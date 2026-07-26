@@ -1,9 +1,9 @@
 # Sprint 08 — World, Region and Home Domain
 
-**Sprint ID:** LUMI-S08  
-**Version:** 1.0.0  
-**Status:** Planned / Agent-ready  
-**Depends On:** Sprint 07 exit gate  
+**Sprint ID:** LUMI-S08
+**Version:** 1.0.0
+**Status:** Planned / Agent-ready
+**Depends On:** Sprint 07 exit gate
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
@@ -20,12 +20,14 @@ home/household yaşam alanlarını kalıcı domain modeli olarak kurmak.
 - home, household residence and shared-space links;
 - environment snapshot: time phase, weather and season references;
 - world/location/object events and APIs;
-- world bootstrap and archive behavior.
+- world bootstrap and archive behavior;
+- first world creation from an accepted character Origin Package.
 
 ## Out of Scope
 
 - offline/background simulation;
 - autonomous NPC decisions;
+- first-run character onboarding UI;
 - full map UI;
 - economy/civilization simulation;
 - Story Outcome Commit System.
@@ -69,3 +71,8 @@ smoke testleri zorunludur. World history destructive rollback ile silinemez.
 World, Region, Location ve Home domain temelini uygula; zaman ilerletme veya NPC
 simulation başlatma.
 
+## Origin-Led World Bootstrap
+
+Sprint 08 must create the first Region, Location and Home from the accepted Origin Package. A sea creature should naturally begin in a sea, reef, lagoon or river context; a dragon should naturally bias toward mountain, cave, volcanic or magical regions unless the accepted package deliberately defines a coherent exception.
+
+The world bootstrap manifest must preserve the accepted package for audit, replay and future story context.

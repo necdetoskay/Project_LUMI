@@ -1,9 +1,9 @@
 # Sprint 12 — Story Generation Pipeline
 
-**Sprint ID:** LUMI-S12  
-**Version:** 1.0.0  
-**Status:** Planned / Agent-ready  
-**Depends On:** Sprint 10 and Sprint 11 exit gates  
+**Sprint ID:** LUMI-S12
+**Version:** 1.0.0
+**Status:** Planned / Agent-ready
+**Depends On:** Sprint 10 and Sprint 11 exit gates
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
@@ -16,6 +16,7 @@ provider-neutral AI generation pipeline'ı kurmak.
 - generation request/response contracts;
 - provider adapter and model routing abstraction;
 - prompt composition from approved registry;
+- origin proposal generation for first-run Auto mode;
 - scene, dialogue and choice proposal generation;
 - schema, canon, safety and continuity validation;
 - bounded repair/retry and deterministic failure states;
@@ -71,3 +72,8 @@ ilerler.
 Güvenli story generation pipeline'ını uygula. LLM çıktısını canonical gerçeklik
 veya doğrudan DB mutation olarak kullanma.
 
+## First-Run Auto Origin Generation
+
+Sprint 12 must provide the provider-neutral generation contract for Auto origin proposal cards. Given a selected character type and child safety context, the pipeline should generate 3-5 coherent, surprising and age-appropriate Origin Packages.
+
+Refresh requests must produce materially different candidates while preserving the selected type and safety constraints.

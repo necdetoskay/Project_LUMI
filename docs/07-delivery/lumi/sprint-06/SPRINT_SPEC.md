@@ -1,9 +1,9 @@
 # Sprint 06 — Character Domain
 
-**Sprint ID:** LUMI-S06  
-**Version:** 1.0.0  
-**Status:** Planned / Agent-ready  
-**Depends On:** Sprint 05 exit gate  
+**Sprint ID:** LUMI-S06
+**Version:** 1.0.0
+**Status:** Planned / Agent-ready
+**Depends On:** Sprint 05 exit gate
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
@@ -14,6 +14,7 @@ aggregate temelini kurmak.
 ## In Scope
 
 - Character aggregate, type, lifecycle and active location;
+- character origin package fields required for first-run bootstrap;
 - trait/personality vectors and bounded evolution;
 - emotion state, needs, goals and temporary conditions;
 - child avatar and NPC separation;
@@ -27,6 +28,7 @@ aggregate temelini kurmak.
 - autonomous NPC planning and emergent interactions;
 - full memory retrieval/consolidation;
 - inventory behavior;
+- final world bootstrap execution;
 - world simulation;
 - irreversible aging/death automation.
 
@@ -71,3 +73,10 @@ silinmez. Completion report invariant kanıtlarını içerir.
 Canonical Character belgelerini uygula; NPC'lere planlama, söylenti veya
 background autonomy ekleme.
 
+## Character Origin Requirement
+
+Sprint 06 must model the accepted Origin Package at the Character aggregate boundary. Character type and subtype are not only display fields; they influence initial traits, needs, affinities and the first world bootstrap handoff.
+
+The implementation must follow:
+
+- [Character Origin and World Bootstrap](../../../03-domain-design/characters/character-origin-and-world-bootstrap.md)

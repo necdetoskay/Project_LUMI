@@ -7,6 +7,7 @@ belgelerini içerir.
 | --- | --- |
 | [`world/`](world/) | Dünya durumu, zaman, olaylar, ekoloji, envanter ve çevre |
 | [`characters/`](characters/) | Karakter temeli, kişilik vektörleri, NPC yaşamı ve gelişim |
+| [`characters/character-origin-and-world-bootstrap.md`](characters/character-origin-and-world-bootstrap.md) | İlk karakter tipi seçimi, Origin Package ve dünya bootstrap akışı |
 | [`decisions/`](decisions/) | Decision Engine, Utility Evaluator ve karar geçmişi |
 | [`emotions/`](emotions/) | Duygu vektörleri, mood ve duygusal bulaşma |
 | [`memory/`](memory/) | Episodic/semantic hafıza, unutma ve kolektif hafıza |

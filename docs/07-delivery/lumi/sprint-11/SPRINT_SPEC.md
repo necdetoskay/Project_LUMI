@@ -1,9 +1,9 @@
 # Sprint 11 — Prompt Registry and Context Builder
 
-**Sprint ID:** LUMI-S11  
-**Version:** 1.0.0  
-**Status:** Planned / Agent-ready  
-**Depends On:** Sprint 09 exit gate; Sprint 10 contracts available  
+**Sprint ID:** LUMI-S11
+**Version:** 1.0.0
+**Status:** Planned / Agent-ready
+**Depends On:** Sprint 09 exit gate; Sprint 10 contracts available
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
@@ -17,7 +17,7 @@ yetkili, bütçelenmiş bağlamı oluşturan Context Builder altyapısını kurm
 - typed variables and rendering validation;
 - provider-neutral prompt contracts;
 - Context Builder orchestration;
-- safety, parent policy, active story, emotion, memory and world context sources;
+- safety, parent policy, active story, emotion, memory, origin package and world context sources;
 - relevance filtering and token budget;
 - prompt/context audit metadata without sensitive raw content;
 - eval fixtures and fallback behavior.
@@ -71,3 +71,6 @@ token-budget ve prompt regression eval testleri zorunludur. Prompt activation
 Registry ve Context Builder'ı kur. Story metni üretme, bağımsız RAG ürünü
 oluşturma veya LLM'ye state mutation yetkisi verme.
 
+## Origin Package Context
+
+Context Builder must be able to include the accepted Origin Package when prompts need first-run continuity, character premise, starting home, nearby NPC seed or first mystery context. It must include only the fields needed for the requested generation task and must respect token and safety budgets.
