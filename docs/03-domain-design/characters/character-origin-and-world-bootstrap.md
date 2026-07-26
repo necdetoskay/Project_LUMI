@@ -51,16 +51,18 @@ Exceptions are allowed only when the exception is the core premise. For example,
 ## Bootstrap Sequence
 
 1. Resolve child profile and parent safety policy.
-2. Select character type.
-3. Choose manual setup or Auto origin generation.
-4. Produce candidate Origin Packages.
-5. Accept one Origin Package.
-6. Create Character aggregate from package fields.
-7. Create World aggregate with package-derived seed.
-8. Create first Region and Location from affinity rules.
-9. Create Home / Nest / Center as the safe return point.
-10. Seed nearby NPC candidates and first gentle world event.
-11. Persist bootstrap manifest for audit and replay.
+2. Create a stable `universeSeed`.
+3. Select character type.
+4. Generate bootstrap vectors from the seed and selected character type.
+5. Choose manual setup or Auto origin generation.
+6. Produce candidate Origin Packages.
+7. Accept one Origin Package.
+8. Create Character aggregate from package fields.
+9. Create World aggregate with package-derived seed and vectors.
+10. Create first Region and Location from affinity rules.
+11. Create Home / Nest / Center as the safe return point.
+12. Seed nearby NPC candidates and first gentle world event.
+13. Persist bootstrap manifest for audit and replay.
 
 ## Auto Origin Generator
 
@@ -69,6 +71,16 @@ The Auto Origin Generator creates multiple coherent Origin Packages from the sel
 It must optimize for compatibility with selected type, novelty without incoherence, child profile safety, playable first location, meaningful home/center, a gentle first mystery and enough specificity for future story generation.
 
 It must not optimize for pure randomness.
+
+Auto generation must follow the
+[Seeded Vector Bootstrap](../simulation/seeded-vector-bootstrap.md) rules:
+
+- create a stable `universeSeed`;
+- derive bootstrap vectors through deterministic RNG;
+- build a structured creative brief from dominant vector values;
+- use the LLM only to express candidate Origin Packages;
+- validate and score proposals before displaying them;
+- persist the accepted candidate seed and vector version.
 
 ## Refresh Behavior
 

@@ -21,7 +21,8 @@ home/household yaşam alanlarını kalıcı domain modeli olarak kurmak.
 - environment snapshot: time phase, weather and season references;
 - world/location/object events and APIs;
 - world bootstrap and archive behavior;
-- first world creation from an accepted character Origin Package.
+- first world creation from an accepted character Origin Package;
+- universe seed, bootstrap manifest and vector-version persistence.
 
 ## Out of Scope
 
@@ -76,3 +77,9 @@ simulation başlatma.
 Sprint 08 must create the first Region, Location and Home from the accepted Origin Package. A sea creature should naturally begin in a sea, reef, lagoon or river context; a dragon should naturally bias toward mountain, cave, volcanic or magical regions unless the accepted package deliberately defines a coherent exception.
 
 The world bootstrap manifest must preserve the accepted package for audit, replay and future story context.
+
+World creation must use the canonical
+[Seeded Vector Bootstrap](../../../03-domain-design/simulation/seeded-vector-bootstrap.md)
+rules. The persisted world state should store the stable `universeSeed`,
+accepted candidate seed, generator version and vector version so bootstrap can
+be replayed in tests.

@@ -17,7 +17,7 @@ yetkili, bütçelenmiş bağlamı oluşturan Context Builder altyapısını kurm
 - typed variables and rendering validation;
 - provider-neutral prompt contracts;
 - Context Builder orchestration;
-- safety, parent policy, active story, emotion, memory, origin package and world context sources;
+- safety, parent policy, active story, emotion, memory, origin package, seed manifest and world context sources;
 - relevance filtering and token budget;
 - prompt/context audit metadata without sensitive raw content;
 - eval fixtures and fallback behavior.
@@ -74,3 +74,7 @@ oluşturma veya LLM'ye state mutation yetkisi verme.
 ## Origin Package Context
 
 Context Builder must be able to include the accepted Origin Package when prompts need first-run continuity, character premise, starting home, nearby NPC seed or first mystery context. It must include only the fields needed for the requested generation task and must respect token and safety budgets.
+
+When first-run Auto generation needs a creative brief, Context Builder must
+derive dominant vector labels from the seed manifest instead of sending raw,
+unbounded world state to the model.

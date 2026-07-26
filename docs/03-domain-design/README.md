@@ -16,6 +16,7 @@ belgelerini içerir.
 | [`civilization/`](civilization/) | Tarih, siyaset, yönetim, hukuk ve adalet |
 | [`story/`](story/) | Hikâye tohumları, narrative director, süreklilik ve sonuçlar |
 | [`simulation/`](simulation/) | Domain seviyesindeki simülasyon specification'ları |
+| [`simulation/seeded-vector-bootstrap.md`](simulation/seeded-vector-bootstrap.md) | Seed numarası, deterministic RNG, vektör üretimi ve LLM brief akışı |
 
 Numaralı 000–059 belge serisi ürün ve domain tasarımının resmi kavramsal
 omurgasıdır. Uygulama ayrıntıları `04-architecture/` ve `06-specifications/`

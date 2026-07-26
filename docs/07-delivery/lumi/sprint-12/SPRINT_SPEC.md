@@ -17,6 +17,7 @@ provider-neutral AI generation pipeline'ı kurmak.
 - provider adapter and model routing abstraction;
 - prompt composition from approved registry;
 - origin proposal generation for first-run Auto mode;
+- seeded vector creative brief generation;
 - scene, dialogue and choice proposal generation;
 - schema, canon, safety and continuity validation;
 - bounded repair/retry and deterministic failure states;
@@ -77,3 +78,9 @@ veya doğrudan DB mutation olarak kullanma.
 Sprint 12 must provide the provider-neutral generation contract for Auto origin proposal cards. Given a selected character type and child safety context, the pipeline should generate 3-5 coherent, surprising and age-appropriate Origin Packages.
 
 Refresh requests must produce materially different candidates while preserving the selected type and safety constraints.
+
+The implementation must use deterministic candidate seeds and bootstrap vectors
+as defined in
+[Seeded Vector Bootstrap](../../../03-domain-design/simulation/seeded-vector-bootstrap.md).
+The LLM should receive a structured creative brief, not direct authority to
+write canonical world state.

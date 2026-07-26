@@ -15,6 +15,7 @@ aggregate temelini kurmak.
 
 - Character aggregate, type, lifecycle and active location;
 - character origin package fields required for first-run bootstrap;
+- seed manifest references required to replay first-run character origin;
 - trait/personality vectors and bounded evolution;
 - emotion state, needs, goals and temporary conditions;
 - child avatar and NPC separation;
@@ -80,3 +81,4 @@ Sprint 06 must model the accepted Origin Package at the Character aggregate boun
 The implementation must follow:
 
 - [Character Origin and World Bootstrap](../../../03-domain-design/characters/character-origin-and-world-bootstrap.md)
+- [Seeded Vector Bootstrap](../../../03-domain-design/simulation/seeded-vector-bootstrap.md)
