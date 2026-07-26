@@ -1,0 +1,21 @@
+# NPC Interaction Engine Checklist
+
+- [ ] Proactive candidate generation var
+- [ ] Rumor desteği var
+- [ ] Gift desteği var
+- [ ] Warning desteği var
+- [ ] Invitation desteği var
+- [ ] Quest seed desteği var
+- [ ] Relationship-aware targeting var
+- [ ] Cooldown policy var
+- [ ] Novelty control var
+- [ ] Safety filtering var
+- [ ] Rumor propagation var
+- [ ] Opportunity persistence var
+- [ ] Interaction participants var
+- [ ] Expiry worker desteği var
+- [ ] World news entegrasyonu var
+- [ ] Inbox delivery var
+- [ ] Accept → story hook akışı var
+- [ ] Audit ve outbox entegrasyonu var
+- [ ] Unit testleri var

@@ -1,0 +1,21 @@
+# Simulation Runtime Checklist
+
+- [ ] Scheduler mevcut
+- [ ] Worker skip-locked kullanıyor
+- [ ] 10-day cap testli
+- [ ] Freeze flag testli
+- [ ] Decay intensity testli
+- [ ] Entity relevance seçimi var
+- [ ] NPC intent evaluation var
+- [ ] Routine execution var
+- [ ] Ecology hook var
+- [ ] Settlement hook var
+- [ ] Culture/politics hook var
+- [ ] State changes persist ediliyor
+- [ ] Memories oluşturuluyor
+- [ ] Checkpoint yazılıyor
+- [ ] Run audit ediliyor
+- [ ] Completion outbox event var
+- [ ] Status endpoint var
+- [ ] Manual run endpoint var
+- [ ] Observability contract var
