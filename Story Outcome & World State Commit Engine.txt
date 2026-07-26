@@ -1,0 +1,741 @@
+1. Hikâye oluşturulmadan önce bir başlangıç fotoğrafı alınır
+
+Hikâye oluşturulurken kullanılan tüm veriler için bir StoryContextSnapshot hazırlanır.
+
+Örneğin:
+
+{
+  "storySessionId": "story_1048",
+  "worldVersion": 482,
+  "startedAt": "2026-07-25T21:00:00Z",
+  "characters": {
+    "child_1": {
+      "location": "whispering_forest",
+      "health": 100,
+      "emotion": {
+        "courage": 62,
+        "curiosity": 78
+      },
+      "inventory": ["silver_compass"]
+    }
+  },
+  "npcs": {
+    "npc_mira": {
+      "location": "whispering_forest",
+      "trustTowardChild": 40,
+      "status": "healthy",
+      "currentGoal": "find_missing_owl"
+    }
+  },
+  "regions": {
+    "whispering_forest": {
+      "weather": "foggy",
+      "dangerLevel": 25,
+      "activeEvents": ["missing_owl"]
+    }
+  }
+}
+
+Bu snapshot çok önemlidir. Çünkü hikâye bittikten sonra:
+
+Hangi veriden başladığımızı biliriz.
+LLM’nin uydurduğu değişiklikleri yakalayabiliriz.
+Aynı hikâyenin iki kez uygulanmasını önleriz.
+Hatalı güncellemeyi geri alabiliriz.
+Hikâye devam ederken dünya değişmişse çakışmayı tespit edebiliriz.
+2. LLM hikâyeyle birlikte “Outcome Manifest” üretir
+
+LLM’nin ikinci çıktısı serbest metin değil, önceden belirlenmiş bir şemaya uyan yapı olmalıdır.
+
+Örneğin hikâyede çocuk Mira’yı kurtardı, kayıp baykuşu buldu ve pusulayı Mira’ya verdi:
+
+{
+  "storySessionId": "story_1048",
+  "outcomeType": "completed",
+  "effects": [
+    {
+      "effectId": "effect_001",
+      "entityType": "relationship",
+      "entityId": "child_1:npc_mira",
+      "operation": "increment",
+      "path": "trust",
+      "value": 15,
+      "reason": "The child rescued Mira from the fallen bridge.",
+      "evidenceSceneId": "scene_08"
+    },
+    {
+      "effectId": "effect_002",
+      "entityType": "npc",
+      "entityId": "npc_mira",
+      "operation": "set",
+      "path": "status",
+      "value": "safe",
+      "reason": "Mira was rescued.",
+      "evidenceSceneId": "scene_08"
+    },
+    {
+      "effectId": "effect_003",
+      "entityType": "world_event",
+      "entityId": "missing_owl",
+      "operation": "set",
+      "path": "status",
+      "value": "resolved",
+      "reason": "The missing owl was found.",
+      "evidenceSceneId": "scene_11"
+    },
+    {
+      "effectId": "effect_004",
+      "entityType": "inventory",
+      "entityId": "child_1",
+      "operation": "remove",
+      "path": "items",
+      "value": "silver_compass",
+      "reason": "The child voluntarily gave the compass to Mira.",
+      "evidenceSceneId": "scene_12"
+    },
+    {
+      "effectId": "effect_005",
+      "entityType": "inventory",
+      "entityId": "npc_mira",
+      "operation": "add",
+      "path": "items",
+      "value": "silver_compass",
+      "reason": "Mira received the compass.",
+      "evidenceSceneId": "scene_12"
+    }
+  ]
+}
+
+Buradaki kritik nokta şudur:
+
+LLM “veritabanındaki son değeri” yazmaz.
+Mümkün olduğunca ne değiştiğini söyler.
+
+Örneğin:
+
+{
+  "operation": "increment",
+  "path": "trust",
+  "value": 15
+}
+
+şeklinde bir delta üretmesi;
+
+{
+  "trust": 55
+}
+
+yazmasından daha güvenlidir.
+
+3. LLM doğrudan değişiklik yapma yetkisine sahip olmamalı
+
+LLM öneri üretir. Gerçek değişikliği uygulayan bölüm bizim deterministik motorumuz olur:
+
+LLM
+ ↓
+Outcome Manifest
+ ↓
+Outcome Validator
+ ↓
+Rule Engine
+ ↓
+Conflict Resolver
+ ↓
+World State Commit
+ ↓
+Post-Commit Simulation
+
+LLM şu tür kararları tek başına veremez:
+
+Bir karakteri kalıcı olarak öldürmek
+Önemli bir şehri yok etmek
+Eşsiz bir eşyayı iki kişiye birden vermek
+İlişki değerini sınır dışına taşımak
+Ana hikâye çizgisini kapatmak
+Daha önce gerçekleşmiş bir olayı geri almak
+Hikâyede bulunmayan bir NPC’yi güncellemek
+
+Bunlar sistem kuralları tarafından kontrol edilmelidir.
+
+4. Etkiler önem seviyelerine ayrılmalı
+
+Her hikâye sonucu aynı ağırlıkta değildir.
+
+A. Mikro etkiler
+
+Genellikle otomatik uygulanabilir:
+
+Cesaret +2
+Bir NPC’nin güveni +5
+Karakterin kıyafetinin çamurlanması
+Küçük bir eşya kazanılması
+Hafif yorgunluk
+Bir söylentinin öğrenilmesi
+B. Orta etkiler
+
+Kuralla doğrulanıp uygulanabilir:
+
+NPC’nin yer değiştirmesi
+Bir görevin tamamlanması
+Yeni bir arkadaşlık oluşması
+Yaralanma
+Eşyanın başka karaktere verilmesi
+Bölgesel olayın çözülmesi
+Bir yerin keşfedilmesi
+C. Büyük etkiler
+
+Ek kontrol gerektirir:
+
+NPC ölümü
+Yerleşimin yok olması
+Yönetim değişikliği
+Büyük ekolojik değişim
+Bir topluluğun göç etmesi
+Ana karakterin kalıcı yetenek kaybı
+Eşsiz bir büyülü eşyanın yok olması
+Dünya tarihini değiştiren olay
+
+Büyük etkiler için:
+
+Ayrı doğrulama
+Hikâye tasarım kurallarına uygunluk kontrolü
+Gerekirse ebeveyn ayarları
+“Kalıcı sonuçlara izin ver” politikası
+Event-sourcing kaydı
+
+kullanılmalı.
+
+5. Hikâyede gerçekleşenlerle LLM’nin önerdiği güncellemeler eşleştirilmeli
+
+Her etki bir kanıta bağlanmalıdır:
+
+{
+  "reason": "The child gave the compass to Mira.",
+  "evidenceSceneId": "scene_12"
+}
+
+Hikâyede pusula verilmediyse, envanter güncellemesi reddedilir.
+
+Bu nedenle hikâye sahneleri de kimlikli olmalı:
+
+{
+  "sceneId": "scene_12",
+  "participants": ["child_1", "npc_mira"],
+  "locationId": "old_bridge",
+  "events": [
+    {
+      "type": "item_transfer",
+      "from": "child_1",
+      "to": "npc_mira",
+      "itemId": "silver_compass"
+    }
+  ]
+}
+
+Böylece sistem yalnızca doğal dil üzerinden anlam çıkarmaya çalışmaz. Hikâye zaten yapılandırılmış olaylar taşır.
+
+6. Asıl doğru model: Hikâye “event” üretmeli
+
+LUMI için en sağlam yapı, doğrudan tablo güncellemek yerine önce olay üretmektir.
+
+Örneğin:
+
+{
+  "eventType": "NPC_RESCUED",
+  "actorId": "child_1",
+  "targetId": "npc_mira",
+  "locationId": "old_bridge",
+  "storySessionId": "story_1048",
+  "sceneId": "scene_08",
+  "occurredAtWorldTime": "year_12_day_84_16:20"
+}
+
+Başka bir olay:
+
+{
+  "eventType": "ITEM_TRANSFERRED",
+  "itemId": "silver_compass",
+  "fromEntityId": "child_1",
+  "toEntityId": "npc_mira",
+  "storySessionId": "story_1048",
+  "sceneId": "scene_12"
+}
+
+Daha sonra kural motoru bu eventlerden state üretir:
+
+NPC_RESCUED
+→ Mira.status = safe
+→ Mira.trust[child] +15
+→ Mira.memory içerisine kurtarılma anısı ekle
+→ Bölgedeki söylenti sistemine olay ekle
+→ Mira'nın ailesinin çocuğa minnettarlığını artır
+
+Bu yaklaşımın büyük avantajı şudur:
+
+Hikâye sadece tek bir alanı değiştirmez.
+Bir olay, evrenin farklı sistemlerinde farklı yankılar doğurur.
+
+Bu tam olarak LUMI’nin vektörel ve yaşayan evren anlayışına uygundur.
+
+7. Bir olayın doğrudan ve dolaylı etkileri ayrılmalı
+
+Örneğin çocuk, tüccarın kayıp çantasını buldu.
+
+Doğrudan etkiler
+Çanta çocuğun envanterinden çıkar.
+Tüccarın envanterine geçer.
+Görev tamamlanır.
+Tüccarın güveni artar.
+Çocuk ödül alır.
+Dolaylı etkiler
+Tüccarın ailesi çocuğu olumlu tanır.
+Köyde çocuk hakkında bir söylenti yayılır.
+Ticaret dükkânında indirim açılabilir.
+Hırsızlık şüphesi taşıyan başka NPC aklanabilir.
+Çantada ilaç varsa hasta bir NPC iyileşebilir.
+Tüccarın ertelenmiş yolculuğu yeniden başlayabilir.
+
+LLM’nin bütün dolaylı etkileri tek tek üretmesi gerekmez.
+
+Daha doğru ayrım:
+
+LLM:
+“Çanta tüccara teslim edildi” olayını üretir.
+
+Evren motoru:
+Bu olayın ilişki, ekonomi, söylenti, görev ve NPC planları üzerindeki etkisini hesaplar.
+
+Böylece evren kuralları LLM’nin keyfine bırakılmaz.
+
+8. Oyuncu seçimleri son sonucu değiştirebilir
+
+Hikâye ilk oluşturulduğu anda sonuçların tamamı kesin olmayabilir.
+
+Örneğin LLM üç ihtimalli bir sahne üretir:
+
+Pusulayı Mira’ya ver
+Pusulayı kendinde tut
+Pusulayı köy yaşlısına teslim et
+
+Bu durumda ilk üretilen Outcome Manifest kesin değil, dallanmış olmalıdır:
+
+{
+  "choiceId": "choice_07",
+  "branches": {
+    "give_to_mira": [
+      {
+        "eventType": "ITEM_TRANSFERRED",
+        "itemId": "silver_compass",
+        "toEntityId": "npc_mira"
+      }
+    ],
+    "keep_item": [
+      {
+        "eventType": "ITEM_RETAINED",
+        "itemId": "silver_compass",
+        "ownerId": "child_1"
+      }
+    ],
+    "give_to_elder": [
+      {
+        "eventType": "ITEM_TRANSFERRED",
+        "itemId": "silver_compass",
+        "toEntityId": "npc_elder"
+      }
+    ]
+  }
+}
+
+Kullanıcı hangi seçimi yaparsa yalnızca o dalın olayları aktive edilir.
+
+Dolayısıyla dünya güncellemesi:
+
+Hikâye üretildiğinde değil,
+Sahne oynandığında kısmen,
+Hikâye tamamlandığında kesin olarak
+
+uygulanmalıdır.
+
+9. Güncellemeler üç aşamalı tutulmalı
+Aşama 1 — Pending Effects
+
+Hikâye devam ederken geçici etkiler:
+
+pending
+
+Örneğin:
+
+Çocuk pusulayı Mira’ya verdi.
+NPC yaralandı.
+Köprü yıkıldı.
+
+Ancak hikâye henüz bitmedi.
+
+Aşama 2 — Confirmed Story Effects
+
+Hikâye tamamlandığında kesinleşen etkiler:
+
+confirmed
+Aşama 3 — Canonical World Commit
+
+Doğrulama ve kurallar sonrasında evrenin resmi durumuna yazılan etkiler:
+
+committed
+
+Bazı etkiler hikâye sonunda iptal olabilir.
+
+Örneğin:
+
+NPC kayboldu sanıldı ama sonunda bulundu.
+Eşya kırıldı sanıldı ama aslında illüzyondu.
+Köprü çöktü ama hikâye bitmeden tamir edildi.
+
+Bu yüzden her sahnede doğrudan kalıcı DB güncellemesi yapmak tehlikelidir.
+
+10. Hikâye sonu güncelleme süreci
+
+Önerdiğim tam akış:
+
+1. Hikâye oturumu kilitlenir
+
+Yeni seçim alınmaz.
+
+status = finalizing
+2. Kesinleşen seçimler toplanır
+Kullanıcı seçimleri
+Kullanılan eşyalar
+Tamamlanan sahneler
+Atlanan sahneler
+Başarı ve başarısızlıklar
+3. Final Outcome Manifest hazırlanır
+
+İlk manifest ile gerçek kullanıcı akışı birleştirilir.
+
+4. Şema doğrulaması yapılır
+Entity gerçekten var mı?
+Alan güncellenebilir mi?
+İşlem türü geçerli mi?
+Değer sınırlar içinde mi?
+5. Hikâye kanıtı kontrol edilir
+
+Her güncelleme gerçekten hikâyede oldu mu?
+
+6. İş kuralları uygulanır
+
+Örneğin:
+
+trust değeri -100 ile +100 arasında olmalı.
+Çocuk karakter kalıcı olarak ölemez.
+Eşsiz eşyanın aynı anda tek sahibi olabilir.
+Kapalı bölge keşfedilmiş sayılamaz.
+7. Çakışma kontrolü yapılır
+
+Başlangıçta dünya sürümü 482 idi ama şimdi 484 olmuş olabilir.
+
+Bu durumda:
+
+Güncelleme güvenli şekilde birleştirilir.
+Yeniden hesaplanır.
+Çakışan etki reddedilir.
+Manuel/otomatik uzlaştırmaya gönderilir.
+8. Tek transaction içinde commit edilir
+BEGIN TRANSACTION
+
+insert story_events
+update inventories
+update relationships
+update npc_states
+update quest_states
+update world_events
+insert memories
+increment world_version
+
+COMMIT
+
+Herhangi bir adım başarısızsa:
+
+ROLLBACK
+9. Dolaylı etkiler kuyruğa alınır
+
+Commit sonrasında:
+
+Söylenti üretimi
+NPC plan değişikliği
+Yakın NPC’lerin tepkisi
+Ekonomi etkileri
+Bölgesel haberler
+Yeni hikâye fırsatları
+Duygu ve hafıza etkileri
+
+hesaplanır.
+
+11. NPC son durumu nasıl güncellenmeli?
+
+NPC’nin tek bir status alanı olmamalı. Hikâye sonunda ilgili state bileşenleri güncellenmeli.
+
+Örneğin:
+
+{
+  "npcId": "npc_mira",
+  "physicalState": {
+    "health": 82,
+    "injuries": [
+      {
+        "type": "sprained_ankle",
+        "severity": 25,
+        "healingDays": 3
+      }
+    ],
+    "fatigue": 55
+  },
+  "emotionalState": {
+    "fear": 20,
+    "gratitude": 74,
+    "hope": 65
+  },
+  "socialState": {
+    "trustTowardChild": 55,
+    "debtTowardChild": 30
+  },
+  "spatialState": {
+    "locationId": "village_infirmary",
+    "movementState": "resting"
+  },
+  "intentState": {
+    "currentGoal": "recover_from_injury",
+    "suspendedGoals": ["find_missing_owl"]
+  }
+}
+
+Ancak hikâye motorunun bunların son değerini tamamen kendisi belirlemesi doğru değildir.
+
+LLM şöyle demeli:
+
+{
+  "eventType": "NPC_MINOR_INJURY",
+  "npcId": "npc_mira",
+  "injuryType": "sprained_ankle",
+  "narrativeSeverity": "mild"
+}
+
+Son değerleri sistem belirlemeli:
+
+mild ankle injury
+→ health -8
+→ mobility -20
+→ recovery duration 2–4 gün
+→ current goal temporarily suspended
+
+Bu, tutarlılığı korur.
+
+12. Hafıza güncellemesi ayrıca yapılmalı
+
+Her state değişikliği hafıza değildir.
+
+Örneğin:
+
+NPC’nin sağlığı 82 oldu: state
+Çocuk tarafından kurtarıldığını hatırlıyor: memory
+Çocuğa daha çok güveniyor: relationship
+Çocuğun cesur olduğunu düşünüyor: belief
+İleride ona yardım etmeyi planlıyor: intention
+
+Bunları ayrı ayrı üretmeliyiz:
+
+{
+  "memory": {
+    "ownerId": "npc_mira",
+    "eventType": "rescued_by",
+    "subjectId": "child_1",
+    "emotionalValence": 0.85,
+    "importance": 0.78,
+    "decayRate": 0.05,
+    "sourceStoryId": "story_1048"
+  }
+}
+
+Bu anı ileride şunları etkileyebilir:
+
+Mira çocuğa yardım eder.
+Mira ailesine çocuktan bahseder.
+Çocuk zor durumda kalınca Mira devreye girer.
+Mira’nın diyalog tonu değişir.
+Yeni bir macera fırsatı doğar.
+13. Güncelleme yalnızca hikâyedeki NPC’lerle sınırlı kalmamalı
+
+Fakat bütün evren de yeniden hesaplanmamalı.
+
+Etkilenen çevre halkaları oluşturmalıyız:
+
+Halka 0: Olayın doğrudan katılımcıları
+Halka 1: Yakın aile, arkadaşlar, tanıklar
+Halka 2: Aynı köy veya topluluk
+Halka 3: Bölgesel kurumlar ve gruplar
+Halka 4: Dünya çapında etki — yalnızca büyük olaylarda
+
+Örneğin bir çocuğun Mira’yı kurtarması:
+
+Mira: doğrudan etkilenir.
+Mira’nın ailesi: güçlü dolaylı etki.
+Olayı gören köylüler: söylenti etkisi.
+Köy halkı: düşük itibar etkisi.
+Uzak kıtadaki krallık: hiçbir etki yok.
+
+Bu sistem, daha önce konuştuğumuz influence vector yaklaşımıyla uyumludur.
+
+14. İdempotency mutlaka olmalı
+
+Aynı hikâye sonucu iki kez uygulanmamalı.
+
+Her effect benzersiz olmalı:
+
+{
+  "effectId": "story_1048_effect_004"
+}
+
+Commit öncesinde:
+
+Bu effectId daha önce uygulandı mı?
+
+kontrol edilir.
+
+Uygulandıysa tekrar çalıştırılmaz.
+
+Bu özellikle şu durumlarda önemlidir:
+
+Kullanıcı sayfayı yeniler.
+Mobil bağlantı kopar.
+Backend yanıt vermez ve frontend tekrar gönderir.
+Worker aynı işi iki kez alır.
+Hikâye finalizasyonu yeniden denenir.
+15. Event sourcing kullanmak burada çok uygun
+
+Yalnızca son durumu saklamak yerine, gerçekleşen olayları da saklamalıyız.
+
+Örneğin son durum:
+
+{
+  "miraTrustTowardChild": 55
+}
+
+Tek başına yetersizdir.
+
+Bunun neden 55 olduğunu da bilmeliyiz:
+
+Başlangıç: 40
++15 Çocuk Mira’yı kurtardı
++5 Çocuk baykuşu buldu
+-5 Çocuk verdiği sözü tutmadı
+Toplam: 55
+
+Bu sayede:
+
+Tutarsızlıkları araştırabiliriz.
+Hatalı hikâye sonucunu geri alabiliriz.
+NPC’nin geçmişini açıklayabiliriz.
+“Mira sana neden güveniyor?” sorusunu cevaplayabiliriz.
+Önceki hikâyelere referans verebiliriz.
+
+Ancak performans için her seferinde tüm eventleri hesaplamayız.
+
+İki yapı birlikte tutulur:
+
+Event Store → Tarihçe ve doğruluk
+Current State → Hızlı okuma
+16. LLM ile ikinci bir “hikâye sonrası analiz çağrısı” gerekir mi?
+
+Her zaman gerekmeyebilir.
+
+En iyi yöntem
+
+Hikâye üretilirken yapılandırılmış eventler de birlikte oluşturulur.
+
+Avantajları:
+
+Daha ucuzdur.
+Hikâyeyle eventler aynı bağlamda üretilir.
+Sonradan metni tekrar analiz etmek gerekmez.
+Hata riski azalır.
+İkinci çağrı ne zaman kullanılabilir?
+Hikâye sırasında kullanıcı serbest metin yazdıysa
+Kullanıcı beklenmeyen bir seçim yaptıysa
+Hikâye dinamik olarak çok değiştiyse
+İlk event planıyla final metin arasında uyumsuzluk oluştuysa
+Serbest anlatımlı bir hikâye içe aktarıldıysa
+
+Bu durumda ayrı bir Story Outcome Extractor kullanılabilir.
+
+Ama bu extractor da DB’yi güncellemez; yalnızca önerilen eventleri çıkarır.
+
+17. Benim önerdiğim nihai sorumluluk ayrımı
+LLM’nin sorumluluğu
+Hikâyeyi üretmek
+Sahneleri tanımlamak
+Anlatısal olayları çıkarmak
+Sebep-sonuç ilişkisi kurmak
+Olası sonuçları önermek
+Hikâye kanıtını göstermek
+Deterministik motorun sorumluluğu
+Değerleri sınırlandırmak
+State değişimlerini hesaplamak
+Eşya sahipliğini yönetmek
+İlişki puanlarını güncellemek
+Yaralanma ve iyileşme kurallarını uygulamak
+Eventlerin etkisini yaymak
+Çakışmaları çözmek
+Transaction yapmak
+Dünya sürümünü artırmak
+Dünya simülasyon motorunun sorumluluğu
+Dolaylı sonuçları üretmek
+NPC niyetlerini yeniden değerlendirmek
+Söylentileri yaymak
+Yeni hikâye fırsatları oluşturmak
+Zaman içindeki iyileşme ve bozulmaları hesaplamak
+Bölgesel ve toplumsal etkileri ilerletmek
+Önerilen temel bileşenler
+
+Bu alan için ayrı bir paket veya modül olarak şu bileşenleri tasarlamalıyız:
+
+Story Outcome & World State Commit System
+│
+├── Story Context Snapshot Manager
+├── Narrative Event Extractor
+├── Outcome Manifest Builder
+├── Story Evidence Validator
+├── State Transition Rule Engine
+├── Inventory Transaction Engine
+├── Relationship Update Engine
+├── NPC State Update Engine
+├── Memory Formation Engine
+├── World Event Resolution Engine
+├── Conflict & Version Resolver
+├── World State Commit Manager
+├── Effect Propagation Engine
+├── Rollback & Compensation Manager
+└── Story Outcome Audit Log
+En önemli mimari karar
+
+LUMI’de hikâye sonrası güncelleme şu şekilde olmamalı:
+
+Hikâye metni
+→ LLM metni okur
+→ NPC kayıtlarını doğrudan günceller
+
+Şu şekilde olmalı:
+
+Hikâye ve kullanıcı seçimleri
+→ Yapılandırılmış anlatısal eventler
+→ Doğrulama
+→ Deterministik state transition
+→ Transactional commit
+→ Hafıza ve ilişki güncellemesi
+→ Dolaylı etki yayılımı
+→ Yeni dünya sürümü
+
+Bunun kısa formülü:
+
+LLM ne olduğunu söyler.
+Kurallar bunun ne anlama geldiğini hesaplar.
+Commit motoru evrene güvenli biçimde yazar.
+
+Bu sistemi ayrı ve kapsamlı bir LUMI tasarım başlığı olarak ele almamız gerekir. Çünkü bunun içinde event şemaları, effect tipleri, rollback, concurrency, kullanıcı seçimleri ve NPC hafızası için oldukça geniş bir tasarım alanı bulunuyor.
