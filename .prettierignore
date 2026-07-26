@@ -1,0 +1,12 @@
+.next
+.turbo
+coverage
+dist
+node_modules
+pnpm-lock.yaml
+docs
+**/*.docx
+LUMI_*
+Story Outcome & World State Commit Engine.txt
+apps/LUMI-*
+packages/LUMI-*
