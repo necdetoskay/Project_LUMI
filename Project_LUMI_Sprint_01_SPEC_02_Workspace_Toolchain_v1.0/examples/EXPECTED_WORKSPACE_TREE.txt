@@ -1,0 +1,29 @@
+project-lumi/
+├── apps/
+│   └── .gitkeep
+├── packages/
+│   └── .gitkeep
+├── tooling/
+│   ├── eslint/
+│   │   └── index.mjs
+│   └── typescript/
+│       └── base.json
+├── infra/
+│   └── .gitkeep
+├── docs/
+├── scripts/
+│   └── .gitkeep
+├── tests/
+│   └── .gitkeep
+├── .editorconfig
+├── .env.example
+├── .gitignore
+├── .npmrc
+├── .prettierignore
+├── .prettierrc.json
+├── eslint.config.mjs
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── turbo.json
+└── tsconfig.json

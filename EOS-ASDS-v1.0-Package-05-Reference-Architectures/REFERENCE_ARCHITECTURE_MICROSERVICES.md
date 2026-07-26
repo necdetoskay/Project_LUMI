@@ -1,0 +1,3 @@
+# REFERENCE_ARCHITECTURE_MICROSERVICES.md
+
+Placeholder document.

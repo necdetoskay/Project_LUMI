@@ -1,0 +1,17 @@
+infra/
+├── compose/
+│   ├── docker-compose.yml
+│   └── README.md
+├── postgres/
+│   └── .gitkeep
+├── redis/
+│   └── .gitkeep
+└── object-storage/
+    └── .gitkeep
+
+scripts/
+├── infra-up.mjs
+├── infra-down.mjs
+├── infra-status.mjs
+├── infra-logs.mjs
+└── infra-reset.mjs

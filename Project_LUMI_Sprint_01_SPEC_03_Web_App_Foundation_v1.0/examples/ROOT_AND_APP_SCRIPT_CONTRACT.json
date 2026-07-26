@@ -1,0 +1,24 @@
+{
+  "root_package_json": {
+    "scripts": {
+      "dev": "turbo run dev",
+      "build": "turbo run build",
+      "lint": "turbo run lint",
+      "typecheck": "turbo run typecheck",
+      "test": "turbo run test"
+    }
+  },
+  "apps_web_package_json": {
+    "name": "@lumi/web",
+    "private": true,
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "<repository-approved-eslint-command>",
+      "typecheck": "tsc --noEmit",
+      "test": "<repository-approved-test-command>",
+      "clean": "<cross-platform-clean-command>"
+    }
+  }
+}

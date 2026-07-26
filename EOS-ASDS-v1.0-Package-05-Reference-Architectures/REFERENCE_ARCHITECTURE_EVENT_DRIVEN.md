@@ -1,0 +1,3 @@
+# REFERENCE_ARCHITECTURE_EVENT_DRIVEN.md
+
+Placeholder document.

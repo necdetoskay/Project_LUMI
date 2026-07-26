@@ -1,0 +1,27 @@
+apps/web/
+├── app/
+│   ├── api/
+│   │   └── health/
+│   │       └── route.ts
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── layout/
+│   │   ├── app-footer.tsx
+│   │   └── app-header.tsx
+│   └── ui/
+│       └── .gitkeep
+├── lib/
+│   ├── env.ts
+│   └── utils.ts
+├── public/
+│   └── .gitkeep
+├── tests/
+│   └── smoke.test.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── tailwind.config.ts
+└── tsconfig.json
