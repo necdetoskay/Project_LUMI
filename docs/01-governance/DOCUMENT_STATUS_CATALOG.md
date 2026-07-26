@@ -8,7 +8,10 @@
 | Ürün deneyimi | `docs/02-product/experience/` | Canonical |
 | Domain tasarımı 000–059 | `docs/02-product/`, `docs/03-domain-design/` | Canonical |
 | Core system interaction 060 | `docs/04-architecture/lumi/core-systems/` | Canonical |
+| Ev, household ve gündelik yaşam | `docs/03-domain-design/relationships/home-household-and-daily-life-system.md` | Canonical |
 | Tasarım backlog'u 061 | `docs/08-backlog/lumi/` | Backlog |
+| NPC Emergent Interaction Engine | `docs/08-backlog/lumi/npc-emergent-interaction-engine.md` | Backlog |
+| Story Outcome Commit ve doğrulama planı | `docs/08-backlog/` | Backlog |
 | Tasarım serisi eski indeksi 062 | `docs/99-archive/lumi/design/` | Archived |
 | Persistence mimarisi | `docs/04-architecture/data/persistence/` | Canonical + Reference |
 | Sprint 01 specification'ları | `docs/07-delivery/lumi/sprint-01/` | Active Delivery |
