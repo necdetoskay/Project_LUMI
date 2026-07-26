@@ -10,7 +10,7 @@ belgelerini içerir.
 | [`decisions/`](decisions/) | Decision Engine, Utility Evaluator ve karar geçmişi |
 | [`emotions/`](emotions/) | Duygu vektörleri, mood ve duygusal bulaşma |
 | [`memory/`](memory/) | Episodic/semantic hafıza, unutma ve kolektif hafıza |
-| [`relationships/`](relationships/) | İlişkiler, sosyal grafik, aile, güven ve iletişim |
+| [`relationships/`](relationships/) | İlişkiler, aile, household, gündelik yaşam, güven ve iletişim |
 | [`culture/`](culture/) | Kültür ve kolektif kimlik |
 | [`civilization/`](civilization/) | Tarih, siyaset, yönetim, hukuk ve adalet |
 | [`story/`](story/) | Hikâye tohumları, narrative director, süreklilik ve sonuçlar |
