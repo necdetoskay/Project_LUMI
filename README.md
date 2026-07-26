@@ -1,172 +1,83 @@
-# EOS-ASDS v1.0
+# Project LUMI
 
-# README.md
+Project LUMI, çocuklar için kalıcı hafızaya ve yaşayan bir dünyaya sahip
+etkileşimli hikâye platformudur.
 
-Version: 1.0.0
-Status: Approved
-Classification: Foundation
-Owner: Engineering
-Applies To: All Software Projects
+Bu depo ürün dokümantasyonunu, mimari kararları, uygulama kodunu, geliştirme
+araçlarını ve teslimat kayıtlarını tek yerde tutan resmi proje deposudur.
 
----
+## Başlangıç
 
-# Engineering Operating System
+```bash
+pnpm install
+pnpm dev
+```
 
-## Agentic Software Delivery Standard
+Web uygulaması `http://localhost:3000`, sağlık kontrolü ise
+`http://localhost:3000/api/health` adresinde çalışır.
 
----
+Yerel PostgreSQL ve Redis altyapısını Docker Desktop açıkken başlatmak için:
 
-# 1. Purpose
+```bash
+cp .env.example .env
+pnpm infra:up
+pnpm infra:status
+```
 
-EOS-ASDS (Agentic Software Delivery Standard), insan mühendisler ile AI Coding Agent'larının birlikte, güvenli, sürdürülebilir ve tekrarlanabilir şekilde yazılım geliştirebilmesi için hazırlanmış resmi mühendislik standardıdır.
+PowerShell karşılığı:
 
-Bu standart;
+```powershell
+Copy-Item .env.example .env
+pnpm infra:up
+pnpm infra:status
+```
 
-- yazılım geliştirme süreçlerini,
-- AI agent kullanım kurallarını,
-- görev tanımlarını,
-- kalite standartlarını,
-- teslim süreçlerini,
-- kod inceleme süreçlerini,
-- mimari sorumluluklarını
+## Depo Yapısı
 
-tek bir standart altında toplar.
+| Yol         | Sorumluluk                                      |
+| ----------- | ----------------------------------------------- |
+| `apps/`     | Çalıştırılabilir kullanıcı uygulamaları         |
+| `services/` | Bağımsız arka plan ve servis süreçleri          |
+| `packages/` | Yeniden kullanılabilir çalışma zamanı paketleri |
+| `tooling/`  | Ortak TypeScript, ESLint ve geliştirme araçları |
+| `infra/`    | Yerel ve dağıtım altyapısı                      |
+| `tests/`    | Depo seviyesindeki çapraz sistem testleri       |
+| `docs/`     | Resmi proje ve mühendislik dokümantasyonu       |
 
-EOS-ASDS herhangi bir programlama dili, framework veya AI modeli için değil; tüm yazılım projeleri için tasarlanmıştır.
+## Dokümantasyon
 
----
+Dokümantasyonun başlangıç noktası [`docs/README.md`](docs/README.md) dosyasıdır.
+Belge otoritesi, durumları ve sınıflandırma kuralları bu indeks üzerinden
+izlenir.
 
-# 2. Vision
+Temel tasarım belgeleri:
 
-Yapay zekâ destekli yazılım geliştirme geleceğin değil, bugünün çalışma biçimidir.
+- [Ürün vizyonu](docs/02-product/foundation/000-LUMI-Project-Vision.md)
+- [Yaşayan Evren Manifestosu](docs/02-product/foundation/001-Living-Universe-Manifesto.md)
+- [Temel tasarım ilkeleri](docs/02-product/foundation/002-Core-Design-Principles.md)
+- [Domain tasarım indeksi](docs/03-domain-design/README.md)
+- [Mimari dokümantasyon](docs/04-architecture/README.md)
+- [Aktif teslimat planları](docs/07-delivery/README.md)
 
-Ancak AI'ın kontrolsüz kullanımı;
+## Mühendislik Otoritesi
 
-- mimari bozulmalar,
-- teknik borç,
-- güvenlik açıkları,
-- standart dışı kod,
-- dokümantasyon eksikliği
+LUMI, EOS-ASDS v1.0 kurallarını uygular. Öncelik sırası:
 
-gibi ciddi sorunlara neden olabilir.
+1. EOS Constitution
+2. EOS Standards
+3. EOS Templates
+4. EOS Playbooks
+5. LUMI proje belgeleri
+6. Sprint ve görev belgeleri
 
-EOS-ASDS'in amacı;
+EOS kaynakları [`docs/eos`](docs/eos) altında dondurulmuş olarak korunur.
 
-AI'ın hızını,
+## Kalite Komutları
 
-insan mühendisliğinin kalite anlayışı ile birleştirmektir.
-
----
-
-# 3. Mission
-
-Standart;
-
-• tekrar üretilebilir
-
-• denetlenebilir
-
-• sürdürülebilir
-
-• yüksek kaliteli
-
-yazılım geliştirme süreci oluşturmayı hedefler.
-
----
-
-# 4. Design Philosophy
-
-EOS-ASDS aşağıdaki temel prensipler üzerine kuruludur.
-
-## Engineering First
-
-Her karar mühendislik bakış açısıyla alınır.
-
-## Human Owns Architecture
-
-Mimari tamamen insan sorumluluğundadır.
-
-## AI Executes
-
-AI uygular; karar vermez.
-
-## Specification First
-
-Koddan önce Specification hazırlanır.
-
-## Documentation First
-
-Her özellik önce dokümante edilir.
-
-## Review Before Merge
-
-İncelenmeyen hiçbir kod üretime alınmaz.
-
-## Test Before Delivery
-
-Test edilmeyen hiçbir geliştirme tamamlanmış sayılmaz.
-
-## Incremental Development
-
-Küçük adımlar, küçük risk, sürekli teslim.
-
-## Traceability
-
-Her satır kodun kaynağı izlenebilir olmalıdır.
-
----
-
-# 5. Scope
-
-Bu standart;
-
-- Yazılım geliştirme
-- API geliştirme
-- Frontend
-- Backend
-- Database
-- DevOps
-- Test
-- Kod inceleme
-- Sprint yönetimi
-- AI Coding Agent kullanımı
-
-alanlarını kapsar.
-
----
-
-# 6. Out of Scope
-
-İK, finans, şirket yönetimi ve hukuki süreçler bu standardın kapsamı dışındadır.
-
----
-
-# 7. Target Audience
-
-Yazılım geliştiriciler, mimarlar, teknik liderler, AI Agent operatörleri, proje yöneticileri, DevOps ve QA mühendisleri.
-
----
-
-# 8. Core Rule
-
-> İnsan tasarlar, AI uygular, insan onaylar.
-
----
-
-# 9. Version Policy
-
-Semantic Versioning (SemVer) kullanılır.
-
----
-
-# 10. Document Status
-
-Current Status: Approved
-
-Version: 1.0.0
-
-Next Review: v1.1 Planning Phase
-
----
-
-END OF DOCUMENT
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
