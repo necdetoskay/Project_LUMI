@@ -1,0 +1,37 @@
+{
+  "name": "project-lumi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Project LUMI monorepo",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "clean": "turbo run clean && rimraf node_modules .turbo",
+    "infra:up": "node scripts/infra-up.mjs",
+    "infra:down": "node scripts/infra-down.mjs",
+    "infra:status": "node scripts/infra-status.mjs",
+    "infra:logs": "node scripts/infra-logs.mjs",
+    "infra:reset": "node scripts/infra-reset.mjs"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@types/node": "24.10.1",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.2.12",
+    "globals": "16.5.0",
+    "prettier": "3.6.2",
+    "rimraf": "6.1.2",
+    "turbo": "2.10.7",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.48.1"
+  }
+}
