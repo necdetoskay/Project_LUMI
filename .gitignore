@@ -12,3 +12,5 @@ node_modules/
 playwright-report/
 test-results/
 apps/web/.env.local
+packages/profiles/node_modules/
+packages/profiles/.turbo/
