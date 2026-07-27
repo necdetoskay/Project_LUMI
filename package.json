@@ -16,7 +16,8 @@
     "infra:down": "node scripts/infra-down.mjs",
     "infra:status": "node scripts/infra-status.mjs",
     "infra:logs": "node scripts/infra-logs.mjs",
-    "infra:reset": "node scripts/infra-reset.mjs"
+    "infra:reset": "node scripts/infra-reset.mjs",
+	"infra:config": "docker compose --env-file .env --file infra/compose/docker-compose.yml config"
   },
   "engines": {
     "node": ">=22 <25"
