@@ -12,6 +12,11 @@ Her sprint önce
 [Agent-Ready Sprint Standard](AGENT_READY_SPRINT_STANDARD.md), ardından kendi
 specification dosyası ile uygulanır. Bu indeks uygulama yetkisi vermez.
 
+İlk kurulum ve çalışan ürün çekirdeği için uygulama sırası ayrıca
+[`Initial Implementation Track v1`](../initial-implementation-track-v1.md)
+belgesine göre checkpoint bazlı doğrulanır. Bu belge sprintleri değiştirmez;
+hangi parçaların önce çalıştırılıp test edileceğini netleştirir.
+
 | Sprint | Scope | Specification | Status |
 | --- | --- | --- | --- |
 | 01 | Project Foundation | [Sprint 01](../sprint-01/) | Active / Stabilization |
@@ -48,3 +53,16 @@ Sprint 13 yalnızca NPC intelligence foundation geliştirir. Sprint 10 yalnızca
 story session içindeki doğrulanmış choice/consequence kayıtlarını üretir; world
 state commit backlog sistemini uygulamaz.
 
+Sprint 15 ve Sprint 16 birlikte
+[`Interactive Story Image Hotspots`](../../../04-architecture/media/interactive-story-image-hotspots.md)
+kararını uygular: hikaye görsellerinde sınırlı sayıda güvenli SFX, keşif,
+ipucu veya seçim hotspot'u gösterilebilir. Hotspot etkileşimi doğrudan canonical
+world state değiştirmez; world state etkisi gerekiyorsa ayrıca doğrulanmış story
+choice/outcome kaydı gerekir.
+
+Sprint 09, Sprint 10 ve Sprint 16 birlikte
+[`Story Challenge and Puzzle Encounters`](../../../04-architecture/story-experience/story-challenge-puzzle-encounters.md)
+kararını ilk basit kapsamda uygular: observation, inventory ve empathy
+challenge'ları story reader içinde gösterilebilir. Her challenge success,
+assisted ve alternate continuation yoluna sahip olmalı; çocuk çözemediğinde
+hikaye kilitlenmemelidir.
