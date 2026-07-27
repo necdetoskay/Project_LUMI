@@ -1,37 +1,41 @@
-# Sprint 01 — Project Foundation
+# Sprint 01 - Project Foundation
 
 ## Durum
 
-- Sprint durumu: **Active / Stabilization**
+- Sprint durumu: **Completed / Stabilized**
 - Kurulum hedefi: **27 Temmuz 2026**
-- Bu dizin, Sprint 01 için teslimat ve uygulama otoritesidir.
+- Bu dizin, Sprint 01 icin teslimat ve uygulama otoritesidir.
 
-## Yarın İçin Başlangıç
+## Kapanis Notu
 
-Kurulum gününde ilk olarak
+Sprint 01 kapsamindaki monorepo, web foundation, kalite komutlari ve yerel altyapi temeli tamamlandi.
+27 Temmuz 2026 itibariyla aktif uygulama oda�� Sprint 02 auth calismasina kaydi.
+
+## Yarin Icin Baslangic
+
+Kurulum gununde ilk olarak
 [`TOMORROW_INSTALLATION_READINESS_RUNBOOK.md`](TOMORROW_INSTALLATION_READINESS_RUNBOOK.md)
-izlenmelidir. Belge, mevcut repo durumuna göre komut sırasını, beklenen
-sonuçları, durma koşullarını ve kanıt toplama adımlarını tek yerde toplar.
+izlenmelidir. Belge, mevcut repo durumuna gore komut sirasini, beklenen
+sonuclari, durma kosullarini ve kanit toplama adimlarini tek yerde toplar.
 
-## Belge Haritası
+## Belge Haritasi
 
-| Belge grubu | Amaç |
+| Belge grubu | Amac |
 |---|---|
-| [`full-spec/`](full-spec/) | Sprint 01'in ürün, mimari, test, güvenlik ve Definition of Done çerçevesi |
-| [`spec/`](spec/) | Uygulama ayrıntıları, operasyon runbook'u, kabul matrisi ve teslim şablonları |
-| [`spec-02-workspace-toolchain/`](spec-02-workspace-toolchain/) | Monorepo ve araç zinciri uygulama paketi |
-| [`spec-03-web-app-foundation/`](spec-03-web-app-foundation/) | Web uygulaması temeli uygulama paketi |
-| [`spec-04-local-development-infrastructure/`](spec-04-local-development-infrastructure/) | PostgreSQL ve Redis yerel altyapı paketi |
+| [`full-spec/`](full-spec/) | Sprint 01'in urun, mimari, test, guvenlik ve Definition of Done cercevesi |
+| [`spec/`](spec/) | Uygulama ayrintilari, operasyon runbook'u, kabul matrisi ve teslim sablonlari |
+| [`spec-02-workspace-toolchain/`](spec-02-workspace-toolchain/) | Monorepo ve arac zinciri uygulama paketi |
+| [`spec-03-web-app-foundation/`](spec-03-web-app-foundation/) | Web uygulamasi temeli uygulama paketi |
+| [`spec-04-local-development-infrastructure/`](spec-04-local-development-infrastructure/) | PostgreSQL ve Redis yerel altyapi paketi |
 
-## Otorite Sırası
+## Otorite Sirasi
 
-Çelişki halinde ürün ve mimari otorite belgeleri teslimat belgelerinden önce
-gelir. Uygulama sırasında repo gerçekliği ile eski bir runbook arasında fark
-varsa çalışma durdurulur; sessizce yeni bir mimari karar alınmaz.
+Celiski halinde urun ve mimari otorite belgeleri teslimat belgelerinden once
+gelir. Uygulama sirasinda repo gercekligi ile eski bir runbook arasinda fark
+varsa calisma durdurulur; sessizce yeni bir mimari karar alinmaz.
 
-## Kapsam Sınırı
+## Kapsam Siniri
 
-Sprint 01 yalnızca proje temelini doğrular. Dünya simülasyonu, karakterler,
-NPC'ler, etkiler, mevsimler ve sonuç sistemleri bu sprintte uygulanmaz; ilgili
-tasarım ve sonraki sprint belgeleri kendi otoritelerini korur.
-
+Sprint 01 yalnizca proje temelini dogrular. Dunya simulasyonu, karakterler,
+NPC'ler, etkiler, mevsimler ve sonuc sistemleri bu sprintte uygulanmaz; ilgili
+tasarim ve sonraki sprint belgeleri kendi otoritelerini korur.

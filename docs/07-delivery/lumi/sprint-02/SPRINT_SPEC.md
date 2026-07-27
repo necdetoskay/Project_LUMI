@@ -1,15 +1,29 @@
-# Sprint 02 — Authentication and Parent Account
+# Sprint 02 - Authentication and Parent Account
 
 **Sprint ID:** LUMI-S02  
 **Version:** 1.0.0  
-**Status:** Planned / Agent-ready  
+**Status:** Active / In Progress  
 **Depends On:** Sprint 01 exit gate  
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
 
-Ebeveyn hesabı için güvenli registration, login, session, logout ve temel
-authorization altyapısını üretmek.
+Ebeveyn hesabi icin guvenli registration, login, session, logout ve temel
+authorization altyapisini uretmek.
+
+## Implementation Snapshot - 2026-07-27
+
+Su an repo icinde calisan auth vertical slice vardir:
+
+- register, login, logout, `/me` ve korunan `/app` akisi;
+- refresh rotation ve refresh-token reuse detection;
+- HTTP-only, Secure, SameSite cookie policy;
+- auth rate limiting ve redacted auth audit logging;
+- register, login, forgot-password ve reset-password ekranlari;
+- remember-me ve confirm-password UX.
+
+Sprint 02 henuz tamamlanmis sayilmaz. PostgreSQL integration testleri,
+browser E2E coverage ve delivery kanitlari eksiktir.
 
 ## In Scope
 
@@ -21,7 +35,7 @@ authorization altyapısını üretmek.
 - logout, current-user (`/me`) and session management;
 - auth rate limiting and security audit events;
 - auth web screens and protected application boundary;
-- dar kapsamlı identity migration/repository.
+- dar kapsamli identity migration/repository.
 
 ## Out of Scope
 
@@ -44,34 +58,32 @@ authorization altyapısını üretmek.
 
 ## Functional and Technical Requirements
 
-- Email canonicalization and uniqueness server-side uygulanır.
-- Parola hiçbir zaman düz metin saklanmaz veya loglanmaz.
-- Refresh token yalnızca hash olarak tutulur; rotation eski tokenı geçersiz
-  kılar.
-- Reuse tespiti token ailesini ve ilgili session'ları revoke eder.
-- Authorization kontrolü UI görünürlüğüne bırakılamaz.
-- Route handler application service çağırır; doğrudan ORM kullanmaz.
-- Development auth shortcut production'da etkinleşemez.
+- Email canonicalization and uniqueness server-side uygulanir.
+- Parola hicbir zaman duz metin saklanmaz veya loglanmaz.
+- Refresh token yalnizca hash olarak tutulur; rotation eski tokeni gecersiz kilar.
+- Reuse tespiti token ailesini ve ilgili session'lari revoke eder.
+- Authorization kontrolu UI gorunurlugune birakilamaz.
+- Route handler application service cagirir; dogrudan ORM kullanmaz.
+- Development auth shortcut production'da etkinlesemez.
 
 ## Acceptance Criteria
 
-- Parent register/login/logout/me akışı gerçek PostgreSQL ile çalışır.
-- Yanlış credential aynı genel hata zarfını döndürür.
-- Refresh rotation ve reuse detection otomatik testle kanıtlanır.
-- Cookie güvenlik bayrakları ortam politikasına uygundur.
-- Revoke edilen session korunan endpoint'e erişemez.
-- Rate limit ve audit kayıtları secret/credential içermez.
-- Yetkisiz kullanıcı korunan route ve API'den reddedilir.
+- Parent register/login/logout/me akisi gercek PostgreSQL ile calisir.
+- Yanlis credential ayni genel hata zarfinda dondurur.
+- Refresh rotation ve reuse detection otomatik testle kanitlanir.
+- Cookie guvenlik bayraklari ortam politikasina uygundur.
+- Revoke edilen session korunan endpoint'e erisemez.
+- Rate limit ve audit kayitlari secret/credential icermez.
+- Yetkisiz kullanici korunan route ve API'den reddedilir.
 
 ## Quality Gate and Rollback
 
 Unit, API contract, PostgreSQL integration, browser auth flow ve security
-testleri zorunludur. Migration rollback veri kaybı yaratıyorsa forward-fix
-uygulanır; auth deployment bağımsız olarak devre dışı bırakılabilir. Completion
-report tüm Task ID ve acceptance kanıtlarını içerir.
+testleri zorunludur. Migration rollback veri kaybi yaratiyorsa forward-fix
+uygulanir; auth deployment bagimsiz olarak devre disi birakilabilir. Completion
+report tum Task ID ve acceptance kanitlarini icerir.
 
 ## Coding Agent Mission
 
-Yalnızca ebeveyn authentication foundation'ı uygula. Child profile veya başka
-domain özelliklerine geçme; gerekli ama eksik ürün kararını varsayma.
-
+Yalnizca ebeveyn authentication foundation'ini uygula. Child profile veya baska
+domain ozelliklerine gecme; gerekli ama eksik urun kararini varsayma.
