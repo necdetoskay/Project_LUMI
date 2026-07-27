@@ -17,7 +17,8 @@
     "infra:status": "node scripts/infra-status.mjs",
     "infra:logs": "node scripts/infra-logs.mjs",
     "infra:config": "node scripts/infra-config.mjs",
-    "infra:reset": "node scripts/infra-reset.mjs"
+    "infra:reset": "node scripts/infra-reset.mjs",
+    "auth:migrate": "pnpm --filter @lumi/web auth:migrate"
   },
   "engines": {
     "node": ">=22 <25"

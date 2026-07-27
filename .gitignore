@@ -4,9 +4,11 @@
 !.env.example
 .next/
 .turbo/
+.cache/
 coverage/
 dist/
 node_modules/
 *.log
 playwright-report/
 test-results/
+apps/web/.env.local

@@ -8,6 +8,9 @@
   --primary: #6d4aff;
   --primary-foreground: #ffffff;
   --destructive: #c24141;
+  --destructive-soft: #fbe4e4;
+  --success: #157347;
+  --success-soft: #e3f5ea;
   --radius: 1rem;
 }
 
@@ -35,6 +38,122 @@ a:focus-visible {
   margin-inline: auto;
   max-width: 72rem;
   padding-inline: 1.5rem;
+}
+
+.page-section,
+.auth-page {
+  padding-block: 5rem;
+}
+
+.eyebrow {
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  max-width: 44rem;
+}
+
+.auth-page {
+  display: grid;
+  gap: 2rem;
+  max-width: 40rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-form label {
+  display: grid;
+  font-weight: 700;
+  gap: 0.5rem;
+}
+
+.auth-form input {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  font: inherit;
+  padding: 0.8rem 0.9rem;
+}
+
+.auth-checkbox {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  font-weight: 700;
+}
+
+.auth-checkbox input {
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.auth-links {
+  color: var(--muted);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.auth-links a {
+  color: var(--foreground);
+}
+
+.auth-message {
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.auth-message-error {
+  background: var(--destructive-soft);
+  color: var(--destructive);
+}
+
+.auth-message-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+button {
+  background: var(--primary);
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--primary-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+}
+
+.button-link {
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  color: var(--primary-foreground);
+  display: inline-flex;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+}
+
+.button-link-secondary {
+  background: transparent;
+  color: var(--foreground);
 }
 
 .skip-link {
