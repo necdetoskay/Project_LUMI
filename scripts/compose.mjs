@@ -1,9 +1,17 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 export function runCompose(arguments_) {
+  const envFileArguments = existsSync(".env") ? ["--env-file", ".env"] : [];
   const result = spawnSync(
     "docker",
-    ["compose", "--file", "infra/compose/docker-compose.yml", ...arguments_],
+    [
+      "compose",
+      ...envFileArguments,
+      "--file",
+      "infra/compose/docker-compose.yml",
+      ...arguments_,
+    ],
     { stdio: "inherit", shell: process.platform === "win32" },
   );
 

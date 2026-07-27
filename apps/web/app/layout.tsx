@@ -15,7 +15,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="tr">
+    <html lang="tr" suppressHydrationWarning>
       <body>
         <a className="skip-link" href="#main-content">
           Ana içeriğe geç

@@ -32,6 +32,12 @@ pnpm infra:up
 pnpm infra:status
 ```
 
+Compose varsayılan olarak standart host portlarını kullanmaz; PostgreSQL `15432`,
+Redis `16379` üzerinden dışarı açılır. Docker context uzak bir sunucuyu
+gösteriyorsa bu portlar Docker host üzerinde kullanılır. Çakışma olursa `.env`
+dosyasında `POSTGRES_PORT`, `DATABASE_URL`, `REDIS_PORT` ve `REDIS_URL`
+değerlerini aynı anda değiştirin.
+
 ## Depo Yapısı
 
 | Yol         | Sorumluluk                                      |
