@@ -401,7 +401,10 @@ export async function resetParentPassword(input: unknown) {
       },
     };
   } catch (error) {
-    await client.query("ROLLBACK");
+    const message = error instanceof Error ? error.message : "";
+    if (message !== "REUSED_SESSION") {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
     client.release();
@@ -427,6 +430,7 @@ export async function refreshParentSession(token: string | undefined) {
 
     if (isReuseCandidate(currentSession) && !isSessionUsable(currentSession)) {
       await revokeSessionFamily(client, currentSession.session_family_id);
+      await client.query("COMMIT");
       throw new Error("REUSED_SESSION");
     }
 
@@ -459,7 +463,10 @@ export async function refreshParentSession(token: string | undefined) {
       session,
     };
   } catch (error) {
-    await client.query("ROLLBACK");
+    const message = error instanceof Error ? error.message : "";
+    if (message !== "REUSED_SESSION") {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
     client.release();

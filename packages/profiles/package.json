@@ -8,6 +8,7 @@
     "./domain": "./src/domain/index.ts",
     "./db": "./src/db/index.ts",
     "./policy": "./src/policy/index.ts",
+    "./application": "./src/application/index.ts",
     "./package.json": "./package.json"
   },
   "scripts": {

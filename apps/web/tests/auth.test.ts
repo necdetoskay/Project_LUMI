@@ -298,8 +298,11 @@ describe("refreshParentSession", () => {
       ),
     ).toBe(true);
     expect(
-      mockQuery.mock.calls.some(([query]) => String(query) === "ROLLBACK"),
+      mockQuery.mock.calls.some(([query]) => String(query) === "COMMIT"),
     ).toBe(true);
+    expect(
+      mockQuery.mock.calls.some(([query]) => String(query) === "ROLLBACK"),
+    ).toBe(false);
     expect(mockRelease).toHaveBeenCalledTimes(1);
   });
 });

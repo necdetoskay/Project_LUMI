@@ -41,6 +41,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lumi/profiles':
+        specifier: workspace:*
+        version: link:../../packages/profiles
       '@next/env':
         specifier: 16.2.12
         version: 16.2.12
