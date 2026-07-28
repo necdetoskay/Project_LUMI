@@ -1,9 +1,9 @@
 # Sprint 02 - Authentication and Parent Account
 
-**Sprint ID:** LUMI-S02  
-**Version:** 1.0.0  
-**Status:** Active / In Progress  
-**Depends On:** Sprint 01 exit gate  
+**Sprint ID:** LUMI-S02
+**Version:** 1.0.0
+**Status:** Completed
+**Depends On:** Sprint 01 exit gate
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
 ## Goal
@@ -22,8 +22,10 @@ Su an repo icinde calisan auth vertical slice vardir:
 - register, login, forgot-password ve reset-password ekranlari;
 - remember-me ve confirm-password UX.
 
-Sprint 02 henuz tamamlanmis sayilmaz. PostgreSQL integration testleri,
-browser E2E coverage ve delivery kanitlari eksiktir.
+Sprint 02 tamamlanmistir. Browser E2E, PostgreSQL integration ve delivery
+kanitlari 2026-07-27 kapanis dokumanlarinda toplanmistir. Destructive
+auth integration testleri yalnizca `AUTH_TEST_ENABLE_DESTRUCTIVE=true` ile
+bilincli olarak calistirilir.
 
 ## In Scope
 

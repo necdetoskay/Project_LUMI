@@ -13,6 +13,12 @@ export type {
   ParentPolicyMetadata,
   PolicyAuditEntry,
 } from "./parent-policy";
+export {
+  LumiCharacter,
+  validateSafetyBounds,
+  matchesOriginPackageContract,
+} from "./character";
+export type { CharacterState } from "./character";
 export { DomainError, ValidationError, NotFoundError, AuthorizationError } from "./errors";
 export {
   validateAgeBand,
@@ -23,5 +29,12 @@ export {
   validateStoryLength,
   validateInteractionLevel,
   validateCharacterOriginHandoff,
+  validateCharacterName,
+  validateCharacterSubtype,
+  validateBroadCharacterKind,
+  validateOriginMode,
+  validateUniverseSeed,
+  validateOriginConcept,
+  validateContentBoundary,
 } from "./validation";
 export * from "./types";

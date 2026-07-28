@@ -5,16 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "auth:migrate": "node scripts/auth-migrate.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "clean": "rimraf .next coverage"
   },
   "dependencies": {
+    "@lumi/profiles": "workspace:*",
     "@next/env": "16.2.12",
     "@node-rs/argon2": "^2.0.2",
-    "@lumi/profiles": "workspace:*",
     "next": "16.2.12",
     "pg": "^8.22.0",
     "react": "19.2.8",
@@ -22,6 +25,7 @@
     "zod": "4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "4.1.14",
     "@testing-library/react": "16.3.0",
     "@types/pg": "^8.20.0",

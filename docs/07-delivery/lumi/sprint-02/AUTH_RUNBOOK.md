@@ -2,7 +2,7 @@
 
 ## Document Status
 
-- Version: **1.0**
+- Version: **1.1**
 - Status: **Active**
 - Last updated: **2026-07-27**
 - Scope: **Parent authentication foundation**
@@ -27,9 +27,7 @@ The current auth slice includes:
 - in-memory auth rate limiting;
 - redacted auth audit logging.
 
-This runbook does not claim production readiness. PostgreSQL integration test
-execution still depends on a reachable local database, and browser E2E coverage
-is still pending.
+Final verification evidence for Sprint 02 was completed on 2026-07-27.
 
 ## Preconditions
 
@@ -146,23 +144,53 @@ pnpm auth:migrate
 pnpm test
 ```
 
+## E2E Browser Tests
+
+E2E tests are implemented with Playwright (Chromium). Run them with:
+
+```powershell
+pnpm --filter @lumi/web test:e2e
+```
+
+This starts the Next.js server automatically, runs the auth smoke tests, and
+tears down the server.
+
+Test scope:
+- Register via API + session cookie validation via `/api/auth/me`
+- Login via API + `/api/auth/me` access + logout invalidates session
+- Invalid credentials return HTTP 401 with `INVALID_CREDENTIALS`
+- Protected `/app` redirects unauthenticated users to `/login`
+- `/api/auth/me` returns 401 for unauthenticated requests
+- Forgot-password + reset-password flow via API
+
+Each test creates its own unique user to avoid hidden order dependence.
+
+## PostgreSQL Integration Tests
+
+Auth integration tests validate real database behavior. They are **destructive**
+(TRUNCATE auth tables) and require explicit opt-in:
+
+```powershell
+set AUTH_TEST_ENABLE_DESTRUCTIVE=true
+pnpm --filter @lumi/web test -- tests/auth.integration.test.ts
+```
+
+## Verification Status
+
+Verified on 2026-07-27:
+
+```powershell
+pnpm --filter @lumi/profiles typecheck
+pnpm --filter @lumi/profiles test
+pnpm --filter @lumi/web typecheck
+pnpm --filter @lumi/web test -- tests/auth.integration.test.ts
+pnpm --filter @lumi/web test:e2e
+```
+
 ## Operational Limits
 
 Current known limits:
 
 - no email delivery provider is integrated yet;
-- no browser E2E coverage is implemented yet;
 - auth rate limiting is not distributed across multiple processes;
 - production rollout evidence is not complete.
-
-## Evidence Commands
-
-Commands verified on 2026-07-27:
-
-```powershell
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm auth:migrate
-```

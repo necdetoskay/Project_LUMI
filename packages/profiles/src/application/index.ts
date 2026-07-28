@@ -9,3 +9,20 @@ export type { PolicyResult, UpdatePolicyInput } from "./parent-policy.service";
 
 export { getOnboardingState } from "./onboarding.service";
 export type { OnboardingState } from "./onboarding.service";
+
+export {
+  createOrReplaceFirstRunHandoff,
+  getCharacterBootstrapStatus,
+  generateAndPersistOriginPackages,
+  listOriginPackages,
+  consumeHandoffAndCreateCharacter,
+  listCharactersByHousehold,
+  getCharacterById,
+} from "./character-bootstrap.service";
+export type {
+  CreateHandoffInput,
+  OriginPackageInput,
+  CharacterBootstrapStatus,
+  CharacterSummary,
+  GeneratedOriginPackage,
+} from "./character-bootstrap.service";

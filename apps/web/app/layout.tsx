@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Project LUMI",
-  description: "Yaşayan, etkileşimli çocuk hikâyeleri için LUMI platformu.",
+  description: "Yasayan, etkilesimli cocuk hikayeleri icin LUMI platformu.",
 };
 
 export default function RootLayout({
@@ -16,12 +16,24 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen flex flex-col">
         <a className="skip-link" href="#main-content">
-          Ana içeriğe geç
+          Ana icerige gec
         </a>
         <AppHeader />
-        <main id="main-content">{children}</main>
+        <main id="main-content" className="flex-1 flex flex-col">
+          {children}
+        </main>
         <AppFooter />
       </body>
     </html>

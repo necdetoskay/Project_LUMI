@@ -3,7 +3,8 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { DrizzleHouseholdRepository } from "../../src/db/repositories/drizzle/drizzle-household.repository";
 import { DrizzleChildProfileRepository } from "../../src/db/repositories/drizzle/drizzle-child-profile.repository";
@@ -34,6 +35,8 @@ beforeAll(async () => {
 
     await db.execute(sql`CREATE SCHEMA IF NOT EXISTS profile`);
 
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
     const migrationPath = resolve(
       __dirname,
       "..",

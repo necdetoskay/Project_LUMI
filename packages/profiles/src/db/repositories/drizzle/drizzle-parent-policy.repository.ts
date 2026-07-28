@@ -65,20 +65,25 @@ export class DrizzleParentPolicyRepository implements ParentPolicyRepository {
       throw new Error("UNAUTHORIZED_HOUSEHOLD_POLICY_ACCESS");
     }
 
+    const updateValues: Record<string, unknown> = {};
+    if (input.maxDailyStories !== undefined) updateValues.maxDailyStories = input.maxDailyStories;
+    if (input.contentBoundary !== undefined) updateValues.contentBoundary = input.contentBoundary;
+    if (input.timeLimitMinutes !== undefined) updateValues.timeLimitMinutes = input.timeLimitMinutes;
+    if (input.requireParentApprovalForAi !== undefined) updateValues.requireParentApprovalForAi = input.requireParentApprovalForAi;
+    if (input.allowImageGeneration !== undefined) updateValues.allowImageGeneration = input.allowImageGeneration;
+    if (input.allowTts !== undefined) updateValues.allowTts = input.allowTts;
+    if (input.safetyMetadata !== undefined) updateValues.safetyMetadata = input.safetyMetadata;
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new Error("No policy values to update");
+    }
+
     const [record] = await this.db
       .insert(parentalSettings)
       .values(input)
       .onConflictDoUpdate({
         target: parentalSettings.householdId,
-        set: {
-          maxDailyStories: input.maxDailyStories,
-          contentBoundary: input.contentBoundary,
-          timeLimitMinutes: input.timeLimitMinutes,
-          requireParentApprovalForAi: input.requireParentApprovalForAi,
-          allowImageGeneration: input.allowImageGeneration,
-          allowTts: input.allowTts,
-          safetyMetadata: input.safetyMetadata,
-        },
+        set: updateValues,
       })
       .returning();
     if (!record) {

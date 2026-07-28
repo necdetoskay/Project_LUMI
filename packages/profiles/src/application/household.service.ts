@@ -53,7 +53,19 @@ export async function createHousehold(
     joinedAt: new Date(),
   });
 
-  await policyRepo.upsert({ householdId: household.id }, userId);
+  await policyRepo.upsert(
+    {
+      householdId: household.id,
+      maxDailyStories: 3,
+      contentBoundary: "strict",
+      timeLimitMinutes: null,
+      requireParentApprovalForAi: false,
+      allowImageGeneration: true,
+      allowTts: true,
+      safetyMetadata: {},
+    },
+    userId,
+  );
 
   return {
     id: household.id,

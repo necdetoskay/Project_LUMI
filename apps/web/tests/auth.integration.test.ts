@@ -27,12 +27,20 @@ async function resetAuthTables() {
 
 describe("auth PostgreSQL integration", () => {
   beforeAll(async () => {
+    const allowDestructive = process.env.AUTH_TEST_ENABLE_DESTRUCTIVE === "true";
+
+    if (!allowDestructive) {
+      console.warn(
+        "Skipping auth PostgreSQL integration tests: set AUTH_TEST_ENABLE_DESTRUCTIVE=true to enable (will TRUNCATE auth tables).",
+      );
+      return;
+    }
+
     try {
       await getAuthPool().query(authSchemaSql);
       databaseAvailable = true;
     } catch (error) {
-      databaseAvailable = false;
-      console.warn("Skipping auth PostgreSQL integration tests because the database is unavailable.");
+      console.warn("Skipping auth PostgreSQL integration tests: database unavailable.");
       console.warn(error);
     }
   });

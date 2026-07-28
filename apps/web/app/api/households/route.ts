@@ -24,8 +24,10 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ household }, { status: 201 });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      if (message.includes("HOUSEHOLD_EXISTS")) {
+      const err = error as Error & { code?: string };
+      const message = err.message ?? "Unknown error";
+      console.error("createHousehold failed", { parentId: parent.id, message, error });
+      if (err.code === "HOUSEHOLD_EXISTS" || message.includes("HOUSEHOLD_EXISTS")) {
         return NextResponse.json(
           { error: "HOUSEHOLD_EXISTS", message: "User already owns a household" },
           { status: 409 },
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
         );
       }
       return NextResponse.json(
-        { error: "INTERNAL_ERROR", message: "Failed to create household" },
+        { error: "INTERNAL_ERROR", message: `Failed to create household: ${message}` },
         { status: 500 },
       );
     }

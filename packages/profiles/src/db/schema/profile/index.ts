@@ -5,4 +5,7 @@ export * from "./child-preferences";
 export * from "./parental-settings";
 export * from "./first-run-handoffs";
 export * from "./policy-audit-log";
+export * from "./lumi-characters";
+export * from "./character-origin-packages";
+export * from "./first-run-handoff-consumptions";
 export * from "./relations";

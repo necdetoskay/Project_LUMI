@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMI - Kayıt Ol</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdbca",
+                    "on-background": "#1c1a24",
+                    "outline-variant": "#c9c4d9",
+                    "surface-container": "#f1ebfa",
+                    "outline": "#797588",
+                    "muted": "#64748b",
+                    "secondary": "#555e74",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#f4eefd",
+                    "error-container": "#ffdad6",
+                    "success-soft": "#e3f5ea",
+                    "on-secondary-fixed": "#121b2e",
+                    "on-primary-fixed-variant": "#4500d8",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#d9e2fc",
+                    "inverse-surface": "#312f3a",
+                    "on-tertiary-fixed": "#331100",
+                    "surface-variant": "#e5e0ef",
+                    "surface-container-highest": "#e5e0ef",
+                    "tertiary-container": "#b44f00",
+                    "on-surface": "#1c1a24",
+                    "on-tertiary-fixed-variant": "#773200",
+                    "on-error-container": "#93000a",
+                    "surface": "#fdf8ff",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#3e475b",
+                    "background": "#f7f8fc",
+                    "on-primary-container": "#f4eeff",
+                    "surface-dim": "#ddd8e6",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#ebe6f5",
+                    "destructive-soft": "#fbe4e4",
+                    "primary-fixed": "#e5deff",
+                    "primary-fixed-dim": "#c9bfff",
+                    "surface-tint": "#5d36ef",
+                    "primary": "#5427e6",
+                    "primary-container": "#6d4aff",
+                    "on-surface-variant": "#484556",
+                    "tertiary": "#8e3d00",
+                    "border": "#dbe2ea",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f7f1ff",
+                    "tertiary-fixed-dim": "#ffb68f",
+                    "on-tertiary-container": "#ffede5",
+                    "inverse-primary": "#c9bfff",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#5a6278",
+                    "on-primary-fixed": "#1b0063",
+                    "surface-bright": "#fdf8ff",
+                    "secondary-fixed-dim": "#bdc6e0",
+                    "secondary-container": "#d7dff9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-block": "5rem",
+                    "container-max": "72rem",
+                    "gutter": "1rem",
+                    "padding-inline": "1.5rem",
+                    "form-gap": "1rem"
+            },
+            "fontFamily": {
+                    "headline-xl-mobile": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "lead": ["Plus Jakarta Sans"],
+                    "body": ["Plus Jakarta Sans"],
+                    "eyebrow": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-xl-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "700"}],
+                    "headline-xl": ["64px", {"lineHeight": "72px", "fontWeight": "700"}],
+                    "lead": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+                    "body": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "eyebrow": ["14px", {"lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: theme('colors.background');
+        }
+        .magical-glow {
+            box-shadow: 0 0 40px -10px rgba(109, 74, 255, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline sticky top-0 z-50">
+<nav class="flex justify-between items-center w-full px-padding-inline max-w-container-max mx-auto h-20">
+<div class="font-headline-xl text-headline-xl font-bold text-primary dark:text-primary-fixed scale-75 origin-left">
+                LUMI
+            </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-label-bold text-label-bold text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Dashboard</a>
+<a class="font-label-bold text-label-bold text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Hikayeler</a>
+<a class="font-label-bold text-label-bold text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Gelişim</a>
+<a class="font-label-bold text-label-bold text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Profil</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container dark:hover:bg-surface-variant transition-all duration-200">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container dark:hover:bg-surface-variant transition-all duration-200">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="flex-grow flex items-center justify-center py-section-block px-padding-inline relative overflow-hidden">
+<!-- Atmospheric Background Elements -->
+<div class="absolute top-0 left-0 w-full h-full -z-10 opacity-30">
+
+</div>
+<div class="w-full max-w-[40rem] z-10">
+<div class="bg-surface border border-outline-variant rounded-xl p-8 md:p-12 magical-glow">
+<!-- Header Content -->
+<div class="text-center mb-10">
+<span class="font-eyebrow text-eyebrow text-primary tracking-widest uppercase mb-4 block">PROJECT LUMI</span>
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-[40px] md:leading-[48px] text-on-background mb-4">Ebeveyn hesabı oluştur</h1>
+<p class="font-lead text-lead text-on-surface-variant">Çocuğunuzun hayal dünyasını keşfetmesine yardımcı olacak güvenli bir liman inşa edelim.</p>
+</div>
+<!-- Registration Form -->
+<form class="space-y-form-gap" id="registerForm">
+<!-- Error Message Box (Hidden by default) -->
+<div class="hidden bg-destructive-soft border border-error rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2" id="error-box">
+<span class="material-symbols-outlined text-error">error</span>
+<div class="font-body text-body text-on-error-container">
+                            Lütfen bilgileri kontrol edip tekrar deneyin.
+                        </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-form-gap">
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-on-surface" for="displayName">Ad</label>
+<input class="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body" id="displayName" name="displayName" placeholder="Örn: Elif" required="" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-on-surface" for="email">E-posta</label>
+<input class="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body" id="email" name="email" placeholder="e-posta@adresiniz.com" required="" type="email"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-on-surface" for="password">Şifre</label>
+<input class="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body" id="password" minlength="10" name="password" placeholder="En az 10 karakter" required="" type="password"/>
+<p class="text-[12px] text-muted mt-1">Şifreniz güvenliğiniz için en az 10 karakterden oluşmalıdır.</p>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-bold text-label-bold text-on-surface" for="confirmPassword">Şifre Tekrar</label>
+<input class="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body" id="confirmPassword" name="confirmPassword" placeholder="Şifrenizi tekrar girin" required="" type="password"/>
+</div>
+<div class="pt-4">
+<button class="w-full py-[0.85rem] bg-primary-container text-white font-label-bold text-label-bold rounded-lg hover:bg-primary transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2" id="submitBtn" type="submit">
+<span>Hesap Oluştur</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</form>
+<div class="mt-8 pt-8 border-t border-outline-variant text-center">
+<p class="font-body text-body text-on-surface-variant">
+                        Zaten bir hesabınız var mı? 
+                        <a class="text-primary font-label-bold hover:underline decoration-primary ml-1" href="#">Giriş yap</a>
+</p>
+</div>
+</div>
+<!-- Visual Decoration -->
+<div class="mt-12 flex justify-center gap-12 opacity-40">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl">verified_user</span>
+<span class="font-label-bold text-label-bold">%100 Güvenli</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl">auto_awesome</span>
+<span class="font-label-bold text-label-bold">Büyülü Deneyim</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl">family_restroom</span>
+<span class="font-label-bold text-label-bold">Ebeveyn Kontrolü</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant dark:border-outline">
+<div class="w-full py-section-block px-padding-inline max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-gutter">
+<div class="font-label-bold text-label-bold text-on-surface dark:text-inverse-on-surface">
+                Project LUMI · Foundation
+            </div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="font-body text-body text-muted dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface hover:underline decoration-primary transition-all" href="#">Gizlilik Politikası</a>
+<a class="font-body text-body text-muted dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface hover:underline decoration-primary transition-all" href="#">Kullanım Şartları</a>
+<a class="font-body text-body text-muted dark:text-outline-variant hover:text-on-surface dark:hover:text-inverse-on-surface hover:underline decoration-primary transition-all" href="#">Yardım Merkezi</a>
+</div>
+<div class="font-eyebrow text-eyebrow text-secondary dark:text-secondary-fixed-dim">
+                © 2024 Project LUMI
+            </div>
+</div>
+</footer>
+<script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errorBox = document.getElementById('error-box');
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            // Simple validation simulation
+            if (password !== confirm) {
+                errorBox.innerHTML = `
+                    <span class="material-symbols-outlined text-error">error</span>
+                    <div class="font-body text-body text-on-error-container">
+                        Şifreler uyuşmuyor. Lütfen tekrar kontrol edin.
+                    </div>
+                `;
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            if (password.length < 10) {
+                errorBox.innerHTML = `
+                    <span class="material-symbols-outlined text-error">error</span>
+                    <div class="font-body text-body text-on-error-container">
+                        Şifre en az 10 karakter olmalıdır.
+                    </div>
+                `;
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            errorBox.classList.add('hidden');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Kayıt yapılıyor...';
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            setTimeout(() => {
+                // Success simulation
+                btn.innerHTML = 'Tamamlandı!';
+                btn.classList.remove('bg-primary-container');
+                btn.classList.add('bg-green-600');
+            }, 1500);
+        });
+
+        // Interactive inputs
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.querySelector('label').classList.add('text-primary');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.querySelector('label').classList.remove('text-primary');
+            });
+        });
+    </script>
+</body></html>

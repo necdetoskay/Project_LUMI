@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
@@ -12,26 +13,226 @@ export default async function ProtectedAppPage() {
   }
 
   const state = await getOnboardingState(parent.id);
-
-  if (!state.hasHousehold || state.childProfileCount === 0) {
-    redirect("/app/onboarding");
-  }
+  const setupComplete = state.hasHousehold && state.childProfileCount > 0;
+  const primarySetupLabel = state.hasHousehold ? "Cocuk profili ekle" : "Aile evreni olustur";
+  const firstProfile = state.childProfiles[0];
 
   return (
-    <section className="container page-section">
-      <p className="eyebrow">PROJECT LUMI</p>
-      <h1>Ebeveyn alanı</h1>
-      <p className="lead">
-        Hoş geldin {parent.displayName}.
-      </p>
-      <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
-        <a className="button-link" href="/app/profiles">
-          Profiller
-        </a>
-        <form action="/api/auth/logout" method="post">
-          <button type="submit">Çıkış yap</button>
-        </form>
-      </div>
+    <section className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col gap-8 px-6 py-10">
+      <header className="flex flex-col gap-6 rounded-2xl border border-outline-variant bg-white px-8 py-8 md:px-10 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+            Ebeveyn alani
+          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
+            Hos geldin {parent.displayName}
+          </h1>
+          <p className="mt-3 max-w-[44rem] text-base leading-7 text-on-surface-variant md:text-lg">
+            Aile evrenini kur, cocuk profillerini yonet ve ilk karakter baslatma akisina buradan devam et.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+          <Link
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+            href="/app/onboarding"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {state.hasHousehold ? "person_add" : "rocket_launch"}
+            </span>
+            {primarySetupLabel}
+          </Link>
+          <Link
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+            href="/app/profiles"
+          >
+            <span className="material-symbols-outlined text-[20px]">group</span>
+            Profilleri yonet
+          </Link>
+          <form action="/api/auth/logout" method="post">
+            <button
+              className="inline-flex h-11 items-center rounded-lg border border-outline-variant bg-white px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+              type="submit"
+            >
+              Cikis yap
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <StatusCard
+          icon="public"
+          label="Aile evreni"
+          title={state.hasHousehold ? state.householdName ?? "Kuruldu" : "Henuz kurulmadÄ±"}
+          body={
+            state.hasHousehold
+              ? "Aile alanin hazir. Yeni cocuk profili ekleyebilir veya mevcut profilleri yonetebilirsin."
+              : "Ilk adim olarak aile evrenini olusturman gerekiyor. Bu alan tum cocuk profillerinin guvenli kapsami olacak."
+          }
+          href="/app/onboarding"
+          cta={state.hasHousehold ? "Evren kurulumuna git" : "Evren olustur"}
+        />
+        <StatusCard
+          icon="supervised_user_circle"
+          label="Cocuk profilleri"
+          title={`${state.childProfileCount} profil`}
+          body={
+            state.childProfileCount > 0
+              ? "Profiller hazir. Her profil icin yas grubu ve karakter baslatma adimini yonetebilirsin."
+              : "Henuz cocuk profili yok. Karakter ve hikaye akisindan once en az bir profil eklenmeli."
+          }
+          href={state.hasHousehold ? "/app/onboarding" : "/app/onboarding"}
+          cta={state.childProfileCount > 0 ? "Yeni profil ekle" : "Ilk profili ekle"}
+        />
+        <StatusCard
+          icon="auto_awesome"
+          label="Karakter baslatma"
+          title={setupComplete ? "Hazir" : "Profil bekliyor"}
+          body={
+            setupComplete
+              ? "Secili cocuk profili icin manual veya auto origin package ile ilk karakteri baslatabilirsin."
+              : "Karakter baslatmak icin once aile evreni ve en az bir cocuk profili gerekiyor."
+          }
+          href={firstProfile ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}` : "/app/onboarding"}
+          cta={setupComplete ? "Karakter baslat" : "Kuruluma devam et"}
+        />
+      </section>
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+                Profil listesi
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-on-surface">Cocuklar</h2>
+            </div>
+            <Link
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+              href="/app/profiles"
+            >
+              Tum profiller
+            </Link>
+          </div>
+
+          {state.childProfiles.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-5 py-10 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+                <span className="material-symbols-outlined text-[28px]">person_add</span>
+              </div>
+              <h3 className="text-lg font-bold text-on-surface">Cocuk profili yok</h3>
+              <p className="mx-auto mt-2 max-w-[34rem] text-sm leading-6 text-on-surface-variant">
+                Bu ekrandan kuruluma giderek ilk cocuk profilini ekleyebilirsin.
+              </p>
+              <Link
+                className="mt-5 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+                href="/app/onboarding"
+              >
+                Profil ekle
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {state.childProfiles.map((profile) => (
+                <article
+                  className="rounded-xl border border-outline-variant bg-surface-container-low p-5"
+                  key={profile.id}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+                      <span className="material-symbols-outlined text-[24px]">face</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-bold text-on-surface">{profile.displayName}</h3>
+                      <p className="mt-1 text-sm text-on-surface-variant">Yas grubu: {profile.ageBand}</p>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                    <Link
+                      className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+                      href={`/app/character-onboarding?childProfileId=${encodeURIComponent(profile.id)}`}
+                    >
+                      Karakter baslat
+                    </Link>
+                    <Link
+                      className="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                      href="/app/profiles"
+                    >
+                      Yonet
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <aside className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8 xl:h-fit">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+            Siradaki adim
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-on-surface">
+            {setupComplete ? "Karakter akisini tamamla" : "Kurulumu tamamla"}
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+            {setupComplete
+              ? "Sprint 04 kapsaminda karakter baslatma hazir. Story/world kayitlari sonraki sprintlere kaldi."
+              : "Evren ve cocuk profili olmadan karakter veya hikaye akisi baslatilamaz."}
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+              href={setupComplete && firstProfile ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}` : "/app/onboarding"}
+            >
+              {setupComplete ? "Karakter baslat" : "Kuruluma git"}
+            </Link>
+            <Link
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+              href="/app/profiles"
+            >
+              Profil panelini ac
+            </Link>
+          </div>
+        </aside>
+      </section>
     </section>
+  );
+}
+
+function StatusCard({
+  icon,
+  label,
+  title,
+  body,
+  href,
+  cta,
+}: {
+  icon: string;
+  label: string;
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
+}) {
+  return (
+    <article className="flex min-h-[260px] flex-col justify-between rounded-2xl border border-outline-variant bg-white p-6">
+      <div>
+        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+          <span className="material-symbols-outlined text-[24px]">{icon}</span>
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+          {label}
+        </p>
+        <h2 className="mt-2 text-2xl font-bold text-on-surface">{title}</h2>
+        <p className="mt-3 text-sm leading-6 text-on-surface-variant">{body}</p>
+      </div>
+      <Link
+        className="mt-6 inline-flex h-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+        href={href}
+      >
+        {cta}
+      </Link>
+    </article>
   );
 }

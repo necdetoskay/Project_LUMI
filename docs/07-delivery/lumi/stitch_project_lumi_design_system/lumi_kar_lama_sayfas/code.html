@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMI - Yaşayan Hikâyeler</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Plus Jakarta Sans & Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Design System Tokens -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffdbca",
+                    "on-background": "#1c1a24",
+                    "outline-variant": "#c9c4d9",
+                    "surface-container": "#f1ebfa",
+                    "outline": "#797588",
+                    "muted": "#64748b",
+                    "secondary": "#555e74",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#f4eefd",
+                    "error-container": "#ffdad6",
+                    "success-soft": "#e3f5ea",
+                    "on-secondary-fixed": "#121b2e",
+                    "on-primary-fixed-variant": "#4500d8",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#d9e2fc",
+                    "inverse-surface": "#312f3a",
+                    "on-tertiary-fixed": "#331100",
+                    "surface-variant": "#e5e0ef",
+                    "surface-container-highest": "#e5e0ef",
+                    "tertiary-container": "#b44f00",
+                    "on-surface": "#1c1a24",
+                    "on-tertiary-fixed-variant": "#773200",
+                    "on-error-container": "#93000a",
+                    "surface": "#fdf8ff",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#3e475b",
+                    "background": "#f7f8fc",
+                    "on-primary-container": "#f4eeff",
+                    "surface-dim": "#ddd8e6",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#ebe6f5",
+                    "destructive-soft": "#fbe4e4",
+                    "primary-fixed": "#e5deff",
+                    "primary-fixed-dim": "#c9bfff",
+                    "surface-tint": "#5d36ef",
+                    "primary": "#5427e6",
+                    "primary-container": "#6d4aff",
+                    "on-surface-variant": "#484556",
+                    "tertiary": "#8e3d00",
+                    "border": "#dbe2ea",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f7f1ff",
+                    "tertiary-fixed-dim": "#ffb68f",
+                    "on-tertiary-container": "#ffede5",
+                    "inverse-primary": "#c9bfff",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#5a6278",
+                    "on-primary-fixed": "#1b0063",
+                    "surface-bright": "#fdf8ff",
+                    "secondary-fixed-dim": "#bdc6e0",
+                    "secondary-container": "#d7dff9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-block": "5rem",
+                    "container-max": "72rem",
+                    "gutter": "1rem",
+                    "padding-inline": "1.5rem",
+                    "form-gap": "1rem"
+            },
+            "fontFamily": {
+                    "headline-xl-mobile": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "lead": ["Plus Jakarta Sans"],
+                    "body": ["Plus Jakarta Sans"],
+                    "eyebrow": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-xl-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "700"}],
+                    "headline-xl": ["64px", {"lineHeight": "72px", "fontWeight": "700"}],
+                    "lead": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+                    "body": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "eyebrow": ["14px", {"lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .floating-orb {
+            filter: blur(80px);
+            opacity: 0.3;
+            z-index: -1;
+            animation: float 20s infinite alternate;
+        }
+
+        @keyframes float {
+            from { transform: translate(0, 0); }
+            to { transform: translate(100px, 50px); }
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            line-height: 1.1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body">
+<!-- Background Decoration -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden">
+<div class="floating-orb absolute -top-20 -left-20 w-[500px] h-[500px] bg-primary-fixed rounded-full"></div>
+<div class="floating-orb absolute top-1/2 -right-20 w-[400px] h-[400px] bg-secondary-fixed rounded-full" style="animation-delay: -5s;"></div>
+</div>
+<!-- TopNavBar Component -->
+<nav class="bg-surface border-b border-outline-variant fixed top-0 left-0 right-0 z-50">
+<div class="flex justify-between items-center w-full px-padding-inline max-w-container-max mx-auto h-20">
+<div class="flex items-center gap-8">
+<a class="font-headline-xl text-headline-xl font-bold text-primary" href="/">LUMI</a>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-primary border-b-2 border-primary pb-1 font-label-bold text-label-bold" href="#">Dashboard</a>
+<a class="text-secondary hover:text-primary transition-colors font-label-bold text-label-bold" href="#">Hikayeler</a>
+<a class="text-secondary hover:text-primary transition-colors font-label-bold text-label-bold" href="#">Gelişim</a>
+<a class="text-secondary hover:text-primary transition-colors font-label-bold text-label-bold" href="#">Profil</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container transition-all duration-200 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-surface-container transition-all duration-200 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="relative pt-32 pb-section-block px-padding-inline overflow-hidden min-h-[calc(100vh-200px)] flex flex-col justify-center">
+<div class="max-w-[800px] mx-auto text-center space-y-8">
+<!-- Eyebrow -->
+<div class="animate-fade-in">
+<span class="font-eyebrow text-eyebrow uppercase text-primary font-bold tracking-widest">PROJECT LUMI</span>
+</div>
+<!-- Main Heading -->
+<h1 class="hero-title font-headline-xl font-bold text-on-background tracking-tight">
+                Yaşayan hikâyeler için ebeveyn alanı hazır.
+            </h1>
+<!-- Description -->
+<p class="font-lead text-lead text-muted max-w-[600px] mx-auto leading-relaxed">
+                Çocuklarınızın hayal dünyasını güvenli, eğitici ve sihirli bir dokunuşla şekillendirin. Gelişim takibi ve içerik yönetimi artık tek bir panelde.
+            </p>
+<!-- CTAs -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+<button class="bg-primary-container text-on-primary w-full sm:w-auto px-8 py-[0.85rem] rounded-lg font-label-bold text-label-bold hover:opacity-90 active:scale-95 transition-all shadow-sm">
+                    Ebeveyn hesabı oluştur
+                </button>
+<button class="border border-border text-secondary w-full sm:w-auto px-8 py-[0.85rem] rounded-lg font-label-bold text-label-bold hover:bg-surface-container-low active:scale-95 transition-all">
+                    Giriş yap
+                </button>
+</div>
+<!-- Bento Preview Section (Magical Feel) -->
+<div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+<!-- Bento Item 1 -->
+<div class="bg-surface border border-border p-8 rounded-[16px] space-y-4 hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">auto_stories</span>
+</div>
+<h3 class="font-label-bold text-on-background">Kişiselleştirilmiş Akış</h3>
+<p class="text-on-surface-variant font-body text-sm">Çocuğunuzun yaşına ve ilgi alanlarına göre otomatik olarak optimize edilen hikaye kütüphanesi.</p>
+</div>
+<!-- Bento Item 2 -->
+<div class="bg-surface border border-border p-8 rounded-[16px] space-y-4 hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">monitoring</span>
+</div>
+<h3 class="font-label-bold text-on-background">Gelişim Analizi</h3>
+<p class="text-on-surface-variant font-body text-sm">Kelime hazinesi ve duygusal zeka gelişimini takip eden gelişmiş veri analitiği araçları.</p>
+</div>
+<!-- Bento Item 3 -->
+<div class="bg-surface border border-border p-8 rounded-[16px] space-y-4 hover:border-primary/30 transition-colors">
+<div class="w-12 h-12 bg-tertiary-container/10 rounded-xl flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">security</span>
+</div>
+<h3 class="font-label-bold text-on-background">Tam Kontrol</h3>
+<p class="text-on-surface-variant font-body text-sm">Ekran süresi limitleri ve içerik filtreleme ile %100 güvenli bir dijital oyun alanı.</p>
+</div>
+</div>
+</div>
+<!-- Atmospheric Shader Animation -->
+<div class="absolute bottom-0 left-0 right-0 h-64 -z-10 opacity-50">
+
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-container-low border-t border-outline-variant">
+<div class="w-full py-section-block px-padding-inline max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-gutter">
+<div class="flex flex-col gap-2 items-center md:items-start">
+<span class="font-label-bold text-label-bold text-on-surface">LUMI</span>
+<p class="text-secondary font-body text-sm">Project LUMI · Foundation</p>
+</div>
+<div class="flex gap-8">
+<a class="text-muted hover:text-on-surface transition-all hover:underline decoration-primary font-body text-sm" href="#">Gizlilik Politikası</a>
+<a class="text-muted hover:text-on-surface transition-all hover:underline decoration-primary font-body text-sm" href="#">Kullanım Şartları</a>
+<a class="text-muted hover:text-on-surface transition-all hover:underline decoration-primary font-body text-sm" href="#">Yardım Merkezi</a>
+</div>
+<div class="flex gap-4">
+<a class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-on-surface-variant">language</span>
+</a>
+<a class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-on-surface-variant">mail</span>
+</a>
+</div>
+</div>
+</footer>
+<!-- Interactive Scripts -->
+<script>
+        // Micro-interaction for hover states
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                // Subtle scale effect managed by tailwind classes usually, 
+                // but can add JS triggers for more complex animations here.
+            });
+        });
+
+        // Initialize any specific UI logic
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('LUMI Landing Page Initialized');
+        });
+    </script>
+</body></html>

@@ -2,8 +2,11 @@ import {
   AGE_BANDS,
   MEMBERSHIP_ROLES,
   STORY_LENGTHS,
+  BROAD_CHARACTER_KINDS,
   type AgeBand,
+  type BroadCharacterKind,
   type MembershipRole,
+  type OriginMode,
   type StoryLength,
 } from "./types";
 import { ValidationError } from "./errors";
@@ -139,4 +142,88 @@ export function validateCharacterOriginHandoff(input: {
       "originMode",
     );
   }
+}
+
+export function validateCharacterName(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 1 || trimmed.length > 120) {
+    throw new ValidationError(
+      "INVALID_CHARACTER_NAME",
+      "Character name must be between 1 and 120 characters",
+      "name",
+    );
+  }
+  return trimmed;
+}
+
+export function validateCharacterSubtype(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 1 || trimmed.length > 80) {
+    throw new ValidationError(
+      "INVALID_CHARACTER_SUBTYPE",
+      "Character subtype must be between 1 and 80 characters",
+      "subtype",
+    );
+  }
+  return trimmed;
+}
+
+export function validateBroadCharacterKind(value: string): BroadCharacterKind {
+  const kind = BROAD_CHARACTER_KINDS.find((k) => k === value);
+  if (!kind) {
+    throw new ValidationError(
+      "INVALID_BROAD_KIND",
+      `Broad character kind must be one of: ${BROAD_CHARACTER_KINDS.join(", ")}`,
+      "broadKind",
+    );
+  }
+  return kind;
+}
+
+export function validateOriginMode(value: string): OriginMode {
+  if (value !== "manual" && value !== "auto") {
+    throw new ValidationError(
+      "INVALID_ORIGIN_MODE",
+      "Origin mode must be 'manual' or 'auto'",
+      "originMode",
+    );
+  }
+  return value as OriginMode;
+}
+
+export function validateUniverseSeed(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 1 || trimmed.length > 120) {
+    throw new ValidationError(
+      "INVALID_UNIVERSE_SEED",
+      "Universe seed must be between 1 and 120 characters",
+      "universeSeed",
+    );
+  }
+  return trimmed;
+}
+
+export function validateOriginConcept(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 1 || trimmed.length > 500) {
+    throw new ValidationError(
+      "INVALID_ORIGIN_CONCEPT",
+      "Origin concept must be between 1 and 500 characters",
+      "originConcept",
+    );
+  }
+  return trimmed;
+}
+
+export function validateContentBoundary(
+  value: string,
+): "strict" | "moderate" | "open" {
+  if (value !== "strict" && value !== "moderate" && value !== "open") {
+    throw new ValidationError(
+      "INVALID_CONTENT_BOUNDARY",
+      "Content boundary must be 'strict', 'moderate', or 'open'",
+      "contentBoundary",
+    );
+  }
+  return value;
 }

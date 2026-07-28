@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="light" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMI | Ebeveyn Alanı</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f7f1ff",
+                    "success-soft": "#e3f5ea",
+                    "destructive-soft": "#fbe4e4",
+                    "surface-dim": "#ddd8e6",
+                    "on-tertiary-fixed-variant": "#773200",
+                    "surface-container-high": "#ebe6f5",
+                    "surface-tint": "#5d36ef",
+                    "surface-variant": "#e5e0ef",
+                    "on-secondary-fixed-variant": "#3e475b",
+                    "on-surface-variant": "#484556",
+                    "inverse-surface": "#312f3a",
+                    "surface-bright": "#fdf8ff",
+                    "primary-container": "#6d4aff",
+                    "primary": "#5427e6",
+                    "secondary-container": "#d7dff9",
+                    "on-secondary-fixed": "#121b2e",
+                    "on-error": "#ffffff",
+                    "tertiary": "#8e3d00",
+                    "inverse-primary": "#c9bfff",
+                    "on-background": "#1c1a24",
+                    "outline-variant": "#c9c4d9",
+                    "on-secondary-container": "#5a6278",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb68f",
+                    "on-tertiary-container": "#ffede5",
+                    "tertiary-container": "#b44f00",
+                    "muted": "#64748b",
+                    "secondary-fixed-dim": "#bdc6e0",
+                    "outline": "#797588",
+                    "on-primary-container": "#f4eeff",
+                    "on-primary-fixed-variant": "#4500d8",
+                    "primary-fixed-dim": "#c9bfff",
+                    "on-tertiary-fixed": "#331100",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#fdf8ff",
+                    "on-surface": "#1c1a24",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#555e74",
+                    "secondary-fixed": "#d9e2fc",
+                    "background": "#f7f8fc",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#f1ebfa",
+                    "primary-fixed": "#e5deff",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#f4eefd",
+                    "error": "#ba1a1a",
+                    "border": "#dbe2ea",
+                    "tertiary-fixed": "#ffdbca",
+                    "on-primary-fixed": "#1b0063",
+                    "surface-container-highest": "#e5e0ef",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-block": "5rem",
+                    "padding-inline": "1.5rem",
+                    "gutter": "1rem",
+                    "form-gap": "1rem",
+                    "container-max": "72rem"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "eyebrow": ["Plus Jakarta Sans"],
+                    "body": ["Plus Jakarta Sans"],
+                    "lead": ["Plus Jakarta Sans"],
+                    "headline-xl-mobile": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-xl": ["64px", {"lineHeight": "72px", "fontWeight": "700"}],
+                    "eyebrow": ["14px", {"lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                    "body": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "lead": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+                    "headline-xl-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-card {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bento-card:hover {
+            transform: translateY(-4px);
+        }
+        .glass-effect {
+            background: rgba(253, 248, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="w-full top-0 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline sticky z-50">
+<nav class="flex justify-between items-center px-padding-inline py-4 max-w-container-max mx-auto">
+<div class="flex items-center gap-8">
+<span class="font-headline-xl text-primary dark:text-primary-fixed-dim tracking-tight text-[28px]">LUMI</span>
+<div class="hidden md:flex gap-6">
+<a class="text-primary dark:text-primary-fixed font-label-bold border-b-2 border-primary py-1" href="#">Dashboard</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-body hover:text-primary-container dark:hover:text-primary-fixed transition-colors" href="#">Stories</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-body hover:text-primary-container dark:hover:text-primary-fixed transition-colors" href="#">Growth</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-body hover:text-primary-container dark:hover:text-primary-fixed transition-colors" href="#">Profile</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a smiling young mother in a bright, modern home office setting. The lighting is soft and natural, reflecting a warm and trustworthy atmosphere. The style is clean corporate photography with a soft-focus background of books and toys, maintaining the LUMI brand's magical yet professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHijVUVFWn1dxyUlcIWI7gFTjRexzTfvox8uExgTrz-WbI0jKVR4I4BOK1dHY4six8wPJFhGhU01c9LH-o4GeUaPZI2m071SVkfZIQ8ofgKxzU-z_IZyY8ccfl4iz6CSsUcbUVVhxWrRsvpL11-X7hVbe4smb9pIsC4a0VSkFbR0G7Xjvsw7xZ20e8n5dGufnlySHCAP7G5PeAeb33w-ar9OthorGXbkQztZf_zzgjhtmIjGNcRTIU"/>
+</div>
+</div>
+</nav>
+</header>
+<main class="max-w-container-max mx-auto px-padding-inline py-section-block">
+<!-- Hero Welcome Section -->
+<div class="relative overflow-hidden rounded-[2rem] bg-surface-container-low p-10 md:p-16 mb-12 border border-outline-variant">
+<div class="relative z-10 max-w-2xl">
+<span class="font-eyebrow text-primary uppercase mb-4 block">Ebeveyn Alanı</span>
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-on-surface mb-4">Hoş geldin Ahmet.</h1>
+<p class="font-lead text-on-surface-variant mb-8">LUMI dünyasında çocuklarının gelişimini takip et, güvenli içerikleri yönet ve yeni hikayeler keşfet.</p>
+<div class="flex flex-wrap gap-4">
+<button class="px-8 py-3.5 bg-primary text-on-primary font-label-bold rounded-lg hover:bg-primary-container transition-all duration-200 flex items-center gap-2 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">group</span>
+                        Profiller
+                    </button>
+<button class="px-8 py-3.5 border border-primary text-primary font-label-bold rounded-lg hover:bg-primary-fixed transition-all duration-200 flex items-center gap-2">
+<span class="material-symbols-outlined">logout</span>
+                        Çıkış yap
+                    </button>
+</div>
+</div>
+<!-- Atmospheric background element -->
+<div class="absolute right-0 top-0 w-1/2 h-full opacity-20 pointer-events-none hidden md:block">
+
+</div>
+</div>
+<!-- Dashboard Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Daily Progress Card (Large) -->
+<div class="md:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-8 bento-card relative overflow-hidden">
+<div class="flex justify-between items-start mb-12">
+<div>
+<h3 class="font-label-bold text-on-surface text-lg mb-1">Girişim Özeti</h3>
+<p class="text-on-surface-variant text-sm">Çocuklarının bugün katettiği yol.</p>
+</div>
+<span class="px-3 py-1 bg-success-soft text-on-tertiary-fixed-variant text-xs font-bold rounded-full">Aktif</span>
+</div>
+<div class="flex flex-col md:flex-row gap-12 items-center">
+<div class="relative w-48 h-48">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-variant" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-primary transition-all duration-1000 ease-out" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" stroke-dasharray="553" stroke-dashoffset="138" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-bold text-primary">75%</span>
+<span class="text-xs text-on-surface-variant font-medium">Günlük Hedef</span>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+<div class="p-4 bg-background rounded-lg border border-outline-variant/50">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary">menu_book</span>
+<span class="text-sm font-label-bold">Okunan Hikayeler</span>
+</div>
+<span class="text-2xl font-bold">12</span>
+</div>
+<div class="p-4 bg-background rounded-lg border border-outline-variant/50">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<span class="text-sm font-label-bold">Kazanılan Beceriler</span>
+</div>
+<span class="text-2xl font-bold">4</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions (Medium) -->
+<div class="bg-primary text-on-primary rounded-xl p-8 bento-card flex flex-col justify-between">
+<div>
+<h3 class="font-label-bold text-lg mb-4">Hızlı Erişim</h3>
+<div class="space-y-3">
+<a class="flex items-center justify-between p-4 bg-on-primary/10 rounded-lg hover:bg-on-primary/20 transition-colors group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-bold">Yeni Profil Ekle</span>
+</div>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 bg-on-primary/10 rounded-lg hover:bg-on-primary/20 transition-colors group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">security</span>
+<span class="font-label-bold">Güvenlik Ayarları</span>
+</div>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 bg-on-primary/10 rounded-lg hover:bg-on-primary/20 transition-colors group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-bold">Abonelik Yönetimi</span>
+</div>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+</div>
+</div>
+<p class="text-xs text-on-primary/60 mt-8 italic">Magic is in the details.</p>
+</div>
+<!-- Profile Cards (Row) -->
+<div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Child Profile 1 -->
+<div class="bg-white border border-outline-variant rounded-xl p-6 bento-card">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-16 h-16 rounded-full bg-surface-container-high p-1 border-2 border-primary">
+<img class="w-full h-full rounded-full object-cover" data-alt="A whimsical, illustrative portrait of a young girl with pigtails, styled like a modern storybook character. The artwork is clean with vibrant but soft pastel colors, featuring a dreamy, magical atmosphere that fits the LUMI child-facing aesthetic. Minimalist and enchanting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhN4VKHMThQHmHkR0UvCnbkHG1tREhfa0jVDFMizzrcWme0VEkCnRnZaXPwtVquOuhhT491JZAzSSSetS2Rx72bx2tbOfK5-U86x9Z4IwbfgxjXrUsiJApz_xIdce3nXul-Wugz_JiSFHZp08CVWbUjiV4-V0fs27Tj8XSXu26oNLs43M5bFTwrE0DIzKv67IuTRqOf4jqr5EpzF7o5-QNKzqDDsA3ObW1CXmxKu8DefKF8OjCCb2y"/>
+</div>
+<div>
+<h4 class="font-label-bold text-lg">Elif</h4>
+<p class="text-xs text-on-surface-variant">7 Yaşında • Kaşif</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%]"></div>
+</div>
+<div class="flex justify-between text-xs font-label-bold text-on-surface-variant">
+<span>Seviye 12</span>
+<span>850 / 1000 XP</span>
+</div>
+<button class="w-full py-2 bg-secondary-container text-on-secondary-container rounded-lg font-label-bold text-sm hover:bg-primary-fixed transition-colors">Yönet</button>
+</div>
+</div>
+<!-- Child Profile 2 -->
+<div class="bg-white border border-outline-variant rounded-xl p-6 bento-card">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-16 h-16 rounded-full bg-surface-container-high p-1 border-2 border-secondary">
+<img class="w-full h-full rounded-full object-cover" data-alt="A charming digital illustration of a young boy wearing a small adventurer hat, looking curious and brave. The style is soft-edged 3D art with a magical, story-driven feel. The color palette uses warm oranges and deep blues, perfectly suited for a child's imaginative profile in the LUMI universe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPemBJOhm24aa9KXluC-wt2L_cYsNQuDfB0qVunjqjHCGYzrdAuBE_cxs6mfbjSjip4nIJ2kjHym1z3dplBcVShR6faXeZQ98kCVBSjUjp84tcmTdKNupluQmp2fclU6CGEwvUQtCvjelzE7-cdlYqagW7gs0w-5u7mwDvA-7zTaRc7IlLddP7_37bMIUv8esD1ESfHC7uMjXuNOR57VZp7x4T844cksjqNcMLFbYFVeBZhuNtMo93"/>
+</div>
+<div>
+<h4 class="font-label-bold text-lg">Can</h4>
+<p class="text-xs text-on-surface-variant">4 Yaşında • Meraklı</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[40%]"></div>
+</div>
+<div class="flex justify-between text-xs font-label-bold text-on-surface-variant">
+<span>Seviye 4</span>
+<span>420 / 1000 XP</span>
+</div>
+<button class="w-full py-2 bg-secondary-container text-on-secondary-container rounded-lg font-label-bold text-sm hover:bg-primary-fixed transition-colors">Yönet</button>
+</div>
+</div>
+<!-- Add New -->
+<button class="border-2 border-dashed border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-surface-container-low hover:border-primary transition-all group">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">add</span>
+</div>
+<span class="font-label-bold text-on-surface-variant group-hover:text-primary">Yeni Profil Ekle</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-section-block bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant dark:border-outline">
+<div class="flex flex-col md:flex-row justify-between items-center px-padding-inline py-10 max-w-container-max mx-auto gap-gutter">
+<div class="flex flex-col items-center md:items-start gap-2">
+<span class="font-headline-xl text-primary dark:text-primary-fixed-dim text-2xl">LUMI</span>
+<p class="text-on-surface-variant dark:text-outline-variant text-xs text-center md:text-left max-w-xs">© 2024 LUMI. All rights reserved. Made with magic for families.</p>
+</div>
+<div class="flex gap-8 text-sm">
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Help Center</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple interaction script
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Potential for adding micro-interaction sounds or secondary animations
+            });
+        });
+
+        // Theme sync or other local logic could go here
+    </script>
+</body></html>

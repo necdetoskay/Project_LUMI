@@ -64,11 +64,12 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ profile }, { status: 201 });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+      const err = error as Error & { code?: string };
+      const message = err.message ?? "Unknown error";
       if (message.includes("not a member")) {
         return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
       }
-      if (message.includes("validation") || message.includes("ValidationError")) {
+      if (err.name === "ValidationError" || message.includes("validation") || message.includes("ValidationError")) {
         return NextResponse.json(
           { error: "VALIDATION_ERROR", message },
           { status: 400 },

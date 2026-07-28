@@ -32,10 +32,16 @@ vi.mock("@/lib/auth/tokens", () => ({
 import { buildAuthAuditEvent } from "@/lib/auth/audit";
 import { checkAuthRateLimit, resetAuthRateLimitStore } from "@/lib/auth/rate-limit";
 import {
+  getParentFromSessionToken,
+  loginParent,
   loginParentSchema,
   refreshParentSession,
+  registerParent,
   registerParentSchema,
+  requestPasswordReset,
+  resetParentPassword,
   resetPasswordSchema,
+  revokeParentSession,
 } from "@/lib/auth/service";
 import { createSessionToken, hashSessionToken } from "@/lib/auth/tokens";
 import { readRequestBody } from "@/lib/http/request-body";
@@ -303,6 +309,202 @@ describe("refreshParentSession", () => {
     expect(
       mockQuery.mock.calls.some(([query]) => String(query) === "ROLLBACK"),
     ).toBe(false);
+    expect(mockRelease).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("registerParent", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockRelease.mockReset();
+    mockConnect.mockClear();
+  });
+
+  it("rejects duplicate email registration with PARENT_EMAIL_ALREADY_EXISTS", async () => {
+    mockQuery.mockImplementation(async () => {
+      const pgError = new Error("duplicate key") as Error & { code: string };
+      pgError.code = "23505";
+      throw pgError;
+    });
+
+    await expect(
+      registerParent({
+        confirmPassword: "very-secret-password",
+        displayName: "Lumi Parent",
+        email: "parent@example.com",
+        password: "very-secret-password",
+      }),
+    ).rejects.toThrow("PARENT_EMAIL_ALREADY_EXISTS");
+  });
+});
+
+describe("loginParent", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockRelease.mockReset();
+    mockConnect.mockClear();
+  });
+
+  it("rejects login with non-existent email as INVALID_CREDENTIALS", async () => {
+    const { verify } = await import("@node-rs/argon2");
+    vi.mocked(verify).mockResolvedValue(true);
+
+    mockQuery.mockResolvedValue({ rows: [] });
+
+    await expect(
+      loginParent({
+        email: "nonexistent@example.com",
+        password: "very-secret-password",
+        rememberMe: false,
+      }),
+    ).rejects.toThrow("INVALID_CREDENTIALS");
+  });
+
+  it("rejects login with wrong password as INVALID_CREDENTIALS", async () => {
+    const { verify } = await import("@node-rs/argon2");
+    vi.mocked(verify).mockResolvedValue(false);
+
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          id: "parent-1",
+          email: "parent@example.com",
+          display_name: "Lumi Parent",
+          password_hash: "hash:stored-password",
+        },
+      ],
+    });
+
+    await expect(
+      loginParent({
+        email: "parent@example.com",
+        password: "wrong-password",
+        rememberMe: false,
+      }),
+    ).rejects.toThrow("INVALID_CREDENTIALS");
+  });
+});
+
+describe("getParentFromSessionToken", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it("returns null when no token is provided", async () => {
+    await expect(getParentFromSessionToken(undefined)).resolves.toBeNull();
+  });
+
+  it("returns null when session is expired", async () => {
+    const pastDate = new Date("2020-01-01T00:00:00.000Z");
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          session_id: "session-1",
+          parent_id: "parent-1",
+          session_family_id: "family-1",
+          remember_me: true,
+          expires_at: pastDate,
+          revoked_at: null,
+          replaced_by_session_id: null,
+          parent_account_id: "parent-1",
+          parent_email: "parent@example.com",
+          parent_display_name: "Lumi Parent",
+        },
+      ],
+    });
+
+    const result = await getParentFromSessionToken("expired-token");
+    expect(result).toBeNull();
+  });
+
+  it("returns null when session is revoked", async () => {
+    const futureDate = new Date("2030-01-01T00:00:00.000Z");
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          session_id: "session-1",
+          parent_id: "parent-1",
+          session_family_id: "family-1",
+          remember_me: true,
+          expires_at: futureDate,
+          revoked_at: new Date("2026-07-27T12:00:00.000Z"),
+          replaced_by_session_id: null,
+          parent_account_id: "parent-1",
+          parent_email: "parent@example.com",
+          parent_display_name: "Lumi Parent",
+        },
+      ],
+    });
+
+    const result = await getParentFromSessionToken("revoked-token");
+    expect(result).toBeNull();
+  });
+});
+
+describe("revokeParentSession", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it("does nothing when no token is provided", async () => {
+    await revokeParentSession(undefined);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it("executes update query when token is provided", async () => {
+    mockQuery.mockResolvedValue({ rows: [] });
+    await revokeParentSession("valid-session-token");
+
+    expect(mockQuery).toHaveBeenCalledOnce();
+  });
+});
+
+describe("requestPasswordReset", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it("returns null previewToken for non-existent email", async () => {
+    mockQuery.mockResolvedValue({ rows: [] });
+    const result = await requestPasswordReset({ email: "unknown@example.com" });
+
+    expect(result.previewToken).toBeNull();
+    expect(result.email).toBe("unknown@example.com");
+  });
+});
+
+describe("resetParentPassword", () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockRelease.mockReset();
+    mockConnect.mockClear();
+  });
+
+  it("rejects reset with invalid token as INVALID_RESET_TOKEN", async () => {
+    mockConnect.mockResolvedValue({
+      query: mockQuery,
+      release: mockRelease,
+    });
+
+    mockQuery.mockImplementation(async (query: string) => {
+      if (query === "BEGIN" || query === "COMMIT" || query === "ROLLBACK") {
+        return { rows: [] };
+      }
+
+      return { rows: [] };
+    });
+
+    await expect(
+      resetParentPassword({
+        confirmPassword: "new-password-here",
+        password: "new-password-here",
+        token: "nonexistent-reset-token-value-here",
+      }),
+    ).rejects.toThrow("INVALID_RESET_TOKEN");
+
+    expect(
+      mockQuery.mock.calls.some(([q]) => String(q) === "ROLLBACK"),
+    ).toBe(true);
     expect(mockRelease).toHaveBeenCalledTimes(1);
   });
 });
