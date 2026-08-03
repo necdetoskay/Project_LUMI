@@ -13,6 +13,21 @@ export type { StorySceneRecord, NewStorySceneRecord } from "./story-scenes";
 export { storySceneTransitions } from "./story-scene-transitions";
 export type { StorySceneTransitionRecord, NewStorySceneTransitionRecord } from "./story-scene-transitions";
 
+export { storyChoicePoints } from "./story-choice-points";
+export type { StoryChoicePointRecord, NewStoryChoicePointRecord } from "./story-choice-points";
+
+export { storyChoiceOptions } from "./story-choice-options";
+export type { StoryChoiceOptionRecord, NewStoryChoiceOptionRecord } from "./story-choice-options";
+
+export { storyCommittedChoices } from "./story-committed-choices";
+export type { StoryCommittedChoiceRecord, NewStoryCommittedChoiceRecord } from "./story-committed-choices";
+
+export { storyChoiceConsequences } from "./story-choice-consequences";
+export type { StoryChoiceConsequenceRecord, NewStoryChoiceConsequenceRecord } from "./story-choice-consequences";
+
+export { storyOutcomeCandidates } from "./story-outcome-candidates";
+export type { StoryOutcomeCandidateRecord, NewStoryOutcomeCandidateRecord } from "./story-outcome-candidates";
+
 export { storySessions } from "./story-sessions";
 export type { StorySessionRecord, NewStorySessionRecord } from "./story-sessions";
 

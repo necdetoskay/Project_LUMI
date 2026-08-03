@@ -54,3 +54,25 @@ export {
   __setTestEventDb,
 } from "./story-event-store.service";
 export type { RecordStoryEventInput } from "./story-event-store.service";
+
+export {
+  createChoicePoint,
+  getChoicePointWithOptions,
+  listChoicePointsByScene,
+  listChoicePointsByVersion,
+  evaluateChoicePointAvailability,
+  commitChoice,
+  getChoiceHistory,
+  createOutcomeCandidate,
+  getLatestOutcomeCandidate,
+  listConsequencesBySession,
+  __setTestChoiceDb,
+} from "./choice/choice.service";
+export type {
+  CreateChoicePointServiceInput,
+  CreateChoiceOptionServiceInput,
+  CommitChoiceInput,
+} from "./choice/choice.service";
+
+export { evaluateRule, evaluateOptionAvailability } from "./choice/rule-evaluator";
+export { hashObject } from "./hash";

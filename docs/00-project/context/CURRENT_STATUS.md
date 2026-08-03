@@ -2,11 +2,11 @@
 
 **Lifecycle:** Execution
 
-**Active branch:** `main`
+**Active branch:** `agent/sprint-10-choice-consequence`
 
-**Active delivery:** Sprint 04 - Character Bootstrap and First-Run Handoff Consumption (complete)
+**Active delivery:** Sprint 10 — Choice and Session Consequence
 
-**Last updated:** 2026-07-28 (review cleanup — timestamp corrected from legacy 2026-03-19)
+**Last updated:** 2026-08-03
 
 ## Completed
 
@@ -86,9 +86,30 @@ Evidence summary:
 
 ## In Progress Now
 
-- (No active sprint — Sprint 05 backlog ahead: PostgreSQL platform core, or story/world domain TBD)
+- Sprint 10 — Choice and Session Consequence (2026-08-03)
 
 ## Recently Completed
+
+### Sprint 09 — Story Definition and Session (2026-08-03)
+
+Sprint 09 foundation is complete and PR #10 is open.
+
+- `@lumi/story` workspace package created with domain, application, repository, and additive migration.
+- Story definition, immutable version, chapter/scene/transition structure, static + interactive modes.
+- Story session lifecycle with `created -> active <-> paused`, `active -> completed/abandoned`.
+- Pause/resume, advance, complete, abandon with optimistic version checks and idempotency ledger.
+- Checkpoint SHA-256 hashing + latest checkpoint API.
+- 11 API routes under `/api/stories` with household-scoped authorization.
+- Forward-only migration `0001_story_schema.sql` with cross-schema FKs to `profile`.
+
+Evidence summary:
+- **@lumi/story unit tests:** 16/16 passed
+- **@lumi/story lint/typecheck:** PASS
+- **@lumi/profiles tests:** 228/228 passed
+- **@lumi/web tests:** 85/85 passed
+- **@lumi/web lint/typecheck:** PASS
+- **pnpm build:** PASS
+- **S09 integration tests:** skipped per user decision
 
 ### Sprint 04 Handoff Cleanup
 
