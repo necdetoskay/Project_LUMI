@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Project LUMI",
-  description: "Yasayan, etkilesimli cocuk hikayeleri icin LUMI platformu.",
+  description: "Yaşayan, etkileşimli çocuk hikayeleri için LUMI platformu.",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <a className="skip-link" href="#main-content">
-          Ana icerige gec
+          Ana içeriğe geç
         </a>
         <AppHeader />
         <main id="main-content" className="flex-1 flex flex-col">

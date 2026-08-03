@@ -18,5 +18,11 @@ export interface CharacterRepository {
 
   create(input: NewLumiCharacterRecord): Promise<LumiCharacterRecord>;
 
+  update(
+    id: string,
+    householdId: string,
+    input: Partial<NewLumiCharacterRecord> & { expectedVersion: number },
+  ): Promise<LumiCharacterRecord>;
+
   softDelete(id: string, householdId: string): Promise<void>;
 }

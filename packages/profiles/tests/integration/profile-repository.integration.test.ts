@@ -12,16 +12,15 @@ import { DrizzleParentPolicyRepository } from "../../src/db/repositories/drizzle
 
 let queryClient: postgres.Sql | undefined;
 let db: ReturnType<typeof drizzle> | undefined;
-let destructiveTestsEnabled = false;
+const databaseUrl = process.env.PROFILE_TEST_DATABASE_URL;
+const destructiveTestsEnabled =
+  Boolean(databaseUrl) && process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
 
 const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 const TEST_USER_ID_2 = "00000000-0000-0000-0000-000000000002";
 
 beforeAll(async () => {
-  const databaseUrl = process.env.PROFILE_TEST_DATABASE_URL;
-  const allowDestructive = process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
-
-  if (!databaseUrl || !allowDestructive) {
+  if (!destructiveTestsEnabled) {
     console.warn(
       "Skipping profile integration tests because PROFILE_TEST_DATABASE_URL and PROFILE_TEST_ENABLE_DESTRUCTIVE=true are required.",
     );
@@ -29,9 +28,8 @@ beforeAll(async () => {
   }
 
   try {
-    queryClient = postgres(databaseUrl, { max: 1 });
+    queryClient = postgres(databaseUrl!, { max: 1 });
     db = drizzle(queryClient);
-    destructiveTestsEnabled = true;
 
     await db.execute(sql`CREATE SCHEMA IF NOT EXISTS profile`);
 
@@ -47,9 +45,8 @@ beforeAll(async () => {
     const migrationSql = readFileSync(migrationPath, "utf-8");
     await db.execute(sql.raw(migrationSql));
   } catch (error) {
-    destructiveTestsEnabled = false;
-    console.warn("Profile integration database unavailable - skipping integration tests");
-    console.warn(error);
+    console.error("Profile integration database setup failed");
+    throw error;
   }
 });
 

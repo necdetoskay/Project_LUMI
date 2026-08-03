@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { createLogger, redact } from "@lumi/logger";
+
 export type AuthAuditAction =
   | "register"
   | "login"
@@ -21,6 +23,8 @@ type BuildAuthAuditEventInput = {
   parentId?: string;
   reason?: string;
 };
+
+const logger = createLogger({ level: "info" });
 
 function hashValue(value: string) {
   return createHash("sha256").update(value).digest("hex").slice(0, 12);
@@ -54,5 +58,9 @@ export function buildAuthAuditEvent(input: BuildAuthAuditEventInput) {
 }
 
 export function logAuthAuditEvent(input: BuildAuthAuditEventInput) {
-  console.warn(JSON.stringify(buildAuthAuditEvent(input)));
+  logger.info("auth.audit", `${input.action}:${input.outcome}`, {
+    ...(redact(buildAuthAuditEvent(input)) as Record<string, unknown>),
+    clientIpHash: hashValue(input.clientIp),
+    emailHash: input.email ? hashValue(input.email.trim().toLowerCase()) : undefined,
+  });
 }

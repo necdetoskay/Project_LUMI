@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { getOnboardingState } from "@lumi/profiles/application";
+import { observeHandlerNoArg } from "@/lib/observability/observed-api-route";
 
-export async function GET() {
+export const GET = observeHandlerNoArg(async () => {
   return withParent(async (parent) => {
     try {
       const state = await getOnboardingState(parent.id);
@@ -15,4 +16,4 @@ export async function GET() {
       );
     }
   });
-}
+}, "/api/onboarding");

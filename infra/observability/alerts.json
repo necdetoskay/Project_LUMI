@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "service": "lumi-web",
+  "alerts": [
+    {
+      "name": "HighErrorRate",
+      "description": "Alert when API error rate exceeds threshold over a 5-minute window",
+      "condition": {
+        "metric": "http.requests.errors",
+        "aggregation": "rate",
+        "window": "5m",
+        "threshold": 0.05,
+        "operator": "gt"
+      },
+      "severity": "critical",
+      "channels": ["pagerduty", "slack"],
+      "runbook": "docs/ops/runbooks/high-error-rate.md"
+    },
+    {
+      "name": "HighLatency",
+      "description": "Alert when p95 latency exceeds threshold over a 5-minute window",
+      "condition": {
+        "metric": "http.request.duration",
+        "aggregation": "p95",
+        "window": "5m",
+        "threshold": 2000,
+        "operator": "gt",
+        "unit": "ms"
+      },
+      "severity": "warning",
+      "channels": ["slack"],
+      "runbook": "docs/ops/runbooks/high-latency.md"
+    },
+    {
+      "name": "ReadinessDegraded",
+      "description": "Alert when readiness probe returns non-200 status for consecutive checks",
+      "condition": {
+        "metric": "readiness.status",
+        "aggregation": "consecutive",
+        "window": "1m",
+        "threshold": 3,
+        "operator": "gte"
+      },
+      "severity": "critical",
+      "channels": ["pagerduty", "slack"],
+      "runbook": "docs/ops/runbooks/db-failure.md"
+    },
+    {
+      "name": "DatabaseConnectionFailure",
+      "description": "Alert when PostgreSQL connection check fails",
+      "condition": {
+        "metric": "readiness.postgres",
+        "aggregation": "state",
+        "window": "1m",
+        "threshold": "error",
+        "operator": "eq"
+      },
+      "severity": "critical",
+      "channels": ["pagerduty", "slack"],
+      "runbook": "docs/ops/runbooks/db-failure.md"
+    },
+    {
+      "name": "CorrelationIdAnomaly",
+      "description": "Alert when rate of invalid or missing correlation IDs spikes",
+      "condition": {
+        "metric": "correlation.invalid",
+        "aggregation": "rate",
+        "window": "5m",
+        "threshold": 0.1,
+        "operator": "gt"
+      },
+      "severity": "warning",
+      "channels": ["slack"],
+      "runbook": "docs/ops/runbooks/missing-correlation.md"
+    }
+  ]
+}

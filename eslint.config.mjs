@@ -6,6 +6,7 @@ export default [
   {
     ignores: [
       "**/.next/**",
+      "**/.next-e2e/**",
       "**/.turbo/**",
       "**/coverage/**",
       "**/dist/**",
@@ -26,6 +27,12 @@ export default [
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
+  },
+  {
+    files: ["**/tests/**/*", "**/*.spec.ts", "**/*.test.ts", "**/e2e/**/*"],
+    rules: {
+      "no-console": "off",
     },
   },
 ];

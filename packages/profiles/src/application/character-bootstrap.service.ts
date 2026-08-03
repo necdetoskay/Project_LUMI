@@ -1,13 +1,12 @@
 import { getProfileDb } from "./db";
-import {
-  DrizzleHouseholdRepository,
-} from "../db/repositories/drizzle/drizzle-household.repository";
+import { DrizzleHouseholdRepository } from "../db/repositories/drizzle/drizzle-household.repository";
 import { DrizzleChildProfileRepository } from "../db/repositories/drizzle/drizzle-child-profile.repository";
 import { DrizzleParentPolicyRepository } from "../db/repositories/drizzle/drizzle-parent-policy.repository";
 import { DrizzleFirstRunHandoffRepository } from "../db/repositories/drizzle/drizzle-first-run-handoff.repository";
 import { DrizzleCharacterRepository } from "../db/repositories/drizzle/drizzle-character.repository";
 import { DrizzleCharacterOriginPackageRepository } from "../db/repositories/drizzle/drizzle-character-origin-package.repository";
 import { DrizzleHandoffConsumptionRepository } from "../db/repositories/drizzle/drizzle-handoff-consumption.repository";
+import { DrizzleArchetypeSuggestionBatchRepository } from "../db/repositories/drizzle/drizzle-archetype-suggestion-batch.repository";
 import {
   AuthorizationError,
   DomainError,
@@ -15,9 +14,8 @@ import {
   ValidationError,
   LumiCharacter,
   validateAgeBand,
-  validateBroadCharacterKind,
   validateCharacterName,
-  validateCharacterSubtype,
+  validateOriginDisplaySubtype,
   validateContentBoundary,
   validateOriginConcept,
   validateUniverseSeed,
@@ -27,7 +25,6 @@ import {
   type StoryPreferenceMetadata,
 } from "../domain";
 import {
-  CHARACTER_TYPE_TO_KIND,
   CHARACTER_TYPES,
   type BroadCharacterKind,
   type CharacterType,
@@ -39,7 +36,10 @@ import type {
   FirstRunHandoffPayload,
   FirstRunHandoffRecord,
   LumiCharacterRecord,
+  PersistedArchetypeSuggestion,
 } from "../db";
+import type { SelectedArchetype } from "../db/schema/profile/first-run-handoffs";
+import { generateOriginPackages as llmGenerateOriginPackages } from "./llm-settings/origin-generator";
 
 export interface CreateHandoffInput {
   householdId: string;
@@ -47,6 +47,8 @@ export interface CreateHandoffInput {
   characterType: string;
   originMode: string;
   preferenceHints?: StoryPreferenceMetadata;
+  archetypeBatchId: string;
+  archetypeId: string;
 }
 
 export interface OriginPackageInput {
@@ -109,6 +111,9 @@ export interface GeneratedOriginPackage {
   noveltyMarkers: string[];
   originMode: OriginMode;
   universeSeed: string;
+  generationSource: "llm";
+  modelId: string | null;
+  generationBatchId: string | null;
 }
 
 function cleanPreferenceHints(
@@ -138,6 +143,7 @@ function getRepos(db: unknown = getProfileDb()) {
     characterRepo: new DrizzleCharacterRepository(database),
     originPkgRepo: new DrizzleCharacterOriginPackageRepository(database),
     consumptionRepo: new DrizzleHandoffConsumptionRepository(database),
+    batchRepo: new DrizzleArchetypeSuggestionBatchRepository(database),
     db: database,
   };
 }
@@ -155,7 +161,7 @@ async function assertScopeAndProfileAlive(
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
-  const profile = await repos.childRepo.findById(childProfileId, householdId);
+  const profile = await repos.childRepo.findByIdIncludingDeleted(childProfileId, householdId);
   if (!profile) {
     throw new NotFoundError("ChildProfile", childProfileId);
   }
@@ -185,184 +191,6 @@ function deriveSafetyBounds(
   };
 }
 
-function deterministicHashedSeed(...parts: string[]): string {
-  const combined = parts.join("|");
-  let h1 = 0xdeadbeef ^ combined.length;
-  let h2 = 0x41c6ce57 ^ combined.length;
-  for (let i = 0; i < combined.length; i++) {
-    const ch = combined.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-  h2 = Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  const hex =
-    (h2 >>> 0).toString(16).padStart(8, "0") +
-    (h1 >>> 0).toString(16).padStart(8, "0");
-  const prefix = parts[0]?.slice(0, 8) ?? "seed";
-  return `lumi-${prefix}-${hex}`.slice(0, 118);
-}
-
-const REGION_AFFINITY: Record<BroadCharacterKind, string[]> = {
-  human: ["aile evi", "orman kenarı", "köy meydanı", "atölye"],
-  animal: ["sessiz orman", "çayır", "dağ yolu", "bahçe"],
-  fantasy: ["büyülü orman", "antik dağ", "Kristal mağara", "bulut adası"],
-  robot: ["eski atölye", "gözlemevi", "makine şehri", "uzay istasyonu"],
-  sea_creature: ["Mercan kayalığı", "gizli lagün", "nehir ağzı", "su altı köyü"],
-  sky_creature: ["bulut köyü", "kaya tepesi", "yıldız adası", "rüzgar yuvası"],
-};
-
-const HOME_AFFINITY: Record<BroadCharacterKind, string[]> = {
-  human: ["sıcak bir kulübe", "ağaç ev", "tepe üstü ev", "atölye içi oda"],
-  animal: ["yumuşak bir in", "ağaç içi yuva", "kayalık sığınak", "dereden mağara"],
-  fantasy: ["Kristal kulübe", "yıldız kulesi", "peri ağacı ev", "büyülü fırın"],
-  robot: ["dişli kulübe", "eski laboratuvar köşesi", "bakır tavan", "uzay kabini"],
-  sea_creature: ["Mercan ev", "deniz kabuğu yuva", "yosun kulesi", "batık gemi köşesi"],
-  sky_creature: ["bulut yuvası", "uçurtma kulesi", "rüzgar sığınağı", "yıldız tavanı"],
-};
-
-const SUBTYPE_POOL: Record<
-  CharacterType,
-  Array<{ kind: BroadCharacterKind; name: string }>
-> = {
-  explorer: [
-    { kind: "human", name: "yıldız kaşifi çocuk" },
-    { kind: "fantasy", name: "harita perisi" },
-    { kind: "robot", name: "pusula robot" },
-  ],
-  inventor: [
-    { kind: "human", name: "rüzgarlı atölye çocuğu" },
-    { kind: "robot", name: "dişli tasarımcı" },
-    { kind: "fantasy", name: "büyücü çırağı" },
-  ],
-  storyteller: [
-    { kind: "human", name: "şair çocuk" },
-    { kind: "fantasy", name: "masal perisi" },
-  ],
-  helper: [
-    { kind: "human", name: "köy kahramanı" },
-    { kind: "animal", name: "tilki yavru yardımcı" },
-    { kind: "fantasy", name: "nazik dev yavru" },
-  ],
-  dreamer: [
-    { kind: "fantasy", name: "rüya ejderhası" },
-    { kind: "sky_creature", name: "bulut çocuğu" },
-    { kind: "sea_creature", name: "deniz feneri balığı" },
-  ],
-};
-
-const MYSTERY_SEEDS: string[] = [
-  "gece yarısı bahçeden gelen şarkı",
-  "kırık bir pusulanın her zaman aynı yeri göstermesi",
-  "üç yapraklı yoncalıklarda kaybolan hediye",
-  "eski bir saat kulesinin çalınmayan çanı",
-  "yer fıstığı ağacından düşen harfler",
-  "kuyruğunda yıldız olan küçük balık",
-];
-
-const NPC_SEEDS: string[] = [
-  "anahtarı unutan yaşlı bekçi",
-  "fırında kekleri şişen pastacı anne",
-  "her gün başka bir taş getiren sincap",
-  "gece göç eden mektup kuşu",
-  "yerini unutan fenerci balık",
-];
-
-const NOVELTY_MARKERS: string[] = [
-  "yer çekimine meydan okuyan küçük çantası",
-  "sadece dürüst konuşulduğunda parlayan kanatları",
-  "kırıldığında şarkı söyleyen bir kılıf",
-  "uykuda unutulan şarkıları hatırlayan kürkü",
-  "düşen yıldızları toplayan çantası",
-  "her sabit yeni bir dil öğrenen gözlüğü",
-];
-
-function pickFrom<T>(arr: T[], idx: number, salt: number): T {
-  if (arr.length === 0) {
-    throw new Error("empty pick pool");
-  }
-  return arr[(idx * 7 + salt * 13) % arr.length] as T;
-}
-
-function buildCandidatesFromHandoff(
-  handoff: FirstRunHandoffPayload,
-  profileAgeBand: string,
-  childProfileId: string,
-  householdId: string,
-  safetyBounds: SafetyBounds,
-): GeneratedOriginPackage[] {
-  const baseSeed = `${childProfileId}-${handoff.characterType}-${handoff.originMode}`;
-  const hType = handoff.characterType as CharacterType;
-  const kinds = CHARACTER_TYPE_TO_KIND[hType];
-  const count = handoff.originMode === "auto" ? 4 : 1;
-  const results: GeneratedOriginPackage[] = [];
-  const subtypePool = SUBTYPE_POOL[hType];
-  const preferenceHints = cleanPreferenceHints(handoff.preferenceHints);
-
-  for (let i = 0; i < count; i++) {
-    const kind = kinds[i % Math.max(1, kinds.length)] as BroadCharacterKind;
-    const subtypeEntry = subtypePool[
-      handoff.originMode === "auto"
-        ? (i + (childProfileId.charCodeAt(0) % subtypePool.length)) %
-          subtypePool.length
-        : 0
-    ] ?? subtypePool[0];
-    if (!subtypeEntry) {
-      continue;
-    }
-
-    const regionPool = REGION_AFFINITY[kind] ?? REGION_AFFINITY.human;
-    const homePool = HOME_AFFINITY[kind] ?? HOME_AFFINITY.human;
-    const salt = i + householdId.length + profileAgeBand.length;
-    const universeSeed = validateUniverseSeed(
-      deterministicHashedSeed(baseSeed, String(i), safetyBounds.ageBand),
-    );
-
-    const subtype = subtypeEntry.name;
-    const regionArchetype = pickFrom(regionPool, i, salt);
-    const home = pickFrom(homePool, i, salt + 1);
-    const npc = pickFrom(NPC_SEEDS, i, salt + 2);
-    const mystery = pickFrom(MYSTERY_SEEDS, i, salt + 3);
-    const novelty = pickFrom(NOVELTY_MARKERS, i, salt + 4);
-    const novelty2 = pickFrom(NOVELTY_MARKERS, i + 3, salt + 7);
-
-    const conceptStart =
-      handoff.originMode === "manual"
-        ? `${subtype} olarak yeni bir maceraya atılmak`
-        : `${novelty} olan ${subtype}`;
-    const originConcept = validateOriginConcept(
-      `${conceptStart}. İlk durağı: ${regionArchetype}.`,
-    );
-
-    const tonePool: ToneVector[] = ["wonder", "warmth", "curiosity", "courage", "mystery", "humor"];
-    const tones: ToneVector[] = [
-      tonePool[i % tonePool.length] as ToneVector,
-      tonePool[(i + 2) % tonePool.length] as ToneVector,
-    ];
-
-    results.push({
-      id: crypto.randomUUID(),
-      broadKind: validateBroadCharacterKind(kind),
-      characterType: hType,
-      subtype: validateCharacterSubtype(subtype),
-      originConcept,
-      startingRegionArchetype: regionArchetype,
-      startingLocation: `${profileAgeBand} yaşlar için güvenli ${regionArchetype} girişi`,
-      homeArchetype: home,
-      nearbyNpcSeed: npc,
-      firstMysterySeed: mystery,
-      toneVector: tones,
-      noveltyMarkers: [novelty, novelty2],
-      originMode: handoff.originMode as OriginMode,
-      universeSeed,
-    });
-    // referenced to silence unused warning
-    void preferenceHints;
-  }
-
-  return results;
-}
-
 export async function createOrReplaceFirstRunHandoff(
   userId: string,
   input: CreateHandoffInput,
@@ -389,6 +217,82 @@ export async function createOrReplaceFirstRunHandoff(
       "originMode",
     );
   }
+  if (!input.archetypeBatchId || typeof input.archetypeBatchId !== "string") {
+    throw new ValidationError(
+      "MISSING_ARCHETYPE_BATCH",
+      "archetypeBatchId is required",
+      "archetypeBatchId",
+    );
+  }
+  if (!input.archetypeId || typeof input.archetypeId !== "string") {
+    throw new ValidationError(
+      "MISSING_ARCHETYPE_ID",
+      "archetypeId is required",
+      "archetypeId",
+    );
+  }
+
+  const batch = await repos.batchRepo.findById(input.archetypeBatchId, input.householdId);
+  if (!batch) {
+    throw new ValidationError(
+      "ARCHETYPE_BATCH_NOT_FOUND",
+      "Arketip batch bulunamadı veya yetkiniz yok",
+      "archetypeBatchId",
+    );
+  }
+  if (batch.childProfileId !== input.childProfileId) {
+    throw new ValidationError(
+      "ARCHETYPE_BATCH_PROFILE_MISMATCH",
+      "Arketip batch farklı çocuk profili için oluşturulmuş",
+      "archetypeBatchId",
+    );
+  }
+  if (batch.expiresAt.getTime() < Date.now()) {
+    throw new ValidationError(
+      "ARCHETYPE_BATCH_EXPIRED",
+      "Arketip batch süresi dolmuş. Lütfen tekrar üretin.",
+      "archetypeBatchId",
+    );
+  }
+  const persistedArchetype: PersistedArchetypeSuggestion | undefined = batch.archetypes.find(
+    (a) => a.id === input.archetypeId,
+  );
+  if (!persistedArchetype) {
+    throw new ValidationError(
+      "ARCHETYPE_NOT_IN_BATCH",
+      "Bu arketip seçilen batch'te bulunamadı",
+      "archetypeId",
+    );
+  }
+  if (persistedArchetype.canonicalType !== input.characterType) {
+    throw new ValidationError(
+      "ARCHETYPE_TYPE_MISMATCH",
+      "Arketip canonicalType ile characterType uyuşmuyor",
+      "characterType",
+    );
+  }
+  if (
+    !persistedArchetype.title || persistedArchetype.title.length < 2 ||
+    !persistedArchetype.description || persistedArchetype.description.length < 10 ||
+    !persistedArchetype.personalityHook || persistedArchetype.personalityHook.length < 5 ||
+    !persistedArchetype.storyPromise || persistedArchetype.storyPromise.length < 5 ||
+    !Array.isArray(persistedArchetype.themeTags) || persistedArchetype.themeTags.length < 2
+  ) {
+    throw new DomainError(
+      "INVALID_ARCHETYPE_DATA",
+      "Veritabanındaki arketip kaydı geçersiz",
+    );
+  }
+
+  const verifiedArchetype: SelectedArchetype = {
+    id: persistedArchetype.id,
+    canonicalType: persistedArchetype.canonicalType,
+    title: persistedArchetype.title,
+    description: persistedArchetype.description,
+    personalityHook: persistedArchetype.personalityHook,
+    storyPromise: persistedArchetype.storyPromise,
+    themeTags: [...persistedArchetype.themeTags],
+  };
 
   const existing = await repos.handoffRepo.findLatestByChildProfile(
     input.childProfileId,
@@ -425,6 +329,7 @@ export async function createOrReplaceFirstRunHandoff(
           },
         }
       : {}),
+    selectedArchetype: verifiedArchetype,
   };
 
   const record = await repos.handoffRepo.create({
@@ -529,11 +434,24 @@ export async function getCharacterBootstrapStatus(
   };
 }
 
+export interface GenerateAndPersistResult {
+  packages: Array<
+    GeneratedOriginPackage & {
+      generationSource: "llm";
+      modelId: string | null;
+      generationBatchId: string;
+    }
+  >;
+  source: "llm";
+  modelId: string | null;
+  generationBatchId: string;
+}
+
 export async function generateAndPersistOriginPackages(
   userId: string,
   householdId: string,
   childProfileId: string,
-): Promise<GeneratedOriginPackage[]> {
+): Promise<GenerateAndPersistResult> {
   const repos = getRepos();
   await assertScopeAndProfileAlive(householdId, childProfileId, userId, repos);
 
@@ -579,47 +497,101 @@ export async function generateAndPersistOriginPackages(
     requireParentApprovalForAi: policy.requireParentApprovalForAi,
   });
 
-  const candidates = buildCandidatesFromHandoff(
-    handoff.payload,
-    profile.ageBand,
-    childProfileId,
+  const previousBatch = await repos.originPkgRepo.findLatestLlmBatch(childProfileId, householdId);
+  const previousBatchConcepts = previousBatch.length > 0
+    ? previousBatch.map((r) => ({
+        subtype: r.subtype,
+        originConcept: r.payload.originConcept,
+      }))
+    : undefined;
+
+  const selectedArchetype = handoff.payload.selectedArchetype;
+
+  const genResult = await llmGenerateOriginPackages(
+    userId,
     householdId,
-    safetyBounds,
+    childProfileId,
+    handoff.payload.characterType,
+    handoff.payload.originMode,
+    handoff.payload.preferenceHints as Record<string, unknown> | undefined,
+    previousBatchConcepts,
+    selectedArchetype
+      ? {
+          title: selectedArchetype.title,
+          description: selectedArchetype.description,
+          personalityHook: selectedArchetype.personalityHook,
+          storyPromise: selectedArchetype.storyPromise,
+          themeTags: selectedArchetype.themeTags,
+        }
+      : undefined,
   );
 
-  for (const c of candidates) {
-    const hints = cleanPreferenceHints(handoff.payload.preferenceHints);
-    await repos.originPkgRepo.create({
-      id: c.id,
-      childProfileId,
-      householdId,
-      broadKind: c.broadKind,
-      characterType: c.characterType,
-      subtype: c.subtype,
-      originMode: c.originMode,
-      universeSeed: c.universeSeed,
-      createdBy: "system",
-      handoffId: handoff.id,
-      accepted: false,
-      payload: {
-        originConcept: c.originConcept,
-        startingRegionArchetype: c.startingRegionArchetype,
-        startingLocation: c.startingLocation,
-        homeArchetype: c.homeArchetype,
-        nearbyNpcSeed: c.nearbyNpcSeed,
-        firstMysterySeed: c.firstMysterySeed,
-        toneVector: c.toneVector,
-        noveltyMarkers: c.noveltyMarkers,
-        safetyBounds,
-        ...(hints ? { preferenceHints: hints } : {}),
-      },
-    });
-  }
+  const candidates = genResult.candidates;
+  const generationBatchId = crypto.randomUUID();
+  const modelId = genResult.modelId;
 
-  return candidates;
+  const rawDb = getProfileDb();
+  await rawDb.transaction(async (tx) => {
+    const txRepos = getRepos(tx);
+    for (const c of candidates) {
+      const hints = cleanPreferenceHints(handoff.payload.preferenceHints);
+      await txRepos.originPkgRepo.create({
+        id: c.id,
+        childProfileId,
+        householdId,
+        broadKind: c.broadKind,
+        characterType: c.characterType,
+        subtype: c.subtype,
+        originMode: c.originMode,
+        universeSeed: c.universeSeed,
+        createdBy: "system",
+        handoffId: handoff.id,
+        accepted: false,
+        generationBatchId,
+        generationSource: "llm",
+        modelId,
+        payload: {
+          originConcept: c.originConcept,
+          startingRegionArchetype: c.startingRegionArchetype,
+          startingLocation: c.startingLocation,
+          homeArchetype: c.homeArchetype,
+          nearbyNpcSeed: c.nearbyNpcSeed,
+          firstMysterySeed: c.firstMysterySeed,
+          toneVector: c.toneVector,
+          noveltyMarkers: c.noveltyMarkers,
+          safetyBounds,
+          ...(hints ? { preferenceHints: hints } : {}),
+        },
+      });
+    }
+  });
+
+  const packagesWithProvenance = candidates.map((c) => ({
+    ...c,
+    generationSource: "llm" as const,
+    modelId,
+    generationBatchId,
+  }));
+
+  return {
+    packages: packagesWithProvenance,
+    source: "llm" as const,
+    modelId,
+    generationBatchId,
+  };
 }
 
 export async function listOriginPackages(
+  userId: string,
+  householdId: string,
+  childProfileId: string,
+): Promise<CharacterOriginPackageRecord[]> {
+  const repos = getRepos();
+  await assertScopeAndProfileAlive(householdId, childProfileId, userId, repos);
+  return repos.originPkgRepo.findLatestLlmBatch(childProfileId, householdId);
+}
+
+export async function listOriginPackagesLegacy(
   userId: string,
   householdId: string,
   childProfileId: string,
@@ -644,16 +616,6 @@ export async function consumeHandoffAndCreateCharacter(
       txRepos,
     );
 
-    const existingCharacter = await txRepos.characterRepo.findByChildProfile(
-      input.childProfileId,
-      input.householdId,
-    );
-    if (existingCharacter) {
-      throw new DomainError(
-        "CHARACTER_ALREADY_EXISTS",
-        "Each child profile may bootstrap only one character",
-      );
-    }
 
     const profile = (await txRepos.childRepo.findById(
       input.childProfileId,
@@ -693,6 +655,17 @@ export async function consumeHandoffAndCreateCharacter(
       );
     }
 
+    const existingCharacter = await txRepos.characterRepo.findByChildProfile(
+      input.childProfileId,
+      input.householdId,
+    );
+    if (existingCharacter) {
+      throw new DomainError(
+        "CHARACTER_ALREADY_EXISTS",
+        "Each child profile may bootstrap only one character",
+      );
+    }
+
     const originPackage = await txRepos.originPkgRepo.findById(
       input.originPackageId,
       input.householdId,
@@ -716,7 +689,7 @@ export async function consumeHandoffAndCreateCharacter(
     const finalName = validateCharacterName(
       (overrides.name && overrides.name.trim()) || fallbackName.slice(0, 118) || "Lumi Karakter",
     );
-    const finalSubtype = validateCharacterSubtype(
+    const finalDisplaySubtype = validateOriginDisplaySubtype(
       (overrides.subtype && overrides.subtype.trim()) || originPackage.subtype,
     );
     const finalConcept = validateOriginConcept(
@@ -741,7 +714,8 @@ export async function consumeHandoffAndCreateCharacter(
       name: finalName,
       broadKind: originPackage.broadKind as BroadCharacterKind,
       characterType: originPackage.characterType as CharacterType,
-      subtype: finalSubtype,
+      subtype: finalDisplaySubtype,
+      characterSubtype: "child_avatar",
       originMode: handoff.originMode as OriginMode,
       firstOriginPackageId: originPackage.id,
       originConcept: finalConcept,
@@ -812,6 +786,40 @@ export async function consumeHandoffAndCreateCharacter(
       handoffConsumptionId: consumption.id,
     };
   }) as Promise<{ character: CharacterSummary; handoffConsumptionId: string }>;
+}
+
+export async function listCharactersByChildProfile(
+  userId: string,
+  householdId: string,
+  childProfileId: string,
+): Promise<CharacterSummary[]> {
+  const repos = getRepos();
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
+  if (!household) {
+    throw new AuthorizationError("User is not a member of this household");
+  }
+  const record = await repos.characterRepo.findByChildProfile(
+    childProfileId,
+    householdId,
+  );
+  if (!record) return [];
+  return [{
+    id: record.id,
+    householdId: record.householdId,
+    childProfileId: record.childProfileId,
+    name: record.name,
+    broadKind: record.broadKind as BroadCharacterKind,
+    characterType: record.characterType as CharacterType,
+    subtype: record.subtype,
+    originMode: record.originMode as OriginMode,
+    originConcept: record.originConcept,
+    startingLocation: record.startingLocation,
+    homeArchetype: record.homeArchetype,
+    createdAt: record.createdAt,
+  }];
 }
 
 export async function listCharactersByHousehold(

@@ -1,9 +1,10 @@
 import {
   check,
   index,
+  integer,
   jsonb,
-  varchar,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -43,6 +44,11 @@ export const lumiCharacters = profileSchema.table(
     universeSeed: varchar("universe_seed", { length: 120 }).notNull(),
     safetyBounds: jsonb("safety_bounds").$type<SafetyBounds>().notNull(),
     preferenceHints: jsonb("preference_hints").$type<StoryPreferenceMetadata>(),
+    characterSubtype: varchar("character_subtype", { length: 20 }).notNull().default("child_avatar"),
+    lifecycleStage: varchar("lifecycle_stage", { length: 20 }).notNull().default("childhood"),
+    activeLocationId: uuid("active_location_id"),
+    activeLocationType: varchar("active_location_type", { length: 40 }),
+    version: integer("version").notNull().default(1),
     ...timestampColumns,
     ...softDeleteColumn,
   },
@@ -60,6 +66,14 @@ export const lumiCharacters = profileSchema.table(
     check(
       "lumi_characters_type_check",
       sql`${table.characterType} IN ('explorer', 'inventor', 'storyteller', 'helper', 'dreamer')`,
+    ),
+    check(
+      "lumi_characters_subtype_check",
+      sql`${table.characterSubtype} IN ('child_avatar', 'npc')`,
+    ),
+    check(
+      "lumi_characters_lifecycle_check",
+      sql`${table.lifecycleStage} IN ('newborn', 'childhood', 'adolescence', 'adulthood', 'elder')`,
     ),
   ],
 );

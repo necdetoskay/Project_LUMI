@@ -5,3 +5,8 @@ export type { FirstRunHandoffRepository } from "./first-run-handoff.repository";
 export type { CharacterRepository } from "./character.repository";
 export type { CharacterOriginPackageRepository } from "./character-origin-package.repository";
 export type { HandoffConsumptionRepository } from "./handoff-consumption.repository";
+export type { CharacterDomainRepository } from "./character-domain.repository";
+export type { InventoryRepository } from "./inventory.repository";
+export type { LlmProviderSettingsRepository } from "./llm-provider-settings.repository";
+export type { LlmTaskModelSettingsRepository } from "./llm-task-model-settings.repository";
+export type { ArchetypeSuggestionBatchRepository } from "./archetype-suggestion-batch.repository";

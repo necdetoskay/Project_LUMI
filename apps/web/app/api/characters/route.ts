@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
-import { listCharactersByHousehold } from "@lumi/profiles/application";
+import { listCharactersByHousehold, listCharactersByChildProfile } from "@lumi/profiles/application";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function GET(request: Request) {
+export const GET = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const { searchParams } = new URL(request.url);
     const householdId = searchParams.get("householdId");
+    const childProfileId = searchParams.get("childProfileId");
 
     if (!householdId) {
       return NextResponse.json(
@@ -18,6 +20,15 @@ export async function GET(request: Request) {
     }
 
     try {
+      if (childProfileId) {
+        const characters = await listCharactersByChildProfile(
+          parent.id,
+          householdId,
+          childProfileId,
+        );
+        return NextResponse.json({ characters });
+      }
+
       const characters = await listCharactersByHousehold(
         parent.id,
         householdId,
@@ -35,4 +46,4 @@ export async function GET(request: Request) {
       );
     }
   });
-}
+});

@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "profile:migrate": "node scripts/profile-migrate.mjs"
+    "profile:migrate": "node scripts/profile-migrate.mjs",
+    "test:int": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.43.1",

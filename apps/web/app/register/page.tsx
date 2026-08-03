@@ -9,15 +9,15 @@ function getValue(value: string | string[] | undefined) {
 function getErrorMessage(error: string | undefined) {
   switch (error) {
     case "password_mismatch":
-      return "Parola ve tekrar parola ayni olmali.";
+      return "Parola ve tekrar parola aynı olmalı.";
     case "email_exists":
       return "Bu e-posta ile zaten bir hesap var.";
     case "invalid_register_input":
       return "Bilgileri yeniden kontrol edip tekrar dene.";
     case "rate_limited":
-      return "Cok fazla deneme yapildi. Biraz sonra tekrar dene.";
+      return "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.";
     case "register_failed":
-      return "Hesap su anda olusturulamadi. Tekrar dene.";
+      return "Hesap şu anda oluşturulamadı. Tekrar dene.";
     default:
       return null;
   }

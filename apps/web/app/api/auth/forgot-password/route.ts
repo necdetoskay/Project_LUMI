@@ -6,6 +6,7 @@ import { checkAuthRateLimit } from "@/lib/auth/rate-limit";
 import { requestPasswordReset } from "@/lib/auth/service";
 import { readRequestBody } from "@/lib/http/request-body";
 import { isFormRequest, redirectWithQuery } from "@/lib/http/response";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
 function getRateLimitIdentifier(request: Request, email: unknown) {
   const clientIp = getClientIp(request);
@@ -13,7 +14,7 @@ function getRateLimitIdentifier(request: Request, email: unknown) {
   return `${clientIp}:${normalizedEmail}`;
 }
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   const body = await readRequestBody(request);
   const clientIp = getClientIp(request);
   const email = typeof body.email === "string" ? body.email : undefined;
@@ -104,4 +105,4 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "PASSWORD_RESET_REQUEST_FAILED" }, { status: 500 });
   }
-}
+});

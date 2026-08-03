@@ -14,3 +14,4 @@ test-results/
 apps/web/.env.local
 packages/profiles/node_modules/
 packages/profiles/.turbo/
+apps/web/.next-e2e/

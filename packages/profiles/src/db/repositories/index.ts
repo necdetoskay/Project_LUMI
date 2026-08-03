@@ -6,6 +6,11 @@ export type {
   CharacterRepository,
   CharacterOriginPackageRepository,
   HandoffConsumptionRepository,
+  CharacterDomainRepository,
+  InventoryRepository,
+  LlmProviderSettingsRepository,
+  LlmTaskModelSettingsRepository,
+  ArchetypeSuggestionBatchRepository,
 } from "./interfaces";
 
 export {
@@ -16,4 +21,9 @@ export {
   DrizzleCharacterRepository,
   DrizzleCharacterOriginPackageRepository,
   DrizzleHandoffConsumptionRepository,
+  DrizzleCharacterDomainRepository,
+  DrizzleInventoryRepository,
+  DrizzleLlmProviderSettingsRepository,
+  DrizzleLlmTaskModelSettingsRepository,
+  DrizzleArchetypeSuggestionBatchRepository,
 } from "./drizzle";

@@ -156,7 +156,7 @@ export function validateCharacterName(value: string): string {
   return trimmed;
 }
 
-export function validateCharacterSubtype(value: string): string {
+export function validateOriginDisplaySubtype(value: string): string {
   const trimmed = value.trim();
   if (trimmed.length < 1 || trimmed.length > 80) {
     throw new ValidationError(

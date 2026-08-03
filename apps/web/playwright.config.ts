@@ -1,30 +1,49 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const appDir = __dirname;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100";
+const appUrl = new URL(baseURL);
+const appPort = Number(appUrl.port || (appUrl.protocol === "https:" ? 443 : 80));
+const mockPort = Number(process.env.MOCK_OPENROUTER_PORT ?? 18999);
+const mockBaseUrl = `http://127.0.0.1:${mockPort}/api/v1`;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
   projects: [
     {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
+  webServer: [
+    {
+      command: "node tests/e2e/mock-llm-server-entry.mjs",
+      port: mockPort,
+      reuseExistingServer: false,
+      timeout: 30_000,
+      cwd: appDir,
+      env: { MOCK_OPENROUTER_PORT: String(mockPort) },
+    },
+    {
+      command: `pnpm exec next dev --hostname ${appUrl.hostname} --port ${appPort}`,
+      url: baseURL,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      cwd: appDir,
+      env: {
+        OPENROUTER_API_BASE_URL: mockBaseUrl,
+        LUMI_SETTINGS_ENCRYPTION_KEY:
+          process.env.LUMI_SETTINGS_ENCRYPTION_KEY ?? "lumi-playwright-encryption-key",
+        NEXT_DIST_DIR: ".next-e2e",
       },
     },
   ],
-  webServer: {
-    command: process.env.CI
-      ? "pnpm build && pnpm start"
-      : "pnpm dev",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    cwd: "E:\\Projeler\\ai-studio-projects\\Project_LUMI\\apps\\web",
-  },
 });

@@ -1,4 +1,5 @@
 import net from "node:net";
+import pg from "pg";
 
 import { serverEnvironment } from "@/lib/env";
 
@@ -15,6 +16,12 @@ type ReadinessCheck = {
   services: {
     postgres: ServiceCheck;
     redis: ServiceCheck;
+  };
+  schema: {
+    /** true if critical tables exist in the `profile` schema */
+    profileSchemaReady: boolean;
+    /** true if critical auth tables exist */
+    authSchemaReady: boolean;
   };
   status: ServiceStatus;
 };
@@ -121,8 +128,30 @@ export async function getReadiness(): Promise<ReadinessCheck> {
     measure(() => checkRedisPing(serverEnvironment.REDIS_URL)),
   ]);
 
+  let profileSchemaReady = false;
+  let authSchemaReady = false;
+
+  if (postgres.status === "ok") {
+    try {
+      const pool = new pg.Pool({ connectionString: serverEnvironment.DATABASE_URL });
+      try {
+        const [profileResult, authResult] = await Promise.all([
+          pool.query("SELECT to_regclass('profile.households') AS r"),
+          pool.query("SELECT to_regclass('parent_accounts') AS r"),
+        ]);
+        profileSchemaReady = profileResult.rows[0]?.r !== null;
+        authSchemaReady = authResult.rows[0]?.r !== null;
+      } finally {
+        await pool.end();
+      }
+    } catch {
+      // schema check failure → keep both as false
+    }
+  }
+
+  const schemaOk = profileSchemaReady && authSchemaReady;
   const status: ServiceStatus =
-    postgres.status === "ok" && redis.status === "ok" ? "ok" : "error";
+    postgres.status === "ok" && redis.status === "ok" && schemaOk ? "ok" : "error";
 
   return {
     checkedAt: new Date().toISOString(),
@@ -130,6 +159,10 @@ export async function getReadiness(): Promise<ReadinessCheck> {
     services: {
       postgres,
       redis,
+    },
+    schema: {
+      profileSchemaReady,
+      authSchemaReady,
     },
     status,
   };

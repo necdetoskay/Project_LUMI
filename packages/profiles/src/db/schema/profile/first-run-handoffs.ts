@@ -4,6 +4,16 @@ import { primaryId, softDeleteColumn, timestampColumns } from "../common";
 import { profileSchema } from "../schemas";
 import { childProfiles } from "./child-profiles";
 
+export interface SelectedArchetype {
+  id: string;
+  canonicalType: string;
+  title: string;
+  description: string;
+  personalityHook: string;
+  storyPromise: string;
+  themeTags: string[];
+}
+
 export type FirstRunHandoffPayload = {
   childProfileId: string;
   characterType: "explorer" | "inventor" | "storyteller" | "helper" | "dreamer";
@@ -12,6 +22,7 @@ export type FirstRunHandoffPayload = {
     preferredThemes?: string[];
     avoidedThemes?: string[];
   };
+  selectedArchetype?: SelectedArchetype;
 };
 
 export const firstRunHandoffs = profileSchema.table(
