@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type { QueryExecutor } from "../../../db/client";
 import {
@@ -7,6 +7,7 @@ import {
   type NewLumiCharacterRecord,
 } from "../../../db/schema/profile";
 import type { CharacterRepository } from "../interfaces/character.repository";
+import { DomainError } from "../../../domain";
 
 export class DrizzleCharacterRepository implements CharacterRepository {
   constructor(private readonly db: QueryExecutor) {}
@@ -71,6 +72,37 @@ export class DrizzleCharacterRepository implements CharacterRepository {
       throw new Error("Character creation returned no record");
     }
     return record as LumiCharacterRecord;
+  }
+
+  async update(
+    id: string,
+    householdId: string,
+    input: Partial<NewLumiCharacterRecord> & { expectedVersion: number },
+  ): Promise<LumiCharacterRecord> {
+    const { expectedVersion, ...updateData } = input;
+    const result = await this.db
+      .update(lumiCharacters)
+      .set({ ...updateData, updatedAt: new Date(), version: sql`${lumiCharacters.version} + 1` })
+      .where(
+        and(
+          eq(lumiCharacters.id, id),
+          eq(lumiCharacters.householdId, householdId),
+          eq(lumiCharacters.version, expectedVersion),
+          isNull(lumiCharacters.deletedAt),
+        ),
+      )
+      .returning();
+    if (!result || result.length === 0) {
+      const existing = await this.findById(id, householdId);
+      if (!existing) {
+        throw new DomainError("NOT_FOUND", `Character ${id} not found`);
+      }
+      throw new DomainError(
+        "VERSION_CONFLICT",
+        `Character ${id} version conflict: expected ${expectedVersion}, actual ${existing.version}`,
+      );
+    }
+    return result[0] as LumiCharacterRecord;
   }
 
   async softDelete(id: string, householdId: string): Promise<void> {

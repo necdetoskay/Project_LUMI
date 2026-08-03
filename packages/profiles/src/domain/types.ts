@@ -90,3 +90,53 @@ export const TONE_VECTORS: ToneVector[] = [
   "courage",
   "curiosity",
 ];
+
+export const CHARACTER_SUBTYPES = ["child_avatar", "npc"] as const;
+export type CharacterSubtype = (typeof CHARACTER_SUBTYPES)[number];
+
+export const CHARACTER_LIFECYCLE_STAGES = [
+  "newborn",
+  "childhood",
+  "adolescence",
+  "adulthood",
+  "elder",
+] as const;
+export type CharacterLifecycleStage = (typeof CHARACTER_LIFECYCLE_STAGES)[number];
+
+export const TRAIT_DIMENSIONS = [
+  "courage",
+  "curiosity",
+  "compassion",
+  "patience",
+  "optimism",
+  "creativity",
+  "discipline",
+  "honesty",
+  "independence",
+  "sociability",
+] as const;
+export type TraitDimension = (typeof TRAIT_DIMENSIONS)[number];
+
+export const EMOTION_DIMENSIONS = [
+  "joy",
+  "sadness",
+  "fear",
+  "anger",
+  "surprise",
+  "trust",
+] as const;
+export type EmotionDimension = (typeof EMOTION_DIMENSIONS)[number];
+
+export const NEED_TYPES = [
+  "hunger",
+  "rest",
+  "safety",
+  "belonging",
+  "learning",
+  "achievement",
+  "curiosity",
+  "love",
+  "purpose",
+  "freedom",
+] as const;
+export type NeedType = (typeof NEED_TYPES)[number];

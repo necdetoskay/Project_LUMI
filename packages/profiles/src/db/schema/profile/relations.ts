@@ -94,6 +94,44 @@ export const characterOriginPackagesRelations = relations(
   }),
 );
 
+import { llmProviderSettings } from "./llm-provider-settings";
+import { llmTaskModelSettings } from "./llm-task-model-settings";
+import { archetypeSuggestionBatches } from "./archetype-suggestion-batches";
+
+export const llmProviderSettingsRelations = relations(
+  llmProviderSettings,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [llmProviderSettings.householdId],
+      references: [households.id],
+    }),
+  }),
+);
+
+export const llmTaskModelSettingsRelations = relations(
+  llmTaskModelSettings,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [llmTaskModelSettings.householdId],
+      references: [households.id],
+    }),
+  }),
+);
+
+export const archetypeSuggestionBatchesRelations = relations(
+  archetypeSuggestionBatches,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [archetypeSuggestionBatches.householdId],
+      references: [households.id],
+    }),
+    childProfile: one(childProfiles, {
+      fields: [archetypeSuggestionBatches.childProfileId],
+      references: [childProfiles.id],
+    }),
+  }),
+);
+
 export const firstRunHandoffConsumptionsRelations = relations(
   firstRunHandoffConsumptions,
   ({ one }) => ({

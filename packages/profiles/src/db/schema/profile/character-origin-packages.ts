@@ -2,8 +2,9 @@ import {
   boolean,
   index,
   jsonb,
-  varchar,
+  text,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 import type {
@@ -49,6 +50,9 @@ export const characterOriginPackages = profileSchema.table(
     accepted: boolean("accepted").notNull().default(false),
     handoffId: uuid("handoff_id"),
     payload: jsonb("payload").$type<OriginPackagePayload>().notNull(),
+    generationBatchId: uuid("generation_batch_id"),
+    generationSource: text("generation_source").notNull().default("legacy_static"),
+    modelId: text("model_id"),
     ...timestampColumns,
   },
   (table) => [
@@ -57,6 +61,10 @@ export const characterOriginPackages = profileSchema.table(
     index("character_origin_packages_accepted_idx").on(
       table.childProfileId,
       table.accepted,
+    ),
+    index("character_origin_packages_batch_idx").on(
+      table.childProfileId,
+      table.generationBatchId,
     ),
   ],
 );

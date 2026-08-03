@@ -29,6 +29,23 @@ export class DrizzleChildProfileRepository implements ChildProfileRepository {
     return record ?? null;
   }
 
+  async findByIdIncludingDeleted(
+    id: string,
+    householdId: string,
+  ): Promise<ChildProfileRecord | null> {
+    const [record] = await this.db
+      .select()
+      .from(childProfiles)
+      .where(
+        and(
+          eq(childProfiles.id, id),
+          eq(childProfiles.householdId, householdId),
+        ),
+      )
+      .limit(1);
+    return record ?? null;
+  }
+
   async listByHousehold(householdId: string): Promise<ChildProfileRecord[]> {
     return this.db
       .select()

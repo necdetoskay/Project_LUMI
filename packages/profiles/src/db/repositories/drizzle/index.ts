@@ -5,3 +5,8 @@ export { DrizzleFirstRunHandoffRepository } from "./drizzle-first-run-handoff.re
 export { DrizzleCharacterRepository } from "./drizzle-character.repository";
 export { DrizzleCharacterOriginPackageRepository } from "./drizzle-character-origin-package.repository";
 export { DrizzleHandoffConsumptionRepository } from "./drizzle-handoff-consumption.repository";
+export { DrizzleCharacterDomainRepository } from "./drizzle-character-domain.repository";
+export { DrizzleInventoryRepository } from "./drizzle-inventory.repository";
+export { DrizzleLlmProviderSettingsRepository } from "./drizzle-llm-provider-settings.repository";
+export { DrizzleLlmTaskModelSettingsRepository } from "./drizzle-llm-task-model-settings.repository";
+export { DrizzleArchetypeSuggestionBatchRepository } from "./drizzle-archetype-suggestion-batch.repository";

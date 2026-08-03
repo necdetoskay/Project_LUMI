@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 
 import type { QueryExecutor } from "../../../db/client";
 import {
@@ -41,6 +41,41 @@ export class DrizzleCharacterOriginPackageRepository
         and(
           eq(characterOriginPackages.childProfileId, childProfileId),
           eq(characterOriginPackages.householdId, householdId),
+        ),
+      )
+      .orderBy(characterOriginPackages.createdAt);
+    return rows as CharacterOriginPackageRecord[];
+  }
+
+  async findLatestLlmBatch(
+    childProfileId: string,
+    householdId: string,
+  ): Promise<CharacterOriginPackageRecord[]> {
+    const latest = await this.db
+      .select({ batchId: characterOriginPackages.generationBatchId })
+      .from(characterOriginPackages)
+      .where(
+        and(
+          eq(characterOriginPackages.childProfileId, childProfileId),
+          eq(characterOriginPackages.householdId, householdId),
+          eq(characterOriginPackages.generationSource, "llm"),
+          isNotNull(characterOriginPackages.generationBatchId),
+        ),
+      )
+      .orderBy(desc(characterOriginPackages.createdAt))
+      .limit(1);
+
+    const batchId = latest[0]?.batchId;
+    if (!batchId) return [];
+
+    const rows = await this.db
+      .select()
+      .from(characterOriginPackages)
+      .where(
+        and(
+          eq(characterOriginPackages.childProfileId, childProfileId),
+          eq(characterOriginPackages.householdId, householdId),
+          eq(characterOriginPackages.generationBatchId, batchId),
         ),
       )
       .orderBy(characterOriginPackages.createdAt);

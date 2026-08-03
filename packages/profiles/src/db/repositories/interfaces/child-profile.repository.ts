@@ -8,6 +8,11 @@ import type {
 export interface ChildProfileRepository {
   findById(id: string, householdId: string): Promise<ChildProfileRecord | null>;
 
+  findByIdIncludingDeleted(
+    id: string,
+    householdId: string,
+  ): Promise<ChildProfileRecord | null>;
+
   listByHousehold(householdId: string): Promise<ChildProfileRecord[]>;
 
   create(input: NewChildProfileRecord): Promise<ChildProfileRecord>;

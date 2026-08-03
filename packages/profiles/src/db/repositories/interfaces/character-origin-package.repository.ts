@@ -14,6 +14,11 @@ export interface CharacterOriginPackageRepository {
     householdId: string,
   ): Promise<CharacterOriginPackageRecord[]>;
 
+  findLatestLlmBatch(
+    childProfileId: string,
+    householdId: string,
+  ): Promise<CharacterOriginPackageRecord[]>;
+
   findAcceptedByChildProfile(
     childProfileId: string,
     householdId: string,

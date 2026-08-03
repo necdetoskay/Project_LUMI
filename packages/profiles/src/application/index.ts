@@ -17,6 +17,7 @@ export {
   listOriginPackages,
   consumeHandoffAndCreateCharacter,
   listCharactersByHousehold,
+  listCharactersByChildProfile,
   getCharacterById,
 } from "./character-bootstrap.service";
 export type {
@@ -25,4 +26,38 @@ export type {
   CharacterBootstrapStatus,
   CharacterSummary,
   GeneratedOriginPackage,
+  GenerateAndPersistResult,
 } from "./character-bootstrap.service";
+
+export {
+  getCharacterDomain,
+  applyTraitDeltas,
+  updateEmotions,
+  updateNeeds,
+  addGoal,
+  completeGoal,
+  upsertInfluence,
+  addRelationship,
+  updateLocation,
+  getCharacterEvents,
+} from "./character-domain.service";
+export type {
+  CharacterDomainSummary,
+} from "./character-domain.service";
+
+export {
+  createItemDefinition,
+  acquireItem,
+  transferItem,
+  consumeItem,
+  archiveItem,
+  getItem,
+  getItemHistory,
+  listInventory,
+  __setTestDb as __setInventoryTestDb,
+} from "./inventory.service";
+export type {
+  InventorySummary,
+} from "./inventory.service";
+
+export * from "./llm-settings";
