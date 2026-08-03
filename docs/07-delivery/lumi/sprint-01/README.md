@@ -8,8 +8,8 @@
 
 ## Kapanis Notu
 
-Sprint 01 kapsamindaki monorepo, web foundation, kalite komutlari ve yerel altyapi temeli tamamlandi.
-27 Temmuz 2026 itibariyla aktif uygulama oda�� Sprint 02 auth calismasina kaydi.
+Sprint 01 kapsamındaki monorepo, web temeli, kalite komutları ve yerel altyapı tamamlandı.
+27 Temmuz 2026 itibarıyla aktif uygulama odağı Sprint 02 kimlik doğrulama çalışmasına kaydı.
 
 ## Yarin Icin Baslangic
 
