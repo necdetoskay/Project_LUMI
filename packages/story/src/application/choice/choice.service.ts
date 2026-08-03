@@ -37,7 +37,9 @@ export interface CreateChoicePointServiceInput extends CreateChoicePointInput {
   options: CreateChoiceOptionServiceInput[];
 }
 
-export type CreateChoiceOptionServiceInput = CreateChoiceOptionInput;
+export type CreateChoiceOptionServiceInput = Omit<CreateChoiceOptionInput, "choicePointId"> & {
+  choicePointId?: string | undefined;
+};
 
 export async function createChoicePoint(input: CreateChoicePointServiceInput) {
   const db = getDb();

@@ -25,7 +25,7 @@ export interface ChoiceAvailabilityRule {
   ruleId: string;
   version: number;
   conditions: RuleCondition[];
-  matchPolicy: "all" | "any";
+  matchPolicy?: "all" | "any";
 }
 
 export interface ChoiceConsequencePreview {

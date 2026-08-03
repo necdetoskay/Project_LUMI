@@ -2,9 +2,9 @@
 
 **Lifecycle:** Execution
 
-**Active branch:** `agent/sprint-10-choice-consequence`
+**Active branch:** `agent/sprint-11-prompt-registry-context-builder`
 
-**Active delivery:** Sprint 10 — Choice and Session Consequence
+**Active delivery:** Sprint 11 — Prompt Registry and Context Builder
 
 **Last updated:** 2026-08-03
 
@@ -86,9 +86,51 @@ Evidence summary:
 
 ## In Progress Now
 
-- Sprint 10 — Choice and Session Consequence (2026-08-03)
+- (none — awaiting sprint 12 direction)
 
 ## Recently Completed
+
+### Sprint 11 — Prompt Registry and Context Builder (2026-08-03)
+
+Sprint 11 is complete and PR #13 is open.
+
+- `@lumi/prompts` workspace package created with versioned prompt registry and typed template renderer.
+- `@lumi/context` workspace package created with deterministic context builder, source ports, safety precedence, and token budget.
+- Prompt registry: household-scoped keys, immutable published versions, explicit activation, activation history.
+- Template renderer: type validation (string/number/boolean/enum/json), required variable enforcement, default fallback, injection escape.
+- Context builder fixed priority: Safety → Parent Policy → Working Story → Emotional State → Long-Term Memory → Knowledge/World → Origin Package.
+- Deterministic `ContextManifest` with SHA-256 content hash and budget-overflow findings.
+- `@lumi/story` minor type fixes to resolve pre-existing choice rule/fixture type errors.
+
+Evidence summary:
+- **@lumi/prompts unit tests:** 44/44 passed
+- **@lumi/prompts integration tests:** guard PASS (no local PostgreSQL)
+- **@lumi/context unit tests:** 19/19 passed
+- **@lumi/story unit tests:** 40/40 passed
+- **@lumi/story lint/typecheck:** PASS
+- **@lumi/web tests:** 85/85 passed
+- **@lumi/web lint/typecheck:** PASS
+- **pnpm build:** PASS
+- **S11 integration tests:** skipped due to no local PostgreSQL
+
+### Sprint 10 — Choice and Session Consequence (2026-08-03)
+
+Sprint 10 is complete and PR #12 is open.
+
+- Choice domain: `ChoicePoint`, `ChoiceOption`, `CommittedChoice`, `ChoiceConsequence`, `OutcomeCandidate`.
+- Table-driven rule evaluator with `eq/neq/gt/gte/lt/lte/in/not_in/has_flag` operators and `all/any` match policies.
+- Additive migration `0002_story_choice_schema.sql` with 5 new tables and FKs.
+- 5 API routes under `/api/stories/sessions/[sessionId]/choices`.
+- Deterministic outcome candidate computation and session state projection.
+- 40 `@lumi/story` unit tests; `@lumi/web` and `@lumi/story` lint/typecheck/build PASS.
+
+Evidence summary:
+- **@lumi/story unit tests:** 40/40 passed
+- **@lumi/story lint/typecheck:** PASS
+- **@lumi/web tests:** 85/85 passed
+- **@lumi/web lint/typecheck:** PASS
+- **pnpm build:** PASS
+- **S10 integration tests:** skipped per user decision
 
 ### Sprint 09 — Story Definition and Session (2026-08-03)
 
