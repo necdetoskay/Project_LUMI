@@ -1,10 +1,10 @@
 # Project LUMI Agent-Ready Sprint Index
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 
-**Status:** Planned / Agent-ready
+**Status:** Active
 
-**Last Updated:** 2026-07-26
+**Last Updated:** 2026-08-03
 
 ## Authority and Usage
 
@@ -31,7 +31,7 @@ hangi parçaların önce çalıştırılıp test edileceğini netleştirir.
 | 10 | Choice & Session Consequence | [Sprint 10](../sprint-10/SPRINT_SPEC.md) | Planned / Agent-ready |
 | 11 | Prompt Registry & Context Builder | [Sprint 11](../sprint-11/SPRINT_SPEC.md) | Planned / Agent-ready |
 | 12 | Story Generation Pipeline | [Sprint 12](../sprint-12/SPRINT_SPEC.md) | Planned / Agent-ready |
-| 13 | NPC Intelligence Foundation | [Sprint 13](../sprint-13/SPRINT_SPEC.md) | Planned / Agent-ready |
+| 13 | NPC Intelligence Foundation | [Sprint 13](../sprint-13/SPRINT_SPEC.md) | Implemented / Ready for review |
 | 14 | World Time & Background Simulation | [Sprint 14](../sprint-14/SPRINT_SPEC.md) | Planned / Agent-ready |
 | 15 | Image, Voice & Audio Pipeline | [Sprint 15](../sprint-15/SPRINT_SPEC.md) | Planned / Agent-ready |
 | 16 | Story Reader & Interaction UX | [Sprint 16](../sprint-16/SPRINT_SPEC.md) | Planned / Agent-ready |
