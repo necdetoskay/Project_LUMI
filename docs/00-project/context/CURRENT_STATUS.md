@@ -86,9 +86,32 @@ Evidence summary:
 
 ## In Progress Now
 
-- Sprint 11 — Prompt Registry and Context Builder (2026-08-03)
+- (none — awaiting sprint 12 direction)
 
 ## Recently Completed
+
+### Sprint 11 — Prompt Registry and Context Builder (2026-08-03)
+
+Sprint 11 is complete and PR #13 is open.
+
+- `@lumi/prompts` workspace package created with versioned prompt registry and typed template renderer.
+- `@lumi/context` workspace package created with deterministic context builder, source ports, safety precedence, and token budget.
+- Prompt registry: household-scoped keys, immutable published versions, explicit activation, activation history.
+- Template renderer: type validation (string/number/boolean/enum/json), required variable enforcement, default fallback, injection escape.
+- Context builder fixed priority: Safety → Parent Policy → Working Story → Emotional State → Long-Term Memory → Knowledge/World → Origin Package.
+- Deterministic `ContextManifest` with SHA-256 content hash and budget-overflow findings.
+- `@lumi/story` minor type fixes to resolve pre-existing choice rule/fixture type errors.
+
+Evidence summary:
+- **@lumi/prompts unit tests:** 44/44 passed
+- **@lumi/prompts integration tests:** guard PASS (no local PostgreSQL)
+- **@lumi/context unit tests:** 19/19 passed
+- **@lumi/story unit tests:** 40/40 passed
+- **@lumi/story lint/typecheck:** PASS
+- **@lumi/web tests:** 85/85 passed
+- **@lumi/web lint/typecheck:** PASS
+- **pnpm build:** PASS
+- **S11 integration tests:** skipped due to no local PostgreSQL
 
 ### Sprint 10 — Choice and Session Consequence (2026-08-03)
 
