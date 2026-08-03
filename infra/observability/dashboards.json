@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "service": "lumi-web",
+  "dashboards": [
+    {
+      "name": "LUMI API Overview",
+      "panels": [
+        {
+          "title": "Request Rate",
+          "metric": "http.requests.total",
+          "aggregation": "rate",
+          "window": "5m",
+          "type": "timeseries"
+        },
+        {
+          "title": "Error Rate",
+          "metric": "http.requests.errors",
+          "aggregation": "rate",
+          "window": "5m",
+          "type": "timeseries"
+        },
+        {
+          "title": "P95 Latency",
+          "metric": "http.request.duration",
+          "aggregation": "p95",
+          "window": "5m",
+          "type": "timeseries",
+          "unit": "ms"
+        },
+        {
+          "title": "Readiness Status",
+          "metric": "readiness.status",
+          "aggregation": "last",
+          "window": "1m",
+          "type": "stat"
+        },
+        {
+          "title": "Active Sessions",
+          "metric": "auth.active_sessions",
+          "aggregation": "last",
+          "window": "5m",
+          "type": "stat"
+        }
+      ]
+    }
+  ]
+}
