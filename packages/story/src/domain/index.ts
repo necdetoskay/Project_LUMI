@@ -2,6 +2,7 @@ export * from "./errors";
 export * from "./validation";
 export * from "./story-types";
 export * from "./events";
+export * from "./choice";
 
 export { StoryDefinition } from "./story-definition";
 export type { CreateStoryDefinitionInput } from "./story-definition";
