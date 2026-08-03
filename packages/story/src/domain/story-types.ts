@@ -101,6 +101,7 @@ export const STORY_EVENT_TYPES = [
   "STORY_SESSION_COMPLETED",
   "STORY_SESSION_ABANDONED",
   "STORY_CHECKPOINT_CREATED",
+  "STORY_CHOICE_COMMITTED",
 ] as const;
 export type StoryEventType = (typeof STORY_EVENT_TYPES)[number];
 

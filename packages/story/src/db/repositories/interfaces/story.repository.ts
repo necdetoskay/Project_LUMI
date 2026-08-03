@@ -7,6 +7,16 @@ import type {
   NewStorySceneRecord,
   StorySceneTransitionRecord,
   NewStorySceneTransitionRecord,
+  StoryChoicePointRecord,
+  NewStoryChoicePointRecord,
+  StoryChoiceOptionRecord,
+  NewStoryChoiceOptionRecord,
+  StoryCommittedChoiceRecord,
+  NewStoryCommittedChoiceRecord,
+  StoryChoiceConsequenceRecord,
+  NewStoryChoiceConsequenceRecord,
+  StoryOutcomeCandidateRecord,
+  NewStoryOutcomeCandidateRecord,
   StorySessionRecord,
   NewStorySessionRecord,
   StorySessionCharacterRecord,
@@ -45,6 +55,32 @@ export interface StoryRepository {
 
   createTransition(tx: { insert: QueryExecutor["insert"] }, data: NewStorySceneTransitionRecord): Promise<StorySceneTransitionRecord>;
   findTransitionsByVersion(tx: { select: QueryExecutor["select"] }, storyVersionId: string): Promise<StorySceneTransitionRecord[]>;
+
+  createChoicePoint(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoicePointRecord): Promise<StoryChoicePointRecord>;
+  findChoicePointById(tx: { select: QueryExecutor["select"] }, id: string): Promise<StoryChoicePointRecord | undefined>;
+  findChoicePointsByScene(tx: { select: QueryExecutor["select"] }, sceneId: string): Promise<StoryChoicePointRecord[]>;
+  findChoicePointsByVersion(tx: { select: QueryExecutor["select"] }, storyVersionId: string): Promise<StoryChoicePointRecord[]>;
+
+  createChoiceOption(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoiceOptionRecord): Promise<StoryChoiceOptionRecord>;
+  findChoiceOptionById(tx: { select: QueryExecutor["select"] }, id: string): Promise<StoryChoiceOptionRecord | undefined>;
+  findChoiceOptionsByPoint(tx: { select: QueryExecutor["select"] }, choicePointId: string): Promise<StoryChoiceOptionRecord[]>;
+
+  createCommittedChoice(tx: { insert: QueryExecutor["insert"] }, data: NewStoryCommittedChoiceRecord): Promise<StoryCommittedChoiceRecord>;
+  findCommittedChoiceByPoint(
+    tx: { select: QueryExecutor["select"] },
+    storySessionId: string,
+    choicePointId: string,
+  ): Promise<StoryCommittedChoiceRecord | undefined>;
+  findCommittedChoicesBySession(tx: { select: QueryExecutor["select"] }, storySessionId: string): Promise<StoryCommittedChoiceRecord[]>;
+
+  createChoiceConsequence(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoiceConsequenceRecord): Promise<StoryChoiceConsequenceRecord>;
+  findConsequencesBySession(tx: { select: QueryExecutor["select"] }, storySessionId: string): Promise<StoryChoiceConsequenceRecord[]>;
+
+  createOutcomeCandidate(tx: { insert: QueryExecutor["insert"] }, data: NewStoryOutcomeCandidateRecord): Promise<StoryOutcomeCandidateRecord>;
+  findLatestOutcomeCandidateBySession(
+    tx: { select: QueryExecutor["select"] },
+    storySessionId: string,
+  ): Promise<StoryOutcomeCandidateRecord | undefined>;
 
   createSession(tx: { insert: QueryExecutor["insert"] }, data: NewStorySessionRecord): Promise<StorySessionRecord>;
   findSessionById(tx: { select: QueryExecutor["select"] }, id: string): Promise<StorySessionRecord | undefined>;

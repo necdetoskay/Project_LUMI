@@ -8,6 +8,11 @@ import {
   storyVersions,
   storyScenes,
   storySceneTransitions,
+  storyChoicePoints,
+  storyChoiceOptions,
+  storyCommittedChoices,
+  storyChoiceConsequences,
+  storyOutcomeCandidates,
   storySessions,
   storySessionCharacters,
   storySessionSceneVisits,
@@ -20,6 +25,11 @@ import type {
   NewStoryVersionRecord,
   NewStorySceneRecord,
   NewStorySceneTransitionRecord,
+  NewStoryChoicePointRecord,
+  NewStoryChoiceOptionRecord,
+  NewStoryCommittedChoiceRecord,
+  NewStoryChoiceConsequenceRecord,
+  NewStoryOutcomeCandidateRecord,
   NewStorySessionRecord,
   NewStorySessionCharacterRecord,
   NewStorySessionSceneVisitRecord,
@@ -118,6 +128,89 @@ export class DrizzleStoryRepository implements StoryRepository {
   async findTransitionsByVersion(tx: { select: QueryExecutor["select"] }, storyVersionId: string) {
     return tx.select().from(storySceneTransitions)
       .where(eq(storySceneTransitions.storyVersionId, storyVersionId));
+  }
+
+  async createChoicePoint(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoicePointRecord) {
+    const [row] = await tx.insert(storyChoicePoints).values(data).returning();
+    return row!;
+  }
+
+  async findChoicePointById(tx: { select: QueryExecutor["select"] }, id: string) {
+    const [row] = await tx.select().from(storyChoicePoints).where(eq(storyChoicePoints.id, id)).limit(1);
+    return row;
+  }
+
+  async findChoicePointsByScene(tx: { select: QueryExecutor["select"] }, sceneId: string) {
+    return tx.select().from(storyChoicePoints)
+      .where(eq(storyChoicePoints.sceneId, sceneId))
+      .orderBy(storyChoicePoints.sequenceNumber);
+  }
+
+  async findChoicePointsByVersion(tx: { select: QueryExecutor["select"] }, storyVersionId: string) {
+    return tx.select().from(storyChoicePoints)
+      .where(eq(storyChoicePoints.storyVersionId, storyVersionId))
+      .orderBy(storyChoicePoints.sequenceNumber);
+  }
+
+  async createChoiceOption(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoiceOptionRecord) {
+    const [row] = await tx.insert(storyChoiceOptions).values(data).returning();
+    return row!;
+  }
+
+  async findChoiceOptionById(tx: { select: QueryExecutor["select"] }, id: string) {
+    const [row] = await tx.select().from(storyChoiceOptions).where(eq(storyChoiceOptions.id, id)).limit(1);
+    return row;
+  }
+
+  async findChoiceOptionsByPoint(tx: { select: QueryExecutor["select"] }, choicePointId: string) {
+    return tx.select().from(storyChoiceOptions)
+      .where(eq(storyChoiceOptions.choicePointId, choicePointId))
+      .orderBy(storyChoiceOptions.sequenceNumber);
+  }
+
+  async createCommittedChoice(tx: { insert: QueryExecutor["insert"] }, data: NewStoryCommittedChoiceRecord) {
+    const [row] = await tx.insert(storyCommittedChoices).values(data).returning();
+    return row!;
+  }
+
+  async findCommittedChoiceByPoint(tx: { select: QueryExecutor["select"] }, storySessionId: string, choicePointId: string) {
+    const [row] = await tx.select().from(storyCommittedChoices)
+      .where(and(
+        eq(storyCommittedChoices.storySessionId, storySessionId),
+        eq(storyCommittedChoices.choicePointId, choicePointId),
+      ))
+      .limit(1);
+    return row;
+  }
+
+  async findCommittedChoicesBySession(tx: { select: QueryExecutor["select"] }, storySessionId: string) {
+    return tx.select().from(storyCommittedChoices)
+      .where(eq(storyCommittedChoices.storySessionId, storySessionId))
+      .orderBy(storyCommittedChoices.committedAt);
+  }
+
+  async createChoiceConsequence(tx: { insert: QueryExecutor["insert"] }, data: NewStoryChoiceConsequenceRecord) {
+    const [row] = await tx.insert(storyChoiceConsequences).values(data).returning();
+    return row!;
+  }
+
+  async findConsequencesBySession(tx: { select: QueryExecutor["select"] }, storySessionId: string) {
+    return tx.select().from(storyChoiceConsequences)
+      .where(eq(storyChoiceConsequences.storySessionId, storySessionId))
+      .orderBy(storyChoiceConsequences.sequenceNumber);
+  }
+
+  async createOutcomeCandidate(tx: { insert: QueryExecutor["insert"] }, data: NewStoryOutcomeCandidateRecord) {
+    const [row] = await tx.insert(storyOutcomeCandidates).values(data).returning();
+    return row!;
+  }
+
+  async findLatestOutcomeCandidateBySession(tx: { select: QueryExecutor["select"] }, storySessionId: string) {
+    const [row] = await tx.select().from(storyOutcomeCandidates)
+      .where(eq(storyOutcomeCandidates.storySessionId, storySessionId))
+      .orderBy(desc(storyOutcomeCandidates.createdAt))
+      .limit(1);
+    return row;
   }
 
   async createSession(tx: { insert: QueryExecutor["insert"] }, data: NewStorySessionRecord) {
