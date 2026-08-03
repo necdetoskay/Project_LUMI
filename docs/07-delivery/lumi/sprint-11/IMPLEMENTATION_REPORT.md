@@ -4,6 +4,7 @@
 **Sprint Title:** Prompt Registry and Context Builder  
 **Release Date:** 2026-08-03  
 **Branch:** `agent/sprint-11-prompt-registry-context-builder`  
+**Pull Request:** https://github.com/necdetoskay/Project_LUMI/pull/13  
 **Status:** Complete
 
 ---
