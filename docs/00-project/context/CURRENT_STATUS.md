@@ -2,9 +2,9 @@
 
 **Lifecycle:** Execution
 
-**Active branch:** `agent/sprint-11-prompt-registry-context-builder`
+**Active branch:** `agent/sprint-12-story-generation-pipeline`
 
-**Active delivery:** Sprint 11 — Prompt Registry and Context Builder
+**Active delivery:** Sprint 12 — Story Generation Pipeline
 
 **Last updated:** 2026-08-03
 
@@ -86,9 +86,27 @@ Evidence summary:
 
 ## In Progress Now
 
-- (none — awaiting sprint 12 direction)
+- Sprint 12 is implemented and ready for review on `agent/sprint-12-story-generation-pipeline`; awaiting explicit merge approval (see Recently Completed above).
 
 ## Recently Completed
+
+### Sprint 12 — Story Generation Pipeline (2026-08-03)
+
+Sprint 12 is implemented on `agent/sprint-12-story-generation-pipeline` and ready for review. Merge requires explicit user approval.
+
+- `@lumi/ai` workspace package created: generation contracts/ports, provider adapters and model routing, pipeline orchestrator, validation/repair pipeline, usage/cost records, eval suite, and First-Run Auto Origin Generation contract.
+- 7 typed generation errors (`ProviderUnavailableError`, `ProviderTimeoutError`, `SchemaValidationError`, `SafetyBlockedError`, `CanonViolationError`, `ContinuityViolationError`, `RepairLimitReachedError`).
+- `OpenRouterProvider` (JSON-mode, timeout/abort mapping), `TestProvider` (scripted hermetic responses), `ModelRouter` (preferred-only vs fallback-allowed).
+- `GenerationOrchestrator`: compose -> call -> parse -> validate -> bounded repair -> record usage -> return; deterministic candidate seeds + SHA-256 output hash (no duplicate progression on retry).
+- Validation check codes: `SCHEMA-001`, `SAFETY-001/002`, `CANON-001/002`, `CONTINUITY-001/002`; safety is a hard gate.
+- Usage/cost: forward-only `ai` schema migration (`0001_ai_usage_schema.sql`), `DrizzleUsageRepository`/recorder; child story text never written to DB.
+- Eval: `src/evals/quality-eval.ts` (weighted score, hard safety gate, motif/generic-phrase analyzer), fixtures, `evals/RUNBOOK.md`, and `docs/03-domain-design/simulation/first-run-auto-origin-contract.md`.
+- Web/API route swap remains out of scope per user approval; `packages/profiles` OpenRouter path stays intact.
+
+Evidence summary:
+- **@lumi/ai unit tests:** 14 files / 85 tests PASS
+- **@lumi/ai lint/typecheck:** PASS
+- **@lumi/ai integration (usage repo):** env-guarded, skipped without PostgreSQL
 
 ### Sprint 11 — Prompt Registry and Context Builder (2026-08-03)
 
