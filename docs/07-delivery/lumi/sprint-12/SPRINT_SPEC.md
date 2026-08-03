@@ -1,8 +1,8 @@
 # Sprint 12 — Story Generation Pipeline
 
 **Sprint ID:** LUMI-S12
-**Version:** 1.0.0
-**Status:** Planned / Agent-ready
+**Version:** 1.1.0
+**Status:** Implemented / Ready for review
 **Depends On:** Sprint 10 and Sprint 11 exit gates
 **Standard:** [Agent-Ready Sprint Standard](../sprint-master-plan/AGENT_READY_SPRINT_STANDARD.md)
 
@@ -34,14 +34,14 @@ provider-neutral AI generation pipeline'ı kurmak.
 
 ## Tasks
 
-| Task ID | Deliverable | Target Boundary | Required Tests |
-| --- | --- | --- | --- |
-| S12-T01 | Generation contracts/ports | `packages/ai`, story/contracts | unit |
-| S12-T02 | Provider adapters/router | ai/infrastructure | contract + fallback |
-| S12-T03 | Story pipeline orchestrator | ai/application | integration |
-| S12-T04 | Validation/repair pipeline | ai/validation | safety + regression |
-| S12-T05 | Usage/cost records | database/ai-usage | integration |
-| S12-T06 | Eval dataset/runbook | tests/evals, `docs/` | eval gate |
+| Task ID | Deliverable | Target Boundary | Required Tests | Status |
+| --- | --- | --- | --- | --- |
+| S12-T01 | Generation contracts/ports | `packages/ai`, story/contracts | unit | [tamamlandı] |
+| S12-T02 | Provider adapters/router | ai/infrastructure | contract + fallback | [tamamlandı] |
+| S12-T03 | Story pipeline orchestrator | ai/application | integration | [tamamlandı] |
+| S12-T04 | Validation/repair pipeline | ai/validation | safety + regression | [tamamlandı] |
+| S12-T05 | Usage/cost records | database/ai-usage | integration | [tamamlandı] |
+| S12-T06 | Eval dataset/runbook | tests/evals, `docs/` | eval gate | [tamamlandı] |
 
 ## Requirements
 
