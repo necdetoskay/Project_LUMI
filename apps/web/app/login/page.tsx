@@ -11,11 +11,11 @@ function getErrorMessage(error: string | undefined) {
     case "invalid_credentials":
       return "E-posta veya parola eslesmedi.";
     case "invalid_login_input":
-      return "Lutfen e-posta ve parolayi yeniden kontrol et.";
+      return "Lütfen e-posta ve parolayı yeniden kontrol et.";
     case "rate_limited":
-      return "Cok fazla deneme yapildi. Biraz sonra tekrar dene.";
+      return "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.";
     case "login_failed":
-      return "Giris su anda tamamlanamadi. Tekrar dene.";
+      return "Giriş şu anda tamamlanamadı. Tekrar dene.";
     default:
       return null;
   }
@@ -24,9 +24,9 @@ function getErrorMessage(error: string | undefined) {
 function getSuccessMessage(success: string | undefined) {
   switch (success) {
     case "signed_out":
-      return "Cikis yaptin. Tekrar giris yapabilirsin.";
+      return "Çıkış yaptın. Tekrar giriş yapabilirsin.";
     case "password_reset":
-      return "Parolan yenilendi. Yeni sifrenle giris yap.";
+      return "Parolan yenilendi. Yeni şifrenle giriş yap.";
     default:
       return null;
   }

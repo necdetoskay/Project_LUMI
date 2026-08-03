@@ -4,8 +4,9 @@ import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
 import { getPolicy, updatePolicy } from "@lumi/profiles/application";
 import type { UpdatePolicyInput } from "@lumi/profiles/application";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function GET(request: Request) {
+export const GET = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const { searchParams } = new URL(request.url);
     const householdId = searchParams.get("householdId");
@@ -37,9 +38,9 @@ export async function GET(request: Request) {
       );
     }
   });
-}
+});
 
-export async function PUT(request: Request) {
+export const PUT = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const body = await readRequestBody(request);
     const parsed = body as Record<string, unknown>;
@@ -92,4 +93,4 @@ export async function PUT(request: Request) {
       );
     }
   });
-}
+});

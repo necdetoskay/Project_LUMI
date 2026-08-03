@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
 import { createHousehold } from "@lumi/profiles/application";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const body = await readRequestBody(request);
 
@@ -45,4 +46,4 @@ export async function POST(request: Request) {
       );
     }
   });
-}
+});

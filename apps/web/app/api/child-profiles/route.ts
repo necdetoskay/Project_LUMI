@@ -6,8 +6,9 @@ import {
   createChildProfile,
   listChildProfiles,
 } from "@lumi/profiles/application";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function GET(request: Request) {
+export const GET = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const { searchParams } = new URL(request.url);
     const householdId = searchParams.get("householdId");
@@ -33,9 +34,9 @@ export async function GET(request: Request) {
       );
     }
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const body = await readRequestBody(request);
     const parsed = body as Record<string, unknown>;
@@ -81,4 +82,4 @@ export async function POST(request: Request) {
       );
     }
   });
-}
+});

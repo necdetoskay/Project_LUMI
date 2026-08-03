@@ -20,6 +20,12 @@ function uniqueSlug(label: string): string {
 }
 
 test.describe("theme visual smoke", () => {
+  test("static favicon is served", async ({ request }) => {
+    const response = await request.get("/favicon.ico");
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("image/x-icon");
+  });
   test("landing page CTA: bg-primary text-on-primary", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
@@ -66,7 +72,59 @@ test.describe("theme visual smoke", () => {
     expect(color).toBe(ON_PRIMARY_RGB);
   });
 
-  test("profiles page: 'Karakter Baslat' CTA bg-primary text-on-primary", async ({ page }) => {
+  test("profiles page: Turkish copy regression", async ({ page }) => {
+    const identity = createTestIdentity("profile-copy");
+    const request = page.request;
+
+    const registerRes = await request.post("/api/auth/register", {
+      data: {
+        displayName: "E2E Theme",
+        email: identity.email,
+        password: identity.password,
+        confirmPassword: identity.password,
+      },
+    });
+    expect(registerRes.status()).toBe(201);
+
+    const loginRes = await request.post("/api/auth/login", {
+      data: { email: identity.email, password: identity.password, rememberMe: true },
+    });
+    expect(loginRes.status()).toBe(200);
+
+    const storage = await request.storageState();
+    await page.context().addCookies(storage.cookies);
+
+    const slug = uniqueSlug("hh");
+    const hhRes = await request.post("/api/households", {
+      data: { name: "Theme Test Family", slug },
+    });
+    expect(hhRes.status()).toBe(201);
+
+    const cpRes = await request.post("/api/child-profiles", {
+      data: { householdId: (await hhRes.json()).household.id, displayName: "Theme Child", ageBand: "6-8" },
+    });
+    expect(cpRes.status()).toBe(201);
+
+    await page.goto("/app/profiles");
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: "Çocuk Profilleri" })).toBeVisible({ timeout: 15000 });
+  });
+
+  test("forgot-password page: Turkish copy", async ({ page }) => {
+    await page.goto("/forgot-password");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByRole("heading", { name: "Şifremi unuttum" })).toBeVisible();
+  });
+
+  test("reset-password page: Turkish copy", async ({ page }) => {
+    await page.goto("/reset-password?token=dummy");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByRole("heading", { name: "Parolayı yenile" })).toBeVisible();
+  });
+
+  test("profiles page: 'Profili Aç' CTA bg-primary text-on-primary", async ({ page }) => {
     const identity = createTestIdentity("profile-cta");
     const request = page.request;
 
@@ -88,9 +146,8 @@ test.describe("theme visual smoke", () => {
     const storage = await request.storageState();
     await page.context().addCookies(storage.cookies);
 
-    const slug = uniqueSlug("hh");
     const hhRes = await request.post("/api/households", {
-      data: { name: "Theme Test Family", slug },
+      data: { name: "Theme Test Family", slug: uniqueSlug("hh") },
     });
     expect(hhRes.status()).toBe(201);
     const householdId = (await hhRes.json()).household.id;
@@ -103,20 +160,16 @@ test.describe("theme visual smoke", () => {
     await page.goto("/app/profiles");
     await page.waitForLoadState("networkidle");
 
-    const cta = page.locator("a").filter({ hasText: "Karakter Baslat" });
+    const cta = page.getByRole("link", { name: "Profili Aç" });
     await expect(cta).toBeVisible({ timeout: 15000 });
-
-    const bg = await cta.evaluate((el) => getComputedStyle(el).backgroundColor);
-    const color = await cta.evaluate((el) => getComputedStyle(el).color);
-    expect(bg).toBe(PRIMARY_RGB);
-    expect(color).toBe(ON_PRIMARY_RGB);
+    expect(await cta.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(PRIMARY_RGB);
+    expect(await cta.evaluate((el) => getComputedStyle(el).color)).toBe(ON_PRIMARY_RGB);
 
     await cta.hover();
-    const hoverBg = await cta.evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(hoverBg).toBe("rgb(76, 41, 207)");
+    await expect.poll(() => cta.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(76, 41, 207)");
   });
 
-  test("character onboarding: unselected cards white, selected primary-fixed, text on-surface", async ({ page }) => {
+  test("character onboarding: AI archetype card theme states", async ({ page }) => {
     const identity = createTestIdentity("char-theme");
     const request = page.request;
 
@@ -138,9 +191,8 @@ test.describe("theme visual smoke", () => {
     const storage = await request.storageState();
     await page.context().addCookies(storage.cookies);
 
-    const slug = uniqueSlug("hh");
     const hhRes = await request.post("/api/households", {
-      data: { name: "Theme Test Family", slug },
+      data: { name: "Theme Test Family", slug: uniqueSlug("hh") },
     });
     expect(hhRes.status()).toBe(201);
     const householdId = (await hhRes.json()).household.id;
@@ -151,28 +203,30 @@ test.describe("theme visual smoke", () => {
     expect(cpRes.status()).toBe(201);
     const profileId = (await cpRes.json()).profile.id;
 
+    const settingsRes = await request.put("/api/settings/llm", {
+      data: { action: "upsert-key", householdId, apiKey: "sk-or-v1-theme-test-key" },
+    });
+    expect(settingsRes.status()).toBe(200);
+
     await page.goto(`/app/character-onboarding?childProfileId=${profileId}`);
-    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: "Karakter Başlangıç Akışı" })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "Karakter arketipi seç" })).toBeVisible();
 
-    const section = page.locator("h2").filter({ hasText: "Karakter taini" }).locator("..").first();
-    const btns = section.locator("button");
-    await expect(btns).toHaveCount(5, { timeout: 15000 });
+    const cards = page.getByTestId("archetype-card");
+    await expect(cards).toHaveCount(5, { timeout: 20000 });
+    const firstCard = cards.nth(0);
+    const secondCard = cards.nth(1);
 
-    const firstBtn = btns.nth(0);
-    const secondBtn = btns.nth(1);
+    expect(await firstCard.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+    expect(await secondCard.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
 
-    const selectedBg = await firstBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
-    const unselectedBg = await secondBtn.evaluate((el) => getComputedStyle(el).backgroundColor);
-
-    expect(unselectedBg).toBe("rgb(255, 255, 255)");
-
+    await firstCard.click();
+    const selectedBg = await firstCard.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(selectedBg).not.toBe("rgb(255, 255, 255)");
     expect(selectedBg).not.toBe(PRIMARY_RGB);
-    expect(unselectedBg).not.toBe(PRIMARY_RGB);
+    expect(await secondCard.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
 
-    const labelColor = await firstBtn.locator("p").first().evaluate((el) => getComputedStyle(el).color);
-    expect(labelColor).toBe(ON_SURFACE_RGB);
-
-    const descColor = await firstBtn.locator("p").nth(1).evaluate((el) => getComputedStyle(el).color);
-    expect(descColor).toBe("rgb(72, 69, 86)");
+    expect(await firstCard.locator("p").first().evaluate((el) => getComputedStyle(el).color)).toBe(ON_SURFACE_RGB);
+    expect(await firstCard.locator("p").nth(1).evaluate((el) => getComputedStyle(el).color)).toBe("rgb(72, 69, 86)");
   });
 });

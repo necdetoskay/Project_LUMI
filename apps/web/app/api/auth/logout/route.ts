@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { clearParentSessionCookie, getParentSessionCookie } from "@/lib/auth/http";
 import { revokeParentSession } from "@/lib/auth/service";
 import { isFormRequest, redirectWithQuery } from "@/lib/http/response";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   await revokeParentSession(await getParentSessionCookie());
 
   const response = isFormRequest(request)
@@ -13,4 +14,4 @@ export async function POST(request: Request) {
 
   clearParentSessionCookie(response);
   return response;
-}
+});

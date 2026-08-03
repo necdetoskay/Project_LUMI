@@ -4,8 +4,9 @@ import { getClientIp, logAuthAuditEvent } from "@/lib/auth/audit";
 import { getParentSessionCookie, setParentSessionCookie } from "@/lib/auth/http";
 import { checkAuthRateLimit } from "@/lib/auth/rate-limit";
 import { refreshParentSession } from "@/lib/auth/service";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   const clientIp = getClientIp(request);
   const rateLimit = checkAuthRateLimit("refresh", clientIp);
 
@@ -67,4 +68,4 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ error: "REFRESH_FAILED" }, { status: 500 });
   }
-}
+});

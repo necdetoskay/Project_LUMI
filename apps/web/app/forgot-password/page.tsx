@@ -9,11 +9,11 @@ function getValue(value: string | string[] | undefined) {
 function getErrorMessage(error: string | undefined) {
   switch (error) {
     case "invalid_email":
-      return "Gecerli bir e-posta girmen gerekiyor.";
+      return "Geçerli bir e-posta girmen gerekiyor.";
     case "rate_limited":
-      return "Cok fazla deneme yapildi. Biraz sonra tekrar dene.";
+      return "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.";
     case "request_failed":
-      return "Sifirleme istegi su anda tamamlanamadi.";
+      return "Sıfırlama isteği şu anda tamamlanamadı.";
     default:
       return null;
   }
@@ -34,18 +34,18 @@ export default async function ForgotPasswordPage({
     <section className="container auth-page">
       <div>
         <p className="eyebrow">PROJECT LUMI</p>
-        <h1>Sifremi unuttum</h1>
+        <h1>Şifremi unuttum</h1>
         <p className="lead">
-          Hesabina bagli e-posta adresini gir. Parola yenileme akisini baslatalim.
+          Hesabına bağlı e-posta adresini gir. Parola yenileme akışını başlatalım.
         </p>
       </div>
       {error ? <p className="auth-message auth-message-error">{error}</p> : null}
       {success ? (
         <div className="auth-message auth-message-success">
-          <p>Baglantin hazir. E-posta altyapisi baglanana kadar bu ortamda dev onizleme kullaniyoruz.</p>
+          <p>Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda dev önizleme kullanıyoruz.</p>
           {previewToken ? (
             <p>
-              Dev onizleme: <Link href={`/reset-password?token=${encodeURIComponent(previewToken)}`}>parolayi yenile</Link>
+              Dev önizleme: <Link href={`/reset-password?token=${encodeURIComponent(previewToken)}`}>parolayı yenile</Link>
             </p>
           ) : null}
         </div>
@@ -55,10 +55,10 @@ export default async function ForgotPasswordPage({
           E-posta
           <input name="email" type="email" required autoComplete="email" defaultValue={email} />
         </label>
-        <button type="submit">Yenileme baglantisi hazirla</button>
+        <button type="submit">Yenileme bağlantısı hazırla</button>
       </form>
       <div className="auth-links">
-        <Link href="/login">Giris ekranina don</Link>
+        <Link href="/login">Giriş ekranına dön</Link>
       </div>
     </section>
   );

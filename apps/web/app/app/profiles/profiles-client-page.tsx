@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Profile = {
   id: string;
@@ -13,10 +13,8 @@ type Profile = {
 
 export default function ProfilesClientPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/onboarding")
@@ -29,7 +27,6 @@ export default function ProfilesClientPage() {
           return;
         }
 
-        setHouseholdId(s.householdId);
         return fetch(`/api/child-profiles?householdId=${s.householdId}`);
       })
       .then((r) => r?.json())
@@ -44,34 +41,6 @@ export default function ProfilesClientPage() {
         setLoading(false);
       });
   }, []);
-
-  const archiveProfile = useCallback(async (profileId: string) => {
-    if (!householdId) {
-      setError("Household not available");
-      return;
-    }
-
-    setArchivingId(profileId);
-    try {
-      const res = await fetch(`/api/child-profiles/${profileId}/archive`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ householdId }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.message ?? "Failed to archive profile");
-        return;
-      }
-
-      setProfiles((current) => current.filter((profile) => profile.id !== profileId));
-    } catch {
-      setError("Failed to archive profile");
-    } finally {
-      setArchivingId(null);
-    }
-  }, [householdId]);
 
   if (loading) return <LoadingDisplay />;
   if (error) return <ErrorDisplay message={error} />;
@@ -88,10 +57,10 @@ export default function ProfilesClientPage() {
             <span className="text-primary">Profiller</span>
           </nav>
           <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
-            Cocuk Profilleri
+            Çocuk Profilleri
           </h1>
           <p className="mt-3 max-w-[42rem] text-base leading-7 text-on-surface-variant md:text-lg">
-            Aileniz icin olusturulan profilleri tek yerden gorun, duzenleyin ve arsivleyin.
+            Aileniz için oluşturulan profilleri görüntüleyin ve yönetin.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -113,10 +82,10 @@ export default function ProfilesClientPage() {
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
             <span className="material-symbols-outlined text-[36px]">person_add</span>
           </div>
-          <h2 className="mb-2 text-2xl font-bold text-on-surface">Henuz profil eklenmemis</h2>
+          <h2 className="mb-2 text-2xl font-bold text-on-surface">Henüz profil eklenmemiş</h2>
           <p className="mb-8 max-w-[34rem] text-base leading-7 text-on-surface-variant">
-            Ilk profili olusturdugunuzda yas grubu ve temel bilgilerle aile alaninizi kullanmaya
-            baslayabilirsiniz.
+            İlk profili oluşturduğunuzda yaş grubu ve temel bilgilerle aile alanınızı kullanmaya
+            başlayabilirsiniz.
           </p>
           <a
             className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
@@ -141,7 +110,7 @@ export default function ProfilesClientPage() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-on-surface">{p.displayName}</h3>
-                      <p className="mt-1 text-sm text-on-surface-variant">Yas grubu: {p.ageBand}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">Yaş grubu: {p.ageBand}</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
@@ -152,7 +121,7 @@ export default function ProfilesClientPage() {
                 <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-surface-container-low px-4 py-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                      Olusturma
+                      Oluşturma
                     </p>
                     <p className="mt-1 text-sm font-semibold text-on-surface">
                       {new Date(p.createdAt).toLocaleDateString("tr-TR")}
@@ -166,43 +135,24 @@ export default function ProfilesClientPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <a
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf]"
-                    href={`/app/character-onboarding?childProfileId=${encodeURIComponent(p.id)}`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                    Karakter Baslat
-                  </a>
-                  <div className="flex gap-3">
-                    <button
-                      className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
-                      type="button"
-                    >
-                      Duzenle
-                    </button>
-                    <button
-                      className="inline-flex items-center gap-2 rounded-lg border border-error-container bg-white px-4 py-3 text-sm font-semibold text-error transition-colors hover:bg-destructive-soft"
-                      type="button"
-                      onClick={() => archiveProfile(p.id)}
-                      disabled={archivingId === p.id}
-                    >
-                      <span className="material-symbols-outlined text-[18px]">archive</span>
-                      {archivingId === p.id ? "Arsivleniyor" : "Arsivle"}
-                    </button>
-                  </div>
-                </div>
+                <a
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf]"
+                  href={`/app/profiles/${encodeURIComponent(p.id)}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                  Profili Aç
+                </a>
               </article>
             ))}
           </div>
 
           <aside className="rounded-2xl border border-outline-variant bg-white p-6 xl:sticky xl:top-24 xl:h-fit">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-              Ozet
+              Özet
             </p>
             <h2 className="mt-2 text-2xl font-bold text-on-surface">{profiles.length} profil</h2>
             <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-              Bu alandan profilleri izleyebilir, duzenleyebilir ve aktif listeden arsivleyebilirsiniz.
+              Bu alandan profilleri görüntüleyebilir ve yönetebilirsiniz.
             </p>
 
             <div className="mt-6 space-y-3">
@@ -216,10 +166,10 @@ export default function ProfilesClientPage() {
               </div>
               <div className="rounded-xl bg-surface-container-low px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Sonraki adim
+                  Sonraki adım
                 </p>
                 <p className="mt-2 text-sm leading-6 text-on-surface">
-                  Yeni profil eklemek veya mevcut tercihleri guncellemek icin kurulum akisina donebilirsiniz.
+                  Profil detayına gitmek için bir profil kartında &quot;Profili Aç&quot;a tıklayın.
                 </p>
               </div>
             </div>
@@ -234,7 +184,7 @@ function LoadingDisplay() {
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 py-10">
       <div className="rounded-2xl border border-outline-variant bg-white px-6 py-8 text-on-surface-variant">
-        Yukleniyor...
+        Yükleniyor...
       </div>
     </section>
   );

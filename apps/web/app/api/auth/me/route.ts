@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
+import { observeHandlerNoArg } from "@/lib/observability/observed-api-route";
 
-export async function GET() {
+export const GET = observeHandlerNoArg(async () => {
   const parent = await getParentFromSessionToken(await getParentSessionCookie());
 
   if (!parent) {
@@ -11,4 +12,4 @@ export async function GET() {
   }
 
   return NextResponse.json({ parent });
-}
+}, "/api/auth/me");

@@ -5,8 +5,9 @@ import { getClientIp, logAuthAuditEvent } from "@/lib/auth/audit";
 import { resetParentPassword } from "@/lib/auth/service";
 import { readRequestBody } from "@/lib/http/request-body";
 import { isFormRequest, redirectWithQuery } from "@/lib/http/response";
+import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export async function POST(request: Request) {
+export const POST = observeHandler(async (request: Request) => {
   const body = await readRequestBody(request);
   const clientIp = getClientIp(request);
   const token = typeof body.token === "string" ? body.token : undefined;
@@ -87,4 +88,4 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "PASSWORD_RESET_FAILED" }, { status: 500 });
   }
-}
+});
