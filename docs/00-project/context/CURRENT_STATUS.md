@@ -2,9 +2,9 @@
 
 **Lifecycle:** Execution
 
-**Active branch:** `agent/sprint-10-choice-consequence`
+**Active branch:** `agent/sprint-11-prompt-registry-context-builder`
 
-**Active delivery:** Sprint 10 — Choice and Session Consequence
+**Active delivery:** Sprint 11 — Prompt Registry and Context Builder
 
 **Last updated:** 2026-08-03
 
@@ -86,9 +86,28 @@ Evidence summary:
 
 ## In Progress Now
 
-- Sprint 10 — Choice and Session Consequence (2026-08-03)
+- Sprint 11 — Prompt Registry and Context Builder (2026-08-03)
 
 ## Recently Completed
+
+### Sprint 10 — Choice and Session Consequence (2026-08-03)
+
+Sprint 10 is complete and PR #12 is open.
+
+- Choice domain: `ChoicePoint`, `ChoiceOption`, `CommittedChoice`, `ChoiceConsequence`, `OutcomeCandidate`.
+- Table-driven rule evaluator with `eq/neq/gt/gte/lt/lte/in/not_in/has_flag` operators and `all/any` match policies.
+- Additive migration `0002_story_choice_schema.sql` with 5 new tables and FKs.
+- 5 API routes under `/api/stories/sessions/[sessionId]/choices`.
+- Deterministic outcome candidate computation and session state projection.
+- 40 `@lumi/story` unit tests; `@lumi/web` and `@lumi/story` lint/typecheck/build PASS.
+
+Evidence summary:
+- **@lumi/story unit tests:** 40/40 passed
+- **@lumi/story lint/typecheck:** PASS
+- **@lumi/web tests:** 85/85 passed
+- **@lumi/web lint/typecheck:** PASS
+- **pnpm build:** PASS
+- **S10 integration tests:** skipped per user decision
 
 ### Sprint 09 — Story Definition and Session (2026-08-03)
 
