@@ -98,7 +98,6 @@ export class ParentPolicy {
   }
 
   update(input: Partial<Omit<ParentPolicyState, "householdId" | "createdAt" | "updatedAt">>): void {
-    const beforeState = { ...this.state };
 
     if (input.maxDailyStories !== undefined) {
       if (!Number.isInteger(input.maxDailyStories) || input.maxDailyStories < 0 || input.maxDailyStories > 50) {

@@ -1,6 +1,6 @@
 import type { Logger } from "@lumi/logger";
 import { SimulationJobRunner } from "./job-runner";
-import type { WorkerConfig, WorkerResult } from "./job-runner";
+import type { WorkerConfig, WorldDiscoveryPort, WorkerResult } from "./job-runner";
 export type { WorkerConfig, WorkerResult } from "./job-runner";
 import type { SimulationStorePort } from "@lumi/simulation/ports";
 import type { WorldSourcePort, NpcSourcePort, RelevanceSourcePort } from "@lumi/simulation/ports";
@@ -11,10 +11,11 @@ export class BackgroundWorker {
 
   constructor(
     private readonly config: WorkerConfig,
-     private readonly store: SimulationStorePort,
+    private readonly store: SimulationStorePort,
     private readonly worldSource: WorldSourcePort,
     private readonly npcSource: NpcSourcePort,
     private readonly relevanceSource: RelevanceSourcePort,
+    private readonly discoverySource: WorldDiscoveryPort,
     private readonly logger: Logger,
     private readonly seed: string,
   ) {}
@@ -47,6 +48,7 @@ export class BackgroundWorker {
         this.worldSource,
         this.npcSource,
         this.relevanceSource,
+        this.discoverySource,
         this.logger,
         this.seed,
       );

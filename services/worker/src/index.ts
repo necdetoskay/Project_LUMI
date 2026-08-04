@@ -2,6 +2,12 @@ import { createLogger } from "@lumi/logger";
 import { createDatabase } from "@lumi/simulation/db";
 import { DrizzleSimulationRepository, SimulationStoreAdapter } from "@lumi/simulation/db";
 import { BackgroundWorker, type WorkerConfig } from "./worker";
+import {
+  EmptyNpcSourceAdapter,
+  EmptyRelevanceSourceAdapter,
+  EnvWorldDiscoveryAdapter,
+  SimulationRepositoryWorldSourceAdapter,
+} from "./adapters";
 
 const workerConfig: WorkerConfig = {
   intervalMs: Number(process.env.WORKER_INTERVAL_MS ?? "60000"),
@@ -18,10 +24,10 @@ const store = new SimulationStoreAdapter(repo);
 const logger = createLogger({ level: "info" });
 const seed = process.env.SIMULATION_SEED ?? "lumi-sim-v1";
 
-// Injected adapters (to be provided by the host application):
-const worldSource = undefined as never;
-const npcSource = undefined as never;
-const relevanceSource = undefined as never;
+const worldSource = new SimulationRepositoryWorldSourceAdapter(repo, logger);
+const npcSource = new EmptyNpcSourceAdapter();
+const relevanceSource = new EmptyRelevanceSourceAdapter();
+const discoverySource = new EnvWorldDiscoveryAdapter(process.env.WORKER_WORLD_CANDIDATES_JSON, logger);
 
 const worker = new BackgroundWorker(
   workerConfig,
@@ -29,6 +35,7 @@ const worker = new BackgroundWorker(
   worldSource,
   npcSource,
   relevanceSource,
+  discoverySource,
   logger,
   seed,
 );

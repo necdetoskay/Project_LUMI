@@ -2,11 +2,11 @@
 
 **Lifecycle:** Execution
 
-**Active branch:** `agent/sprint-12-story-generation-pipeline`
+**Active branch:** `agent/sprint-15-image-voice-audio-pipelines`
 
-**Active delivery:** Sprint 12 — Story Generation Pipeline
+**Active delivery:** Pre-Sprint 16 readiness hardening (Sprints 01-15)
 
-**Last updated:** 2026-08-03
+**Last updated:** 2026-08-04
 
 ## Completed
 
@@ -86,9 +86,45 @@ Evidence summary:
 
 ## In Progress Now
 
-- Sprint 12 is implemented and ready for review on `agent/sprint-12-story-generation-pipeline`; awaiting explicit merge approval (see Recently Completed above).
+- Sprint 15 is implemented on `agent/sprint-15-image-voice-audio-pipelines` and ready for review (see Recently Completed below). Merge requires explicit user approval.
 
 ## Recently Completed
+
+### Sprint 14 — Simulation Engine Hardening Closure (2026-08-04)
+
+Sprint 14 is now closed for the pre-Sprint 16 readiness gate. The previously tracked open caps were addressed on `agent/sprint-15-image-voice-audio-pipelines` as hardening work before Sprint 16 begins.
+
+- `BudgetPlanner` test moved from repo-root `tests/application/` into `packages/simulation/tests/application/`, so it is part of `@lumi/simulation test`.
+- `BudgetPlanner` relevance threshold tightened so low-relevance NPCs stay outside the relevance bubble.
+- `services/worker` now has an explicit `WorldDiscoveryPort`; `SimulationJobRunner` consumes discovered candidates with `batchSize` and `maxConcurrent`.
+- `worker/src/index.ts` no longer wires `undefined as never`; composition now uses concrete discovery/world/NPC/relevance adapters.
+- Worker tests cover env discovery parsing, invalid discovery JSON, empty runs, freeze threshold, concurrency limit, and overlapping tick skip.
+
+Evidence summary:
+- **@lumi/simulation tests:** 4 files / 36 tests PASS
+- **@lumi/worker tests:** 1 file / 6 tests PASS
+- **@lumi/simulation lint/typecheck:** PASS
+- **@lumi/worker lint/typecheck:** PASS
+
+### Sprint 15 — Image, Voice and Audio Pipelines (2026-08-04)
+
+Sprint 15 is implemented on `agent/sprint-15-image-voice-audio-pipelines` and ready for review. Merge requires explicit user approval.
+
+- `@lumi/media` workspace package created: provider-neutral image/TTS/audio generation pipelines, cost/policy gates, fingerprint caching, safety/consistency validation, asset lifecycle (metadata-only persistence).
+- Domain: `MediaKind`/asset types, size/duration/model policies, `StoredAsset`/`AssetScope`/variant/generation meta, key-sorted sha256 fingerprint, typed jobs (`ImageJobRequest`, `TtsJobRequest`, `AudioJobRequest`).
+- Ports: provider, object storage, repository, fingerprint cache, safety/consistency validator, policy/cost estimator.
+- Application: `ImagePipeline`, `AudioPipeline` (TTS + ambience/SFX), `MediaCostEstimator`, `MediaPolicyEnforcer`. Pipeline order: cost estimate → policy gate → prompt safety (short-circuit before any provider call) → generate → payload safety → consistency → storage → metadata → cache.
+- Infrastructure: `FakeMediaProvider` (deterministic bytes embedding identity reference + trait hashes), in-memory storage/cache/repository, `StaticSafetyValidator`/`StaticConsistencyValidator`.
+- DB: forward-only `media` schema migration (`0001_media_schema.sql`) — `media_assets` (metadata + object-storage key only, **no binary payloads**), variants, generations, references, fingerprint cache, idempotent migration ledger. `DrizzleMediaAssetRepository` with household-scoped reads.
+- Docs: `packages/media/AGENTS.md` (package DOX contract), `docs/07-delivery/lumi/persistence/schemas/media/LUMI-media-and-asset-schema-v1.md`, and this sprint report.
+
+Evidence summary:
+- **@lumi/media unit tests:** 6 files / 35 tests PASS
+- **@lumi/media integration tests:** 4/4 PASS with `MEDIA_TEST_ENABLE_DESTRUCTIVE=true` on PostgreSQL
+- **@lumi/media lint/typecheck:** PASS
+- **Migration applied:** `media:migrate` verified (schema + ledger present)
+- **pnpm build:** PASS (all packages)
+- **check-mojibake:** PASS
 
 ### Sprint 12 — Story Generation Pipeline (2026-08-03)
 
@@ -194,4 +230,4 @@ Sprint 04 sonrası kalan boundary:
 - Password reset currently uses a development preview link instead of email delivery.
 - Auth rate limiting is process-local (not distributed).
 - Docker validation must be performed on a Docker-enabled machine.
-- **Sprint 04'teki 12 pre-existing lint hatası**: Sprint 03'ten kalan child-profile.test any, validation.test unused import vb. kurallar ("mevcut kodları revert etme / gereksiz refactor") nedeniyle dokunulmadı.
+- **Sprint 04 kaynaklı pre-existing lint borcu**: 2026-08-04 doğrulamasında davranışsız temizlikle kapatıldı; repo-wide `pnpm lint` artık PASS.

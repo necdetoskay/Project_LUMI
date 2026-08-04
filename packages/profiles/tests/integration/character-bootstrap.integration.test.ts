@@ -5,7 +5,6 @@ import { sql, eq } from "drizzle-orm";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
 
 const mockCallOpenRouter = vi.hoisted(() => vi.fn());
 const mockDecryptApiKey = vi.hoisted(() => vi.fn(() => "sk-or-v1-test-decrypted-key"));
@@ -29,8 +28,6 @@ import { DrizzleLlmTaskModelSettingsRepository } from "../../src/db/repositories
 
 import { lumiCharacters } from "../../src/db/schema/profile/lumi-characters";
 import { archetypeSuggestionBatches } from "../../src/db/schema/profile/archetype-suggestion-batches";
-import { llmProviderSettings } from "../../src/db/schema/profile/llm-provider-settings";
-import { llmTaskModelSettings } from "../../src/db/schema/profile/llm-task-model-settings";
 import { DomainError, NotFoundError, ValidationError, AuthorizationError } from "../../src/domain";
 import {
   createOrReplaceFirstRunHandoff,
@@ -231,23 +228,6 @@ async function setupLlmConfig(householdId: string, userId: string = TEST_USER_ID
     maxOutputTokens: 1800,
     enabled: true,
   });
-}
-
-function deterministicHashedSeed(...parts: string[]): string {
-  const combined = parts.join("|");
-  let h1 = 0xdeadbeef ^ combined.length;
-  let h2 = 0x41c6ce57 ^ combined.length;
-  for (let i = 0; i < combined.length; i++) {
-    const ch = combined.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-  h2 = Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  const hex =
-    (h2 >>> 0).toString(16).padStart(8, "0") +
-    (h1 >>> 0).toString(16).padStart(8, "0");
-  return `lumi-${hex}`.slice(0, 118);
 }
 
 function makeOriginPackageResponse(nonce: string, count: number) {
@@ -696,7 +676,7 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       await setupLlmConfig(household.id);
       const { batchId, archetypeId } = await setupArchetypeBatch(household.id, profile.id);
 
-      const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+      await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
         childProfileId: profile.id,
         characterType: "explorer",

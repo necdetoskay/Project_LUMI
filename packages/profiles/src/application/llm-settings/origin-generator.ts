@@ -10,9 +10,7 @@ import {
   AuthorizationError,
   NotFoundError,
   ValidationError,
-  validateAgeBand,
   validateBroadCharacterKind,
-  validateContentBoundary,
   validateOriginConcept,
   validateOriginDisplaySubtype,
   validateUniverseSeed,
@@ -43,7 +41,6 @@ import {
 import { decryptApiKey } from "./encryption";
 import { callOpenRouter } from "./openrouter-client";
 import { parseAndValidateLlmOutput } from "./llm-output-parser";
-import type { SafetyBounds } from "../../domain/types";
 
 export interface GenerationResult {
   candidates: GeneratedOriginPackage[];
@@ -246,21 +243,6 @@ async function attemptLlmGeneration(
     source: "llm",
     modelId: response.model,
   };
-}
-
-function hasSimilarConcept(
-  candidates: GeneratedOriginPackage[],
-  incoming: string,
-): boolean {
-  const wordsA = new Set(incoming.toLowerCase().split(/\s+/).filter(w => w.length > 3));
-  if (wordsA.size === 0) return false;
-  for (const existing of candidates) {
-    const wordsB = new Set(existing.originConcept.toLowerCase().split(/\s+/).filter(w => w.length > 3));
-    const intersection = new Set([...wordsA].filter(w => wordsB.has(w)));
-    const ratio = intersection.size / Math.min(wordsA.size, wordsB.size);
-    if (ratio > 0.4) return true;
-  }
-  return false;
 }
 
 function hasSimilarConceptToPrevious(

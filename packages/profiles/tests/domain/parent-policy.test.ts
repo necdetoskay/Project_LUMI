@@ -42,7 +42,7 @@ describe("ParentPolicy", () => {
 
   it("rejects invalid content boundary", () => {
     expect(() =>
-      ParentPolicy.create({ householdId, contentBoundary: "extreme" as any }),
+      ParentPolicy.create({ householdId, contentBoundary: "extreme" as never }),
     ).toThrow(ValidationError);
   });
 

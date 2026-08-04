@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   validateAgeBand,
   validateDisplayName,
-  validateHouseholdName,
   validateSlug,
   validateMembershipRole,
   validateStoryLength,

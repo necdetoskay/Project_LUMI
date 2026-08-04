@@ -11,8 +11,7 @@ import { DrizzleChildProfileRepository } from "../../src/db/repositories/drizzle
 import { DrizzleCharacterRepository } from "../../src/db/repositories/drizzle/drizzle-character.repository";
 import { DrizzleCharacterDomainRepository } from "../../src/db/repositories/drizzle/drizzle-character-domain.repository";
 import type { QueryExecutor } from "../../src/db/client";
-import { DomainError, NotFoundError } from "../../src/domain";
-import type { CharacterEventType } from "../../src/domain/events";
+import { DomainError } from "../../src/domain";
 import {
   applyTraitDeltas,
   updateNeeds,
@@ -296,7 +295,6 @@ describe("S06 - Transaction Rollback [repo-level] (DB-gated)", () => {
   itIfDb("[repo-level] rolls back domain writes on version conflict", async () => {
     const { character, db: d } = await setupCharacter();
     const domainRepo = getDomainRepo(d as never);
-
     const charRepo = new DrizzleCharacterRepository(d as never);
 
     // First mutation succeeds
@@ -341,8 +339,6 @@ describe("S06 - Transaction Rollback [repo-level] (DB-gated)", () => {
   itIfDb("[repo-level] rolls back event write on version conflict", async () => {
     const { character, db: d } = await setupCharacter();
     const domainRepo = getDomainRepo(d as never);
-    const charRepo = new DrizzleCharacterRepository(d as never);
-
     // First mutation succeeds
     await d.transaction(async (tx) => {
       const txCharRepo = new DrizzleCharacterRepository(tx as never);
@@ -457,9 +453,6 @@ describe("S06 - Service-Level Mutation Audit (DB-gated)", () => {
     __setTestDb(undefined);
   });
 
-  function getTestUserId(char: { householdId: string }) {
-    return TEST_USER_ID;
-  }
 
   itIfDb("uses test DB for both getRepos() reads and resolveDb() writes after __setTestDb injection", async () => {
     const { character, db: d } = await setupCharacter();

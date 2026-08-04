@@ -71,7 +71,7 @@ export class BudgetPlanner {
     );
 
     const sorted = [...relevances].sort((a, b) => b.score - a.score);
-    const threshold = 0.1;
+    const threshold = 0.2;
     const bubble: RelevanceBubble = {
       worldId,
       householdId,
