@@ -119,7 +119,7 @@ describe("ChildProfile", () => {
   it("rejects invalid preference values", () => {
     const profile = ChildProfile.create(validInput);
     expect(() =>
-      profile.updatePreferences({ storyLength: "extra-long" as any }),
+      profile.updatePreferences({ storyLength: "extra-long" as never }),
     ).toThrow(ValidationError);
   });
 

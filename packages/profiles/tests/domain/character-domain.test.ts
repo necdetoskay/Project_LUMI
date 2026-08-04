@@ -11,16 +11,11 @@ import {
   resolveTraitDeltaAgainstState,
   validateCharacterSubtype,
   validateCharacterLifecycleStage,
-  validateSafetyBounds,
   ValidationError,
-  MAX_TRAIT_DELTA,
   DEFAULT_CHILD_AVATAR_TRAITS,
   DEFAULT_CHILD_AVATAR_EMOTIONS,
   DEFAULT_NPC_TRAITS,
-  DEFAULT_NPC_EMOTIONS,
-  type NeedState,
   type GoalState,
-  type TraitDeltaEntry,
 } from "../../src/domain";
 
 const SAFE_BASE = {

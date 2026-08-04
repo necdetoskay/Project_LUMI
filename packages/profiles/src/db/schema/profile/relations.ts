@@ -45,7 +45,7 @@ export const childPreferencesRelations = relations(childPreferences, ({ one }) =
   }),
 }));
 
-export const firstRunHandoffsRelations = relations(firstRunHandoffs, ({ one, many }) => ({
+export const firstRunHandoffsRelations = relations(firstRunHandoffs, ({ one }) => ({
   childProfile: one(childProfiles, {
     fields: [firstRunHandoffs.childProfileId],
     references: [childProfiles.id],

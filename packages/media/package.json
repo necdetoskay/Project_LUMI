@@ -1,0 +1,38 @@
+{
+  "name": "@lumi/media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./domain": "./src/domain/index.ts",
+    "./ports": "./src/ports/index.ts",
+    "./application": "./src/application/index.ts",
+    "./infrastructure": "./src/infrastructure/index.ts",
+    "./db": "./src/db/index.ts",
+    "./db/client": "./src/db/client/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:int": "vitest run --config vitest.integration.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "media:migrate": "node scripts/media-migrate.mjs"
+  },
+  "dependencies": {
+    "@lumi/logger": "workspace:*",
+    "drizzle-orm": "^0.43.1",
+    "pg": "^8.22.0",
+    "postgres": "^3.4.5",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/pg": "^8.11.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.14"
+  }
+}

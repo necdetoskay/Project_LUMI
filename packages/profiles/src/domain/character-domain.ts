@@ -1,5 +1,5 @@
 import { ValidationError } from "./errors";
-import { TRAIT_DIMENSIONS, EMOTION_DIMENSIONS, NEED_TYPES, CHARACTER_LIFECYCLE_STAGES, CHARACTER_SUBTYPES, type CharacterSubtype, type CharacterLifecycleStage, type TraitDimension, type EmotionDimension, type NeedType } from "./types";
+import { TRAIT_DIMENSIONS, EMOTION_DIMENSIONS, NEED_TYPES, CHARACTER_LIFECYCLE_STAGES, CHARACTER_SUBTYPES, type CharacterSubtype, type CharacterLifecycleStage, type TraitDimension, type NeedType } from "./types";
 
 export const MAX_TRAIT_DELTA = 0.15;
 

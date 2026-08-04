@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { DrizzleHouseholdRepository } from "../../src/db/repositories/drizzle/drizzle-household.repository";
 import { DrizzleChildProfileRepository } from "../../src/db/repositories/drizzle/drizzle-child-profile.repository";
 import { DrizzleParentPolicyRepository } from "../../src/db/repositories/drizzle/drizzle-parent-policy.repository";
+import type { QueryExecutor } from "../../src/db/client";
 
 let queryClient: postgres.Sql | undefined;
 let db: ReturnType<typeof drizzle> | undefined;
@@ -63,7 +64,7 @@ function itIfDb(name: string, fn: () => void | Promise<void>) {
 }
 
 describe("HouseholdRepository Integration", () => {
-  const repo = () => new DrizzleHouseholdRepository(db as any);
+  const repo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
 
   itIfDb("creates and retrieves a household for a member", async () => {
     const household = await repo().create({
@@ -118,8 +119,8 @@ describe("HouseholdRepository Integration", () => {
 });
 
 describe("ChildProfileRepository Integration", () => {
-  const hRepo = () => new DrizzleHouseholdRepository(db as any);
-  const cRepo = () => new DrizzleChildProfileRepository(db as any);
+  const hRepo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
+  const cRepo = () => new DrizzleChildProfileRepository(db as unknown as QueryExecutor);
 
   itIfDb("creates and retrieves child profile within household scope", async () => {
     const household = await hRepo().create({
@@ -192,8 +193,8 @@ describe("ChildProfileRepository Integration", () => {
 });
 
 describe("ParentPolicyRepository Integration", () => {
-  const hRepo = () => new DrizzleHouseholdRepository(db as any);
-  const pRepo = () => new DrizzleParentPolicyRepository(db as any);
+  const hRepo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
+  const pRepo = () => new DrizzleParentPolicyRepository(db as unknown as QueryExecutor);
 
   itIfDb("creates and retrieves parent policy for an owner", async () => {
     const household = await hRepo().create({

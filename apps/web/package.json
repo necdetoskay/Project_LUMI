@@ -17,6 +17,7 @@
   "dependencies": {
     "@lumi/logger": "workspace:*",
     "@lumi/profiles": "workspace:*",
+    "@lumi/simulation": "workspace:*",
     "@lumi/story": "workspace:*",
     "@lumi/world": "workspace:*",
     "@next/env": "16.2.12",
