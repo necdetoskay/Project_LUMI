@@ -57,7 +57,10 @@ export async function getWorldEvents(worldId: string) {
   return repo.findEventsByWorldId(db, worldId);
 }
 
-export async function getEventCountByType(worldId: string, eventType: WorldEventType): Promise<number> {
+export async function getEventCountByType(
+  worldId: string,
+  eventType: WorldEventType,
+): Promise<number> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
   const events = await repo.findEventsByWorldId(db, worldId);

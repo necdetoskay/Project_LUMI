@@ -82,7 +82,10 @@ export class StoryDefinition {
 
   setCurrentPublishedVersion(versionId: string): void {
     if (this.state.lifecycle === "archived") {
-      throw new ValidationError("STORY_ARCHIVED", "Cannot publish to an archived story definition");
+      throw new ValidationError(
+        "STORY_ARCHIVED",
+        "Cannot publish to an archived story definition",
+      );
     }
     this.state.currentPublishedVersionId = versionId;
     this.state.lifecycle = "published";
@@ -92,7 +95,10 @@ export class StoryDefinition {
 
   retire(): void {
     if (this.state.lifecycle === "archived") {
-      throw new ValidationError("STORY_ALREADY_ARCHIVED", "Story definition is already archived");
+      throw new ValidationError(
+        "STORY_ALREADY_ARCHIVED",
+        "Story definition is already archived",
+      );
     }
     this.state.lifecycle = "retired";
     this.state.updatedAt = new Date();
@@ -101,7 +107,10 @@ export class StoryDefinition {
 
   archive(): void {
     if (this.state.lifecycle === "archived") {
-      throw new ValidationError("STORY_ALREADY_ARCHIVED", "Story definition is already archived");
+      throw new ValidationError(
+        "STORY_ALREADY_ARCHIVED",
+        "Story definition is already archived",
+      );
     }
     this.state.lifecycle = "archived";
     this.state.archivedAt = new Date();
@@ -110,6 +119,8 @@ export class StoryDefinition {
   }
 
   isActive(): boolean {
-    return this.state.lifecycle === "published" || this.state.lifecycle === "retired";
+    return (
+      this.state.lifecycle === "published" || this.state.lifecycle === "retired"
+    );
   }
 }

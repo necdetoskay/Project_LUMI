@@ -18,16 +18,19 @@ export const householdMembers = profileSchema.table(
     householdId: uuid("household_id")
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull(),
+    userId: uuid("user_id").notNull(),
     membershipRole: varchar("membership_role", {
       length: 40,
-    }).notNull().default("member"),
+    })
+      .notNull()
+      .default("member"),
     isActive: boolean("is_active").notNull().default(true),
     joinedAt: timestamp("joined_at", {
       withTimezone: true,
       mode: "date",
-    }).notNull().defaultNow(),
+    })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({

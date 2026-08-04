@@ -36,24 +36,45 @@ export default async function ForgotPasswordPage({
         <p className="eyebrow">PROJECT LUMI</p>
         <h1>Şifremi unuttum</h1>
         <p className="lead">
-          Hesabına bağlı e-posta adresini gir. Parola yenileme akışını başlatalım.
+          Hesabına bağlı e-posta adresini gir. Parola yenileme akışını
+          başlatalım.
         </p>
       </div>
-      {error ? <p className="auth-message auth-message-error">{error}</p> : null}
+      {error ? (
+        <p className="auth-message auth-message-error">{error}</p>
+      ) : null}
       {success ? (
         <div className="auth-message auth-message-success">
-          <p>Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda dev önizleme kullanıyoruz.</p>
+          <p>
+            Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda dev
+            önizleme kullanıyoruz.
+          </p>
           {previewToken ? (
             <p>
-              Dev önizleme: <Link href={`/reset-password?token=${encodeURIComponent(previewToken)}`}>parolayı yenile</Link>
+              Dev önizleme:{" "}
+              <Link
+                href={`/reset-password?token=${encodeURIComponent(previewToken)}`}
+              >
+                parolayı yenile
+              </Link>
             </p>
           ) : null}
         </div>
       ) : null}
-      <form action="/api/auth/forgot-password" method="post" className="auth-form">
+      <form
+        action="/api/auth/forgot-password"
+        method="post"
+        className="auth-form"
+      >
         <label>
           E-posta
-          <input name="email" type="email" required autoComplete="email" defaultValue={email} />
+          <input
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            defaultValue={email}
+          />
         </label>
         <button type="submit">Yenileme bağlantısı hazırla</button>
       </form>

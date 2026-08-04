@@ -20,10 +20,16 @@ function handleStoryError(error: unknown) {
     return NextResponse.json({ error: "NOT_FOUND", message }, { status: 404 });
   }
   if (err.name === "ValidationError") {
-    return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+    return NextResponse.json(
+      { error: err.code ?? "VALIDATION_ERROR", message },
+      { status: 400 },
+    );
   }
   if (err.name === "DomainError" && err.code === "VERSION_CONFLICT") {
-    return NextResponse.json({ error: "VERSION_CONFLICT", message }, { status: 409 });
+    return NextResponse.json(
+      { error: "VERSION_CONFLICT", message },
+      { status: 409 },
+    );
   }
   return NextResponse.json(
     { error: "INTERNAL_ERROR", message: "Story request failed" },
@@ -40,7 +46,10 @@ export const GET = observeHandler(async (request: Request) => {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "householdId query parameter is required and must be a UUID" },
+        {
+          error: "VALIDATION_ERROR",
+          message: "householdId query parameter is required and must be a UUID",
+        },
         { status: 400 },
       );
     }
@@ -50,7 +59,10 @@ export const GET = observeHandler(async (request: Request) => {
     const household = await getOwnedHousehold(parent.id);
     if (!household || household.id !== householdId) {
       return NextResponse.json(
-        { error: "FORBIDDEN", message: "User does not have access to this household" },
+        {
+          error: "FORBIDDEN",
+          message: "User does not have access to this household",
+        },
         { status: 403 },
       );
     }

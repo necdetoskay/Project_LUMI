@@ -1,4 +1,8 @@
-import { generateCorrelationId, isValidCorrelationId, withCorrelation } from "@lumi/logger";
+import {
+  generateCorrelationId,
+  isValidCorrelationId,
+  withCorrelation,
+} from "@lumi/logger";
 
 export const CORRELATION_HEADER = "x-correlation-id";
 
@@ -12,7 +16,10 @@ export function getOrCreateCorrelationId(request: Request): string {
   return generateCorrelationId();
 }
 
-export function setCorrelationResponseHeader(response: Response, correlationId: string): void {
+export function setCorrelationResponseHeader(
+  response: Response,
+  correlationId: string,
+): void {
   response.headers.set(CORRELATION_HEADER, correlationId);
 }
 

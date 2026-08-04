@@ -78,20 +78,36 @@ function getRepos(db: ReturnType<typeof getProfileDb> = getProfileDb()) {
   };
 }
 
-function validateArchetypeFields(raw: Record<string, unknown>, index: number): { valid: boolean; errors: string[] } {
+function validateArchetypeFields(
+  raw: Record<string, unknown>,
+  index: number,
+): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   const pre = `archetype[${index}]`;
 
   const ct = raw.canonicalType;
-  if (typeof ct !== "string" || !VALID_CANONICAL_TYPES.includes(ct as CharacterType)) {
-    errors.push(`${pre}.canonicalType: must be one of ${VALID_CANONICAL_TYPES.join(", ")}`);
+  if (
+    typeof ct !== "string" ||
+    !VALID_CANONICAL_TYPES.includes(ct as CharacterType)
+  ) {
+    errors.push(
+      `${pre}.canonicalType: must be one of ${VALID_CANONICAL_TYPES.join(", ")}`,
+    );
   }
   const title = raw.title;
-  if (typeof title !== "string" || title.trim().length < 2 || title.length > 100) {
+  if (
+    typeof title !== "string" ||
+    title.trim().length < 2 ||
+    title.length > 100
+  ) {
     errors.push(`${pre}.title: must be 2-100 chars`);
   }
   const desc = raw.description;
-  if (typeof desc !== "string" || desc.trim().length < 10 || desc.length > 400) {
+  if (
+    typeof desc !== "string" ||
+    desc.trim().length < 10 ||
+    desc.length > 400
+  ) {
     errors.push(`${pre}.description: must be 10-400 chars`);
   }
   const hook = raw.personalityHook;
@@ -99,7 +115,11 @@ function validateArchetypeFields(raw: Record<string, unknown>, index: number): {
     errors.push(`${pre}.personalityHook: must be 5-300 chars`);
   }
   const promise = raw.storyPromise;
-  if (typeof promise !== "string" || promise.trim().length < 5 || promise.length > 300) {
+  if (
+    typeof promise !== "string" ||
+    promise.trim().length < 5 ||
+    promise.length > 300
+  ) {
     errors.push(`${pre}.storyPromise: must be 5-300 chars`);
   }
   const tags = raw.themeTags;
@@ -127,13 +147,18 @@ function extractAndParseArchetypeJson(raw: string): Record<string, unknown>[] {
   }
   let topLevel: Record<string, unknown>;
   try {
-    topLevel = JSON.parse(jsonStr.slice(braceStart, braceEnd + 1)) as Record<string, unknown>;
+    topLevel = JSON.parse(jsonStr.slice(braceStart, braceEnd + 1)) as Record<
+      string,
+      unknown
+    >;
   } catch {
     throw new LlmGenerationError("Failed to parse LLM response as JSON");
   }
   const rawArchs = topLevel.archetypes;
   if (!Array.isArray(rawArchs) || rawArchs.length === 0) {
-    throw new LlmGenerationError("LLM response missing valid 'archetypes' array");
+    throw new LlmGenerationError(
+      "LLM response missing valid 'archetypes' array",
+    );
   }
   return rawArchs as Record<string, unknown>[];
 }
@@ -141,9 +166,11 @@ function extractAndParseArchetypeJson(raw: string): Record<string, unknown>[] {
 function buildArchetypePrompt(params: ArchetypeGenerationParams): string {
   let excludedStr = "";
   if (params.excludedConcepts.length > 0) {
-    const descriptions = params.excludedConcepts.map((ec, i) =>
-      `#${i + 1}: "${ec.title}" — ${ec.description.slice(0, 80)}`,
-    ).join("\n");
+    const descriptions = params.excludedConcepts
+      .map(
+        (ec, i) => `#${i + 1}: "${ec.title}" — ${ec.description.slice(0, 80)}`,
+      )
+      .join("\n");
     excludedStr = `Daha önce gösterilen konseptler (BUNLARI KULLANMA, benzer fikirler üretme):\n${descriptions}\n`;
   }
 
@@ -204,7 +231,8 @@ async function attemptLlmGeneration(
     messages: [
       {
         role: "system",
-        content: "Sen çocuk hikayeleri için karakter arketipi önerileri üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+        content:
+          "Sen çocuk hikayeleri için karakter arketipi önerileri üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
       },
       { role: "user", content: prompt },
     ],
@@ -222,16 +250,24 @@ async function attemptLlmGeneration(
     const raw = rawArchetypes[i]!;
     const validation = validateArchetypeFields(raw, i);
     if (!validation.valid) {
-      throw new LlmGenerationError(`Archetype validation failed: ${validation.errors.join("; ")}`);
+      throw new LlmGenerationError(
+        `Archetype validation failed: ${validation.errors.join("; ")}`,
+      );
     }
     const ct = raw.canonicalType as string;
     if (seenTypes.has(ct)) {
-      throw new LlmGenerationError(`Duplicate canonicalType in LLM response: ${ct}`);
+      throw new LlmGenerationError(
+        `Duplicate canonicalType in LLM response: ${ct}`,
+      );
     }
     seenTypes.add(ct);
-    const titleLower = String(raw.title ?? "").toLowerCase().trim();
+    const titleLower = String(raw.title ?? "")
+      .toLowerCase()
+      .trim();
     if (seenTitles.has(titleLower)) {
-      throw new LlmGenerationError(`Duplicate title in LLM response: ${raw.title}`);
+      throw new LlmGenerationError(
+        `Duplicate title in LLM response: ${raw.title}`,
+      );
     }
     seenTitles.add(titleLower);
     archetypes.push({
@@ -246,7 +282,9 @@ async function attemptLlmGeneration(
   }
 
   if (archetypes.length !== 5) {
-    throw new LlmGenerationError(`Expected exactly 5 archetypes, got ${archetypes.length}`);
+    throw new LlmGenerationError(
+      `Expected exactly 5 archetypes, got ${archetypes.length}`,
+    );
   }
 
   return { archetypes, modelId: response.model };
@@ -257,16 +295,26 @@ function hasSimilarConcepts(
   candidate: { title: string; description: string; personalityHook: string },
 ): boolean {
   const wordsA = new Set(
-    (candidate.title + " " + candidate.description + " " + candidate.personalityHook)
-      .toLowerCase().split(/\s+/).filter(w => w.length > 3),
+    (
+      candidate.title +
+      " " +
+      candidate.description +
+      " " +
+      candidate.personalityHook
+    )
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3),
   );
   if (wordsA.size === 0) return false;
   for (const ex of existing) {
     const wordsB = new Set(
       (ex.title + " " + ex.description + " " + ex.personalityHook)
-        .toLowerCase().split(/\s+/).filter(w => w.length > 3),
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3),
     );
-    const intersection = new Set([...wordsA].filter(w => wordsB.has(w)));
+    const intersection = new Set([...wordsA].filter((w) => wordsB.has(w)));
     const ratio = intersection.size / Math.min(wordsA.size, wordsB.size);
     if (ratio > 0.35) return true;
   }
@@ -282,7 +330,10 @@ export async function generateArchetypes(
 ): Promise<ArchetypeResult> {
   const repos = getRepos();
 
-  const household = await repos.householdRepo.findByIdForUser(householdId, userId);
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
@@ -320,16 +371,28 @@ export async function generateArchetypes(
   );
 
   if (!providerSettings?.encryptedApiKey) {
-    throw new LlmConfigError("LLM_KEY_MISSING", "OpenRouter API key not configured. Go to Settings > AI Bağlantısı to add your key.");
+    throw new LlmConfigError(
+      "LLM_KEY_MISSING",
+      "OpenRouter API key not configured. Go to Settings > AI Bağlantısı to add your key.",
+    );
   }
   if (!providerSettings.enabled) {
-    throw new LlmConfigError("LLM_PROVIDER_DISABLED", "OpenRouter provider is disabled. Enable it in Settings > AI Bağlantısı.");
+    throw new LlmConfigError(
+      "LLM_PROVIDER_DISABLED",
+      "OpenRouter provider is disabled. Enable it in Settings > AI Bağlantısı.",
+    );
   }
   if (!llmSettings) {
-    throw new LlmConfigError("LLM_TASK_MISSING", "Character archetype generation task not configured. Ensure your API key is saved in Settings.");
+    throw new LlmConfigError(
+      "LLM_TASK_MISSING",
+      "Character archetype generation task not configured. Ensure your API key is saved in Settings.",
+    );
   }
   if (!llmSettings.enabled) {
-    throw new LlmConfigError("LLM_TASK_DISABLED", "Character archetype generation task is disabled. Enable it in Settings.");
+    throw new LlmConfigError(
+      "LLM_TASK_DISABLED",
+      "Character archetype generation task is disabled. Enable it in Settings.",
+    );
   }
 
   let apiKey: string;
@@ -361,27 +424,45 @@ export async function generateArchetypes(
   for (let attemptNum = 0; attemptNum < 2; attemptNum++) {
     const nonce = attemptNum === 0 ? genNonce1 : crypto.randomUUID();
     usedNonce = nonce;
-    const attemptParams: ArchetypeGenerationParams = { ...genParams, generationNonce: nonce };
+    const attemptParams: ArchetypeGenerationParams = {
+      ...genParams,
+      generationNonce: nonce,
+    };
     try {
-      const result = await attemptLlmGeneration(attemptParams, apiKey, llmSettings.modelId, llmSettings.temperature, llmSettings.maxOutputTokens);
-      if (excludedList.length === 0 || !result.archetypes.some((a) => hasSimilarConcepts(excludedList, a))) {
+      const result = await attemptLlmGeneration(
+        attemptParams,
+        apiKey,
+        llmSettings.modelId,
+        llmSettings.temperature,
+        llmSettings.maxOutputTokens,
+      );
+      if (
+        excludedList.length === 0 ||
+        !result.archetypes.some((a) => hasSimilarConcepts(excludedList, a))
+      ) {
         successful = result;
         break;
       } else {
-        lastError = new LlmGenerationError("LLM response similar to excluded concepts");
+        lastError = new LlmGenerationError(
+          "LLM response similar to excluded concepts",
+        );
       }
     } catch (err) {
       if (err instanceof LlmConfigError) throw err;
       if (err instanceof LlmGenerationError) {
         lastError = err;
       } else {
-        lastError = new LlmGenerationError((err as Error).message ?? "LLM call failed");
+        lastError = new LlmGenerationError(
+          (err as Error).message ?? "LLM call failed",
+        );
       }
     }
   }
 
   if (!successful) {
-    throw lastError ?? new LlmGenerationError("LLM archetype generation failed");
+    throw (
+      lastError ?? new LlmGenerationError("LLM archetype generation failed")
+    );
   }
 
   const batchId = crypto.randomUUID();

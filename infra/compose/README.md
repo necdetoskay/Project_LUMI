@@ -16,10 +16,10 @@ PostgreSQL kalıcı sistem kaynağıdır. Redis yalnızca geçici önbellek olar
 Varsayılan host portları çakışma riskini azaltmak için standart servis
 portlarından farklıdır:
 
-| Servis | Container portu | Varsayılan host portu |
-| ------ | --------------- | --------------------- |
-| PostgreSQL | `5432` | `15432` |
-| Redis | `6379` | `16379` |
+| Servis     | Container portu | Varsayılan host portu |
+| ---------- | --------------- | --------------------- |
+| PostgreSQL | `5432`          | `15432`               |
+| Redis      | `6379`          | `16379`               |
 
 Docker remote context kullanıldığında host portu yerel bilgisayarda değil, uzak
 Docker sunucusunda ayrılır. Çakışma olursa kök `.env` dosyasındaki port ve URL

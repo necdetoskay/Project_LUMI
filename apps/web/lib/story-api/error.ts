@@ -5,7 +5,11 @@ export function handleStoryError(error: unknown, fallbackMessage: string) {
   const err = error as Error & { code?: string };
   const message = err.message ?? "Unknown error";
 
-  if (err.name === "AuthorizationError" || message.includes("not a member") || message.includes("not accessible")) {
+  if (
+    err.name === "AuthorizationError" ||
+    message.includes("not a member") ||
+    message.includes("not accessible")
+  ) {
     return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
   }
   if (err.name === "NotFoundError") {
@@ -19,10 +23,16 @@ export function handleStoryError(error: unknown, fallbackMessage: string) {
       "VERSION_CONFLICT",
     ];
     const status = conflictCodes.includes(err.code ?? "") ? 409 : 400;
-    return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status });
+    return NextResponse.json(
+      { error: err.code ?? "VALIDATION_ERROR", message },
+      { status },
+    );
   }
   if (err.name === "DomainError" && err.code === "VERSION_CONFLICT") {
-    return NextResponse.json({ error: "VERSION_CONFLICT", message }, { status: 409 });
+    return NextResponse.json(
+      { error: "VERSION_CONFLICT", message },
+      { status: 409 },
+    );
   }
   return NextResponse.json(
     { error: "INTERNAL_ERROR", message: fallbackMessage },

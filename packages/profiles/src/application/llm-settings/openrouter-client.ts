@@ -1,5 +1,7 @@
 function getOpenRouterBaseUrl(): string {
-  return process.env["OPENROUTER_API_BASE_URL"] ?? "https://openrouter.ai/api/v1";
+  return (
+    process.env["OPENROUTER_API_BASE_URL"] ?? "https://openrouter.ai/api/v1"
+  );
 }
 
 export interface OpenRouterMessage {
@@ -14,8 +16,6 @@ export interface OpenRouterRequestOptions {
   maxTokens?: number;
   signal?: AbortSignal;
 }
-
-
 
 export interface OpenRouterUsage {
   promptTokens: number;
@@ -49,7 +49,7 @@ export async function callOpenRouter(
   if (temperature !== undefined) body.temperature = temperature;
   if (maxTokens !== undefined) body.max_tokens = maxTokens;
 
-  const fetchSignal = signal ?? null as AbortSignal | null;
+  const fetchSignal = signal ?? (null as AbortSignal | null);
   const response = await fetch(`${getOpenRouterBaseUrl()}/chat/completions`, {
     method: "POST",
     headers: {
@@ -70,14 +70,19 @@ export async function callOpenRouter(
     } catch {
       // not json
     }
-    const errMsg = parsed?.error?.message ?? errorBody ?? "Unknown OpenRouter error";
+    const errMsg =
+      parsed?.error?.message ?? errorBody ?? "Unknown OpenRouter error";
     throw new Error(`OpenRouter API error (${response.status}): ${errMsg}`);
   }
 
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
     model: string;
-    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    usage?: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
   };
 
   const content = data.choices?.[0]?.message?.content ?? "";

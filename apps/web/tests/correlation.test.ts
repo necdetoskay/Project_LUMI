@@ -2,8 +2,15 @@ import type { NextRequest } from "next/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { getCorrelationId } from "@lumi/logger";
-import { getOrCreateCorrelationId, setCorrelationResponseHeader } from "@/lib/observability/correlation";
-import { withObservedApiRoute, observeHandlerNoArg, CORRELATION_HEADER } from "@/lib/observability/observed-api-route";
+import {
+  getOrCreateCorrelationId,
+  setCorrelationResponseHeader,
+} from "@/lib/observability/correlation";
+import {
+  withObservedApiRoute,
+  observeHandlerNoArg,
+  CORRELATION_HEADER,
+} from "@/lib/observability/observed-api-route";
 
 describe("getOrCreateCorrelationId", () => {
   it("uses valid existing correlation ID from header", () => {
@@ -51,9 +58,11 @@ describe("proxy correlation behavior", () => {
   it("sets x-correlation-id on response headers", async () => {
     const { proxy } = await import("@/proxy");
 
-    const request = toNextRequest(new Request("http://localhost/api/test", {
-      headers: { "content-type": "application/json" },
-    }));
+    const request = toNextRequest(
+      new Request("http://localhost/api/test", {
+        headers: { "content-type": "application/json" },
+      }),
+    );
 
     const response = await proxy(request);
 
@@ -63,13 +72,19 @@ describe("proxy correlation behavior", () => {
   it("preserves valid incoming correlation ID in response", async () => {
     const { proxy } = await import("@/proxy");
 
-    const request = toNextRequest(new Request("http://localhost/api/test", {
-      headers: { [CORRELATION_HEADER]: "550e8400-e29b-41d4-a716-446655440000" },
-    }));
+    const request = toNextRequest(
+      new Request("http://localhost/api/test", {
+        headers: {
+          [CORRELATION_HEADER]: "550e8400-e29b-41d4-a716-446655440000",
+        },
+      }),
+    );
 
     const response = await proxy(request);
 
-    expect(response.headers.get(CORRELATION_HEADER)).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(response.headers.get(CORRELATION_HEADER)).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
   });
 });
 
@@ -84,17 +99,26 @@ describe("withObservedApiRoute correlation propagation", () => {
       headers: { [CORRELATION_HEADER]: "550e8400-e29b-41d4-a716-446655440000" },
     });
 
-    const response = await withObservedApiRoute(request, async (correlationId) => {
-      log.info("test.event", "inside withObservedApiRoute", { correlationId });
+    const response = await withObservedApiRoute(
+      request,
+      async (correlationId) => {
+        log.info("test.event", "inside withObservedApiRoute", {
+          correlationId,
+        });
 
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
-    });
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      },
+    );
 
-    expect(response.headers.get(CORRELATION_HEADER)).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(response.headers.get(CORRELATION_HEADER)).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
     expect(spy).toHaveBeenCalled();
 
     const logOutput = JSON.parse(spy.mock.calls[0]?.[0] as string);
-    expect(logOutput.correlationId).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(logOutput.correlationId).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
 
     spy.mockRestore();
   });
@@ -117,9 +141,16 @@ describe("withObservedApiRoute correlation propagation", () => {
   it("returns 200 response with correct body and correlation header", async () => {
     const request = new Request("http://localhost/api/health");
 
-    const response = await withObservedApiRoute(request, async (correlationId) => {
-      return Response.json({ service: "lumi-web", status: "ok", correlationId });
-    });
+    const response = await withObservedApiRoute(
+      request,
+      async (correlationId) => {
+        return Response.json({
+          service: "lumi-web",
+          status: "ok",
+          correlationId,
+        });
+      },
+    );
 
     expect(response.status).toBe(200);
     expect(response.headers.get(CORRELATION_HEADER)).toBeTruthy();
@@ -188,7 +219,9 @@ describe("observeHandlerNoArg correlation preservation", () => {
 
     const response = await handler(request);
 
-    expect(response.headers.get(CORRELATION_HEADER)).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(response.headers.get(CORRELATION_HEADER)).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
   });
 
   it("propagates correlation ID to AsyncLocalStorage for log output", async () => {
@@ -210,7 +243,9 @@ describe("observeHandlerNoArg correlation preservation", () => {
 
     expect(spy).toHaveBeenCalled();
     const logOutput = JSON.parse(spy.mock.calls[0]?.[0] as string);
-    expect(logOutput.correlationId).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(logOutput.correlationId).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
 
     spy.mockRestore();
   });
@@ -226,7 +261,9 @@ describe("observeHandlerNoArg correlation preservation", () => {
 
     const response = await handler(request);
 
-    expect(response.headers.get(CORRELATION_HEADER)).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(response.headers.get(CORRELATION_HEADER)).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
   });
 });
 
@@ -264,7 +301,9 @@ describe("DB/repository boundary correlation", () => {
     });
 
     const body = await response.json();
-    expect(body.repo.correlationId).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(body.repo.correlationId).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
   });
 
   it("returns undefined getCorrelationId() outside a correlation context", () => {

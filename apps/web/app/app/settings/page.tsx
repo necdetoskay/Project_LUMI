@@ -5,7 +5,9 @@ import { getParentFromSessionToken } from "@/lib/auth/service";
 import LlmSettingsClientPage from "./llm-settings-client-page";
 
 export default async function SettingsPage() {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
 
   if (!parent) {
     redirect("/login");
@@ -13,4 +15,3 @@ export default async function SettingsPage() {
 
   return <LlmSettingsClientPage />;
 }
-

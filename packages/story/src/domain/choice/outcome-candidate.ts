@@ -1,5 +1,8 @@
 import { ValidationError } from "../errors";
-import { assertKnownOutcomeCandidateStatus, type OutcomeCandidateStatus } from "./choice-types";
+import {
+  assertKnownOutcomeCandidateStatus,
+  type OutcomeCandidateStatus,
+} from "./choice-types";
 
 export interface CreateOutcomeCandidateInput {
   storySessionId: string;
@@ -26,7 +29,10 @@ export class OutcomeCandidate {
     const status = input.status ?? "pending";
     assertKnownOutcomeCandidateStatus(status);
     if (input.candidateSchemaVersion <= 0) {
-      throw new ValidationError("INVALID_SCHEMA_VERSION", "Outcome candidate schema version must be positive");
+      throw new ValidationError(
+        "INVALID_SCHEMA_VERSION",
+        "Outcome candidate schema version must be positive",
+      );
     }
     return new OutcomeCandidate({
       id: crypto.randomUUID(),

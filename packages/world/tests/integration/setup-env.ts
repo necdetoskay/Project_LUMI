@@ -13,7 +13,7 @@ if (ENABLE_DESTRUCTIVE) {
   if (!dbName || (!dbName.includes("test") && !dbName.includes("review"))) {
     throw new Error(
       `[WORLD-DESTRUCTIVE-TEST] UNSAFE DB NAME: "${dbName}". ` +
-      `Destructive tests require DB name containing "test" or "review".`,
+        `Destructive tests require DB name containing "test" or "review".`,
     );
   }
 }

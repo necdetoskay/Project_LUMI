@@ -1,5 +1,8 @@
 import { ValidationError } from "../errors";
-import type { ChoiceAvailabilityRule, ChoiceConsequencePreview } from "./choice-types";
+import type {
+  ChoiceAvailabilityRule,
+  ChoiceConsequencePreview,
+} from "./choice-types";
 
 export interface CreateChoiceOptionInput {
   choicePointId: string;
@@ -58,14 +61,20 @@ export class ChoiceOption {
   }
 
   getState(): ChoiceOptionState {
-    return { ...this.state, consequencePreviews: [...this.state.consequencePreviews] };
+    return {
+      ...this.state,
+      consequencePreviews: [...this.state.consequencePreviews],
+    };
   }
 }
 
 function validateOptionKey(key: string): string {
   const trimmed = key.trim();
   if (!trimmed || trimmed.length > 120) {
-    throw new ValidationError("INVALID_CHOICE_OPTION_KEY", "Choice option key must be 1-120 characters");
+    throw new ValidationError(
+      "INVALID_CHOICE_OPTION_KEY",
+      "Choice option key must be 1-120 characters",
+    );
   }
   return trimmed;
 }
@@ -73,7 +82,10 @@ function validateOptionKey(key: string): string {
 function validateOptionText(text: string): string {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 1000) {
-    throw new ValidationError("INVALID_CHOICE_OPTION_TEXT", "Choice option text must be 1-1000 characters");
+    throw new ValidationError(
+      "INVALID_CHOICE_OPTION_TEXT",
+      "Choice option text must be 1-1000 characters",
+    );
   }
   return trimmed;
 }

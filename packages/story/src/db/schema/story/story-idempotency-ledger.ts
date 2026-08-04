@@ -10,7 +10,9 @@ export const storyIdempotencyLedger = storySchema.table(
     storySessionId: uuid("story_session_id"),
     operationType: varchar("operation_type", { length: 60 }).notNull(),
     idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("story_idempotency_scope_idx").on(
@@ -21,5 +23,7 @@ export const storyIdempotencyLedger = storySchema.table(
   ],
 );
 
-export type StoryIdempotencyLedgerRecord = typeof storyIdempotencyLedger.$inferSelect;
-export type NewStoryIdempotencyLedgerRecord = typeof storyIdempotencyLedger.$inferInsert;
+export type StoryIdempotencyLedgerRecord =
+  typeof storyIdempotencyLedger.$inferSelect;
+export type NewStoryIdempotencyLedgerRecord =
+  typeof storyIdempotencyLedger.$inferInsert;

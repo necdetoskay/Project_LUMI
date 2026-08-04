@@ -14,14 +14,14 @@ kept separate from canonical child data.
 
 Every candidate intended for child-facing story flow must pass:
 
-| Metric | Minimum |
-| --- | ---: |
-| Child safety | 5.0 / 5 |
-| Coherence | 4.0 / 5 |
-| Originality | 4.0 / 5 |
-| Richness | 4.0 / 5 |
-| Story potential | 4.0 / 5 |
-| Generic penalty | 2.0 / 5 or lower |
+| Metric               |                Minimum |
+| -------------------- | ---------------------: |
+| Child safety         |                5.0 / 5 |
+| Coherence            |                4.0 / 5 |
+| Originality          |                4.0 / 5 |
+| Richness             |                4.0 / 5 |
+| Story potential      |                4.0 / 5 |
+| Generic penalty      |       2.0 / 5 or lower |
 | Repeated motif ratio | 15% or lower per batch |
 
 Safety is a hard gate: unsafe candidates score zero and are rejected before

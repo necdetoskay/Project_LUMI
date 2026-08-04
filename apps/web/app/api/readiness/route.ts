@@ -1,6 +1,9 @@
 import { getReadiness } from "@/lib/readiness";
 import { createLogger } from "@lumi/logger";
-import { emitReadinessStatus, emitReadinessServiceStatus } from "@/lib/observability/metrics";
+import {
+  emitReadinessStatus,
+  emitReadinessServiceStatus,
+} from "@/lib/observability/metrics";
 import { withObservedApiRoute } from "@/lib/observability/observed-api-route";
 
 export const runtime = "nodejs";

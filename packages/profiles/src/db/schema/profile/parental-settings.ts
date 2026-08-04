@@ -28,9 +28,9 @@ export const parentalSettings = profileSchema.table(
       .notNull()
       .default("strict"),
     timeLimitMinutes: integer("time_limit_minutes"),
-    requireParentApprovalForAi: boolean(
-      "require_parent_approval_for_ai",
-    ).notNull().default(false),
+    requireParentApprovalForAi: boolean("require_parent_approval_for_ai")
+      .notNull()
+      .default(false),
     allowImageGeneration: boolean("allow_image_generation")
       .notNull()
       .default(true),

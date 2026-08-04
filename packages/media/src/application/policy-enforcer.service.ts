@@ -4,10 +4,7 @@ import type {
   ImageSizePolicy,
   MediaModelPolicy,
 } from "../domain/media-types";
-import type {
-  MediaPolicyPort,
-  PolicyDecision,
-} from "../ports/policy.port";
+import type { MediaPolicyPort, PolicyDecision } from "../ports/policy.port";
 
 export interface MediaPolicyConfig {
   maxImageCostUsd: number;

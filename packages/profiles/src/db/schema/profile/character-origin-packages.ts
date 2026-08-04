@@ -44,14 +44,20 @@ export const characterOriginPackages = profileSchema.table(
     broadKind: varchar("broad_kind", { length: 40 }).notNull(),
     characterType: varchar("character_type", { length: 40 }).notNull(),
     subtype: varchar("subtype", { length: 80 }).notNull(),
-    originMode: varchar("origin_mode", { length: 20 }).$type<OriginMode>().notNull(),
+    originMode: varchar("origin_mode", { length: 20 })
+      .$type<OriginMode>()
+      .notNull(),
     universeSeed: varchar("universe_seed", { length: 120 }).notNull(),
-    createdBy: varchar("created_by", { length: 20 }).notNull().default("system"),
+    createdBy: varchar("created_by", { length: 20 })
+      .notNull()
+      .default("system"),
     accepted: boolean("accepted").notNull().default(false),
     handoffId: uuid("handoff_id"),
     payload: jsonb("payload").$type<OriginPackagePayload>().notNull(),
     generationBatchId: uuid("generation_batch_id"),
-    generationSource: text("generation_source").notNull().default("legacy_static"),
+    generationSource: text("generation_source")
+      .notNull()
+      .default("legacy_static"),
     modelId: text("model_id"),
     ...timestampColumns,
   },

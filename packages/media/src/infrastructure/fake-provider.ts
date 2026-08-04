@@ -52,9 +52,7 @@ export class FakeMediaProvider implements MediaProvider {
       throw new Error(reason);
     }
     await delay(this.options.latencyMs ?? 1);
-    const bytes =
-      this.options.imageBytes ??
-      deterministicImageBytes(request);
+    const bytes = this.options.imageBytes ?? deterministicImageBytes(request);
     const result: FakeProviderImage = {
       bytes,
       mimeType: "image/png",
@@ -101,7 +99,8 @@ export class FakeMediaProvider implements MediaProvider {
     }
     await delay(this.options.latencyMs ?? 1);
     const bytes =
-      this.options.audioBytes ?? deterministicBytes("ambient", request.requestId);
+      this.options.audioBytes ??
+      deterministicBytes("ambient", request.requestId);
     const result: FakeProviderAudio = {
       bytes,
       mimeType: "audio/ogg",
@@ -116,10 +115,7 @@ export class FakeMediaProvider implements MediaProvider {
 function deterministicImageBytes(request: ProviderImageRequest): Uint8Array {
   const encoder = new TextEncoder();
   const identityParts = request.identity
-    ? [
-        request.identity.referenceKey,
-        ...request.identity.traitHashes,
-      ]
+    ? [request.identity.referenceKey, ...request.identity.traitHashes]
     : [];
   return encoder.encode(
     ["image", request.requestId, ...identityParts].join(":"),

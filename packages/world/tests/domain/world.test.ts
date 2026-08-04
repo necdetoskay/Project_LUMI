@@ -34,20 +34,22 @@ describe("World", () => {
   });
 
   it("rejects empty universe seed", () => {
-    expect(() =>
-      World.create({ ...validInput, universeSeed: "" }),
-    ).toThrow(ValidationError);
+    expect(() => World.create({ ...validInput, universeSeed: "" })).toThrow(
+      ValidationError,
+    );
   });
 
   it("rejects empty origin seed", () => {
-    expect(() =>
-      World.create({ ...validInput, originSeed: "" }),
-    ).toThrow(ValidationError);
+    expect(() => World.create({ ...validInput, originSeed: "" })).toThrow(
+      ValidationError,
+    );
   });
 
   it("creates world with metadata containing originConcept", () => {
     const world = World.create(validInput);
-    expect(world.getState().metadata.originConcept).toBe(validInput.originConcept);
+    expect(world.getState().metadata.originConcept).toBe(
+      validInput.originConcept,
+    );
   });
 
   it("archives an active world", () => {

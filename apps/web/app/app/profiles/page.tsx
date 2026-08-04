@@ -6,7 +6,9 @@ import { getParentFromSessionToken } from "@/lib/auth/service";
 import ProfilesClientPage from "./profiles-client-page";
 
 export default async function ProfilesPage() {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
 
   if (!parent) {
     redirect("/login");

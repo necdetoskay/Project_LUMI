@@ -29,15 +29,22 @@ import {
 } from "../../schema/profile";
 import type { CharacterDomainRepository } from "../interfaces/character-domain.repository";
 
-export class DrizzleCharacterDomainRepository implements CharacterDomainRepository {
+export class DrizzleCharacterDomainRepository
+  implements CharacterDomainRepository
+{
   constructor(private readonly db: QueryExecutor) {}
 
-  async upsertTraitState(input: NewCharacterTraitStateRecord): Promise<CharacterTraitStateRecord> {
+  async upsertTraitState(
+    input: NewCharacterTraitStateRecord,
+  ): Promise<CharacterTraitStateRecord> {
     const [record] = await this.db
       .insert(characterTraitState)
       .values(input)
       .onConflictDoUpdate({
-        target: [characterTraitState.characterId, characterTraitState.dimension],
+        target: [
+          characterTraitState.characterId,
+          characterTraitState.dimension,
+        ],
         set: { value: input.value, updatedAt: new Date() },
       })
       .returning();
@@ -45,7 +52,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterTraitStateRecord;
   }
 
-  async getTraitStates(characterId: string): Promise<CharacterTraitStateRecord[]> {
+  async getTraitStates(
+    characterId: string,
+  ): Promise<CharacterTraitStateRecord[]> {
     const rows = await this.db
       .select()
       .from(characterTraitState)
@@ -59,7 +68,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
       .where(eq(characterTraitState.characterId, characterId));
   }
 
-  async createTraitHistory(input: NewCharacterTraitHistoryRecord): Promise<CharacterTraitHistoryRecord> {
+  async createTraitHistory(
+    input: NewCharacterTraitHistoryRecord,
+  ): Promise<CharacterTraitHistoryRecord> {
     const [record] = await this.db
       .insert(characterTraitHistory)
       .values(input)
@@ -68,7 +79,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterTraitHistoryRecord;
   }
 
-  async getTraitHistory(characterId: string): Promise<CharacterTraitHistoryRecord[]> {
+  async getTraitHistory(
+    characterId: string,
+  ): Promise<CharacterTraitHistoryRecord[]> {
     const rows = await this.db
       .select()
       .from(characterTraitHistory)
@@ -77,12 +90,17 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return rows as CharacterTraitHistoryRecord[];
   }
 
-  async upsertEmotionState(input: NewCharacterEmotionStateRecord): Promise<CharacterEmotionStateRecord> {
+  async upsertEmotionState(
+    input: NewCharacterEmotionStateRecord,
+  ): Promise<CharacterEmotionStateRecord> {
     const [record] = await this.db
       .insert(characterEmotionState)
       .values(input)
       .onConflictDoUpdate({
-        target: [characterEmotionState.characterId, characterEmotionState.dimension],
+        target: [
+          characterEmotionState.characterId,
+          characterEmotionState.dimension,
+        ],
         set: { value: input.value, updatedAt: new Date() },
       })
       .returning();
@@ -90,7 +108,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterEmotionStateRecord;
   }
 
-  async getEmotionStates(characterId: string): Promise<CharacterEmotionStateRecord[]> {
+  async getEmotionStates(
+    characterId: string,
+  ): Promise<CharacterEmotionStateRecord[]> {
     const rows = await this.db
       .select()
       .from(characterEmotionState)
@@ -104,7 +124,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
       .where(eq(characterEmotionState.characterId, characterId));
   }
 
-  async upsertNeed(input: NewCharacterNeedRecord): Promise<CharacterNeedRecord> {
+  async upsertNeed(
+    input: NewCharacterNeedRecord,
+  ): Promise<CharacterNeedRecord> {
     const [record] = await this.db
       .insert(characterNeeds)
       .values(input)
@@ -131,7 +153,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
       .where(eq(characterNeeds.characterId, characterId));
   }
 
-  async createGoal(input: NewCharacterGoalRecord): Promise<CharacterGoalRecord> {
+  async createGoal(
+    input: NewCharacterGoalRecord,
+  ): Promise<CharacterGoalRecord> {
     const [record] = await this.db
       .insert(characterGoals)
       .values(input)
@@ -140,11 +164,20 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterGoalRecord;
   }
 
-  async updateGoal(id: string, characterId: string, input: Partial<NewCharacterGoalRecord>): Promise<CharacterGoalRecord> {
+  async updateGoal(
+    id: string,
+    characterId: string,
+    input: Partial<NewCharacterGoalRecord>,
+  ): Promise<CharacterGoalRecord> {
     const [record] = await this.db
       .update(characterGoals)
       .set(input)
-      .where(and(eq(characterGoals.id, id), eq(characterGoals.characterId, characterId)))
+      .where(
+        and(
+          eq(characterGoals.id, id),
+          eq(characterGoals.characterId, characterId),
+        ),
+      )
       .returning();
     if (!record) throw new Error("Goal update returned no record");
     return record as CharacterGoalRecord;
@@ -159,7 +192,10 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return rows as CharacterGoalRecord[];
   }
 
-  async upsertInfluence(characterId: string, input: Partial<NewCharacterInfluenceRecord>): Promise<CharacterInfluenceRecord> {
+  async upsertInfluence(
+    characterId: string,
+    input: Partial<NewCharacterInfluenceRecord>,
+  ): Promise<CharacterInfluenceRecord> {
     const existing = await this.getInfluence(characterId);
     if (!existing) {
       const [record] = await this.db
@@ -178,7 +214,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterInfluenceRecord;
   }
 
-  async getInfluence(characterId: string): Promise<CharacterInfluenceRecord | null> {
+  async getInfluence(
+    characterId: string,
+  ): Promise<CharacterInfluenceRecord | null> {
     const [record] = await this.db
       .select()
       .from(characterInfluence)
@@ -187,7 +225,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return (record as CharacterInfluenceRecord) ?? null;
   }
 
-  async createRelationship(input: NewCharacterRelationshipRecord): Promise<CharacterRelationshipRecord> {
+  async createRelationship(
+    input: NewCharacterRelationshipRecord,
+  ): Promise<CharacterRelationshipRecord> {
     const [record] = await this.db
       .insert(characterRelationships)
       .values(input)
@@ -215,7 +255,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterRelationshipRecord;
   }
 
-  async getRelationships(characterId: string): Promise<CharacterRelationshipRecord[]> {
+  async getRelationships(
+    characterId: string,
+  ): Promise<CharacterRelationshipRecord[]> {
     const rows = await this.db
       .select()
       .from(characterRelationships)
@@ -223,7 +265,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return rows as CharacterRelationshipRecord[];
   }
 
-  async createDomainEvent(input: NewCharacterDomainEventRecord): Promise<CharacterDomainEventRecord> {
+  async createDomainEvent(
+    input: NewCharacterDomainEventRecord,
+  ): Promise<CharacterDomainEventRecord> {
     const [record] = await this.db
       .insert(characterDomainEvents)
       .values(input)
@@ -232,7 +276,9 @@ export class DrizzleCharacterDomainRepository implements CharacterDomainReposito
     return record as CharacterDomainEventRecord;
   }
 
-  async getDomainEvents(characterId: string): Promise<CharacterDomainEventRecord[]> {
+  async getDomainEvents(
+    characterId: string,
+  ): Promise<CharacterDomainEventRecord[]> {
     const rows = await this.db
       .select()
       .from(characterDomainEvents)

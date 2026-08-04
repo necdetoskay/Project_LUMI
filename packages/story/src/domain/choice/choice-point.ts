@@ -1,5 +1,8 @@
 import { ValidationError } from "../errors";
-import { assertKnownChoicePointType, type ChoicePointType } from "./choice-types";
+import {
+  assertKnownChoicePointType,
+  type ChoicePointType,
+} from "./choice-types";
 
 export interface CreateChoicePointInput {
   storyVersionId: string;
@@ -75,7 +78,10 @@ export class ChoicePoint {
 function validateChoicePointKey(key: string): string {
   const trimmed = key.trim();
   if (!trimmed || trimmed.length > 120) {
-    throw new ValidationError("INVALID_CHOICE_POINT_KEY", "Choice point key must be 1-120 characters");
+    throw new ValidationError(
+      "INVALID_CHOICE_POINT_KEY",
+      "Choice point key must be 1-120 characters",
+    );
   }
   return trimmed;
 }
@@ -83,7 +89,10 @@ function validateChoicePointKey(key: string): string {
 function validatePromptText(text: string): string {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 2000) {
-    throw new ValidationError("INVALID_PROMPT_TEXT", "Prompt text must be 1-2000 characters");
+    throw new ValidationError(
+      "INVALID_PROMPT_TEXT",
+      "Prompt text must be 1-2000 characters",
+    );
   }
   return trimmed;
 }

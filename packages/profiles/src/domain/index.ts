@@ -19,7 +19,12 @@ export {
   matchesOriginPackageContract,
 } from "./character";
 export type { CharacterState } from "./character";
-export { DomainError, ValidationError, NotFoundError, AuthorizationError } from "./errors";
+export {
+  DomainError,
+  ValidationError,
+  NotFoundError,
+  AuthorizationError,
+} from "./errors";
 export {
   validateAgeBand,
   validateDisplayName,
@@ -75,18 +80,34 @@ export type { CharacterEventType } from "./events";
 
 export * from "./inventory-types";
 export {
-  validateOwnerType, validateItemCategory, validateItemType,
-  validateRarity, validateStackMode, validateDurabilityMode,
-  validateTransferType, validateEntryStatus, validateInventoryType,
-  validateDefinitionKey, validateItemDefinitionInput,
-  validateItemInstanceCreateInput, validateOriginType,
-  inventoryDomainService, InventoryDomainService,
-  combineItemInstance, DEFAULT_CAPACITY,
-  type ItemDefinitionState, type ItemInstanceState,
-  type OwnershipState, type InventoryState,
-  type ItemInstanceCreateInput, type ResolvedItemInstance,
+  validateOwnerType,
+  validateItemCategory,
+  validateItemType,
+  validateRarity,
+  validateStackMode,
+  validateDurabilityMode,
+  validateTransferType,
+  validateEntryStatus,
+  validateInventoryType,
+  validateDefinitionKey,
+  validateItemDefinitionInput,
+  validateItemInstanceCreateInput,
+  validateOriginType,
+  inventoryDomainService,
+  InventoryDomainService,
+  combineItemInstance,
+  DEFAULT_CAPACITY,
+  type ItemDefinitionState,
+  type ItemInstanceState,
+  type OwnershipState,
+  type InventoryState,
+  type ItemInstanceCreateInput,
+  type ResolvedItemInstance,
 } from "./inventory";
 export { validateItemMetadata } from "./inventory-types";
 export type { ItemDefinitionInput } from "./inventory-types";
 export { createInventoryEvent } from "./inventory-events";
-export type { InventoryEventType, InventoryDomainEvent } from "./inventory-events";
+export type {
+  InventoryEventType,
+  InventoryDomainEvent,
+} from "./inventory-events";

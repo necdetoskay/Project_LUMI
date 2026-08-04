@@ -137,25 +137,68 @@ function starterLocationTypeForArchetype(archetype: string): string {
   return "custom";
 }
 
-function secondLocationKeyForArchetype(archetype: string): { key: string; name: string; locationType: string } {
-  const secondLocations: Record<string, { key: string; name: string; locationType: string }> = {
+function secondLocationKeyForArchetype(archetype: string): {
+  key: string;
+  name: string;
+  locationType: string;
+} {
+  const secondLocations: Record<
+    string,
+    { key: string; name: string; locationType: string }
+  > = {
     sea: { key: "tide-pools", name: "Tide Pools", locationType: "reef" },
     ocean: { key: "tide-pools", name: "Tide Pools", locationType: "reef" },
     reef: { key: "deep-drop", name: "Deep Drop-off", locationType: "reef" },
-    lagoon: { key: "seagrass-meadow", name: "Seagrass Meadow", locationType: "reef" },
-    river: { key: "river-bend", name: "River Bend", locationType: "river_bank" },
+    lagoon: {
+      key: "seagrass-meadow",
+      name: "Seagrass Meadow",
+      locationType: "reef",
+    },
+    river: {
+      key: "river-bend",
+      name: "River Bend",
+      locationType: "river_bank",
+    },
     forest: { key: "sunlit-glade", name: "Sunlit Glade", locationType: "path" },
-    mountain: { key: "ridge-path", name: "Ridge Path", locationType: "lookout" },
-    cave: { key: "crystal-chamber", name: "Crystal Chamber", locationType: "cave" },
+    mountain: {
+      key: "ridge-path",
+      name: "Ridge Path",
+      locationType: "lookout",
+    },
+    cave: {
+      key: "crystal-chamber",
+      name: "Crystal Chamber",
+      locationType: "cave",
+    },
     volcano: { key: "ash-field", name: "Ash Field", locationType: "cave" },
-    village: { key: "market-square", name: "Market Square", locationType: "town_square" },
-    sky: { key: "floating-garden", name: "Floating Garden", locationType: "cloud_platform" },
-    cloud: { key: "breezy-perch", name: "Breezy Perch", locationType: "cloud_platform" },
+    village: {
+      key: "market-square",
+      name: "Market Square",
+      locationType: "town_square",
+    },
+    sky: {
+      key: "floating-garden",
+      name: "Floating Garden",
+      locationType: "cloud_platform",
+    },
+    cloud: {
+      key: "breezy-perch",
+      name: "Breezy Perch",
+      locationType: "cloud_platform",
+    },
     beach: { key: "sand-dunes", name: "Sand Dunes", locationType: "beach" },
     coast: { key: "tidal-pool", name: "Tidal Pool", locationType: "beach" },
     island: { key: "inland-trail", name: "Inland Trail", locationType: "path" },
-    lab: { key: "research-station", name: "Research Station", locationType: "workshop" },
-    workshop: { key: "storage-room", name: "Storage Room", locationType: "building" },
+    lab: {
+      key: "research-station",
+      name: "Research Station",
+      locationType: "workshop",
+    },
+    workshop: {
+      key: "storage-room",
+      name: "Storage Room",
+      locationType: "building",
+    },
     school: { key: "playground", name: "Playground", locationType: "garden" },
     city: { key: "quiet-alley", name: "Quiet Alley", locationType: "path" },
     desert: { key: "oasis", name: "Oasis", locationType: "custom" },
@@ -168,7 +211,9 @@ function secondLocationKeyForArchetype(archetype: string): { key: string; name: 
   return { key: "nearby-spot", name: "Nearby Spot", locationType: "custom" };
 }
 
-export async function createWorldFromOrigin(input: BootstrapWorldInput): Promise<BootstrapWorldResult> {
+export async function createWorldFromOrigin(
+  input: BootstrapWorldInput,
+): Promise<BootstrapWorldResult> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 
@@ -184,9 +229,15 @@ export async function createWorldFromOrigin(input: BootstrapWorldInput): Promise
     originConcept: input.originPackage.originConcept,
   });
 
-  const regionType = regionTypeFromArchetype(input.originPackage.startingRegionArchetype);
-  const locationType = starterLocationTypeForArchetype(input.originPackage.startingLocation);
-  const secondLoc = secondLocationKeyForArchetype(input.originPackage.startingRegionArchetype);
+  const regionType = regionTypeFromArchetype(
+    input.originPackage.startingRegionArchetype,
+  );
+  const locationType = starterLocationTypeForArchetype(
+    input.originPackage.startingLocation,
+  );
+  const secondLoc = secondLocationKeyForArchetype(
+    input.originPackage.startingRegionArchetype,
+  );
 
   const result = await db.transaction(async (tx) => {
     const worldRecord = await repo.createWorld(tx, {
@@ -236,7 +287,10 @@ export async function createWorldFromOrigin(input: BootstrapWorldInput): Promise
     const location = Location.create({
       worldId: worldRecord.id,
       regionId: regionRecord.id,
-      locationKey: input.originPackage.startingLocation.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, ""),
+      locationKey: input.originPackage.startingLocation
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9_-]/g, ""),
       displayName: input.originPackage.startingLocation,
       accessibilityStatus: "open",
       locationType: locationType,
@@ -353,7 +407,9 @@ export async function createWorldFromOrigin(input: BootstrapWorldInput): Promise
       createdAt: new Date(),
     });
 
-    const manifestData = world.toBootstrapManifest(input.originPackage as never);
+    const manifestData = world.toBootstrapManifest(
+      input.originPackage as never,
+    );
     const manifestRecord = await repo.createBootstrapManifest(tx, {
       id: crypto.randomUUID(),
       worldId: worldRecord.id,
@@ -467,7 +523,8 @@ export async function archiveWorld(worldId: string) {
   const newState = world.getState();
 
   await db.transaction(async (tx) => {
-    await tx.update(worlds)
+    await tx
+      .update(worlds)
       .set({
         lifecycleStatus: newState.lifecycleStatus,
         archivedAt: newState.archivedAt,

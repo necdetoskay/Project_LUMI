@@ -10,7 +10,10 @@ function createTestIdentity(label: string) {
   };
 }
 
-async function registerAndLogin(request: APIRequestContext, identity: { email: string; password: string }) {
+async function registerAndLogin(
+  request: APIRequestContext,
+  identity: { email: string; password: string },
+) {
   const registerRes = await request.post("/api/auth/register", {
     data: {
       displayName: "E2E Parent",
@@ -22,7 +25,11 @@ async function registerAndLogin(request: APIRequestContext, identity: { email: s
   expect(registerRes.status()).toBe(201);
 
   const loginRes = await request.post("/api/auth/login", {
-    data: { email: identity.email, password: identity.password, rememberMe: true },
+    data: {
+      email: identity.email,
+      password: identity.password,
+      rememberMe: true,
+    },
   });
   expect(loginRes.status()).toBe(200);
   return loginRes;
@@ -31,20 +38,31 @@ async function registerAndLogin(request: APIRequestContext, identity: { email: s
 let householdCounter = 0;
 function uniqueSlug(label: string): string {
   householdCounter++;
-  return `e2e-${label}-${Date.now()}-${householdCounter}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  return `e2e-${label}-${Date.now()}-${householdCounter}`
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-");
 }
 
 test.describe("Profile API authorization and contracts", () => {
-  test("unauthenticated requests return 401 for all profile endpoints", async ({ request }) => {
-    const postRes1 = await request.post("/api/households", { data: { name: "x", slug: "x" } });
+  test("unauthenticated requests return 401 for all profile endpoints", async ({
+    request,
+  }) => {
+    const postRes1 = await request.post("/api/households", {
+      data: { name: "x", slug: "x" },
+    });
     expect(postRes1.status()).toBe(401);
     expect((await postRes1.json()).error).toBe("UNAUTHORIZED");
 
-    const postRes2 = await request.post("/api/child-profiles", { data: { householdId: "x", displayName: "x", ageBand: "6-8" } });
+    const postRes2 = await request.post("/api/child-profiles", {
+      data: { householdId: "x", displayName: "x", ageBand: "6-8" },
+    });
     expect(postRes2.status()).toBe(401);
     expect((await postRes2.json()).error).toBe("UNAUTHORIZED");
 
-    const postRes3 = await request.post(`/api/child-profiles/archive/${crypto.randomUUID()}`, { data: { householdId: "x" } });
+    const postRes3 = await request.post(
+      `/api/child-profiles/archive/${crypto.randomUUID()}`,
+      { data: { householdId: "x" } },
+    );
     expect(postRes3.status()).toBe(401);
     expect((await postRes3.json()).error).toBe("UNAUTHORIZED");
 
@@ -57,7 +75,9 @@ test.describe("Profile API authorization and contracts", () => {
     expect((await getRes2.json()).error).toBe("UNAUTHORIZED");
   });
 
-  test("create household returns 400 for missing fields", async ({ request }) => {
+  test("create household returns 400 for missing fields", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("hh-missing");
     await registerAndLogin(request, identity);
 
@@ -67,12 +87,16 @@ test.describe("Profile API authorization and contracts", () => {
     expect(body.error).toBe("VALIDATION_ERROR");
   });
 
-  test("full flow: register -> create household -> create child profile -> list -> archive", async ({ request }) => {
+  test("full flow: register -> create household -> create child profile -> list -> archive", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("full-flow");
     await registerAndLogin(request, identity);
 
     const hhSlug = uniqueSlug("full");
-    const hhRes = await request.post("/api/households", { data: { name: "Full Flow Family", slug: hhSlug } });
+    const hhRes = await request.post("/api/households", {
+      data: { name: "Full Flow Family", slug: hhSlug },
+    });
     expect(hhRes.status()).toBe(201);
     const hhBody = await hhRes.json();
     expect(hhBody.household.name).toBe("Full Flow Family");
@@ -86,19 +110,26 @@ test.describe("Profile API authorization and contracts", () => {
     expect(cpBody.profile.displayName).toBe("Efe");
     const profileId = cpBody.profile.id;
 
-    const listRes = await request.get(`/api/child-profiles?householdId=${householdId}`);
+    const listRes = await request.get(
+      `/api/child-profiles?householdId=${householdId}`,
+    );
     expect(listRes.status()).toBe(200);
     const listBody = await listRes.json();
     expect(listBody.profiles).toHaveLength(1);
     expect(listBody.profiles[0].id).toBe(profileId);
 
-    const archiveRes = await request.post(`/api/child-profiles/archive/${profileId}`, {
-      data: { householdId },
-    });
+    const archiveRes = await request.post(
+      `/api/child-profiles/archive/${profileId}`,
+      {
+        data: { householdId },
+      },
+    );
     expect(archiveRes.status()).toBe(200);
     expect((await archiveRes.json()).success).toBe(true);
 
-    const listAfterArchive = await request.get(`/api/child-profiles?householdId=${householdId}`);
+    const listAfterArchive = await request.get(
+      `/api/child-profiles?householdId=${householdId}`,
+    );
     const listAfterBody = await listAfterArchive.json();
     expect(listAfterBody.profiles).toHaveLength(0);
   });
@@ -108,10 +139,14 @@ test.describe("Profile API authorization and contracts", () => {
     await registerAndLogin(request, identity);
 
     const slug = uniqueSlug("dup");
-    const firstRes = await request.post("/api/households", { data: { name: "First", slug } });
+    const firstRes = await request.post("/api/households", {
+      data: { name: "First", slug },
+    });
     expect(firstRes.status()).toBe(201);
 
-    const res = await request.post("/api/households", { data: { name: "Second", slug } });
+    const res = await request.post("/api/households", {
+      data: { name: "Second", slug },
+    });
     expect(res.status()).toBe(409);
     const body = await res.json();
     expect(body.error).toBe("HOUSEHOLD_EXISTS");
@@ -122,7 +157,9 @@ test.describe("Profile API authorization and contracts", () => {
     await registerAndLogin(request, identity);
 
     const slug = uniqueSlug("update");
-    const hhRes = await request.post("/api/households", { data: { name: "Update Family", slug } });
+    const hhRes = await request.post("/api/households", {
+      data: { name: "Update Family", slug },
+    });
     expect(hhRes.status()).toBe(201);
     const householdId = (await hhRes.json()).household.id;
 
@@ -147,7 +184,9 @@ test.describe("Profile API authorization and contracts", () => {
 
     await registerAndLogin(request, identityA);
     const slugA = uniqueSlug("cross-a");
-    const hhResA = await request.post("/api/households", { data: { name: "Family A", slug: slugA } });
+    const hhResA = await request.post("/api/households", {
+      data: { name: "Family A", slug: slugA },
+    });
     expect(hhResA.status()).toBe(201);
     const hhA = (await hhResA.json()).household;
 
@@ -160,7 +199,9 @@ test.describe("Profile API authorization and contracts", () => {
     await request.post("/api/auth/logout");
     await registerAndLogin(request, identityB);
     const slugB = uniqueSlug("cross-b");
-    const hhResB = await request.post("/api/households", { data: { name: "Family B", slug: slugB } });
+    const hhResB = await request.post("/api/households", {
+      data: { name: "Family B", slug: slugB },
+    });
     expect(hhResB.status()).toBe(201);
     const hhB = (await hhResB.json()).household;
 
@@ -170,12 +211,17 @@ test.describe("Profile API authorization and contracts", () => {
     expect(cpResB.status()).toBe(201);
     const profileB = (await cpResB.json()).profile;
 
-    const ownArchiveRes = await request.post(`/api/child-profiles/archive/${profileB.id}`, {
-      data: { householdId: hhB.id },
-    });
+    const ownArchiveRes = await request.post(
+      `/api/child-profiles/archive/${profileB.id}`,
+      {
+        data: { householdId: hhB.id },
+      },
+    );
     expect(ownArchiveRes.status()).toBe(200);
 
-    const listRes = await request.get(`/api/child-profiles?householdId=${hhA.id}`);
+    const listRes = await request.get(
+      `/api/child-profiles?householdId=${hhA.id}`,
+    );
     expect(listRes.status()).toBe(403);
 
     const createRes = await request.post("/api/child-profiles", {
@@ -183,17 +229,25 @@ test.describe("Profile API authorization and contracts", () => {
     });
     expect(createRes.status()).toBe(403);
 
-    const archiveRes = await request.post(`/api/child-profiles/archive/${profileA.id}`, {
-      data: { householdId: hhA.id },
-    });
+    const archiveRes = await request.post(
+      `/api/child-profiles/archive/${profileA.id}`,
+      {
+        data: { householdId: hhA.id },
+      },
+    );
     expect(archiveRes.status()).toBe(403);
 
-    const updateRes = await request.patch(`/api/child-profiles/${profileA.id}`, {
-      data: { householdId: hhA.id, displayName: "Hacked", ageBand: "9-12" },
-    });
+    const updateRes = await request.patch(
+      `/api/child-profiles/${profileA.id}`,
+      {
+        data: { householdId: hhA.id, displayName: "Hacked", ageBand: "9-12" },
+      },
+    );
     expect(updateRes.status()).toBe(403);
 
-    const policyRes = await request.get(`/api/parent-policy?householdId=${hhA.id}`);
+    const policyRes = await request.get(
+      `/api/parent-policy?householdId=${hhA.id}`,
+    );
     expect([403, 404]).toContain(policyRes.status());
   });
 
@@ -202,18 +256,27 @@ test.describe("Profile API authorization and contracts", () => {
     await registerAndLogin(request, identity);
 
     const slug = uniqueSlug("policy");
-    const hhRes = await request.post("/api/households", { data: { name: "Policy Family", slug } });
+    const hhRes = await request.post("/api/households", {
+      data: { name: "Policy Family", slug },
+    });
     expect(hhRes.status()).toBe(201);
     const householdId = (await hhRes.json()).household.id;
 
-    const getRes = await request.get(`/api/parent-policy?householdId=${householdId}`);
+    const getRes = await request.get(
+      `/api/parent-policy?householdId=${householdId}`,
+    );
     expect(getRes.status()).toBe(200);
     const policy = (await getRes.json()).policy;
     expect(policy.maxDailyStories).toBe(3);
     expect(policy.contentBoundary).toBe("strict");
 
     const updateRes = await request.put("/api/parent-policy", {
-      data: { householdId, maxDailyStories: 10, contentBoundary: "moderate", timeLimitMinutes: 60 },
+      data: {
+        householdId,
+        maxDailyStories: 10,
+        contentBoundary: "moderate",
+        timeLimitMinutes: 60,
+      },
     });
     expect(updateRes.status()).toBe(200);
     const updated = (await updateRes.json()).policy;
@@ -222,23 +285,31 @@ test.describe("Profile API authorization and contracts", () => {
     expect(updated.timeLimitMinutes).toBe(60);
   });
 
-  test("child profile validation rejects invalid payloads", async ({ request }) => {
+  test("child profile validation rejects invalid payloads", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("cp-val");
     await registerAndLogin(request, identity);
 
     const slug = uniqueSlug("cpval");
-    const hhRes = await request.post("/api/households", { data: { name: "Val Family", slug } });
+    const hhRes = await request.post("/api/households", {
+      data: { name: "Val Family", slug },
+    });
     expect(hhRes.status()).toBe(201);
     const householdId = (await hhRes.json()).household.id;
 
     const res1 = await request.post("/api/child-profiles", { data: {} });
     expect(res1.status()).toBe(400);
 
-    const res2 = await request.post("/api/child-profiles", { data: { householdId, displayName: "", ageBand: "6-8" } });
+    const res2 = await request.post("/api/child-profiles", {
+      data: { householdId, displayName: "", ageBand: "6-8" },
+    });
     expect(res2.status()).toBe(400);
   });
 
-  test("onboarding state reflects household and profile count", async ({ request }) => {
+  test("onboarding state reflects household and profile count", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("onboard-state");
     await registerAndLogin(request, identity);
 
@@ -248,7 +319,9 @@ test.describe("Profile API authorization and contracts", () => {
     expect(state.hasHousehold).toBe(false);
 
     const slug = uniqueSlug("onstate");
-    const householdRes = await request.post("/api/households", { data: { name: "Onboard State", slug } });
+    const householdRes = await request.post("/api/households", {
+      data: { name: "Onboard State", slug },
+    });
     expect(householdRes.status()).toBe(201);
 
     const onboardingAfterHH = await request.get("/api/onboarding");
@@ -257,7 +330,11 @@ test.describe("Profile API authorization and contracts", () => {
     expect(state.childProfileCount).toBe(0);
 
     const childRes = await request.post("/api/child-profiles", {
-      data: { householdId: state.householdId, displayName: "Zeynep", ageBand: "3-5" },
+      data: {
+        householdId: state.householdId,
+        displayName: "Zeynep",
+        ageBand: "3-5",
+      },
     });
     expect(childRes.status()).toBe(201);
 

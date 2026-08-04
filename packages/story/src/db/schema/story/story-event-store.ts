@@ -1,4 +1,11 @@
-import { index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
 
@@ -13,7 +20,9 @@ export const storyEventStore = storySchema.table(
     actorHouseholdId: uuid("actor_household_id"),
     childProfileId: uuid("child_profile_id"),
     payload: jsonb("payload").notNull().default({}),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("story_event_session_idx").on(table.storySessionId, table.createdAt),

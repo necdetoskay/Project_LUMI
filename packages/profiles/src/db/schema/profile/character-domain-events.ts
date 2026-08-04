@@ -1,4 +1,11 @@
-import { index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { primaryId } from "../common";
 import { profileSchema } from "../schemas";
 import { lumiCharacters } from "./lumi-characters";
@@ -32,5 +39,7 @@ export const characterDomainEvents = profileSchema.table(
   }),
 );
 
-export type CharacterDomainEventRecord = typeof characterDomainEvents.$inferSelect;
-export type NewCharacterDomainEventRecord = typeof characterDomainEvents.$inferInsert;
+export type CharacterDomainEventRecord =
+  typeof characterDomainEvents.$inferSelect;
+export type NewCharacterDomainEventRecord =
+  typeof characterDomainEvents.$inferInsert;

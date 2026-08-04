@@ -1,4 +1,11 @@
-import { check, index, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId, timestampColumns } from "./common";
 import { storySchema } from "./schemas";

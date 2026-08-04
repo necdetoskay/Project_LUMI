@@ -13,7 +13,10 @@ export interface SimulationRepository {
 
   saveRun(run: SimulationRunRecord): Promise<void>;
   findRun(runId: string): Promise<SimulationRunRecord | undefined>;
-  findLatestRun(worldId: string, householdId: string): Promise<SimulationRunRecord | undefined>;
+  findLatestRun(
+    worldId: string,
+    householdId: string,
+  ): Promise<SimulationRunRecord | undefined>;
 
   saveEffect(effect: SimulationEffectRecord): Promise<boolean>;
   findEffectsByRun(runId: string): Promise<SimulationEffectRecord[]>;
@@ -22,8 +25,15 @@ export interface SimulationRepository {
     householdId: string,
     after?: Date,
   ): Promise<SimulationEffectRecord[]>;
-  findPendingEffects(worldId: string, householdId: string): Promise<SimulationEffectRecord[]>;
-  updateEffectStatus(effectId: string, status: string, committedAt?: Date): Promise<void>;
+  findPendingEffects(
+    worldId: string,
+    householdId: string,
+  ): Promise<SimulationEffectRecord[]>;
+  updateEffectStatus(
+    effectId: string,
+    status: string,
+    committedAt?: Date,
+  ): Promise<void>;
 
   saveScheduledEvent(event: ScheduledEventRecord): Promise<void>;
   findScheduledEvents(
@@ -31,7 +41,10 @@ export interface SimulationRepository {
     householdId: string,
     unresolvedOnly?: boolean,
   ): Promise<ScheduledEventRecord[]>;
-  updateScheduledEventResolved(eventId: string, resolvedAt: Date): Promise<void>;
+  updateScheduledEventResolved(
+    eventId: string,
+    resolvedAt: Date,
+  ): Promise<void>;
 
   recordIdempotency(data: NewSimulationIdempotencyLedgerRecord): Promise<void>;
   findIdempotencyRecord(

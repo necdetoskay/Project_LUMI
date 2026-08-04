@@ -9,7 +9,9 @@ export const storyParentNotes = storySchema.table(
     storySessionId: uuid("story_session_id").notNull(),
     noteType: varchar("note_type", { length: 40 }).notNull(),
     placeholder: varchar("placeholder", { length: 1000 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [

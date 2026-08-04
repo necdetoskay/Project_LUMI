@@ -1,6 +1,10 @@
 import type { EntityRelevance, RelevanceBubble } from "../domain";
 import type { WorldClockState } from "../domain";
-import type { SimulationEffect, SimulationScheduledEvent, SimulationRunState } from "../domain";
+import type {
+  SimulationEffect,
+  SimulationScheduledEvent,
+  SimulationRunState,
+} from "../domain";
 
 export interface WorldClockSnapshot {
   worldId: string;
@@ -26,9 +30,18 @@ export interface NpcSnapshot {
 }
 
 export interface WorldSourcePort {
-  fetchClock(worldId: string, householdId: string): Promise<WorldClockSnapshot | null>;
-  fetchNpcsForWorld(worldId: string, householdId: string): Promise<NpcSnapshot[]>;
-  fetchChildLastSeen(worldId: string, childProfileId: string): Promise<Date | null>;
+  fetchClock(
+    worldId: string,
+    householdId: string,
+  ): Promise<WorldClockSnapshot | null>;
+  fetchNpcsForWorld(
+    worldId: string,
+    householdId: string,
+  ): Promise<NpcSnapshot[]>;
+  fetchChildLastSeen(
+    worldId: string,
+    childProfileId: string,
+  ): Promise<Date | null>;
   fetchScheduledEvents(
     worldId: string,
     householdId: string,
@@ -92,8 +105,5 @@ export interface RelevanceSourcePort {
 }
 
 export interface NpcSourcePort {
-  fetchSnapshots(
-    worldId: string,
-    householdId: string,
-  ): Promise<NpcSnapshot[]>;
+  fetchSnapshots(worldId: string, householdId: string): Promise<NpcSnapshot[]>;
 }

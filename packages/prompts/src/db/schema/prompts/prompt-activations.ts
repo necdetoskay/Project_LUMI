@@ -13,7 +13,10 @@ export const promptActivations = promptsSchema.table(
     activatedAt: timestamp("activated_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
-    deactivatedAt: timestamp("deactivated_at", { withTimezone: true, mode: "date" }),
+    deactivatedAt: timestamp("deactivated_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
   },
   (table) => [
     index("prompt_act_registry_idx").on(table.registryId),

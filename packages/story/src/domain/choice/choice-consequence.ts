@@ -1,4 +1,7 @@
-import { assertKnownConsequenceType, type ConsequenceType } from "./choice-types";
+import {
+  assertKnownConsequenceType,
+  type ConsequenceType,
+} from "./choice-types";
 
 export interface CreateChoiceConsequenceInput {
   storySessionId: string;

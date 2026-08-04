@@ -4,7 +4,10 @@ import type {
   ImageSizePolicy,
   MediaModelPolicy,
 } from "../../src/domain/media-types";
-import type { CharacterVisualIdentity, VoiceProfile } from "../../src/domain/identity";
+import type {
+  CharacterVisualIdentity,
+  VoiceProfile,
+} from "../../src/domain/identity";
 
 export const SCOPE: AssetScope = {
   householdId: "11111111-1111-4111-8111-111111111111",

@@ -42,10 +42,20 @@ export const simulationRuns = simulationSchema.table(
       .defaultNow(),
   },
   (table) => [
-    index("sr_world_household_idx").on(table.householdId, table.worldId, table.startedAt),
+    index("sr_world_household_idx").on(
+      table.householdId,
+      table.worldId,
+      table.startedAt,
+    ),
     index("sr_run_hash_idx").on(table.runHash),
-    check("chk_simulation_run_phase", sql`${table.timePhase} IN ('normal','reduced','limited','frozen')`),
-    check("chk_simulation_run_status", sql`${table.status} IN ('planned','running','completed','failed')`),
+    check(
+      "chk_simulation_run_phase",
+      sql`${table.timePhase} IN ('normal','reduced','limited','frozen')`,
+    ),
+    check(
+      "chk_simulation_run_status",
+      sql`${table.status} IN ('planned','running','completed','failed')`,
+    ),
   ],
 );
 

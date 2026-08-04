@@ -1,8 +1,5 @@
 import type { AssetScope } from "../domain/asset";
-import type {
-  ObjectStoragePort,
-  StoredObject,
-} from "../ports/storage.port";
+import type { ObjectStoragePort, StoredObject } from "../ports/storage.port";
 
 export class InMemoryObjectStorage implements ObjectStoragePort {
   readonly providerId = "memory";

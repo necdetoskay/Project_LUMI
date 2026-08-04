@@ -12,16 +12,26 @@ export const POST = observeHandler(
 
       if (!householdId) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
           { status: 400 },
         );
       }
 
       try {
-        const body = (await request.json()) as { needType: string; description: string; priority?: number };
+        const body = (await request.json()) as {
+          needType: string;
+          description: string;
+          priority?: number;
+        };
         if (!body.needType || !body.description) {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "needType and description are required" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "needType and description are required",
+            },
             { status: 400 },
           );
         }
@@ -41,17 +51,32 @@ export const POST = observeHandler(
             { status: 404 },
           );
         }
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json({ error: "NOT_FOUND", message: "Character not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
         }
         if (err.name === "ValidationError") {
-          return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+          return NextResponse.json(
+            { error: err.code ?? "VALIDATION_ERROR", message },
+            { status: 400 },
+          );
         }
         if (err.name === "DomainError" && err.code === "VERSION_CONFLICT") {
-          return NextResponse.json({ error: "VERSION_CONFLICT", message }, { status: 409 });
+          return NextResponse.json(
+            { error: "VERSION_CONFLICT", message },
+            { status: 409 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to add goal" },
@@ -72,43 +97,75 @@ export const PATCH = observeHandler(
 
       if (!householdId) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
           { status: 400 },
         );
       }
 
       try {
-        const body = (await request.json()) as { action: string; goalId: string };
+        const body = (await request.json()) as {
+          action: string;
+          goalId: string;
+        };
         if (!body.action || !body.goalId) {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "action and goalId are required" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "action and goalId are required",
+            },
             { status: 400 },
           );
         }
 
         if (body.action !== "complete") {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "Only 'complete' action is supported" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "Only 'complete' action is supported",
+            },
             { status: 400 },
           );
         }
 
-        const result = await completeGoal(parent.id, householdId, id, body.goalId);
+        const result = await completeGoal(
+          parent.id,
+          householdId,
+          id,
+          body.goalId,
+        );
         return NextResponse.json({ character: result });
       } catch (error) {
         const err = error as Error & { code?: string };
         const message = err.message ?? "Unknown error";
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json({ error: "NOT_FOUND", message: "Character not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
         }
         if (err.name === "ValidationError") {
-          return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+          return NextResponse.json(
+            { error: err.code ?? "VALIDATION_ERROR", message },
+            { status: 400 },
+          );
         }
         if (err.name === "DomainError" && err.code === "VERSION_CONFLICT") {
-          return NextResponse.json({ error: "VERSION_CONFLICT", message }, { status: 409 });
+          return NextResponse.json(
+            { error: "VERSION_CONFLICT", message },
+            { status: 409 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to complete goal" },

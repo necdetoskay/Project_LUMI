@@ -43,7 +43,4 @@ export {
   __setTestAuthDb,
 } from "./world-auth.service";
 
-export {
-  getWorldDetail,
-  __setTestDetailDb,
-} from "./world-detail.service";
+export { getWorldDetail, __setTestDetailDb } from "./world-detail.service";

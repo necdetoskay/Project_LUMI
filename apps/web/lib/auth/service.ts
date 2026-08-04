@@ -110,7 +110,9 @@ function toParentAccount(row: ParentAccountRow): ParentAccount {
   };
 }
 
-function toParentAccountFromSession(row: ParentSessionRecordRow): ParentAccount {
+function toParentAccountFromSession(
+  row: ParentSessionRecordRow,
+): ParentAccount {
   return {
     id: row.parent_account_id,
     email: row.parent_email,
@@ -154,7 +156,13 @@ async function createSession(
       VALUES ($1, $2, $3, COALESCE($4, gen_random_uuid()), $5)
       RETURNING id, session_family_id, remember_me, expires_at
     `,
-    [parentId, tokenHash, expiresAt, options.sessionFamilyId ?? null, rememberMe],
+    [
+      parentId,
+      tokenHash,
+      expiresAt,
+      options.sessionFamilyId ?? null,
+      rememberMe,
+    ],
   );
 
   const row = result.rows[0];

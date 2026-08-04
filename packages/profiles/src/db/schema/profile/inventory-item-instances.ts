@@ -1,4 +1,11 @@
-import { integer, jsonb, real, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  integer,
+  jsonb,
+  real,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId, timestampColumns } from "../common";
 import { profileSchema } from "../schemas";
@@ -13,8 +20,12 @@ export const inventoryItemInstances = profileSchema.table(
       .references(() => inventoryItemDefinitions.id, { onDelete: "restrict" }),
     householdId: uuid("household_id").notNull(),
     instanceName: varchar("instance_name", { length: 200 }),
-    lifecycleStatus: varchar("lifecycle_status", { length: 20 }).notNull().default("active"),
-    conditionStatus: varchar("condition_status", { length: 20 }).notNull().default("pristine"),
+    lifecycleStatus: varchar("lifecycle_status", { length: 20 })
+      .notNull()
+      .default("active"),
+    conditionStatus: varchar("condition_status", { length: 20 })
+      .notNull()
+      .default("pristine"),
     durabilityCurrent: real("durability_current"),
     durabilityMax: real("durability_max"),
     quantity: integer("quantity").notNull().default(1),
@@ -32,7 +43,7 @@ export const inventoryItemInstances = profileSchema.table(
   }),
 );
 
-export type InventoryItemInstanceRecord = typeof inventoryItemInstances.$inferSelect;
-export type NewInventoryItemInstanceRecord = typeof inventoryItemInstances.$inferInsert;
-
-
+export type InventoryItemInstanceRecord =
+  typeof inventoryItemInstances.$inferSelect;
+export type NewInventoryItemInstanceRecord =
+  typeof inventoryItemInstances.$inferInsert;

@@ -23,7 +23,10 @@ export class DrizzleHouseholdRepository implements HouseholdRepository {
     return record ?? null;
   }
 
-  async findByIdForUser(id: string, userId: string): Promise<HouseholdRecord | null> {
+  async findByIdForUser(
+    id: string,
+    userId: string,
+  ): Promise<HouseholdRecord | null> {
     const [record] = await this.db
       .select({
         id: households.id,

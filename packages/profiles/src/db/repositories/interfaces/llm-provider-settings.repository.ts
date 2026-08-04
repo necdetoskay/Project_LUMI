@@ -10,7 +10,9 @@ export interface LlmProviderSettingsRepository {
     provider: string,
   ): Promise<LlmProviderSettingsRecord | null>;
 
-  upsert(input: NewLlmProviderSettingsRecord): Promise<LlmProviderSettingsRecord>;
+  upsert(
+    input: NewLlmProviderSettingsRecord,
+  ): Promise<LlmProviderSettingsRecord>;
 
   deleteByUserAndHousehold(
     userId: string,

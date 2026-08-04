@@ -14,30 +14,31 @@ export function createNoopMetricsAdapter(): MetricsAdapter {
   };
 }
 
-export function createSafeMetricsAdapter(adapter: MetricsAdapter): MetricsAdapter {
+export function createSafeMetricsAdapter(
+  adapter: MetricsAdapter,
+): MetricsAdapter {
   return {
     incrementCounter(name, value, labels) {
       try {
         adapter.incrementCounter(name, value, labels);
-      } catch {
-      }
+      } catch {}
     },
     recordHistogram(name, value, labels) {
       try {
         adapter.recordHistogram(name, value, labels);
-      } catch {
-      }
+      } catch {}
     },
     recordError(name, labels) {
       try {
         adapter.recordError(name, labels);
-      } catch {
-      }
+      } catch {}
     },
   };
 }
 
-export function validateLabels(labels: MetricLabels | undefined): MetricLabels | undefined {
+export function validateLabels(
+  labels: MetricLabels | undefined,
+): MetricLabels | undefined {
   if (!labels) {
     return undefined;
   }

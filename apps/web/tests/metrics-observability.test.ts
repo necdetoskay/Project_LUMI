@@ -10,13 +10,19 @@ describe("metrics emission via spy adapter", () => {
       recordError: vi.fn(),
     };
 
-    const { configureMetricsAdapter, metricsAdapter } = await import("@/lib/observability/metrics");
+    const { configureMetricsAdapter, metricsAdapter } = await import(
+      "@/lib/observability/metrics"
+    );
     const originalAdapter = metricsAdapter.instance;
     configureMetricsAdapter(mock);
 
-    const { withObservedApiRoute } = await import("@/lib/observability/observed-api-route");
+    const { withObservedApiRoute } = await import(
+      "@/lib/observability/observed-api-route"
+    );
 
-    const request = new Request("http://localhost/api/test", { method: "POST" });
+    const request = new Request("http://localhost/api/test", {
+      method: "POST",
+    });
 
     await withObservedApiRoute(request, async () => {
       return new Response(null, { status: 201 });
@@ -25,7 +31,11 @@ describe("metrics emission via spy adapter", () => {
     expect(mock.incrementCounter).toHaveBeenCalledWith(
       "http.requests.total",
       1,
-      expect.objectContaining({ method: "POST", path: "/api/test", status: "201" }),
+      expect.objectContaining({
+        method: "POST",
+        path: "/api/test",
+        status: "201",
+      }),
     );
 
     metricsAdapter.instance = originalAdapter;
@@ -38,11 +48,15 @@ describe("metrics emission via spy adapter", () => {
       recordError: vi.fn(),
     };
 
-    const { configureMetricsAdapter, metricsAdapter } = await import("@/lib/observability/metrics");
+    const { configureMetricsAdapter, metricsAdapter } = await import(
+      "@/lib/observability/metrics"
+    );
     const originalAdapter = metricsAdapter.instance;
     configureMetricsAdapter(mock);
 
-    const { withObservedApiRoute } = await import("@/lib/observability/observed-api-route");
+    const { withObservedApiRoute } = await import(
+      "@/lib/observability/observed-api-route"
+    );
 
     const request = new Request("http://localhost/api/test");
 
@@ -66,11 +80,15 @@ describe("metrics emission via spy adapter", () => {
       recordError: vi.fn(),
     };
 
-    const { configureMetricsAdapter, metricsAdapter } = await import("@/lib/observability/metrics");
+    const { configureMetricsAdapter, metricsAdapter } = await import(
+      "@/lib/observability/metrics"
+    );
     const originalAdapter = metricsAdapter.instance;
     configureMetricsAdapter(mock);
 
-    const { withObservedApiRoute } = await import("@/lib/observability/observed-api-route");
+    const { withObservedApiRoute } = await import(
+      "@/lib/observability/observed-api-route"
+    );
 
     const request = new Request("http://localhost/api/test");
 
@@ -94,11 +112,15 @@ describe("metrics emission via spy adapter", () => {
       recordError: vi.fn(),
     };
 
-    const { configureMetricsAdapter, metricsAdapter } = await import("@/lib/observability/metrics");
+    const { configureMetricsAdapter, metricsAdapter } = await import(
+      "@/lib/observability/metrics"
+    );
     const originalAdapter = metricsAdapter.instance;
     configureMetricsAdapter(mock);
 
-    const { emitReadinessStatus, emitReadinessServiceStatus } = await import("@/lib/observability/metrics");
+    const { emitReadinessStatus, emitReadinessServiceStatus } = await import(
+      "@/lib/observability/metrics"
+    );
 
     emitReadinessStatus("ok");
     emitReadinessServiceStatus("postgres", "ok");
@@ -124,15 +146,23 @@ describe("metrics emission via spy adapter", () => {
       recordError: vi.fn(),
     };
 
-    const { configureMetricsAdapter, metricsAdapter } = await import("@/lib/observability/metrics");
+    const { configureMetricsAdapter, metricsAdapter } = await import(
+      "@/lib/observability/metrics"
+    );
     const originalAdapter = metricsAdapter.instance;
     configureMetricsAdapter(mock);
 
-    const { emitCorrelationInvalid } = await import("@/lib/observability/metrics");
+    const { emitCorrelationInvalid } = await import(
+      "@/lib/observability/metrics"
+    );
 
     emitCorrelationInvalid();
 
-    expect(mock.incrementCounter).toHaveBeenCalledWith("correlation.invalid", 1, undefined);
+    expect(mock.incrementCounter).toHaveBeenCalledWith(
+      "correlation.invalid",
+      1,
+      undefined,
+    );
 
     metricsAdapter.instance = originalAdapter;
   });

@@ -1,4 +1,8 @@
-export { validatePolicyInput, checkGuardianPermission, validateAgeBandConsistency } from "./validator";
+export {
+  validatePolicyInput,
+  checkGuardianPermission,
+  validateAgeBandConsistency,
+} from "./validator";
 export type {
   PolicyValidationInput,
   PolicyValidationResult,

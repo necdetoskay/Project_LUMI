@@ -10,7 +10,8 @@ import { observeHandler } from "@/lib/observability/observed-api-route";
 
 function getRateLimitIdentifier(request: Request, email: unknown) {
   const clientIp = getClientIp(request);
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "unknown";
+  const normalizedEmail =
+    typeof email === "string" ? email.trim().toLowerCase() : "unknown";
   return `${clientIp}:${normalizedEmail}`;
 }
 
@@ -85,7 +86,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
       }
 
-      return NextResponse.json({ error: "INVALID_RESET_REQUEST" }, { status: 400 });
+      return NextResponse.json(
+        { error: "INVALID_RESET_REQUEST" },
+        { status: 400 },
+      );
     }
 
     logAuthAuditEvent({
@@ -103,6 +107,9 @@ export const POST = observeHandler(async (request: Request) => {
       });
     }
 
-    return NextResponse.json({ error: "PASSWORD_RESET_REQUEST_FAILED" }, { status: 500 });
+    return NextResponse.json(
+      { error: "PASSWORD_RESET_REQUEST_FAILED" },
+      { status: 500 },
+    );
   }
 });

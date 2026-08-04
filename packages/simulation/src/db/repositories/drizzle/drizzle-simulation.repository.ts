@@ -149,7 +149,10 @@ export class DrizzleSimulationRepository implements SimulationRepository {
     if (after) {
       conditions.push(sql`${simulationEffects.committedAt} >= ${after}`);
     }
-    return this.db.select().from(simulationEffects).where(and(...conditions));
+    return this.db
+      .select()
+      .from(simulationEffects)
+      .where(and(...conditions));
   }
 
   async findPendingEffects(
@@ -229,7 +232,10 @@ export class DrizzleSimulationRepository implements SimulationRepository {
       );
   }
 
-  async updateScheduledEventResolved(eventId: string, resolvedAt: Date): Promise<void> {
+  async updateScheduledEventResolved(
+    eventId: string,
+    resolvedAt: Date,
+  ): Promise<void> {
     await this.db
       .update(scheduledEvents)
       .set({

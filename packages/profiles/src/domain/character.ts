@@ -10,9 +10,7 @@ import type {
   CharacterLifecycleStage,
 } from "./types";
 import { ValidationError } from "./errors";
-import {
-  validateCharacterOriginHandoff,
-} from "./validation";
+import { validateCharacterOriginHandoff } from "./validation";
 import {
   validateTraitVector,
   validateEmotionVector,
@@ -44,13 +42,19 @@ function cleanPreferenceHints(
 ): StoryPreferenceMetadata | undefined {
   if (!input) return undefined;
   const out: StoryPreferenceMetadata = {};
-  if (Array.isArray(input.preferredThemes) && input.preferredThemes.length > 0) {
+  if (
+    Array.isArray(input.preferredThemes) &&
+    input.preferredThemes.length > 0
+  ) {
     out.preferredThemes = [...input.preferredThemes];
   }
   if (Array.isArray(input.avoidedThemes) && input.avoidedThemes.length > 0) {
     out.avoidedThemes = [...input.avoidedThemes];
   }
-  if (Array.isArray(input.favoriteCharacterTypes) && input.favoriteCharacterTypes.length > 0) {
+  if (
+    Array.isArray(input.favoriteCharacterTypes) &&
+    input.favoriteCharacterTypes.length > 0
+  ) {
     out.favoriteCharacterTypes = [...input.favoriteCharacterTypes];
   }
   return out;
@@ -149,14 +153,22 @@ export class LumiCharacter {
         "householdId",
       );
     }
-    if (!input.name || input.name.trim().length < 1 || input.name.length > 120) {
+    if (
+      !input.name ||
+      input.name.trim().length < 1 ||
+      input.name.length > 120
+    ) {
       throw new ValidationError(
         "INVALID_CHARACTER_NAME",
         "Character name must be between 1 and 120 characters",
         "name",
       );
     }
-    if (!input.subtype || input.subtype.trim().length < 1 || input.subtype.length > 80) {
+    if (
+      !input.subtype ||
+      input.subtype.trim().length < 1 ||
+      input.subtype.length > 80
+    ) {
       throw new ValidationError(
         "INVALID_CHARACTER_SUBTYPE",
         "Character subtype must be between 1 and 80 characters",
@@ -183,8 +195,16 @@ export class LumiCharacter {
     validateCharacterLifecycleStage(lifecycleStage);
 
     const isChildAvatar = subtype === "child_avatar";
-    const traits = input.traits ?? (isChildAvatar ? { ...DEFAULT_CHILD_AVATAR_TRAITS } : { ...DEFAULT_NPC_TRAITS });
-    const emotions = input.emotions ?? (isChildAvatar ? { ...DEFAULT_CHILD_AVATAR_EMOTIONS } : { ...DEFAULT_NPC_EMOTIONS });
+    const traits =
+      input.traits ??
+      (isChildAvatar
+        ? { ...DEFAULT_CHILD_AVATAR_TRAITS }
+        : { ...DEFAULT_NPC_TRAITS });
+    const emotions =
+      input.emotions ??
+      (isChildAvatar
+        ? { ...DEFAULT_CHILD_AVATAR_EMOTIONS }
+        : { ...DEFAULT_NPC_EMOTIONS });
     const needs = input.needs ?? [];
     const goals = input.goals ?? [];
     const influence = input.influence ?? createDefaultInfluenceVector();
@@ -197,7 +217,11 @@ export class LumiCharacter {
     validateInfluenceVector(influence);
     validateRelationships(relationships);
 
-    if (isChildAvatar && input.relationships && input.relationships.length > 0) {
+    if (
+      isChildAvatar &&
+      input.relationships &&
+      input.relationships.length > 0
+    ) {
       throw new ValidationError(
         "CHILD_AVATAR_NO_RELATIONSHIPS",
         "Child avatar cannot have relationships at creation",
@@ -350,7 +374,11 @@ export class LumiCharacter {
   completeGoal(goalId: string): void {
     const goal = this.state.goals.find((g) => g.id === goalId);
     if (!goal) {
-      throw new ValidationError("GOAL_NOT_FOUND", `Goal ${goalId} not found`, "goalId");
+      throw new ValidationError(
+        "GOAL_NOT_FOUND",
+        `Goal ${goalId} not found`,
+        "goalId",
+      );
     }
     goal.status = "completed";
     goal.completedAt = new Date();
@@ -367,10 +395,18 @@ export class LumiCharacter {
 
   setActiveLocation(locationId: string, locationType: string): void {
     if (!locationId) {
-      throw new ValidationError("MISSING_LOCATION_ID", "Active location ID is required", "activeLocationId");
+      throw new ValidationError(
+        "MISSING_LOCATION_ID",
+        "Active location ID is required",
+        "activeLocationId",
+      );
     }
     if (!locationType) {
-      throw new ValidationError("MISSING_LOCATION_TYPE", "Active location type is required", "activeLocationType");
+      throw new ValidationError(
+        "MISSING_LOCATION_TYPE",
+        "Active location type is required",
+        "activeLocationType",
+      );
     }
     this.state.activeLocationId = locationId;
     this.state.activeLocationType = locationType;
@@ -411,7 +447,16 @@ export class LumiCharacter {
 
   updateRelationship(
     targetCharacterId: string,
-    updates: Partial<Pick<DirectionalRelationship, "trust" | "affinity" | "familiarity" | "relationshipType" | "customTypeLabel">>,
+    updates: Partial<
+      Pick<
+        DirectionalRelationship,
+        | "trust"
+        | "affinity"
+        | "familiarity"
+        | "relationshipType"
+        | "customTypeLabel"
+      >
+    >,
   ): void {
     const existing = this.state.relationships.find(
       (r) => r.targetCharacterId === targetCharacterId,
@@ -430,7 +475,10 @@ export class LumiCharacter {
 
   setLifecycleStage(stage: CharacterLifecycleStage): void {
     validateCharacterLifecycleStage(stage);
-    if (this.state.characterSubtype === "child_avatar" && stage !== "childhood") {
+    if (
+      this.state.characterSubtype === "child_avatar" &&
+      stage !== "childhood"
+    ) {
       throw new ValidationError(
         "CHILD_AVATAR_LIFECYCLE_FIXED",
         "Child avatar lifecycle stage is fixed to childhood",

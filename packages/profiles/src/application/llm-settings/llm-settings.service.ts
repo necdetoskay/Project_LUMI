@@ -61,7 +61,10 @@ async function assertHouseholdAccess(
   householdId: string,
   repos: ReturnType<typeof getRepos>,
 ): Promise<void> {
-  const household = await repos.householdRepo.findByIdForUser(householdId, userId);
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
@@ -136,7 +139,10 @@ export async function getLlmSettings(
     "openrouter",
   );
 
-  const taskRecords = await repos.taskRepo.findByUserAndHousehold(userId, householdId);
+  const taskRecords = await repos.taskRepo.findByUserAndHousehold(
+    userId,
+    householdId,
+  );
 
   let maskedApiKey: string | null = null;
   if (providerSettings?.encryptedApiKey) {
@@ -300,7 +306,10 @@ export async function listTaskModelSettings(
   const repos = getRepos();
   await assertHouseholdAccess(userId, householdId, repos);
 
-  const records = await repos.taskRepo.findByUserAndHousehold(userId, householdId);
+  const records = await repos.taskRepo.findByUserAndHousehold(
+    userId,
+    householdId,
+  );
   return records.map((r) => ({
     id: r.id,
     taskType: r.taskType,
@@ -322,7 +331,11 @@ export async function getTaskModelSetting(
   const repos = getRepos();
   await assertHouseholdAccess(userId, householdId, repos);
 
-  const record = await repos.taskRepo.findByTaskType(userId, householdId, taskType);
+  const record = await repos.taskRepo.findByTaskType(
+    userId,
+    householdId,
+    taskType,
+  );
   if (!record) return null;
 
   return {

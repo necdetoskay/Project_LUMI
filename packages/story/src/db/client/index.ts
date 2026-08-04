@@ -21,7 +21,9 @@ let _storyDb: Database | undefined;
 
 export function getStoryDb(): Database {
   if (_storyDb) return _storyDb;
-  const url = process.env.DATABASE_URL ?? "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
+  const url =
+    process.env.DATABASE_URL ??
+    "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
   _storyDb = createDatabase(url);
   return _storyDb;
 }

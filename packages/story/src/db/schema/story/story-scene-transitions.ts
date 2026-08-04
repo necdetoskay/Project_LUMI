@@ -1,4 +1,11 @@
-import { check, index, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
@@ -12,7 +19,9 @@ export const storySceneTransitions = storySchema.table(
     toSceneId: uuid("to_scene_id").notNull(),
     transitionType: varchar("transition_type", { length: 20 }).notNull(),
     priority: integer("priority").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("story_transition_version_idx").on(table.storyVersionId),
@@ -24,5 +33,7 @@ export const storySceneTransitions = storySchema.table(
   ],
 );
 
-export type StorySceneTransitionRecord = typeof storySceneTransitions.$inferSelect;
-export type NewStorySceneTransitionRecord = typeof storySceneTransitions.$inferInsert;
+export type StorySceneTransitionRecord =
+  typeof storySceneTransitions.$inferSelect;
+export type NewStorySceneTransitionRecord =
+  typeof storySceneTransitions.$inferInsert;

@@ -1,7 +1,4 @@
-import type {
-  LumiCharacterRecord,
-  NewLumiCharacterRecord,
-} from "../../../db";
+import type { LumiCharacterRecord, NewLumiCharacterRecord } from "../../../db";
 
 export interface CharacterRepository {
   findById(

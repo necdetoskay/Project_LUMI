@@ -44,8 +44,12 @@ export const lumiCharacters = profileSchema.table(
     universeSeed: varchar("universe_seed", { length: 120 }).notNull(),
     safetyBounds: jsonb("safety_bounds").$type<SafetyBounds>().notNull(),
     preferenceHints: jsonb("preference_hints").$type<StoryPreferenceMetadata>(),
-    characterSubtype: varchar("character_subtype", { length: 20 }).notNull().default("child_avatar"),
-    lifecycleStage: varchar("lifecycle_stage", { length: 20 }).notNull().default("childhood"),
+    characterSubtype: varchar("character_subtype", { length: 20 })
+      .notNull()
+      .default("child_avatar"),
+    lifecycleStage: varchar("lifecycle_stage", { length: 20 })
+      .notNull()
+      .default("childhood"),
     activeLocationId: uuid("active_location_id"),
     activeLocationType: varchar("active_location_type", { length: 40 }),
     version: integer("version").notNull().default(1),

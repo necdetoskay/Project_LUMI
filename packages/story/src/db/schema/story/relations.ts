@@ -11,10 +11,13 @@ import { storyEventStore } from "./story-event-store";
 import { storyIdempotencyLedger } from "./story-idempotency-ledger";
 import { storyParentNotes } from "./story-parent-notes";
 
-export const storyDefinitionsRelations = relations(storyDefinitions, ({ many }) => ({
-  versions: many(storyVersions),
-  sessions: many(storySessions),
-}));
+export const storyDefinitionsRelations = relations(
+  storyDefinitions,
+  ({ many }) => ({
+    versions: many(storyVersions),
+    sessions: many(storySessions),
+  }),
+);
 
 export const storyVersionsRelations = relations(storyVersions, ({ many }) => ({
   scenes: many(storyScenes),
@@ -23,7 +26,10 @@ export const storyVersionsRelations = relations(storyVersions, ({ many }) => ({
 }));
 
 export const storyScenesRelations = relations(storyScenes, () => ({}));
-export const storySceneTransitionsRelations = relations(storySceneTransitions, () => ({}));
+export const storySceneTransitionsRelations = relations(
+  storySceneTransitions,
+  () => ({}),
+);
 export const storySessionsRelations = relations(storySessions, ({ many }) => ({
   characters: many(storySessionCharacters),
   visits: many(storySessionSceneVisits),
@@ -33,9 +39,24 @@ export const storySessionsRelations = relations(storySessions, ({ many }) => ({
   idempotency: many(storyIdempotencyLedger),
 }));
 
-export const storySessionCharactersRelations = relations(storySessionCharacters, () => ({}));
-export const storySessionSceneVisitsRelations = relations(storySessionSceneVisits, () => ({}));
-export const storySessionCheckpointsRelations = relations(storySessionCheckpoints, () => ({}));
+export const storySessionCharactersRelations = relations(
+  storySessionCharacters,
+  () => ({}),
+);
+export const storySessionSceneVisitsRelations = relations(
+  storySessionSceneVisits,
+  () => ({}),
+);
+export const storySessionCheckpointsRelations = relations(
+  storySessionCheckpoints,
+  () => ({}),
+);
 export const storyEventStoreRelations = relations(storyEventStore, () => ({}));
-export const storyIdempotencyLedgerRelations = relations(storyIdempotencyLedger, () => ({}));
-export const storyParentNotesRelations = relations(storyParentNotes, () => ({}));
+export const storyIdempotencyLedgerRelations = relations(
+  storyIdempotencyLedger,
+  () => ({}),
+);
+export const storyParentNotesRelations = relations(
+  storyParentNotes,
+  () => ({}),
+);

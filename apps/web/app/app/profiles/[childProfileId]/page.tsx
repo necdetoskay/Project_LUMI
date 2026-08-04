@@ -10,7 +10,9 @@ export default async function ChildProfileDetailPage({
 }: {
   params: Promise<{ childProfileId: string }>;
 }) {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
 
   if (!parent) {
     redirect("/login");

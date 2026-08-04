@@ -1,4 +1,11 @@
-import { check, index, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
@@ -10,15 +17,27 @@ export const storySessionSceneVisits = storySchema.table(
     storySessionId: uuid("story_session_id").notNull(),
     sceneId: uuid("scene_id").notNull(),
     visitSequence: integer("visit_sequence").notNull(),
-    enteredAt: timestamp("entered_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    enteredAt: timestamp("entered_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     visitReason: varchar("visit_reason", { length: 40 }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    index("story_session_visits_session_idx").on(table.storySessionId, table.visitSequence),
-    check("story_session_visits_sequence_check", sql`${table.visitSequence} >= 0`),
+    index("story_session_visits_session_idx").on(
+      table.storySessionId,
+      table.visitSequence,
+    ),
+    check(
+      "story_session_visits_sequence_check",
+      sql`${table.visitSequence} >= 0`,
+    ),
   ],
 );
 
-export type StorySessionSceneVisitRecord = typeof storySessionSceneVisits.$inferSelect;
-export type NewStorySessionSceneVisitRecord = typeof storySessionSceneVisits.$inferInsert;
+export type StorySessionSceneVisitRecord =
+  typeof storySessionSceneVisits.$inferSelect;
+export type NewStorySessionSceneVisitRecord =
+  typeof storySessionSceneVisits.$inferInsert;

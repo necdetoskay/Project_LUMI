@@ -15,7 +15,10 @@ function loadRootEnv() {
     const separatorIndex = trimmed.indexOf("=");
     if (separatorIndex === -1) continue;
     const key = trimmed.slice(0, separatorIndex).trim();
-    const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, "");
+    const value = trimmed
+      .slice(separatorIndex + 1)
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
     process.env[key] ??= value;
   }
 }

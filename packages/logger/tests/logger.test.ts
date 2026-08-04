@@ -76,7 +76,10 @@ describe("createLogger", () => {
     const log = createLogger();
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    log.info("auth.login", "login attempt", { password: "supersecret", email: "test@test.com" });
+    log.info("auth.login", "login attempt", {
+      password: "supersecret",
+      email: "test@test.com",
+    });
 
     const output = JSON.parse(spy.mock.calls[0]?.[0] as string);
     expect(output.context.password).toBe("[REDACTED]");

@@ -45,11 +45,15 @@ describe("checkTcpUrl", () => {
   it("detects an open TCP service", async () => {
     const { port } = await listen();
 
-    await expect(checkTcpUrl(`postgresql://127.0.0.1:${port}/lumi`)).resolves.toBeUndefined();
+    await expect(
+      checkTcpUrl(`postgresql://127.0.0.1:${port}/lumi`),
+    ).resolves.toBeUndefined();
   });
 
   it("times out when no service is listening", async () => {
-    await expect(checkTcpUrl("postgresql://127.0.0.1:15999/lumi", 200)).rejects.toThrow();
+    await expect(
+      checkTcpUrl("postgresql://127.0.0.1:15999/lumi", 200),
+    ).rejects.toThrow();
   });
 });
 
@@ -61,6 +65,8 @@ describe("checkRedisPing", () => {
       });
     });
 
-    await expect(checkRedisPing(`redis://127.0.0.1:${port}`)).resolves.toBeUndefined();
+    await expect(
+      checkRedisPing(`redis://127.0.0.1:${port}`),
+    ).resolves.toBeUndefined();
   });
 });

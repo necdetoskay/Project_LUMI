@@ -23,7 +23,12 @@ export const testRequest: ContextRequest = {
 export const testSafetyPolicy: SafetyPolicyItem = {
   contentBoundary: "strict",
   requireParentApprovalForAi: true,
-  forbiddenThemes: ["violence", "substance_abuse", "sexual_content", "profanity"],
+  forbiddenThemes: [
+    "violence",
+    "substance_abuse",
+    "sexual_content",
+    "profanity",
+  ],
   ageGuidance: ["Use short sentences.", "Balance tension with safety."],
   rules: [
     "No graphic physical harm.",
@@ -40,13 +45,21 @@ export const testParentPolicy: ParentPolicyItem = {
   allowImageGeneration: false,
   allowTts: true,
   timeLimitMinutes: 30,
-  forbiddenThemes: ["violence", "substance_abuse", "sexual_content", "profanity"],
+  forbiddenThemes: [
+    "violence",
+    "substance_abuse",
+    "sexual_content",
+    "profanity",
+  ],
 };
 
 export const testWorkingStory: WorkingStoryItem = {
   mode: "continuation",
   sceneGoal: "Investigate the mark found at the old mill.",
-  worldFacts: ["The door under the mill is locked.", "Mira is not on the island."],
+  worldFacts: [
+    "The door under the mill is locked.",
+    "Mira is not on the island.",
+  ],
   activeCharacterContexts: [
     {
       characterId: "fox",
@@ -55,10 +68,16 @@ export const testWorkingStory: WorkingStoryItem = {
       relevantMemories: ["Lumi rescued the fox from the river."],
       relationshipNotes: ["The fox trusts Lumi strongly."],
       beliefNotes: ["The old sailor is hiding something about the cave."],
-      behaviorGuidance: ["Stay close to Lumi when in danger.", "Suggest checking the surroundings before entering the cave."],
+      behaviorGuidance: [
+        "Stay close to Lumi when in danger.",
+        "Suggest checking the surroundings before entering the cave.",
+      ],
     },
   ],
-  playerKnownFacts: ["The fox found a mark at the mill.", "The old sailor does not want them near the cave."],
+  playerKnownFacts: [
+    "The fox found a mark at the mill.",
+    "The old sailor does not want them near the cave.",
+  ],
   hiddenFacts: ["Mira went to get help.", "The dragon is wounded and hiding."],
   pendingEvents: ["The owl left a note that has not been opened."],
   fixedDecisions: ["The fox will not enter the cave immediately."],
@@ -66,13 +85,20 @@ export const testWorkingStory: WorkingStoryItem = {
   mustNotInclude: ["The dragon's true state must not be revealed."],
   tone: "gentle tension",
   ageGuidance: ["Keep sentences short."],
-  choiceOptions: ["Search around the mill", "Talk to the old sailor", "Open the owl's note"],
+  choiceOptions: [
+    "Search around the mill",
+    "Talk to the old sailor",
+    "Open the owl's note",
+  ],
 };
 
 export const testEmotionalState: EmotionalStateItem = {
   characterId: "fox",
   dominantEmotions: ["cautious", "hopeful"],
-  behaviorGuidance: ["Pause near dark openings.", "Speak more quietly when anxious."],
+  behaviorGuidance: [
+    "Pause near dark openings.",
+    "Speak more quietly when anxious.",
+  ],
   arousal: "medium",
 };
 
@@ -98,7 +124,10 @@ export const testLongTermMemories: LongTermMemoryItem[] = [
 ];
 
 export const testKnowledge: KnowledgeItem = {
-  knownFacts: ["The fox found a mark at the mill.", "The old sailor warned them away from the cave."],
+  knownFacts: [
+    "The fox found a mark at the mill.",
+    "The old sailor warned them away from the cave.",
+  ],
   suspectedFacts: ["Mira might be hiding something."],
   unknownFacts: ["Mira went to get help."],
   hiddenTruths: ["The dragon is wounded and hiding."],

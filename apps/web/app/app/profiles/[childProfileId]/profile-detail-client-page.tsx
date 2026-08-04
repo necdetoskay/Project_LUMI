@@ -20,7 +20,11 @@ type CharacterInfo = {
   createdAt: string;
 };
 
-export default function ProfileDetailClientPage({ childProfileId }: { childProfileId: string }) {
+export default function ProfileDetailClientPage({
+  childProfileId,
+}: {
+  childProfileId: string;
+}) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [characters, setCharacters] = useState<CharacterInfo[]>([]);
@@ -39,7 +43,10 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
       try {
         const onboardRes = await fetch("/api/onboarding");
         const onboardData = await onboardRes.json();
-        const s = onboardData.onboarding as { hasHousehold: boolean; householdId: string | null };
+        const s = onboardData.onboarding as {
+          hasHousehold: boolean;
+          householdId: string | null;
+        };
 
         if (!s.hasHousehold || !s.householdId) {
           setError("No household found. Complete onboarding first.");
@@ -49,7 +56,9 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
 
         setHouseholdId(s.householdId);
 
-        const profileRes = await fetch(`/api/child-profiles/${encodeURIComponent(childProfileId)}?householdId=${s.householdId}`);
+        const profileRes = await fetch(
+          `/api/child-profiles/${encodeURIComponent(childProfileId)}?householdId=${s.householdId}`,
+        );
 
         if (!profileRes.ok) {
           if (profileRes.status === 404) {
@@ -70,7 +79,9 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
 
         setCharactersLoading(true);
         try {
-          const charsRes = await fetch(`/api/characters?householdId=${s.householdId}&childProfileId=${encodeURIComponent(childProfileId)}`);
+          const charsRes = await fetch(
+            `/api/characters?householdId=${s.householdId}&childProfileId=${encodeURIComponent(childProfileId)}`,
+          );
           if (charsRes.ok) {
             const charsData = await charsRes.json();
             setCharacters(charsData.characters ?? []);
@@ -108,15 +119,18 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
     setEditSubmitting(true);
 
     try {
-      const res = await fetch(`/api/child-profiles/${encodeURIComponent(childProfileId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          householdId,
-          displayName: editDisplayName.trim(),
-          ageBand: editAgeBand,
-        }),
-      });
+      const res = await fetch(
+        `/api/child-profiles/${encodeURIComponent(childProfileId)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            householdId,
+            displayName: editDisplayName.trim(),
+            ageBand: editAgeBand,
+          }),
+        },
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -144,9 +158,16 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
   return (
     <main className="mx-auto flex w-full max-w-[1180px] flex-col px-6 py-10">
       <nav className="mb-6 flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-        <a className="transition-colors hover:text-primary" href="/app">Dashboard</a>
+        <a className="transition-colors hover:text-primary" href="/app">
+          Dashboard
+        </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a className="transition-colors hover:text-primary" href="/app/profiles">Profiller</a>
+        <a
+          className="transition-colors hover:text-primary"
+          href="/app/profiles"
+        >
+          Profiller
+        </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <span className="text-primary">{profile.displayName}</span>
       </nav>
@@ -162,16 +183,22 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-on-surface-variant">
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">cake</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  cake
+                </span>
                 {ageBandLabel}
               </span>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">language</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  language
+                </span>
                 {profile.locale}
               </span>
               {firstCharacter && (
                 <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    auto_awesome
+                  </span>
                   {firstCharacter.name}
                 </span>
               )}
@@ -196,23 +223,48 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
             href="/app/profiles"
           >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_back
+            </span>
             Profiller listesine dön
           </a>
         </div>
       </header>
 
       <div className="mb-6 flex border-b border-outline-variant">
-        <TabButton label="Genel Bakış" tab="overview" active={activeTab === "overview"} onClick={setActiveTab} />
-        <TabButton label="Karakterler" tab="characters" active={activeTab === "characters"} onClick={setActiveTab} />
-        <TabButton label="Hikayeler" tab="stories" active={activeTab === "stories"} onClick={setActiveTab} />
-        <TabButton label="Tercihler" tab="preferences" active={activeTab === "preferences"} onClick={setActiveTab} />
-        <TabButton label="Güvenlik" tab="security" active={activeTab === "security"} onClick={setActiveTab} />
+        <TabButton
+          label="Genel Bakış"
+          tab="overview"
+          active={activeTab === "overview"}
+          onClick={setActiveTab}
+        />
+        <TabButton
+          label="Karakterler"
+          tab="characters"
+          active={activeTab === "characters"}
+          onClick={setActiveTab}
+        />
+        <TabButton
+          label="Hikayeler"
+          tab="stories"
+          active={activeTab === "stories"}
+          onClick={setActiveTab}
+        />
+        <TabButton
+          label="Tercihler"
+          tab="preferences"
+          active={activeTab === "preferences"}
+          onClick={setActiveTab}
+        />
+        <TabButton
+          label="Güvenlik"
+          tab="security"
+          active={activeTab === "security"}
+          onClick={setActiveTab}
+        />
       </div>
 
-      {activeTab === "overview" && (
-        <OverviewSection profile={profile} />
-      )}
+      {activeTab === "overview" && <OverviewSection profile={profile} />}
       {activeTab === "characters" && (
         <CharactersSection
           characters={characters}
@@ -220,21 +272,19 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
           childProfileId={childProfileId}
         />
       )}
-      {activeTab === "stories" && (
-        <StoriesSection />
-      )}
-      {activeTab === "preferences" && (
-        <PreferencesSection />
-      )}
-      {activeTab === "security" && (
-        <SecuritySection />
-      )}
+      {activeTab === "stories" && <StoriesSection />}
+      {activeTab === "preferences" && <PreferencesSection />}
+      {activeTab === "security" && <SecuritySection />}
 
       {editModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-on-surface">Profili düzenle</h2>
-            <p className="mt-1 text-sm text-on-surface-variant">{profile.displayName} için bilgileri güncelleyin.</p>
+            <h2 className="text-xl font-bold text-on-surface">
+              Profili düzenle
+            </h2>
+            <p className="mt-1 text-sm text-on-surface-variant">
+              {profile.displayName} için bilgileri güncelleyin.
+            </p>
 
             {editError && (
               <div className="mt-4 rounded-lg border border-error-container bg-destructive-soft px-4 py-3 text-sm text-error">
@@ -244,7 +294,10 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-on-surface" htmlFor="edit-name">
+                <label
+                  className="mb-1 block text-sm font-semibold text-on-surface"
+                  htmlFor="edit-name"
+                >
                   Görünen ad
                 </label>
                 <input
@@ -257,7 +310,10 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-on-surface" htmlFor="edit-age">
+                <label
+                  className="mb-1 block text-sm font-semibold text-on-surface"
+                  htmlFor="edit-age"
+                >
                   Yaş grubu
                 </label>
                 <select
@@ -275,7 +331,10 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-on-surface" htmlFor="edit-locale">
+                <label
+                  className="mb-1 block text-sm font-semibold text-on-surface"
+                  htmlFor="edit-locale"
+                >
                   Dil
                 </label>
                 <input
@@ -285,7 +344,9 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
                   value={profile.locale}
                   disabled
                 />
-                <p className="mt-1 text-xs text-on-surface-variant">Dil değişikliği şu anda desteklenmiyor.</p>
+                <p className="mt-1 text-xs text-on-surface-variant">
+                  Dil değişikliği şu anda desteklenmiyor.
+                </p>
               </div>
             </div>
 
@@ -313,7 +374,17 @@ export default function ProfileDetailClientPage({ childProfileId }: { childProfi
   );
 }
 
-function TabButton({ label, tab, active, onClick }: { label: string; tab: string; active: boolean; onClick: (tab: string) => void }) {
+function TabButton({
+  label,
+  tab,
+  active,
+  onClick,
+}: {
+  label: string;
+  tab: string;
+  active: boolean;
+  onClick: (tab: string) => void;
+}) {
   return (
     <button
       className={`px-4 py-3 text-sm font-semibold transition-colors ${
@@ -339,18 +410,36 @@ function OverviewSection({ profile }: { profile: Profile }) {
         <InfoCard label="Yaş grubu" value={ageBandLabel} icon="cake" />
         <InfoCard label="Dil / Locale" value={profile.locale} icon="language" />
         <InfoCard label="Profil durumu" value="Aktif" icon="check_circle" />
-        <InfoCard label="Aile evreni" value={profile.householdId.slice(0, 8) + "..."} icon="public" />
-        <InfoCard label="Oluşturma" value={new Date(profile.createdAt).toLocaleDateString("tr-TR")} icon="calendar_month" />
+        <InfoCard
+          label="Aile evreni"
+          value={profile.householdId.slice(0, 8) + "..."}
+          icon="public"
+        />
+        <InfoCard
+          label="Oluşturma"
+          value={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+          icon="calendar_month"
+        />
       </div>
     </section>
   );
 }
 
-function CharactersSection({ characters, loading, childProfileId }: { characters: CharacterInfo[]; loading: boolean; childProfileId: string }) {
+function CharactersSection({
+  characters,
+  loading,
+  childProfileId,
+}: {
+  characters: CharacterInfo[];
+  loading: boolean;
+  childProfileId: string;
+}) {
   if (loading) {
     return (
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <p className="text-sm text-on-surface-variant">Karakterler yükleniyor...</p>
+        <p className="text-sm text-on-surface-variant">
+          Karakterler yükleniyor...
+        </p>
       </section>
     );
   }
@@ -360,17 +449,24 @@ function CharactersSection({ characters, loading, childProfileId }: { characters
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[32px]">auto_awesome</span>
+            <span className="material-symbols-outlined text-[32px]">
+              auto_awesome
+            </span>
           </div>
-          <h3 className="text-xl font-bold text-on-surface">Henüz karakter yok</h3>
+          <h3 className="text-xl font-bold text-on-surface">
+            Henüz karakter yok
+          </h3>
           <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-            Bu profil için henüz karakter oluşturulmamış. İlk karakteri başlatarak maceraya adım atın.
+            Bu profil için henüz karakter oluşturulmamış. İlk karakteri
+            başlatarak maceraya adım atın.
           </p>
           <a
             className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
             href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
           >
-            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            <span className="material-symbols-outlined text-[20px]">
+              rocket_launch
+            </span>
             İlk karakteri başlat
           </a>
         </div>
@@ -392,10 +488,15 @@ function CharactersSection({ characters, loading, childProfileId }: { characters
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {characters.map((c) => (
-          <article key={c.id} className="rounded-xl border border-outline-variant bg-surface-container-low p-5">
+          <article
+            key={c.id}
+            className="rounded-xl border border-outline-variant bg-surface-container-low p-5"
+          >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-                <span className="material-symbols-outlined text-[24px]">magic</span>
+                <span className="material-symbols-outlined text-[24px]">
+                  magic
+                </span>
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold text-on-surface">{c.name}</h3>
@@ -430,12 +531,14 @@ function StoriesSection() {
       </div>
       <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
-          <span className="material-symbols-outlined text-[32px]">menu_book</span>
+          <span className="material-symbols-outlined text-[32px]">
+            menu_book
+          </span>
         </div>
         <h3 className="text-xl font-bold text-on-surface">Henüz hikaye yok</h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Hikaye geçmişi sonraki sprintlerde bağlanacak. Şu anda hikaye oluşturma ve görüntüleme
-          özelliği kullanıma hazır değil.
+          Hikaye geçmişi sonraki sprintlerde bağlanacak. Şu anda hikaye
+          oluşturma ve görüntüleme özelliği kullanıma hazır değil.
         </p>
       </div>
     </section>
@@ -450,10 +553,12 @@ function PreferencesSection() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">tune</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">Tercihler henüz tanımlanmadı</h3>
+        <h3 className="text-xl font-bold text-on-surface">
+          Tercihler henüz tanımlanmadı
+        </h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Bu profil için hikaye temaları, karakter türü tercihleri ve diğer ayarlar
-          sonraki sürümlerde eklenecek.
+          Bu profil için hikaye temaları, karakter türü tercihleri ve diğer
+          ayarlar sonraki sürümlerde eklenecek.
         </p>
       </div>
     </section>
@@ -468,22 +573,37 @@ function SecuritySection() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">shield</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">Ebeveyn politikası aktif</h3>
+        <h3 className="text-xl font-bold text-on-surface">
+          Ebeveyn politikası aktif
+        </h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Çocuk profili güvenlik ayarları, aile evreni düzeyindeki ebeveyn politikası tarafından
-          yönetilir. Politika detaylarını görüntülemek ve düzenlemek için ebeveyn panelini kullanın.
+          Çocuk profili güvenlik ayarları, aile evreni düzeyindeki ebeveyn
+          politikası tarafından yönetilir. Politika detaylarını görüntülemek ve
+          düzenlemek için ebeveyn panelini kullanın.
         </p>
       </div>
     </section>
   );
 }
 
-function InfoCard({ label, value, icon }: { label: string; value: string; icon: string }) {
+function InfoCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+}) {
   return (
     <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[18px] text-primary">{icon}</span>
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+        <span className="material-symbols-outlined text-[18px] text-primary">
+          {icon}
+        </span>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+          {label}
+        </p>
       </div>
       <p className="mt-2 text-base font-semibold text-on-surface">{value}</p>
     </div>

@@ -7,7 +7,8 @@ export const STORY_DEFINITION_LIFECYCLE = [
   "retired",
   "archived",
 ] as const;
-export type StoryDefinitionLifecycle = (typeof STORY_DEFINITION_LIFECYCLE)[number];
+export type StoryDefinitionLifecycle =
+  (typeof STORY_DEFINITION_LIFECYCLE)[number];
 
 export const STORY_TYPES = [
   "static",
@@ -205,56 +206,101 @@ export interface StorySessionCheckpointState {
   createdAt: Date;
 }
 
-export function assertKnownLifecycle(lifecycle: string): asserts lifecycle is StoryDefinitionLifecycle {
+export function assertKnownLifecycle(
+  lifecycle: string,
+): asserts lifecycle is StoryDefinitionLifecycle {
   if (!(STORY_DEFINITION_LIFECYCLE as readonly string[]).includes(lifecycle)) {
-    throw new ValidationError("INVALID_STORY_LIFECYCLE", `Invalid story definition lifecycle: ${lifecycle}`);
+    throw new ValidationError(
+      "INVALID_STORY_LIFECYCLE",
+      `Invalid story definition lifecycle: ${lifecycle}`,
+    );
   }
 }
 
-export function assertKnownSessionStatus(status: string): asserts status is SessionStatus {
+export function assertKnownSessionStatus(
+  status: string,
+): asserts status is SessionStatus {
   if (!(SESSION_STATUSES as readonly string[]).includes(status)) {
-    throw new ValidationError("INVALID_SESSION_STATUS", `Invalid session status: ${status}`);
+    throw new ValidationError(
+      "INVALID_SESSION_STATUS",
+      `Invalid session status: ${status}`,
+    );
   }
 }
 
-export function assertKnownStoryType(value: string): asserts value is StoryType {
+export function assertKnownStoryType(
+  value: string,
+): asserts value is StoryType {
   if (!(STORY_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_STORY_TYPE", `Invalid story type: ${value}`);
+    throw new ValidationError(
+      "INVALID_STORY_TYPE",
+      `Invalid story type: ${value}`,
+    );
   }
 }
 
-export function assertKnownSourceType(value: string): asserts value is StorySourceType {
+export function assertKnownSourceType(
+  value: string,
+): asserts value is StorySourceType {
   if (!(STORY_SOURCE_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_SOURCE_TYPE", `Invalid source type: ${value}`);
+    throw new ValidationError(
+      "INVALID_SOURCE_TYPE",
+      `Invalid source type: ${value}`,
+    );
   }
 }
 
-export function assertKnownStoryVersionStatus(value: string): asserts value is StoryVersionStatus {
+export function assertKnownStoryVersionStatus(
+  value: string,
+): asserts value is StoryVersionStatus {
   if (!(STORY_VERSION_STATUS as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_VERSION_STATUS", `Invalid story version status: ${value}`);
+    throw new ValidationError(
+      "INVALID_VERSION_STATUS",
+      `Invalid story version status: ${value}`,
+    );
   }
 }
 
-export function assertKnownStoryMode(value: string): asserts value is StoryMode {
+export function assertKnownStoryMode(
+  value: string,
+): asserts value is StoryMode {
   if (!(STORY_MODES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_STORY_MODE", `Invalid story mode: ${value}`);
+    throw new ValidationError(
+      "INVALID_STORY_MODE",
+      `Invalid story mode: ${value}`,
+    );
   }
 }
 
-export function assertKnownPlaybackMode(value: string): asserts value is PlaybackMode {
+export function assertKnownPlaybackMode(
+  value: string,
+): asserts value is PlaybackMode {
   if (!(PLAYBACK_MODES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_PLAYBACK_MODE", `Invalid playback mode: ${value}`);
+    throw new ValidationError(
+      "INVALID_PLAYBACK_MODE",
+      `Invalid playback mode: ${value}`,
+    );
   }
 }
 
-export function assertKnownSceneType(value: string): asserts value is SceneType {
+export function assertKnownSceneType(
+  value: string,
+): asserts value is SceneType {
   if (!(SCENE_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_SCENE_TYPE", `Invalid scene type: ${value}`);
+    throw new ValidationError(
+      "INVALID_SCENE_TYPE",
+      `Invalid scene type: ${value}`,
+    );
   }
 }
 
-export function assertKnownTransitionType(value: string): asserts value is TransitionType {
+export function assertKnownTransitionType(
+  value: string,
+): asserts value is TransitionType {
   if (!(TRANSITION_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_TRANSITION_TYPE", `Invalid transition type: ${value}`);
+    throw new ValidationError(
+      "INVALID_TRANSITION_TYPE",
+      `Invalid transition type: ${value}`,
+    );
   }
 }

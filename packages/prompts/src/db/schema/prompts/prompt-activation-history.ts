@@ -18,5 +18,7 @@ export const promptActivationHistory = promptsSchema.table(
   (table) => [index("prompt_hist_registry_idx").on(table.registryId)],
 );
 
-export type PromptActivationHistoryRecord = typeof promptActivationHistory.$inferSelect;
-export type NewPromptActivationHistoryRecord = typeof promptActivationHistory.$inferInsert;
+export type PromptActivationHistoryRecord =
+  typeof promptActivationHistory.$inferSelect;
+export type NewPromptActivationHistoryRecord =
+  typeof promptActivationHistory.$inferInsert;

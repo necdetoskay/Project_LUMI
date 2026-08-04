@@ -38,6 +38,8 @@ describe("ChoiceOption", () => {
     });
 
     expect(option.consequencePreviews).toHaveLength(1);
-    expect(option.consequencePreviews[0]!.previewText).toBe("You move toward the forest");
+    expect(option.consequencePreviews[0]!.previewText).toBe(
+      "You move toward the forest",
+    );
   });
 });

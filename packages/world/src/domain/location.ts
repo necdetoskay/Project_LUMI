@@ -1,4 +1,9 @@
-import type { LocationState, LocationAccessibilityStatus, OccupancyLevel, SafetyLevel } from "./world-types";
+import type {
+  LocationState,
+  LocationAccessibilityStatus,
+  OccupancyLevel,
+  SafetyLevel,
+} from "./world-types";
 import { validateDisplayName, validateLocationKey } from "./validation";
 
 export interface CreateLocationInput {

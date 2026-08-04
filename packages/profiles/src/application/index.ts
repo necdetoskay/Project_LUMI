@@ -1,10 +1,32 @@
-export { createHousehold, getOwnedHousehold, getHouseholdForUser, assertHouseholdOwnership } from "./household.service";
-export type { CreateHouseholdInput, HouseholdResult } from "./household.service";
+export {
+  createHousehold,
+  getOwnedHousehold,
+  getHouseholdForUser,
+  assertHouseholdOwnership,
+} from "./household.service";
+export type {
+  CreateHouseholdInput,
+  HouseholdResult,
+} from "./household.service";
 
-export { createChildProfile, listChildProfiles, updateChildProfile, archiveChildProfile, findChildProfileForUser } from "./child-profile.service";
-export type { CreateChildProfileInput, UpdateChildProfileInput, ChildProfileResult } from "./child-profile.service";
+export {
+  createChildProfile,
+  listChildProfiles,
+  updateChildProfile,
+  archiveChildProfile,
+  findChildProfileForUser,
+} from "./child-profile.service";
+export type {
+  CreateChildProfileInput,
+  UpdateChildProfileInput,
+  ChildProfileResult,
+} from "./child-profile.service";
 
-export { getPolicy, updatePolicy, appendPolicyAudit } from "./parent-policy.service";
+export {
+  getPolicy,
+  updatePolicy,
+  appendPolicyAudit,
+} from "./parent-policy.service";
 export type { PolicyResult, UpdatePolicyInput } from "./parent-policy.service";
 
 export { getOnboardingState } from "./onboarding.service";
@@ -41,9 +63,7 @@ export {
   updateLocation,
   getCharacterEvents,
 } from "./character-domain.service";
-export type {
-  CharacterDomainSummary,
-} from "./character-domain.service";
+export type { CharacterDomainSummary } from "./character-domain.service";
 
 export {
   createItemDefinition,
@@ -56,8 +76,6 @@ export {
   listInventory,
   __setTestDb as __setInventoryTestDb,
 } from "./inventory.service";
-export type {
-  InventorySummary,
-} from "./inventory.service";
+export type { InventorySummary } from "./inventory.service";
 
 export * from "./llm-settings";

@@ -1,7 +1,14 @@
-import type { PromptVariableDefinition, PromptVersionState } from "./prompt-types";
+import type {
+  PromptVariableDefinition,
+  PromptVersionState,
+} from "./prompt-types";
 import { PROMPT_VERSION_STATUS } from "./prompt-types";
 import { ValidationError } from "./errors";
-import { validateId, validateTemplateBody, validateVersionNumber } from "./validation";
+import {
+  validateId,
+  validateTemplateBody,
+  validateVersionNumber,
+} from "./validation";
 
 export interface CreatePromptVersionInput {
   registryId: string;
@@ -104,13 +111,19 @@ export class PromptVersion {
 
   assertRenderable(): void {
     if (this.state.status !== "published") {
-      throw new ValidationError("VERSION_NOT_PUBLISHED", "Only published versions can be rendered");
+      throw new ValidationError(
+        "VERSION_NOT_PUBLISHED",
+        "Only published versions can be rendered",
+      );
     }
   }
 
   publish(): void {
     if (this.state.status !== "draft") {
-      throw new ValidationError("VERSION_NOT_DRAFT", "Only a draft version can be published");
+      throw new ValidationError(
+        "VERSION_NOT_DRAFT",
+        "Only a draft version can be published",
+      );
     }
     this.state.status = "published";
     this.state.publishedAt = new Date();
@@ -119,7 +132,10 @@ export class PromptVersion {
 
   archive(): void {
     if (this.state.status !== "published") {
-      throw new ValidationError("VERSION_NOT_PUBLISHED", "Only a published version can be archived");
+      throw new ValidationError(
+        "VERSION_NOT_PUBLISHED",
+        "Only a published version can be archived",
+      );
     }
     this.state.status = "archived";
     this.state.archivedAt = new Date();
@@ -127,5 +143,7 @@ export class PromptVersion {
   }
 }
 
-export const isValidPromptVersionStatus = (value: string): value is (typeof PROMPT_VERSION_STATUS)[number] =>
+export const isValidPromptVersionStatus = (
+  value: string,
+): value is (typeof PROMPT_VERSION_STATUS)[number] =>
   (PROMPT_VERSION_STATUS as readonly string[]).includes(value);

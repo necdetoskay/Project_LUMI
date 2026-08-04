@@ -1,4 +1,10 @@
-import { index, primaryKey, real, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  primaryKey,
+  real,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { profileSchema } from "../schemas";
 import { lumiCharacters } from "./lumi-characters";
 
@@ -20,5 +26,7 @@ export const characterEmotionState = profileSchema.table(
   }),
 );
 
-export type CharacterEmotionStateRecord = typeof characterEmotionState.$inferSelect;
-export type NewCharacterEmotionStateRecord = typeof characterEmotionState.$inferInsert;
+export type CharacterEmotionStateRecord =
+  typeof characterEmotionState.$inferSelect;
+export type NewCharacterEmotionStateRecord =
+  typeof characterEmotionState.$inferInsert;

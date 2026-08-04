@@ -13,7 +13,10 @@ export const GET = observeHandler(async (request: Request) => {
 
     if (!householdId) {
       return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+        {
+          error: "VALIDATION_ERROR",
+          message: "householdId query parameter is required",
+        },
         { status: 400 },
       );
     }
@@ -22,15 +25,24 @@ export const GET = observeHandler(async (request: Request) => {
       const policy = await getPolicy(householdId, parent.id);
       if (!policy) {
         return NextResponse.json(
-          { error: "NOT_FOUND", message: "Policy not found for this household" },
+          {
+            error: "NOT_FOUND",
+            message: "Policy not found for this household",
+          },
           { status: 404 },
         );
       }
       return NextResponse.json({ policy });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      if (message.includes("not a member") || message.includes("UNAUTHORIZED")) {
-        return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+      if (
+        message.includes("not a member") ||
+        message.includes("UNAUTHORIZED")
+      ) {
+        return NextResponse.json(
+          { error: "FORBIDDEN", message },
+          { status: 403 },
+        );
       }
       return NextResponse.json(
         { error: "INTERNAL_ERROR", message: "Failed to get policy" },
@@ -64,7 +76,8 @@ export const PUT = observeHandler(async (request: Request) => {
         input.timeLimitMinutes = parsed.timeLimitMinutes as number | null;
       }
       if (parsed.requireParentApprovalForAi !== undefined) {
-        input.requireParentApprovalForAi = parsed.requireParentApprovalForAi as boolean;
+        input.requireParentApprovalForAi =
+          parsed.requireParentApprovalForAi as boolean;
       }
       if (parsed.allowImageGeneration !== undefined) {
         input.allowImageGeneration = parsed.allowImageGeneration as boolean;
@@ -78,10 +91,19 @@ export const PUT = observeHandler(async (request: Request) => {
       return NextResponse.json({ policy });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      if (message.includes("not a member") || message.includes("UNAUTHORIZED")) {
-        return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+      if (
+        message.includes("not a member") ||
+        message.includes("UNAUTHORIZED")
+      ) {
+        return NextResponse.json(
+          { error: "FORBIDDEN", message },
+          { status: 403 },
+        );
       }
-      if (message.includes("validation") || message.includes("ValidationError")) {
+      if (
+        message.includes("validation") ||
+        message.includes("ValidationError")
+      ) {
         return NextResponse.json(
           { error: "VALIDATION_ERROR", message },
           { status: 400 },

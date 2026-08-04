@@ -1,5 +1,9 @@
 import type { SimulationStorePort } from "@lumi/simulation/ports";
-import type { WorldSourcePort, NpcSourcePort, RelevanceSourcePort } from "@lumi/simulation/ports";
+import type {
+  WorldSourcePort,
+  NpcSourcePort,
+  RelevanceSourcePort,
+} from "@lumi/simulation/ports";
 import type { SimulationRunInput } from "@lumi/simulation/application";
 import { SimulationRunner, BudgetPlanner } from "@lumi/simulation/application";
 import type { Logger } from "@lumi/logger";
@@ -61,14 +65,22 @@ export class SimulationJobRunner implements JobRunner {
       details: [],
     };
 
-    this.logger.info("worker.run.start", "starting simulation run", { runId: this.runId, batchSize: this.config.batchSize });
+    this.logger.info("worker.run.start", "starting simulation run", {
+      runId: this.runId,
+      batchSize: this.config.batchSize,
+    });
 
-    const candidates = await this.discoverySource.discoverAbsentWorlds(this.config.batchSize, this.now);
+    const candidates = await this.discoverySource.discoverAbsentWorlds(
+      this.config.batchSize,
+      this.now,
+    );
     const concurrency = Math.max(1, this.config.maxConcurrent);
 
     for (let index = 0; index < candidates.length; index += concurrency) {
       const chunk = candidates.slice(index, index + concurrency);
-      const outcomes = await Promise.all(chunk.map((candidate) => this.processCandidate(candidate)));
+      const outcomes = await Promise.all(
+        chunk.map((candidate) => this.processCandidate(candidate)),
+      );
       for (const outcome of outcomes) {
         result.processed += outcome.processed;
         result.skipped += outcome.skipped;
@@ -96,7 +108,10 @@ export class SimulationJobRunner implements JobRunner {
     errors: number;
     detail: { worldId: string; status: string; message: string };
   }> {
-    const absentDays = this.computeAbsentDays(candidate.childLastSeenAt, this.now);
+    const absentDays = this.computeAbsentDays(
+      candidate.childLastSeenAt,
+      this.now,
+    );
 
     if (absentDays < 1) {
       return {
@@ -141,7 +156,10 @@ export class SimulationJobRunner implements JobRunner {
         this.store,
         this.worldSource,
         this.npcSource,
-        { plan: (w, h, phase, budget, npcs, n) => new BudgetPlanner().plan(w, h, phase, budget, npcs, n) },
+        {
+          plan: (w, h, phase, budget, npcs, n) =>
+            new BudgetPlanner().plan(w, h, phase, budget, npcs, n),
+        },
       );
 
       const runResult = await runner.run(runInput);
@@ -159,7 +177,10 @@ export class SimulationJobRunner implements JobRunner {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error("worker.run.error", "simulation run error", { worldId: candidate.worldId, error: message });
+      this.logger.error("worker.run.error", "simulation run error", {
+        worldId: candidate.worldId,
+        error: message,
+      });
       return {
         processed: 0,
         skipped: 0,

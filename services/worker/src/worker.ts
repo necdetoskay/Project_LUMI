@@ -1,9 +1,17 @@
 import type { Logger } from "@lumi/logger";
 import { SimulationJobRunner } from "./job-runner";
-import type { WorkerConfig, WorldDiscoveryPort, WorkerResult } from "./job-runner";
+import type {
+  WorkerConfig,
+  WorldDiscoveryPort,
+  WorkerResult,
+} from "./job-runner";
 export type { WorkerConfig, WorkerResult } from "./job-runner";
 import type { SimulationStorePort } from "@lumi/simulation/ports";
-import type { WorldSourcePort, NpcSourcePort, RelevanceSourcePort } from "@lumi/simulation/ports";
+import type {
+  WorldSourcePort,
+  NpcSourcePort,
+  RelevanceSourcePort,
+} from "@lumi/simulation/ports";
 
 export class BackgroundWorker {
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -22,7 +30,9 @@ export class BackgroundWorker {
 
   start(): void {
     if (this.timer) return;
-    this.logger.info("worker.start", "worker starting", { intervalMs: this.config.intervalMs });
+    this.logger.info("worker.start", "worker starting", {
+      intervalMs: this.config.intervalMs,
+    });
     this.timer = setInterval(() => this.tick(), this.config.intervalMs);
   }
 
@@ -36,7 +46,9 @@ export class BackgroundWorker {
 
   async tick(): Promise<WorkerResult | null> {
     if (this.running) {
-      this.logger.warn("worker.tick.skip", "already running", { reason: "already_running" });
+      this.logger.warn("worker.tick.skip", "already running", {
+        reason: "already_running",
+      });
       return null;
     }
 
@@ -58,7 +70,9 @@ export class BackgroundWorker {
     } catch (error) {
       this.running = false;
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error("worker.tick.error", "worker tick error", { error: message });
+      this.logger.error("worker.tick.error", "worker tick error", {
+        error: message,
+      });
       return null;
     }
   }

@@ -13,7 +13,10 @@ function getDb(): Database {
   return testDb ?? getWorldDb();
 }
 
-export async function assertWorldAccess(worldId: string, householdId: string): Promise<void> {
+export async function assertWorldAccess(
+  worldId: string,
+  householdId: string,
+): Promise<void> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 
@@ -26,7 +29,10 @@ export async function assertWorldAccess(worldId: string, householdId: string): P
   }
 }
 
-export async function getWorldOrForbidden(worldId: string, householdId: string) {
+export async function getWorldOrForbidden(
+  worldId: string,
+  householdId: string,
+) {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 

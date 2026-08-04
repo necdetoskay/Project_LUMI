@@ -13,12 +13,16 @@ export const inventoryOwnerships = profileSchema.table(
       .references(() => inventoryItemInstances.id, { onDelete: "restrict" }),
     ownerType: varchar("owner_type", { length: 40 }).notNull(),
     ownerId: uuid("owner_id").notNull(),
-    ownershipType: varchar("ownership_type", { length: 20 }).notNull().default("owned"),
+    ownershipType: varchar("ownership_type", { length: 20 })
+      .notNull()
+      .default("owned"),
     status: varchar("status", { length: 20 }).notNull().default("active"),
     sourceType: varchar("source_type", { length: 40 }).notNull(),
     sourceId: uuid("source_id"),
     metadata: jsonb("metadata").notNull().default({}),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     releasedAt: timestamp("released_at", { withTimezone: true, mode: "date" }),
   },
   () => ({
@@ -29,5 +33,5 @@ export const inventoryOwnerships = profileSchema.table(
 );
 
 export type InventoryOwnershipRecord = typeof inventoryOwnerships.$inferSelect;
-export type NewInventoryOwnershipRecord = typeof inventoryOwnerships.$inferInsert;
-
+export type NewInventoryOwnershipRecord =
+  typeof inventoryOwnerships.$inferInsert;

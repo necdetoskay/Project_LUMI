@@ -110,7 +110,10 @@ describe("DrizzleSimulationRepository integration", () => {
 
     await repo.updateEffectStatus(effect.id, "committed", new Date());
 
-    const pending = await repo.findPendingEffects(effect.worldId, effect.householdId);
+    const pending = await repo.findPendingEffects(
+      effect.worldId,
+      effect.householdId,
+    );
     expect(pending.find((e) => e.id === effect.id)).toBeUndefined();
   });
 

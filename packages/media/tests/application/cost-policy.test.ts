@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { MediaCostEstimator } from "../../src/application/cost-estimator.service";
 import { MediaPolicyEnforcer } from "../../src/application/policy-enforcer.service";
-import { CostLimitExceededError, PolicyBlockedError } from "../../src/domain/errors";
+import {
+  CostLimitExceededError,
+  PolicyBlockedError,
+} from "../../src/domain/errors";
 import type { MediaPolicyConfig } from "../../src/application/policy-enforcer.service";
 import {
   AUDIO_MODEL,
@@ -69,7 +72,11 @@ describe("MediaPolicyEnforcer", () => {
 
   it("blocks image when attempt limit exceeded", () => {
     expect(() =>
-      enforcer.checkImage(IMAGE_POLICY, { ...IMAGE_MODEL, maxAttempts: 9 }, 0.02),
+      enforcer.checkImage(
+        IMAGE_POLICY,
+        { ...IMAGE_MODEL, maxAttempts: 9 },
+        0.02,
+      ),
     ).toThrow(PolicyBlockedError);
   });
 
@@ -79,8 +86,8 @@ describe("MediaPolicyEnforcer", () => {
   });
 
   it("blocks audio when cost limit exceeded", () => {
-    expect(() =>
-      enforcer.checkAudio(AUDIO_POLICY, AUDIO_MODEL, 0.9),
-    ).toThrow(CostLimitExceededError);
+    expect(() => enforcer.checkAudio(AUDIO_POLICY, AUDIO_MODEL, 0.9)).toThrow(
+      CostLimitExceededError,
+    );
   });
 });

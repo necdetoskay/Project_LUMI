@@ -282,7 +282,9 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 0.8rem 0.9rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 16px;
   line-height: 24px;

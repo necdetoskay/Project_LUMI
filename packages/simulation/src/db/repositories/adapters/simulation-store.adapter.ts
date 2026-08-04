@@ -19,7 +19,9 @@ function toSimulationRunState(record: SimulationRunRecord): SimulationRunState {
   return record as unknown as SimulationRunState;
 }
 
-function toScheduledEvent(record: ScheduledEventRecord): SimulationScheduledEvent {
+function toScheduledEvent(
+  record: ScheduledEventRecord,
+): SimulationScheduledEvent {
   return record as unknown as SimulationScheduledEvent;
 }
 
@@ -44,7 +46,11 @@ export class SimulationStoreAdapter implements SimulationStorePort {
     householdId: string,
     after?: Date,
   ): Promise<SimulationEffect[]> {
-    const records = await this.repo.findCommittedEffects(worldId, householdId, after);
+    const records = await this.repo.findCommittedEffects(
+      worldId,
+      householdId,
+      after,
+    );
     return records.map(toSimulationEffect);
   }
 
@@ -67,7 +73,10 @@ export class SimulationStoreAdapter implements SimulationStorePort {
     await this.repo.saveScheduledEvent(toScheduledEvent(event));
   }
 
-  async updateScheduledEventResolved(eventId: string, resolvedAt: Date): Promise<void> {
+  async updateScheduledEventResolved(
+    eventId: string,
+    resolvedAt: Date,
+  ): Promise<void> {
     await this.repo.updateScheduledEventResolved(eventId, resolvedAt);
   }
 

@@ -29,7 +29,9 @@ async function registerParent(
 }
 
 test.describe("auth smoke", () => {
-  test("register via API, get session cookie, then access /me", async ({ request }) => {
+  test("register via API, get session cookie, then access /me", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("register");
     const registerRes = await registerParent(request, identity);
 
@@ -83,12 +85,16 @@ test.describe("auth smoke", () => {
     expect(body.error).toBe("INVALID_CREDENTIALS");
   });
 
-  test("protected /app redirects unauthenticated users to login", async ({ page }) => {
+  test("protected /app redirects unauthenticated users to login", async ({
+    page,
+  }) => {
     await page.goto("/app");
     await page.waitForURL(/\/login/, { timeout: 10000 });
   });
 
-  test("/api/auth/me returns 401 for unauthenticated requests", async ({ request }) => {
+  test("/api/auth/me returns 401 for unauthenticated requests", async ({
+    request,
+  }) => {
     const response = await request.get("/api/auth/me");
     expect(response.status()).toBe(401);
 
@@ -96,7 +102,9 @@ test.describe("auth smoke", () => {
     expect(body.error).toBe("UNAUTHORIZED");
   });
 
-  test("forgot-password and reset-password flow via API", async ({ request }) => {
+  test("forgot-password and reset-password flow via API", async ({
+    request,
+  }) => {
     const identity = createTestIdentity("reset");
     await registerParent(request, identity);
 
@@ -126,7 +134,11 @@ test.describe("auth smoke", () => {
     expect(loginWithOldRes.status()).toBe(401);
 
     const loginWithNewRes = await request.post("/api/auth/login", {
-      data: { email: identity.email, password: "updated-password-456", rememberMe: true },
+      data: {
+        email: identity.email,
+        password: "updated-password-456",
+        rememberMe: true,
+      },
     });
     expect(loginWithNewRes.status()).toBe(200);
     const loginBody = await loginWithNewRes.json();

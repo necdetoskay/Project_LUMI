@@ -1,7 +1,11 @@
 import { withCorrelation } from "@lumi/logger";
 import { generateCorrelationId, isValidCorrelationId } from "@lumi/logger";
 
-import { emitHttpRequestDuration, emitHttpRequestError, emitHttpRequestTotal } from "./metrics";
+import {
+  emitHttpRequestDuration,
+  emitHttpRequestError,
+  emitHttpRequestTotal,
+} from "./metrics";
 
 export const CORRELATION_HEADER = "x-correlation-id";
 
@@ -70,7 +74,11 @@ export function observeHandler<P extends unknown[] = []>(
   routePattern?: string,
 ): (request: Request, ...params: P) => Promise<Response> {
   return async (request: Request, ...params: P) => {
-    return withObservedApiRoute(request, () => handler(request, ...params), routePattern);
+    return withObservedApiRoute(
+      request,
+      () => handler(request, ...params),
+      routePattern,
+    );
   };
 }
 

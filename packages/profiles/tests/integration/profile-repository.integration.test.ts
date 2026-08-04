@@ -15,7 +15,8 @@ let queryClient: postgres.Sql | undefined;
 let db: ReturnType<typeof drizzle> | undefined;
 const databaseUrl = process.env.PROFILE_TEST_DATABASE_URL;
 const destructiveTestsEnabled =
-  Boolean(databaseUrl) && process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
+  Boolean(databaseUrl) &&
+  process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
 
 const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 const TEST_USER_ID_2 = "00000000-0000-0000-0000-000000000002";
@@ -64,7 +65,8 @@ function itIfDb(name: string, fn: () => void | Promise<void>) {
 }
 
 describe("HouseholdRepository Integration", () => {
-  const repo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
+  const repo = () =>
+    new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
 
   itIfDb("creates and retrieves a household for a member", async () => {
     const household = await repo().create({
@@ -119,28 +121,33 @@ describe("HouseholdRepository Integration", () => {
 });
 
 describe("ChildProfileRepository Integration", () => {
-  const hRepo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
-  const cRepo = () => new DrizzleChildProfileRepository(db as unknown as QueryExecutor);
+  const hRepo = () =>
+    new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
+  const cRepo = () =>
+    new DrizzleChildProfileRepository(db as unknown as QueryExecutor);
 
-  itIfDb("creates and retrieves child profile within household scope", async () => {
-    const household = await hRepo().create({
-      id: crypto.randomUUID(),
-      name: "Child Test",
-      slug: `child-test-${crypto.randomUUID()}`,
-    });
+  itIfDb(
+    "creates and retrieves child profile within household scope",
+    async () => {
+      const household = await hRepo().create({
+        id: crypto.randomUUID(),
+        name: "Child Test",
+        slug: `child-test-${crypto.randomUUID()}`,
+      });
 
-    const profile = await cRepo().create({
-      id: crypto.randomUUID(),
-      householdId: household.id,
-      displayName: "Test Child",
-      ageBand: "6-8",
-      locale: "tr-TR",
-    });
+      const profile = await cRepo().create({
+        id: crypto.randomUUID(),
+        householdId: household.id,
+        displayName: "Test Child",
+        ageBand: "6-8",
+        locale: "tr-TR",
+      });
 
-    const found = await cRepo().findById(profile.id, household.id);
-    expect(found).not.toBeNull();
-    expect(found!.displayName).toBe("Test Child");
-  });
+      const found = await cRepo().findById(profile.id, household.id);
+      expect(found).not.toBeNull();
+      expect(found!.displayName).toBe("Test Child");
+    },
+  );
 
   itIfDb("does not expose profile across households", async () => {
     const h1 = await hRepo().create({
@@ -188,13 +195,17 @@ describe("ChildProfileRepository Integration", () => {
     });
 
     expect(prefs.storyLength).toBe("long");
-    await expect(cRepo().findPreferences(profile.id, household.id)).resolves.not.toBeNull();
+    await expect(
+      cRepo().findPreferences(profile.id, household.id),
+    ).resolves.not.toBeNull();
   });
 });
 
 describe("ParentPolicyRepository Integration", () => {
-  const hRepo = () => new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
-  const pRepo = () => new DrizzleParentPolicyRepository(db as unknown as QueryExecutor);
+  const hRepo = () =>
+    new DrizzleHouseholdRepository(db as unknown as QueryExecutor);
+  const pRepo = () =>
+    new DrizzleParentPolicyRepository(db as unknown as QueryExecutor);
 
   itIfDb("creates and retrieves parent policy for an owner", async () => {
     const household = await hRepo().create({

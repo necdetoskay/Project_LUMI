@@ -28,7 +28,8 @@ export class MediaCostEstimator implements MediaCostEstimatePort {
     const quality = sizePolicy.quality;
     const base = (IMAGE_PRICE_PER_MP_MODEL[quality] ?? 0.02) * megaPixels;
     const modelMultiplier =
-      modelPolicy.modelId.includes("hd") || modelPolicy.modelId.includes("large")
+      modelPolicy.modelId.includes("hd") ||
+      modelPolicy.modelId.includes("large")
         ? 2
         : 1;
     return round4(base * modelMultiplier);

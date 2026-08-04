@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getClientIp, logAuthAuditEvent } from "@/lib/auth/audit";
-import { getParentSessionCookie, setParentSessionCookie } from "@/lib/auth/http";
+import {
+  getParentSessionCookie,
+  setParentSessionCookie,
+} from "@/lib/auth/http";
 import { checkAuthRateLimit } from "@/lib/auth/rate-limit";
 import { refreshParentSession } from "@/lib/auth/service";
 import { observeHandler } from "@/lib/observability/observed-api-route";

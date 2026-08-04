@@ -17,7 +17,12 @@ function getDb(): Database {
 export async function createCheckpoint(
   worldId: string,
   description?: string,
-): Promise<{ checkpointId: string; sequence: number; worldVersion: number; stateHash: string }> {
+): Promise<{
+  checkpointId: string;
+  sequence: number;
+  worldVersion: number;
+  stateHash: string;
+}> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 
@@ -43,7 +48,8 @@ export async function createCheckpoint(
   });
 
   const checkpoints = await repo.findCheckpointsByWorldId(db, worldId);
-  const nextSequence = checkpoints.length > 0 ? checkpoints[0]!.checkpointSequence + 1 : 1;
+  const nextSequence =
+    checkpoints.length > 0 ? checkpoints[0]!.checkpointSequence + 1 : 1;
   const stateHash = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
 
   const checkpointRecord = await repo.createCheckpoint(db, {
@@ -70,7 +76,10 @@ export async function getWorldCheckpoints(worldId: string) {
   return repo.findCheckpointsByWorldId(db, worldId);
 }
 
-export async function verifyCheckpointHash(worldId: string, checkpointId: string): Promise<boolean> {
+export async function verifyCheckpointHash(
+  worldId: string,
+  checkpointId: string,
+): Promise<boolean> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 

@@ -18,10 +18,7 @@ export interface BudgetPlan {
   runHash: string;
 }
 
-function computeNpcRelevance(
-  npc: NpcSnapshot,
-  now: Date,
-): EntityRelevance {
+function computeNpcRelevance(npc: NpcSnapshot, now: Date): EntityRelevance {
   const daysSinceInteraction =
     (now.getTime() - npc.lastInteractionAt.getTime()) / (1000 * 60 * 60 * 24);
 
@@ -29,7 +26,8 @@ function computeNpcRelevance(
   const recencyScore = Math.max(0, 1 - daysSinceInteraction / 30);
   const proximityScore = npc.locationId !== null ? 0.5 : 0.2;
 
-  const score = (relationshipScore * 0.5 + recencyScore * 0.3 + proximityScore * 0.2);
+  const score =
+    relationshipScore * 0.5 + recencyScore * 0.3 + proximityScore * 0.2;
 
   const reasons: string[] = [];
   if (relationshipScore > 0.7) reasons.push("high relationship");

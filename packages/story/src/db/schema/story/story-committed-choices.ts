@@ -13,14 +13,21 @@ export const storyCommittedChoices = storySchema.table(
     evidenceSceneId: uuid("evidence_scene_id").notNull(),
     ruleVersion: integer("rule_version").notNull().default(1),
     actorUserId: uuid("actor_user_id"),
-    committedAt: timestamp("committed_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    committedAt: timestamp("committed_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("story_committed_choice_session_idx").on(table.storySessionId),
     index("story_committed_choice_point_idx").on(table.choicePointId),
-    check("story_committed_choice_rule_version_positive_check", sql`${table.ruleVersion} >= 1`),
+    check(
+      "story_committed_choice_rule_version_positive_check",
+      sql`${table.ruleVersion} >= 1`,
+    ),
   ],
 );
 
-export type StoryCommittedChoiceRecord = typeof storyCommittedChoices.$inferSelect;
-export type NewStoryCommittedChoiceRecord = typeof storyCommittedChoices.$inferInsert;
+export type StoryCommittedChoiceRecord =
+  typeof storyCommittedChoices.$inferSelect;
+export type NewStoryCommittedChoiceRecord =
+  typeof storyCommittedChoices.$inferInsert;

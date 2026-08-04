@@ -21,7 +21,9 @@ let _worldDb: Database | undefined;
 
 export function getWorldDb(): Database {
   if (_worldDb) return _worldDb;
-  const url = process.env.DATABASE_URL ?? "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
+  const url =
+    process.env.DATABASE_URL ??
+    "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
   _worldDb = createDatabase(url);
   return _worldDb;
 }

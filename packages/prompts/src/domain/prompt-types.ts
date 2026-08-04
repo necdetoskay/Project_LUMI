@@ -1,9 +1,19 @@
 import { ValidationError } from "./errors";
 
-export const PROMPT_VERSION_STATUS = ["draft", "published", "archived"] as const;
+export const PROMPT_VERSION_STATUS = [
+  "draft",
+  "published",
+  "archived",
+] as const;
 export type PromptVersionStatus = (typeof PROMPT_VERSION_STATUS)[number];
 
-export const PROMPT_VARIABLE_TYPES = ["string", "number", "boolean", "enum", "json"] as const;
+export const PROMPT_VARIABLE_TYPES = [
+  "string",
+  "number",
+  "boolean",
+  "enum",
+  "json",
+] as const;
 export type PromptVariableType = (typeof PROMPT_VARIABLE_TYPES)[number];
 
 export interface PromptRegistryState {
@@ -48,14 +58,24 @@ export interface PromptVariableDefinition {
   description?: string;
 }
 
-export function assertKnownPromptVersionStatus(value: string): asserts value is PromptVersionStatus {
+export function assertKnownPromptVersionStatus(
+  value: string,
+): asserts value is PromptVersionStatus {
   if (!(PROMPT_VERSION_STATUS as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_VERSION_STATUS", `Invalid prompt version status: ${value}`);
+    throw new ValidationError(
+      "INVALID_VERSION_STATUS",
+      `Invalid prompt version status: ${value}`,
+    );
   }
 }
 
-export function assertKnownPromptVariableType(value: string): asserts value is PromptVariableType {
+export function assertKnownPromptVariableType(
+  value: string,
+): asserts value is PromptVariableType {
   if (!(PROMPT_VARIABLE_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_VARIABLE_TYPE", `Invalid prompt variable type: ${value}`);
+    throw new ValidationError(
+      "INVALID_VARIABLE_TYPE",
+      `Invalid prompt variable type: ${value}`,
+    );
   }
 }

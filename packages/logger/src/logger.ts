@@ -18,7 +18,11 @@ export type LoggerOptions = {
   redactOptions?: Parameters<typeof redact>[1];
 };
 
-type LoggerMethod = (event: string, message: string, context?: Record<string, unknown>) => void;
+type LoggerMethod = (
+  event: string,
+  message: string,
+  context?: Record<string, unknown>,
+) => void;
 
 export interface Logger {
   debug: LoggerMethod;
@@ -63,13 +67,21 @@ export function createLogger(options: LoggerOptions = {}): Logger {
     }
 
     if (extraContext && Object.keys(extraContext).length > 0) {
-      base.context = redact(extraContext, redactOptions) as Record<string, unknown>;
+      base.context = redact(extraContext, redactOptions) as Record<
+        string,
+        unknown
+      >;
     }
 
     return base;
   }
 
-  function write(level: LogLevel, event: string, message: string, context?: Record<string, unknown>) {
+  function write(
+    level: LogLevel,
+    event: string,
+    message: string,
+    context?: Record<string, unknown>,
+  ) {
     if (!shouldLog(configuredLevel, level)) {
       return;
     }

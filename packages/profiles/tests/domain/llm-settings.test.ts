@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { encryptApiKey, decryptApiKey, maskApiKey } from "../../src/application/llm-settings/encryption";
+import {
+  encryptApiKey,
+  decryptApiKey,
+  maskApiKey,
+} from "../../src/application/llm-settings/encryption";
 import { parseAndValidateLlmOutput } from "../../src/application/llm-settings/llm-output-parser";
 
 describe("encryption helper", () => {
   beforeAll(() => {
-    process.env["LUMI_SETTINGS_ENCRYPTION_KEY"] = "test-encryption-key-32chars!!";
+    process.env["LUMI_SETTINGS_ENCRYPTION_KEY"] =
+      "test-encryption-key-32chars!!";
   });
 
   it("encrypts and decrypts a key (roundtrip)", () => {
@@ -186,14 +191,16 @@ describe("LLM output parser", () => {
   });
 
   it("extracts JSON from markdown code block", () => {
-    const raw = "```json\n{\"packages\":[{\"broadKind\":\"human\",\"characterType\":\"helper\",\"subtype\":\"Test\",\"originConcept\":\"A short concept\",\"startingRegionArchetype\":\"forest\",\"startingLocation\":\"safe\",\"homeArchetype\":\"home\",\"nearbyNpcSeed\":\"npc\",\"firstMysterySeed\":\"mystery\",\"toneVector\":[\"wonder\"],\"noveltyMarkers\":[\"m1\"]}]}\n```";
+    const raw =
+      '```json\n{"packages":[{"broadKind":"human","characterType":"helper","subtype":"Test","originConcept":"A short concept","startingRegionArchetype":"forest","startingLocation":"safe","homeArchetype":"home","nearbyNpcSeed":"npc","firstMysterySeed":"mystery","toneVector":["wonder"],"noveltyMarkers":["m1"]}]}\n```';
     const result = parseAndValidateLlmOutput(raw);
     expect(result.errors).toHaveLength(0);
     expect(result.packages).toHaveLength(1);
   });
 
   it("extracts JSON with brace matching from raw text", () => {
-    const raw = "Here is the result: {\"packages\":[{\"broadKind\":\"human\",\"characterType\":\"helper\",\"subtype\":\"Test\",\"originConcept\":\"A short concept\",\"startingRegionArchetype\":\"forest\",\"startingLocation\":\"safe\",\"homeArchetype\":\"home\",\"nearbyNpcSeed\":\"npc\",\"firstMysterySeed\":\"mystery\",\"toneVector\":[\"wonder\"],\"noveltyMarkers\":[\"m1\"]}]} That's it.";
+    const raw =
+      'Here is the result: {"packages":[{"broadKind":"human","characterType":"helper","subtype":"Test","originConcept":"A short concept","startingRegionArchetype":"forest","startingLocation":"safe","homeArchetype":"home","nearbyNpcSeed":"npc","firstMysterySeed":"mystery","toneVector":["wonder"],"noveltyMarkers":["m1"]}]} That\'s it.';
     const result = parseAndValidateLlmOutput(raw);
     expect(result.errors).toHaveLength(0);
     expect(result.packages).toHaveLength(1);

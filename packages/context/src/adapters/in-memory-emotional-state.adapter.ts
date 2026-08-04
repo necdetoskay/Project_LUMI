@@ -9,7 +9,9 @@ import { emotionalStateToItems } from "../application";
 export class InMemoryEmotionalStateAdapter implements EmotionalStateSource {
   constructor(private readonly states: EmotionalStateItem[]) {}
 
-  async fetch(_request: ContextRequest): Promise<ContextSourceResult<EmotionalStateItem>> {
+  async fetch(
+    _request: ContextRequest,
+  ): Promise<ContextSourceResult<EmotionalStateItem>> {
     void _request;
     return {
       sourceRelevance: 0.9,

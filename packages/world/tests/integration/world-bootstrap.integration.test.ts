@@ -8,8 +8,14 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "../../src/db/schema/world";
 import type { Database } from "../../src/db/client";
 import { DrizzleWorldRepository } from "../../src/db/repositories/drizzle/drizzle-world.repository";
-import { createWorldFromOrigin, __setTestWorldDb } from "../../src/application/world-bootstrap.service";
-import { moveCharacterToLocation, __setTestMoveDb } from "../../src/application/movement.service";
+import {
+  createWorldFromOrigin,
+  __setTestWorldDb,
+} from "../../src/application/world-bootstrap.service";
+import {
+  moveCharacterToLocation,
+  __setTestMoveDb,
+} from "../../src/application/movement.service";
 
 const ENABLE_DESTRUCTIVE = process.env.WORLD_TEST_ENABLE_DESTRUCTIVE === "true";
 const DATABASE_URL = process.env.WORLD_TEST_DATABASE_URL;
@@ -26,14 +32,14 @@ function getSafeDbName(url: string): string {
   if (LUMI_DB_NAMES.includes(dbName)) {
     throw new Error(
       `[WORLD-DESTRUCTIVE-TEST] DESTRUCTIVE TEST BLOCKED for production DB: "${dbName}". ` +
-      `World destructive tests require a disposable DB name containing "test" or "review".`,
+        `World destructive tests require a disposable DB name containing "test" or "review".`,
     );
   }
   if (!dbName.includes("test") && !dbName.includes("review")) {
     throw new Error(
       `[WORLD-DESTRUCTIVE-TEST] UNSAFE DB NAME: "${dbName}". ` +
-      `Destructive tests require DB name containing "test" or "review". ` +
-      `Got: ${dbName}`,
+        `Destructive tests require DB name containing "test" or "review". ` +
+        `Got: ${dbName}`,
     );
   }
   return dbName;
@@ -43,13 +49,13 @@ function isDestructiveEnabled(): boolean {
   if (!ENABLE_DESTRUCTIVE) {
     throw new Error(
       "[WORLD-DESTRUCTIVE-TEST] WORLD_TEST_ENABLE_DESTRUCTIVE is not set to true. " +
-      "Set WORLD_TEST_ENABLE_DESTRUCTIVE=true and WORLD_TEST_DATABASE_URL to a disposable database.",
+        "Set WORLD_TEST_ENABLE_DESTRUCTIVE=true and WORLD_TEST_DATABASE_URL to a disposable database.",
     );
   }
   if (!DATABASE_URL) {
     throw new Error(
       "[WORLD-DESTRUCTIVE-TEST] WORLD_TEST_DATABASE_URL is not set. " +
-      "Set WORLD_TEST_DATABASE_URL to a disposable test database.",
+        "Set WORLD_TEST_DATABASE_URL to a disposable test database.",
     );
   }
   getSafeDbName(DATABASE_URL);
@@ -73,7 +79,9 @@ describe("World bootstrap integration (destructive)", () => {
     // Run migrations as-is — they target profile.* schema
     // This works because Drizzle schema also targets profile.* via pgSchema("profile")
     const migrationDir = resolve(import.meta.dirname, "..", "..", "migrations");
-    const files = readdirSync(migrationDir).filter((f) => f.endsWith(".sql")).sort();
+    const files = readdirSync(migrationDir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
     for (const file of files) {
       const sql = readFileSync(resolve(migrationDir, file), "utf-8");
       await pool.query(sql);
@@ -96,15 +104,27 @@ describe("World bootstrap integration (destructive)", () => {
     // Clean up: drop the entire profile schema (safe only in disposable DB)
     try {
       if (pool) {
-        try { await pool.query("DROP SCHEMA IF EXISTS profile CASCADE"); } catch { /* ignore */ }
+        try {
+          await pool.query("DROP SCHEMA IF EXISTS profile CASCADE");
+        } catch {
+          /* ignore */
+        }
       }
     } finally {
       try {
         if (queryClient) {
-          try { await queryClient.end(); } catch { /* ignore */ }
+          try {
+            await queryClient.end();
+          } catch {
+            /* ignore */
+          }
         }
         if (pool) {
-          try { await pool.end(); } catch { /* ignore */ }
+          try {
+            await pool.end();
+          } catch {
+            /* ignore */
+          }
         }
       } finally {
         __setTestWorldDb(undefined);
@@ -160,7 +180,10 @@ describe("World bootstrap integration (destructive)", () => {
     const home = await repo.findHomeByWorldId(db, result.worldId);
     expect(home).toBeTruthy();
 
-    const manifest = await repo.findBootstrapManifestByWorldId(db, result.worldId);
+    const manifest = await repo.findBootstrapManifestByWorldId(
+      db,
+      result.worldId,
+    );
     expect(manifest).toBeTruthy();
 
     // Verify connections exist
@@ -172,7 +195,10 @@ describe("World bootstrap integration (destructive)", () => {
     expect(residences.length).toBeGreaterThanOrEqual(1);
 
     // Verify environment snapshots exist
-    const envSnapshots = await repo.findEnvironmentSnapshotsByWorldId(db, result.worldId);
+    const envSnapshots = await repo.findEnvironmentSnapshotsByWorldId(
+      db,
+      result.worldId,
+    );
     expect(envSnapshots.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -288,7 +314,10 @@ describe("World bootstrap integration (destructive)", () => {
       actorUserId: crypto.randomUUID(),
     });
 
-    const manifest = await repo.findBootstrapManifestByWorldId(db, result.worldId);
+    const manifest = await repo.findBootstrapManifestByWorldId(
+      db,
+      result.worldId,
+    );
     expect(manifest).toBeTruthy();
     expect(manifest!.originSeed).toBe("manifest-test-origin-004");
     expect(manifest!.acceptedCandidateSeed).toBe("manifest-test-candidate-004");

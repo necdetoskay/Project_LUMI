@@ -34,18 +34,31 @@ export default async function ResetPasswordPage({
         <p className="eyebrow">PROJECT LUMI</p>
         <h1>Parolayı yenile</h1>
         <p className="lead">
-          Yeni parolanı belirle. Bu işlem aktif oturumlarını kapatır ve yeni parola ile tekrar giriş yaparsın.
+          Yeni parolanı belirle. Bu işlem aktif oturumlarını kapatır ve yeni
+          parola ile tekrar giriş yaparsın.
         </p>
       </div>
-      {error ? <p className="auth-message auth-message-error">{error}</p> : null}
-      <form action="/api/auth/reset-password" method="post" className="auth-form">
+      {error ? (
+        <p className="auth-message auth-message-error">{error}</p>
+      ) : null}
+      <form
+        action="/api/auth/reset-password"
+        method="post"
+        className="auth-form"
+      >
         <label>
           Sıfırlama bağlantısı anahtarı
           <input name="token" type="text" required defaultValue={token} />
         </label>
         <label>
           Yeni parola
-          <input name="password" type="password" required autoComplete="new-password" minLength={10} />
+          <input
+            name="password"
+            type="password"
+            required
+            autoComplete="new-password"
+            minLength={10}
+          />
         </label>
         <label>
           Yeni parolayı tekrar gir

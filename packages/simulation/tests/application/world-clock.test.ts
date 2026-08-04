@@ -5,7 +5,12 @@ import {
   FREEZE_DAY_THRESHOLD,
 } from "../../src/domain/time";
 import { WorldClock } from "../../src/domain/clock";
-import { makeAbsenceInfo, makeClock, WORLD_ID, HOUSEHOLD_ID } from "../fixtures/simulation.fixtures";
+import {
+  makeAbsenceInfo,
+  makeClock,
+  WORLD_ID,
+  HOUSEHOLD_ID,
+} from "../fixtures/simulation.fixtures";
 
 describe("computeAbsencePolicy", () => {
   it("returns normal phase for 1 day absence", () => {
@@ -92,7 +97,10 @@ describe("computeAbsencePolicy", () => {
 
 describe("WorldClock", () => {
   it("creates a clock with day 1, hour 7 by default", () => {
-    const clock = WorldClock.create({ worldId: WORLD_ID, householdId: HOUSEHOLD_ID });
+    const clock = WorldClock.create({
+      worldId: WORLD_ID,
+      householdId: HOUSEHOLD_ID,
+    });
     const state = clock.getState();
 
     expect(state.worldId).toBe(WORLD_ID);
@@ -147,8 +155,14 @@ describe("WorldClock", () => {
   });
 
   it("produces a stable clock hash for the same state", () => {
-    const clock1 = WorldClock.create({ worldId: WORLD_ID, householdId: HOUSEHOLD_ID });
-    const clock2 = WorldClock.create({ worldId: WORLD_ID, householdId: HOUSEHOLD_ID });
+    const clock1 = WorldClock.create({
+      worldId: WORLD_ID,
+      householdId: HOUSEHOLD_ID,
+    });
+    const clock2 = WorldClock.create({
+      worldId: WORLD_ID,
+      householdId: HOUSEHOLD_ID,
+    });
     expect(clock1.getState().clockHash).toBe(clock2.getState().clockHash);
   });
 

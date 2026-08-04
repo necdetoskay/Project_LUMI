@@ -40,10 +40,7 @@ export const mediaAssets = mediaSchema.table(
     version: integer("version").notNull().default(1),
   },
   (table) => [
-    index("media_assets_scope_idx").on(
-      table.householdId,
-      table.assetType,
-    ),
+    index("media_assets_scope_idx").on(table.householdId, table.assetType),
     index("media_assets_key_idx").on(table.storageKey),
     index("media_assets_fingerprint_idx").on(
       table.householdId,
@@ -75,7 +72,9 @@ export const mediaAssetVariants = mediaSchema.table(
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique("uq_media_asset_variant").on(table.assetId, table.variantKey)],
+  (table) => [
+    unique("uq_media_asset_variant").on(table.assetId, table.variantKey),
+  ],
 );
 
 export const mediaAssetGenerations = mediaSchema.table(

@@ -24,7 +24,10 @@ function parseEnvFile(filePath: string): Record<string, string> {
     }
 
     const key = trimmed.slice(0, separatorIndex).trim();
-    const value = trimmed.slice(separatorIndex + 1).trim().replace(/^[`'"]|[`'"]$/g, "");
+    const value = trimmed
+      .slice(separatorIndex + 1)
+      .trim()
+      .replace(/^[`'"]|[`'"]$/g, "");
     values[key] = value;
   }
 

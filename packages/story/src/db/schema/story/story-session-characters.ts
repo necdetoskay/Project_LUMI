@@ -1,4 +1,12 @@
-import { check, index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { storySchema } from "./schemas";
 
@@ -8,7 +16,9 @@ export const storySessionCharacters = storySchema.table(
     storySessionId: uuid("story_session_id").notNull(),
     characterId: uuid("character_id").notNull(),
     participationRole: varchar("participation_role", { length: 20 }).notNull(),
-    joinedAt: timestamp("joined_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    joinedAt: timestamp("joined_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     initialStateSnapshot: jsonb("initial_state_snapshot").notNull().default({}),
     version: integer("version").notNull().default(1),
   },
@@ -21,5 +31,7 @@ export const storySessionCharacters = storySchema.table(
   ],
 );
 
-export type StorySessionCharacterRecord = typeof storySessionCharacters.$inferSelect;
-export type NewStorySessionCharacterRecord = typeof storySessionCharacters.$inferInsert;
+export type StorySessionCharacterRecord =
+  typeof storySessionCharacters.$inferSelect;
+export type NewStorySessionCharacterRecord =
+  typeof storySessionCharacters.$inferInsert;

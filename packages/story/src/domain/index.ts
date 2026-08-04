@@ -11,7 +11,10 @@ export { StoryVersion } from "./story-version";
 export type { CreateStoryVersionInput } from "./story-version";
 
 export { StoryScene, StorySceneTransition } from "./story-scene";
-export type { CreateStorySceneInput, CreateStorySceneTransitionInput } from "./story-scene";
+export type {
+  CreateStorySceneInput,
+  CreateStorySceneTransitionInput,
+} from "./story-scene";
 
 export { StorySession } from "./story-session";
 export type { CreateStorySessionInput } from "./story-session";

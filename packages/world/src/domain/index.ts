@@ -6,7 +6,12 @@ export { Location } from "./location";
 export type { CreateLocationInput } from "./location";
 export { Home } from "./home";
 export type { CreateHomeInput } from "./home";
-export { DomainError, ValidationError, NotFoundError, AuthorizationError } from "./errors";
+export {
+  DomainError,
+  ValidationError,
+  NotFoundError,
+  AuthorizationError,
+} from "./errors";
 
 export {
   WORLD_LIFECYCLE_STATUSES,

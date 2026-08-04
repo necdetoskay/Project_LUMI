@@ -9,8 +9,14 @@ import { fileURLToPath } from "node:url";
 import { DrizzleHouseholdRepository } from "../../src/db/repositories/drizzle/drizzle-household.repository";
 import { DrizzleInventoryRepository } from "../../src/db/repositories/drizzle/drizzle-inventory.repository";
 import {
-  acquireItem, transferItem, consumeItem, archiveItem,
-  getItem, getItemHistory, createItemDefinition, listInventory,
+  acquireItem,
+  transferItem,
+  consumeItem,
+  archiveItem,
+  getItem,
+  getItemHistory,
+  createItemDefinition,
+  listInventory,
   __setTestDb,
 } from "../../src/application/inventory.service";
 
@@ -20,7 +26,8 @@ const __dirname = dirname(__filename);
 let queryClient: postgres.Sql | undefined;
 let db: ReturnType<typeof drizzle> | undefined;
 const destructiveEnvEnabled =
-  !!process.env.PROFILE_TEST_DATABASE_URL && process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
+  !!process.env.PROFILE_TEST_DATABASE_URL &&
+  process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
 let destructiveTestsEnabled = destructiveEnvEnabled;
 
 const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -29,10 +36,13 @@ const MIGRATION_DIR = resolve(__dirname, "..", "..", "migrations");
 
 beforeAll(async () => {
   const databaseUrl = process.env.PROFILE_TEST_DATABASE_URL;
-  const allowDestructive = process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
+  const allowDestructive =
+    process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
 
   if (!databaseUrl || !allowDestructive) {
-    console.warn("Skipping inventory integration tests: PROFILE_TEST_DATABASE_URL + PROFILE_TEST_ENABLE_DESTRUCTIVE=true required.");
+    console.warn(
+      "Skipping inventory integration tests: PROFILE_TEST_DATABASE_URL + PROFILE_TEST_ENABLE_DESTRUCTIVE=true required.",
+    );
     return;
   }
 
@@ -68,7 +78,13 @@ afterAll(async () => {
 });
 
 function itIfDb(name: string, fn: () => Promise<void> | void) {
-  return (it as unknown as { runIf: (cond: boolean) => (n: string, f: () => Promise<void> | void) => void }).runIf(destructiveTestsEnabled)(name, fn);
+  return (
+    it as unknown as {
+      runIf: (
+        cond: boolean,
+      ) => (n: string, f: () => Promise<void> | void) => void;
+    }
+  ).runIf(destructiveTestsEnabled)(name, fn);
 }
 
 async function setupFixture() {
@@ -140,8 +156,11 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const result = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_sword", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_sword",
+      "character",
+      charId,
     );
     expect(result.instance.id).toBeTruthy();
     expect(result.instance.ownerType).toBe("character");
@@ -149,184 +168,267 @@ describe("S07 - Inventory Integration", () => {
     expect(result.ownershipId).toBeTruthy();
   });
 
-  itIfDb("acquire with idempotency key returns same result on replay", async () => {
-    await createItemDefinition(TEST_USER_ID, fixture.householdId, {
-      definitionKey: "test_idempotent_item",
-      displayName: "Idempotent Item",
-      category: "tool",
-      itemType: "persistent",
-      rarity: "common",
-      stackMode: "non_stackable",
-      durabilityMode: "none",
-      isTransferable: true,
-      isEquippable: false,
-      isConsumable: false,
-      isStorySelectable: true,
-      allowedOwnerTypes: ["character"],
-      metadata: {},
-    });
+  itIfDb(
+    "acquire with idempotency key returns same result on replay",
+    async () => {
+      await createItemDefinition(TEST_USER_ID, fixture.householdId, {
+        definitionKey: "test_idempotent_item",
+        displayName: "Idempotent Item",
+        category: "tool",
+        itemType: "persistent",
+        rarity: "common",
+        stackMode: "non_stackable",
+        durabilityMode: "none",
+        isTransferable: true,
+        isEquippable: false,
+        isConsumable: false,
+        isStorySelectable: true,
+        allowedOwnerTypes: ["character"],
+        metadata: {},
+      });
 
-    const charId = crypto.randomUUID();
-    const idempKey = `acquire-${crypto.randomUUID()}`;
+      const charId = crypto.randomUUID();
+      const idempKey = `acquire-${crypto.randomUUID()}`;
 
-    const first = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_idempotent_item", "character", charId,
-      undefined, idempKey,
-    );
-    expect(first.instance.id).toBeTruthy();
+      const first = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_idempotent_item",
+        "character",
+        charId,
+        undefined,
+        idempKey,
+      );
+      expect(first.instance.id).toBeTruthy();
 
-    const second = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_idempotent_item", "character", charId,
-      undefined, idempKey,
-    );
-    expect(second.instance.id).toBe(first.instance.id);
-  });
+      const second = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_idempotent_item",
+        "character",
+        charId,
+        undefined,
+        idempKey,
+      );
+      expect(second.instance.id).toBe(first.instance.id);
+    },
+  );
 
-  itIfDb("allows same acquire idempotency key in different households", async () => {
-    await createItemDefinition(TEST_USER_ID, fixture.householdId, {
-      definitionKey: "test_scoped_acquire_idempotency",
-      displayName: "Scoped Acquire Idempotency",
-      category: "tool",
-      itemType: "persistent",
-      rarity: "common",
-      stackMode: "non_stackable",
-      durabilityMode: "none",
-      isTransferable: true,
-      isEquippable: false,
-      isConsumable: false,
-      isStorySelectable: true,
-      allowedOwnerTypes: ["character"],
-      metadata: {},
-    });
+  itIfDb(
+    "allows same acquire idempotency key in different households",
+    async () => {
+      await createItemDefinition(TEST_USER_ID, fixture.householdId, {
+        definitionKey: "test_scoped_acquire_idempotency",
+        displayName: "Scoped Acquire Idempotency",
+        category: "tool",
+        itemType: "persistent",
+        rarity: "common",
+        stackMode: "non_stackable",
+        durabilityMode: "none",
+        isTransferable: true,
+        isEquippable: false,
+        isConsumable: false,
+        isStorySelectable: true,
+        allowedOwnerTypes: ["character"],
+        metadata: {},
+      });
 
-    const otherHousehold = await (new DrizzleHouseholdRepository(db! as never)).create({
-      id: crypto.randomUUID(),
-      name: "Idempotency Other Family",
-      slug: `idem-other-${crypto.randomUUID().slice(0, 8)}`,
-    });
+      const otherHousehold = await new DrizzleHouseholdRepository(
+        db! as never,
+      ).create({
+        id: crypto.randomUUID(),
+        name: "Idempotency Other Family",
+        slug: `idem-other-${crypto.randomUUID().slice(0, 8)}`,
+      });
 
-    await db!.execute(sql`
+      await db!.execute(sql`
       INSERT INTO profile.household_members (household_id, user_id, membership_role)
       VALUES (${otherHousehold.id}, ${TEST_USER_ID_2}, 'owner')
     `);
 
-    const sharedKey = `shared-acquire-${crypto.randomUUID()}`;
-    const first = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_scoped_acquire_idempotency", "character", crypto.randomUUID(),
-      undefined, sharedKey,
-    );
-    const second = await acquireItem(
-      TEST_USER_ID_2, otherHousehold.id,
-      "test_scoped_acquire_idempotency", "character", crypto.randomUUID(),
-      undefined, sharedKey,
-    );
+      const sharedKey = `shared-acquire-${crypto.randomUUID()}`;
+      const first = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_scoped_acquire_idempotency",
+        "character",
+        crypto.randomUUID(),
+        undefined,
+        sharedKey,
+      );
+      const second = await acquireItem(
+        TEST_USER_ID_2,
+        otherHousehold.id,
+        "test_scoped_acquire_idempotency",
+        "character",
+        crypto.randomUUID(),
+        undefined,
+        sharedKey,
+      );
 
-    expect(first.instance.id).toBeTruthy();
-    expect(second.instance.id).toBeTruthy();
-    expect(second.instance.id).not.toBe(first.instance.id);
-  });
+      expect(first.instance.id).toBeTruthy();
+      expect(second.instance.id).toBeTruthy();
+      expect(second.instance.id).not.toBe(first.instance.id);
+    },
+  );
 
-  itIfDb("allows same transfer idempotency key for different household items", async () => {
-    await createItemDefinition(TEST_USER_ID, fixture.householdId, {
-      definitionKey: "test_scoped_transfer_idempotency",
-      displayName: "Scoped Transfer Idempotency",
-      category: "tool",
-      itemType: "persistent",
-      rarity: "common",
-      stackMode: "non_stackable",
-      durabilityMode: "none",
-      isTransferable: true,
-      isEquippable: false,
-      isConsumable: false,
-      isStorySelectable: true,
-      allowedOwnerTypes: ["character"],
-      metadata: {},
-    });
+  itIfDb(
+    "allows same transfer idempotency key for different household items",
+    async () => {
+      await createItemDefinition(TEST_USER_ID, fixture.householdId, {
+        definitionKey: "test_scoped_transfer_idempotency",
+        displayName: "Scoped Transfer Idempotency",
+        category: "tool",
+        itemType: "persistent",
+        rarity: "common",
+        stackMode: "non_stackable",
+        durabilityMode: "none",
+        isTransferable: true,
+        isEquippable: false,
+        isConsumable: false,
+        isStorySelectable: true,
+        allowedOwnerTypes: ["character"],
+        metadata: {},
+      });
 
-    const otherHousehold = await (new DrizzleHouseholdRepository(db! as never)).create({
-      id: crypto.randomUUID(),
-      name: "Transfer Idempotency Other Family",
-      slug: `transfer-idem-other-${crypto.randomUUID().slice(0, 8)}`,
-    });
+      const otherHousehold = await new DrizzleHouseholdRepository(
+        db! as never,
+      ).create({
+        id: crypto.randomUUID(),
+        name: "Transfer Idempotency Other Family",
+        slug: `transfer-idem-other-${crypto.randomUUID().slice(0, 8)}`,
+      });
 
-    await db!.execute(sql`
+      await db!.execute(sql`
       INSERT INTO profile.household_members (household_id, user_id, membership_role)
       VALUES (${otherHousehold.id}, ${TEST_USER_ID_2}, 'owner')
     `);
 
-    const sharedKey = `shared-transfer-${crypto.randomUUID()}`;
-    const fromA = crypto.randomUUID();
-    const toA = crypto.randomUUID();
-    const itemA = await acquireItem(TEST_USER_ID, fixture.householdId, "test_scoped_transfer_idempotency", "character", fromA);
-    const transferA = await transferItem(
-      TEST_USER_ID, fixture.householdId,
-      itemA.instance.id, "character", fromA,
-      "character", toA, "gift", "A transfer", sharedKey,
-    );
+      const sharedKey = `shared-transfer-${crypto.randomUUID()}`;
+      const fromA = crypto.randomUUID();
+      const toA = crypto.randomUUID();
+      const itemA = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_scoped_transfer_idempotency",
+        "character",
+        fromA,
+      );
+      const transferA = await transferItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        itemA.instance.id,
+        "character",
+        fromA,
+        "character",
+        toA,
+        "gift",
+        "A transfer",
+        sharedKey,
+      );
 
-    const fromB = crypto.randomUUID();
-    const toB = crypto.randomUUID();
-    const itemB = await acquireItem(TEST_USER_ID_2, otherHousehold.id, "test_scoped_transfer_idempotency", "character", fromB);
-    const transferB = await transferItem(
-      TEST_USER_ID_2, otherHousehold.id,
-      itemB.instance.id, "character", fromB,
-      "character", toB, "gift", "B transfer", sharedKey,
-    );
+      const fromB = crypto.randomUUID();
+      const toB = crypto.randomUUID();
+      const itemB = await acquireItem(
+        TEST_USER_ID_2,
+        otherHousehold.id,
+        "test_scoped_transfer_idempotency",
+        "character",
+        fromB,
+      );
+      const transferB = await transferItem(
+        TEST_USER_ID_2,
+        otherHousehold.id,
+        itemB.instance.id,
+        "character",
+        fromB,
+        "character",
+        toB,
+        "gift",
+        "B transfer",
+        sharedKey,
+      );
 
-    expect(transferA).toBeTruthy();
-    expect(transferB).toBeTruthy();
-    expect(transferB!.toOwnership.ownerId).toBe(toB);
-  });
-  itIfDb("transfers item and moves inventory entry between two characters", async () => {
-    await createItemDefinition(TEST_USER_ID, fixture.householdId, {
-      definitionKey: "test_transfer_item",
-      displayName: "Transfer Item",
-      category: "tool",
-      itemType: "persistent",
-      rarity: "common",
-      stackMode: "non_stackable",
-      durabilityMode: "none",
-      isTransferable: true,
-      isEquippable: false,
-      isConsumable: false,
-      isStorySelectable: true,
-      allowedOwnerTypes: ["character", "household"],
-      metadata: {},
-    });
+      expect(transferA).toBeTruthy();
+      expect(transferB).toBeTruthy();
+      expect(transferB!.toOwnership.ownerId).toBe(toB);
+    },
+  );
+  itIfDb(
+    "transfers item and moves inventory entry between two characters",
+    async () => {
+      await createItemDefinition(TEST_USER_ID, fixture.householdId, {
+        definitionKey: "test_transfer_item",
+        displayName: "Transfer Item",
+        category: "tool",
+        itemType: "persistent",
+        rarity: "common",
+        stackMode: "non_stackable",
+        durabilityMode: "none",
+        isTransferable: true,
+        isEquippable: false,
+        isConsumable: false,
+        isStorySelectable: true,
+        allowedOwnerTypes: ["character", "household"],
+        metadata: {},
+      });
 
-    const fromChar = crypto.randomUUID();
-    const toChar = crypto.randomUUID();
+      const fromChar = crypto.randomUUID();
+      const toChar = crypto.randomUUID();
 
-    const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_transfer_item", "character", fromChar,
-    );
-    const itemId = acquired.instance.id;
+      const acquired = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_transfer_item",
+        "character",
+        fromChar,
+      );
+      const itemId = acquired.instance.id;
 
-    const transferResult = await transferItem(
-      TEST_USER_ID, fixture.householdId,
-      itemId, "character", fromChar,
-      "character", toChar, "gift", "Testing transfer",
-    );
-    expect(transferResult).toBeTruthy();
-    expect(transferResult!.toOwnership.ownerId).toBe(toChar);
+      const transferResult = await transferItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        itemId,
+        "character",
+        fromChar,
+        "character",
+        toChar,
+        "gift",
+        "Testing transfer",
+      );
+      expect(transferResult).toBeTruthy();
+      expect(transferResult!.toOwnership.ownerId).toBe(toChar);
 
-    const afterTransfer = await getItem(TEST_USER_ID, fixture.householdId, itemId);
-    expect(afterTransfer).toBeTruthy();
-    expect(afterTransfer!.ownerId).toBe(toChar);
+      const afterTransfer = await getItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        itemId,
+      );
+      expect(afterTransfer).toBeTruthy();
+      expect(afterTransfer!.ownerId).toBe(toChar);
 
-    const sourceItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", fromChar);
-    expect(sourceItems.find(i => i.id === itemId)).toBeUndefined();
+      const sourceItems = await listInventory(
+        TEST_USER_ID,
+        fixture.householdId,
+        "character",
+        fromChar,
+      );
+      expect(sourceItems.find((i) => i.id === itemId)).toBeUndefined();
 
-    const targetItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", toChar);
-    expect(targetItems.find(i => i.id === itemId)).toBeTruthy();
-  });
+      const targetItems = await listInventory(
+        TEST_USER_ID,
+        fixture.householdId,
+        "character",
+        toChar,
+      );
+      expect(targetItems.find((i) => i.id === itemId)).toBeTruthy();
+    },
+  );
 
   itIfDb("rejects cross-family item access via GET", async () => {
-    const otherHousehold = await (new DrizzleHouseholdRepository(db! as never)).create({
+    const otherHousehold = await new DrizzleHouseholdRepository(
+      db! as never,
+    ).create({
       id: crypto.randomUUID(),
       name: "Other Family",
       slug: `other-${crypto.randomUUID().slice(0, 8)}`,
@@ -334,59 +436,75 @@ describe("S07 - Inventory Integration", () => {
 
     await expect(
       acquireItem(
-        TEST_USER_ID, otherHousehold.id,
-        "test_apple", "character", crypto.randomUUID(),
+        TEST_USER_ID,
+        otherHousehold.id,
+        "test_apple",
+        "character",
+        crypto.randomUUID(),
       ),
     ).rejects.toThrow(/not a member/);
   });
 
-  itIfDb("rejects cross-family item access: cannot get/transfer/consume/archive another household's item", async () => {
-    const otherHousehold = await (new DrizzleHouseholdRepository(db! as never)).create({
-      id: crypto.randomUUID(),
-      name: "Other Family 2",
-      slug: `other2-${crypto.randomUUID().slice(0, 8)}`,
-    });
+  itIfDb(
+    "rejects cross-family item access: cannot get/transfer/consume/archive another household's item",
+    async () => {
+      const otherHousehold = await new DrizzleHouseholdRepository(
+        db! as never,
+      ).create({
+        id: crypto.randomUUID(),
+        name: "Other Family 2",
+        slug: `other2-${crypto.randomUUID().slice(0, 8)}`,
+      });
 
-    await db!.execute(sql`
+      await db!.execute(sql`
       INSERT INTO profile.household_members (household_id, user_id, membership_role)
       VALUES (${otherHousehold.id}, ${TEST_USER_ID_2}, 'owner')
     `);
 
-    await createItemDefinition(TEST_USER_ID, fixture.householdId, {
-      definitionKey: "test_cross_item",
-      displayName: "Cross Item",
-      category: "tool",
-      itemType: "persistent",
-      rarity: "common",
-      stackMode: "non_stackable",
-      durabilityMode: "none",
-      isTransferable: true,
-      isEquippable: false,
-      isConsumable: false,
-      isStorySelectable: true,
-      allowedOwnerTypes: ["character"],
-      metadata: {},
-    });
+      await createItemDefinition(TEST_USER_ID, fixture.householdId, {
+        definitionKey: "test_cross_item",
+        displayName: "Cross Item",
+        category: "tool",
+        itemType: "persistent",
+        rarity: "common",
+        stackMode: "non_stackable",
+        durabilityMode: "none",
+        isTransferable: true,
+        isEquippable: false,
+        isConsumable: false,
+        isStorySelectable: true,
+        allowedOwnerTypes: ["character"],
+        metadata: {},
+      });
 
-    const charId = crypto.randomUUID();
-    const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_cross_item", "character", charId,
-    );
-    const itemId = acquired.instance.id;
+      const charId = crypto.randomUUID();
+      const acquired = await acquireItem(
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_cross_item",
+        "character",
+        charId,
+      );
+      const itemId = acquired.instance.id;
 
-    await expect(
-      getItem(TEST_USER_ID_2, otherHousehold.id, itemId),
-    ).resolves.toBeNull();
+      await expect(
+        getItem(TEST_USER_ID_2, otherHousehold.id, itemId),
+      ).resolves.toBeNull();
 
-    await expect(
-      transferItem(
-        TEST_USER_ID_2, otherHousehold.id,
-        itemId, "character", charId,
-        "character", crypto.randomUUID(), "gift",
-      ),
-    ).rejects.toThrow(/not found/);
-  });
+      await expect(
+        transferItem(
+          TEST_USER_ID_2,
+          otherHousehold.id,
+          itemId,
+          "character",
+          charId,
+          "character",
+          crypto.randomUUID(),
+          "gift",
+        ),
+      ).rejects.toThrow(/not found/);
+    },
+  );
 
   itIfDb("rejects acquire with disallowed owner type", async () => {
     await createItemDefinition(TEST_USER_ID, fixture.householdId, {
@@ -407,8 +525,11 @@ describe("S07 - Inventory Integration", () => {
 
     await expect(
       acquireItem(
-        TEST_USER_ID, fixture.householdId,
-        "test_char_only_item", "household", crypto.randomUUID(),
+        TEST_USER_ID,
+        fixture.householdId,
+        "test_char_only_item",
+        "household",
+        crypto.randomUUID(),
       ),
     ).rejects.toThrow(/not allowed/);
   });
@@ -433,18 +554,38 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_consumable_list", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_consumable_list",
+      "character",
+      charId,
       { itemDefinitionId: def.id, originType: "generated", quantity: 2 },
     );
 
-    const beforeItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", charId);
-    expect(beforeItems.find(i => i.id === acquired.instance.id)).toBeTruthy();
+    const beforeItems = await listInventory(
+      TEST_USER_ID,
+      fixture.householdId,
+      "character",
+      charId,
+    );
+    expect(beforeItems.find((i) => i.id === acquired.instance.id)).toBeTruthy();
 
-    await consumeItem(TEST_USER_ID, fixture.householdId, acquired.instance.id, 2);
+    await consumeItem(
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+      2,
+    );
 
-    const afterItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", charId);
-    expect(afterItems.find(i => i.id === acquired.instance.id)).toBeUndefined();
+    const afterItems = await listInventory(
+      TEST_USER_ID,
+      fixture.householdId,
+      "character",
+      charId,
+    );
+    expect(
+      afterItems.find((i) => i.id === acquired.instance.id),
+    ).toBeUndefined();
   });
 
   itIfDb("archived item is not visible in active inventory list", async () => {
@@ -466,18 +607,31 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_archive_list", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_archive_list",
+      "character",
+      charId,
     );
     const itemId = acquired.instance.id;
 
-    const beforeItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", charId);
-    expect(beforeItems.find(i => i.id === itemId)).toBeTruthy();
+    const beforeItems = await listInventory(
+      TEST_USER_ID,
+      fixture.householdId,
+      "character",
+      charId,
+    );
+    expect(beforeItems.find((i) => i.id === itemId)).toBeTruthy();
 
     await archiveItem(TEST_USER_ID, fixture.householdId, itemId, "Testing");
 
-    const afterItems = await listInventory(TEST_USER_ID, fixture.householdId, "character", charId);
-    expect(afterItems.find(i => i.id === itemId)).toBeUndefined();
+    const afterItems = await listInventory(
+      TEST_USER_ID,
+      fixture.householdId,
+      "character",
+      charId,
+    );
+    expect(afterItems.find((i) => i.id === itemId)).toBeUndefined();
   });
 
   itIfDb("consumes a consumable item", async () => {
@@ -500,14 +654,19 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_consumable_item", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_consumable_item",
+      "character",
+      charId,
       { itemDefinitionId: def.id, originType: "generated", quantity: 3 },
     );
 
     const event = await consumeItem(
-      TEST_USER_ID, fixture.householdId,
-      acquired.instance.id, 1,
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+      1,
     );
     expect(event.eventType).toBe("ITEM_CONSUMED");
   });
@@ -531,17 +690,26 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_archive_item", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_archive_item",
+      "character",
+      charId,
     );
 
     const event = await archiveItem(
-      TEST_USER_ID, fixture.householdId,
-      acquired.instance.id, "Testing archive",
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+      "Testing archive",
     );
     expect(event.eventType).toBe("ITEM_ARCHIVED");
 
-    const archived = await getItem(TEST_USER_ID, fixture.householdId, acquired.instance.id);
+    const archived = await getItem(
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+    );
     expect(archived).toBeTruthy();
     expect(archived!.lifecycleStatus).toBe("archived");
   });
@@ -565,12 +733,19 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_event_item", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_event_item",
+      "character",
+      charId,
     );
     const itemId = acquired.instance.id;
 
-    const events = await getItemHistory(TEST_USER_ID, fixture.householdId, itemId);
+    const events = await getItemHistory(
+      TEST_USER_ID,
+      fixture.householdId,
+      itemId,
+    );
     expect(events.length).toBeGreaterThanOrEqual(1);
     expect(events[0]!.eventType).toBe("ITEM_ACQUIRED");
   });
@@ -595,16 +770,31 @@ describe("S07 - Inventory Integration", () => {
 
     const charId = crypto.randomUUID();
     const acquired = await acquireItem(
-      TEST_USER_ID, fixture.householdId,
-      "test_idem_consume", "character", charId,
+      TEST_USER_ID,
+      fixture.householdId,
+      "test_idem_consume",
+      "character",
+      charId,
       { itemDefinitionId: def.id, originType: "generated", quantity: 5 },
     );
 
     const idemKey = `consume-${crypto.randomUUID()}`;
-    const first = await consumeItem(TEST_USER_ID, fixture.householdId, acquired.instance.id, 1, idemKey);
+    const first = await consumeItem(
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+      1,
+      idemKey,
+    );
     expect(first.eventType).toBe("ITEM_CONSUMED");
 
-    const second = await consumeItem(TEST_USER_ID, fixture.householdId, acquired.instance.id, 1, idemKey);
+    const second = await consumeItem(
+      TEST_USER_ID,
+      fixture.householdId,
+      acquired.instance.id,
+      1,
+      idemKey,
+    );
     expect(second.eventType).toBe("ITEM_CONSUMED");
   });
 
@@ -655,6 +845,3 @@ describe("S07 - Inventory Integration", () => {
     ).rejects.toThrow();
   });
 });
-
-
-

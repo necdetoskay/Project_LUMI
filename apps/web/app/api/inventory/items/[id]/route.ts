@@ -12,7 +12,10 @@ export const GET = observeHandler(
 
       if (!householdId) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
           { status: 400 },
         );
       }
@@ -29,8 +32,14 @@ export const GET = observeHandler(
       } catch (error) {
         const err = error as Error & { code?: string };
         const message = err.message ?? "Unknown error";
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to get item" },

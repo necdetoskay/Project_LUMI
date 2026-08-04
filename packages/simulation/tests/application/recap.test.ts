@@ -13,21 +13,39 @@ class InMemoryStore implements SimulationStorePort {
   effects: SimulationEffect[] = [];
 
   async saveRun(): Promise<void> {}
-  async findRun(): Promise<SimulationRunState | null> { return null; }
-  async findLatestRun(): Promise<SimulationRunState | null> { return null; }
+  async findRun(): Promise<SimulationRunState | null> {
+    return null;
+  }
+  async findLatestRun(): Promise<SimulationRunState | null> {
+    return null;
+  }
   async saveEffect(effect: SimulationEffect): Promise<boolean> {
     this.effects.push(effect);
     return true;
   }
-  async findEffectsByRun(): Promise<SimulationEffect[]> { return []; }
-  async findCommittedEffects(_worldId: string, _householdId: string, after?: Date): Promise<SimulationEffect[]> {
-    return this.effects.filter((e) => e.status === "committed" && (!after || (e.committedAt && e.committedAt >= after)));
+  async findEffectsByRun(): Promise<SimulationEffect[]> {
+    return [];
   }
-  async findPendingEffects(): Promise<SimulationEffect[]> { return []; }
+  async findCommittedEffects(
+    _worldId: string,
+    _householdId: string,
+    after?: Date,
+  ): Promise<SimulationEffect[]> {
+    return this.effects.filter(
+      (e) =>
+        e.status === "committed" &&
+        (!after || (e.committedAt && e.committedAt >= after)),
+    );
+  }
+  async findPendingEffects(): Promise<SimulationEffect[]> {
+    return [];
+  }
   async updateEffectStatus(): Promise<void> {}
   async saveScheduledEvent(): Promise<void> {}
   async updateScheduledEventResolved(): Promise<void> {}
-  async findIdempotencyRecord(): Promise<string | undefined> { return undefined; }
+  async findIdempotencyRecord(): Promise<string | undefined> {
+    return undefined;
+  }
   async recordIdempotency(): Promise<void> {}
 }
 
@@ -58,14 +76,21 @@ describe("RecapService", () => {
     const recap = await service.buildRecap(WORLD_ID, HOUSEHOLD_ID);
 
     expect(recap.entries).toHaveLength(2);
-    expect(recap.entries[0]!.committedAt).toEqual(new Date("2026-08-02T12:00:00Z"));
-    expect(recap.entries[1]!.committedAt).toEqual(new Date("2026-08-03T10:00:00Z"));
+    expect(recap.entries[0]!.committedAt).toEqual(
+      new Date("2026-08-02T12:00:00Z"),
+    );
+    expect(recap.entries[1]!.committedAt).toEqual(
+      new Date("2026-08-03T10:00:00Z"),
+    );
   });
 
   it("excludes pending effects from recap", async () => {
     const store = new InMemoryStore();
     store.effects = [
-      makeCommittedEffect({ status: "committed", committedAt: new Date("2026-08-02T12:00:00Z") }),
+      makeCommittedEffect({
+        status: "committed",
+        committedAt: new Date("2026-08-02T12:00:00Z"),
+      }),
       makeCommittedEffect({
         status: "pending" as never,
         committedAt: null,

@@ -6,7 +6,10 @@ import { recordStoryEventWithTx } from "./story-event-store.service";
 import { hashObject } from "./hash";
 import type { Database } from "../db/client";
 import type { ParticipationRole, PlaybackMode } from "../domain/story-types";
-import { assertKnownSessionStatus, assertKnownPlaybackMode } from "../domain/story-types";
+import {
+  assertKnownSessionStatus,
+  assertKnownPlaybackMode,
+} from "../domain/story-types";
 
 let testDb: Database | undefined;
 
@@ -54,11 +57,18 @@ export interface AbandonSessionInput {
   actorUserId?: string | undefined;
 }
 
-async function findVersionEntryScene(repo: DrizzleStoryRepository, db: Database, storyVersionId: string) {
+async function findVersionEntryScene(
+  repo: DrizzleStoryRepository,
+  db: Database,
+  storyVersionId: string,
+) {
   const scenes = await repo.findScenesByVersion(db, storyVersionId);
   const entry = scenes.find((s) => s.isEntryScene);
   if (!entry) {
-    throw new ValidationError("NO_ENTRY_SCENE", "Story version has no entry scene");
+    throw new ValidationError(
+      "NO_ENTRY_SCENE",
+      "Story version has no entry scene",
+    );
   }
   return entry;
 }
@@ -97,7 +107,12 @@ async function checkIdempotency(
   operationType: string,
   idempotencyKey: string,
 ): Promise<string | undefined> {
-  const existing = await repo.findIdempotencyRecord(db, householdId, operationType, idempotencyKey);
+  const existing = await repo.findIdempotencyRecord(
+    db,
+    householdId,
+    operationType,
+    idempotencyKey,
+  );
   return existing?.storySessionId ?? undefined;
 }
 
@@ -108,12 +123,15 @@ async function getSessionPlaybackStateFromRecord(sessionId: string) {
   if (!session) {
     throw new NotFoundError("StorySession", sessionId);
   }
-  const [characters, currentScene, visits, latestCheckpoint] = await Promise.all([
-    repo.findSessionCharacters(db, sessionId),
-    session.currentSceneId ? repo.findSceneById(db, session.currentSceneId) : Promise.resolve(undefined),
-    repo.findSceneVisitsBySession(db, sessionId),
-    repo.findLatestCheckpoint(db, sessionId),
-  ]);
+  const [characters, currentScene, visits, latestCheckpoint] =
+    await Promise.all([
+      repo.findSessionCharacters(db, sessionId),
+      session.currentSceneId
+        ? repo.findSceneById(db, session.currentSceneId)
+        : Promise.resolve(undefined),
+      repo.findSceneVisitsBySession(db, sessionId),
+      repo.findLatestCheckpoint(db, sessionId),
+    ]);
 
   return {
     session,
@@ -146,7 +164,10 @@ export async function startSession(input: StartSessionInput) {
     throw new NotFoundError("StoryVersion", input.storyVersionId);
   }
   if (version.publicationStatus !== "published") {
-    throw new ValidationError("VERSION_NOT_PUBLISHED", "Only published story versions can be started");
+    throw new ValidationError(
+      "VERSION_NOT_PUBLISHED",
+      "Only published story versions can be started",
+    );
   }
 
   const existingActive = await repo.findActiveSessionByChildAndWorld(
@@ -161,7 +182,11 @@ export async function startSession(input: StartSessionInput) {
     );
   }
 
-  const entryScene = await findVersionEntryScene(repo, db, input.storyVersionId);
+  const entryScene = await findVersionEntryScene(
+    repo,
+    db,
+    input.storyVersionId,
+  );
 
   const session = StorySession.create({
     householdId: input.householdId,
@@ -284,7 +309,8 @@ function sessionFromRecord(record: {
   assertKnownSessionStatus(record.sessionStatus);
   assertKnownPlaybackMode(record.playbackMode);
   const contextSnapshot =
-    typeof record.contextSnapshot === "object" && record.contextSnapshot !== null
+    typeof record.contextSnapshot === "object" &&
+    record.contextSnapshot !== null
       ? (record.contextSnapshot as Record<string, unknown>)
       : {};
   return StorySession.fromState({
@@ -301,7 +327,11 @@ async function changeSessionState(
   sessionId: string,
   expectedVersion: number,
   mutator: (session: StorySession) => void,
-  eventType: "STORY_SESSION_PAUSED" | "STORY_SESSION_RESUMED" | "STORY_SESSION_COMPLETED" | "STORY_SESSION_ABANDONED",
+  eventType:
+    | "STORY_SESSION_PAUSED"
+    | "STORY_SESSION_RESUMED"
+    | "STORY_SESSION_COMPLETED"
+    | "STORY_SESSION_ABANDONED",
   operationType: string,
   idempotencyKey: string | undefined,
   actorHouseholdId: string,
@@ -315,7 +345,13 @@ async function changeSessionState(
   }
 
   if (idempotencyKey) {
-    const existing = await checkIdempotency(db, repo, actorHouseholdId, operationType, idempotencyKey);
+    const existing = await checkIdempotency(
+      db,
+      repo,
+      actorHouseholdId,
+      operationType,
+      idempotencyKey,
+    );
     if (existing) {
       return getSessionPlaybackStateFromRecord(existing);
     }
@@ -323,7 +359,10 @@ async function changeSessionState(
 
   const session = sessionFromRecord(record);
   if (session.version !== expectedVersion) {
-    throw new ValidationError("VERSION_CONFLICT", "Session version conflict; reload current state");
+    throw new ValidationError(
+      "VERSION_CONFLICT",
+      "Session version conflict; reload current state",
+    );
   }
   mutator(session);
   const newState = session.getState();
@@ -347,7 +386,10 @@ async function changeSessionState(
       expectedVersion,
     );
     if (!updated) {
-      throw new ValidationError("VERSION_CONFLICT", "Session version conflict; reload current state");
+      throw new ValidationError(
+        "VERSION_CONFLICT",
+        "Session version conflict; reload current state",
+      );
     }
 
     if (checkpointType && newState.currentSceneId) {
@@ -381,7 +423,14 @@ async function changeSessionState(
     });
 
     if (idempotencyKey) {
-      await recordIdempotency(tx, repo, actorHouseholdId, operationType, idempotencyKey, sessionId);
+      await recordIdempotency(
+        tx,
+        repo,
+        actorHouseholdId,
+        operationType,
+        idempotencyKey,
+        sessionId,
+      );
     }
 
     return getSessionPlaybackStateFromRecord(sessionId);
@@ -510,7 +559,10 @@ export async function advanceSession(input: AdvanceSessionInput) {
 
   const session = sessionFromRecord(record);
   if (session.version !== input.expectedVersion) {
-    throw new ValidationError("VERSION_CONFLICT", "Session version conflict; reload current state");
+    throw new ValidationError(
+      "VERSION_CONFLICT",
+      "Session version conflict; reload current state",
+    );
   }
   session.advance(input.nextSceneId);
   const newState = session.getState();
@@ -530,11 +582,17 @@ export async function advanceSession(input: AdvanceSessionInput) {
       input.expectedVersion,
     );
     if (!updated) {
-      throw new ValidationError("VERSION_CONFLICT", "Session version conflict; reload current state");
+      throw new ValidationError(
+        "VERSION_CONFLICT",
+        "Session version conflict; reload current state",
+      );
     }
 
     const visits = await repo.findSceneVisitsBySession(tx, input.sessionId);
-    const nextSequence = visits.length > 0 ? (visits[visits.length - 1]?.visitSequence ?? 0) + 1 : 0;
+    const nextSequence =
+      visits.length > 0
+        ? (visits[visits.length - 1]?.visitSequence ?? 0) + 1
+        : 0;
     await repo.createSceneVisit(tx, {
       id: crypto.randomUUID(),
       storySessionId: input.sessionId,
@@ -617,7 +675,10 @@ export async function getLatestCheckpoint(sessionId: string) {
   return repo.findLatestCheckpoint(db, sessionId);
 }
 
-export async function createManualCheckpoint(sessionId: string, sceneId: string) {
+export async function createManualCheckpoint(
+  sessionId: string,
+  sceneId: string,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const record = await repo.findSessionById(db, sessionId);
@@ -655,7 +716,10 @@ export async function getSessionById(sessionId: string) {
   return record;
 }
 
-export async function getActiveSessionForChildAndWorld(childProfileId: string, worldId: string) {
+export async function getActiveSessionForChildAndWorld(
+  childProfileId: string,
+  worldId: string,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   return repo.findActiveSessionByChildAndWorld(db, childProfileId, worldId);

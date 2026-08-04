@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
-import { updateChildProfile, findChildProfileForUser } from "@lumi/profiles/application";
+import {
+  updateChildProfile,
+  findChildProfileForUser,
+} from "@lumi/profiles/application";
 import type { UpdateChildProfileInput } from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const GET = observeHandler(
-  async (
-    request: Request,
-    { params }: { params: Promise<{ id: string }> },
-  ) => {
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     return withParent(async (parent) => {
       const profileId = (await params).id;
       const { searchParams } = new URL(request.url);
@@ -18,23 +18,37 @@ export const GET = observeHandler(
 
       if (!householdId) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
           { status: 400 },
         );
       }
 
       try {
-        const profile = await findChildProfileForUser(profileId, parent.id, householdId);
+        const profile = await findChildProfileForUser(
+          profileId,
+          parent.id,
+          householdId,
+        );
 
         if (!profile) {
-          return NextResponse.json({ error: "NOT_FOUND", message: "Profile not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Profile not found" },
+            { status: 404 },
+          );
         }
 
         return NextResponse.json({ profile });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         if (message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to get profile" },
@@ -47,10 +61,7 @@ export const GET = observeHandler(
 );
 
 export const PATCH = observeHandler(
-  (
-    request: Request,
-    { params }: { params: Promise<{ id: string }> },
-  ) => {
+  (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     return withParent(async (parent) => {
       const profileId = (await params).id;
       const body = await readRequestBody(request);
@@ -72,18 +83,33 @@ export const PATCH = observeHandler(
           input.ageBand = parsed.ageBand as string;
         }
 
-        const profile = await updateChildProfile(parent.id, profileId, parsed.householdId, input);
+        const profile = await updateChildProfile(
+          parent.id,
+          profileId,
+          parsed.householdId,
+          input,
+        );
 
         return NextResponse.json({ profile });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         if (message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (message.includes("not found")) {
-          return NextResponse.json({ error: "NOT_FOUND", message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message },
+            { status: 404 },
+          );
         }
-        if (message.includes("validation") || message.includes("ValidationError")) {
+        if (
+          message.includes("validation") ||
+          message.includes("ValidationError")
+        ) {
           return NextResponse.json(
             { error: "VALIDATION_ERROR", message },
             { status: 400 },
@@ -96,6 +122,5 @@ export const PATCH = observeHandler(
       }
     });
   },
-  "/api/child-profiles/{id}"
-
+  "/api/child-profiles/{id}",
 );

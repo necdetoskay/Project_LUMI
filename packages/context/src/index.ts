@@ -52,7 +52,12 @@ export {
   getSafetyPrecedence,
   ensureParentPolicyDoesNotLoosenSafety,
 } from "./policy";
-export type { SafetyBaseline, SafetyContentBoundary, PolicyViolation, PolicyGuardResult } from "./policy";
+export type {
+  SafetyBaseline,
+  SafetyContentBoundary,
+  PolicyViolation,
+  PolicyGuardResult,
+} from "./policy";
 
 export {
   InMemorySafetyPolicyAdapter,

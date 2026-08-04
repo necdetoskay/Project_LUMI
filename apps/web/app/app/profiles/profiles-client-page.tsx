@@ -20,7 +20,10 @@ export default function ProfilesClientPage() {
     fetch("/api/onboarding")
       .then((r) => r.json())
       .then((data) => {
-        const s = data.onboarding as { hasHousehold: boolean; householdId: string | null };
+        const s = data.onboarding as {
+          hasHousehold: boolean;
+          householdId: string | null;
+        };
         if (!s.hasHousehold || !s.householdId) {
           setError("No household found. Complete onboarding first.");
           setLoading(false);
@@ -53,7 +56,9 @@ export default function ProfilesClientPage() {
             <a className="transition-colors hover:text-primary" href="/app">
               Dashboard
             </a>
-            <span className="material-symbols-outlined text-sm">chevron_right</span>
+            <span className="material-symbols-outlined text-sm">
+              chevron_right
+            </span>
             <span className="text-primary">Profiller</span>
           </nav>
           <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
@@ -80,24 +85,33 @@ export default function ProfilesClientPage() {
           id="empty-state"
         >
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[36px]">person_add</span>
+            <span className="material-symbols-outlined text-[36px]">
+              person_add
+            </span>
           </div>
-          <h2 className="mb-2 text-2xl font-bold text-on-surface">Henüz profil eklenmemiş</h2>
+          <h2 className="mb-2 text-2xl font-bold text-on-surface">
+            Henüz profil eklenmemiş
+          </h2>
           <p className="mb-8 max-w-[34rem] text-base leading-7 text-on-surface-variant">
-            İlk profili oluşturduğunuzda yaş grubu ve temel bilgilerle aile alanınızı kullanmaya
-            başlayabilirsiniz.
+            İlk profili oluşturduğunuzda yaş grubu ve temel bilgilerle aile
+            alanınızı kullanmaya başlayabilirsiniz.
           </p>
           <a
             className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
             href="/app/onboarding"
           >
-            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            <span className="material-symbols-outlined text-[20px]">
+              rocket_launch
+            </span>
             Kuruluma git
           </a>
         </div>
       ) : (
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2" id="profile-container">
+          <div
+            className="grid grid-cols-1 gap-5 lg:grid-cols-2"
+            id="profile-container"
+          >
             {profiles.map((p) => (
               <article
                 key={p.id}
@@ -106,11 +120,17 @@ export default function ProfilesClientPage() {
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-                      <span className="material-symbols-outlined text-[28px]">face</span>
+                      <span className="material-symbols-outlined text-[28px]">
+                        face
+                      </span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-on-surface">{p.displayName}</h3>
-                      <p className="mt-1 text-sm text-on-surface-variant">Yaş grubu: {p.ageBand}</p>
+                      <h3 className="text-xl font-bold text-on-surface">
+                        {p.displayName}
+                      </h3>
+                      <p className="mt-1 text-sm text-on-surface-variant">
+                        Yaş grubu: {p.ageBand}
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
@@ -131,7 +151,9 @@ export default function ProfilesClientPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                       Dil
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-on-surface">{p.locale}</p>
+                    <p className="mt-1 text-sm font-semibold text-on-surface">
+                      {p.locale}
+                    </p>
                   </div>
                 </div>
 
@@ -139,7 +161,9 @@ export default function ProfilesClientPage() {
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf]"
                   href={`/app/profiles/${encodeURIComponent(p.id)}`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    open_in_new
+                  </span>
                   Profili Aç
                 </a>
               </article>
@@ -150,7 +174,9 @@ export default function ProfilesClientPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
               Özet
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-on-surface">{profiles.length} profil</h2>
+            <h2 className="mt-2 text-2xl font-bold text-on-surface">
+              {profiles.length} profil
+            </h2>
             <p className="mt-3 text-sm leading-6 text-on-surface-variant">
               Bu alandan profilleri görüntüleyebilir ve yönetebilirsiniz.
             </p>
@@ -169,7 +195,8 @@ export default function ProfilesClientPage() {
                   Sonraki adım
                 </p>
                 <p className="mt-2 text-sm leading-6 text-on-surface">
-                  Profil detayına gitmek için bir profil kartında &quot;Profili Aç&quot;a tıklayın.
+                  Profil detayına gitmek için bir profil kartında &quot;Profili
+                  Aç&quot;a tıklayın.
                 </p>
               </div>
             </div>

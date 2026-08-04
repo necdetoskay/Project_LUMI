@@ -1,4 +1,11 @@
-import { boolean, index, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { primaryId } from "./common";
 import { profileSchema } from "./schemas";
 
@@ -10,10 +17,16 @@ export const worldCharacterResidences = profileSchema.table(
     worldId: uuid("world_id").notNull(),
     homeId: uuid("home_id").notNull(),
     isActive: boolean("is_active").notNull().default(false),
-    residenceType: varchar("residence_type", { length: 20 }).notNull().default("primary"),
+    residenceType: varchar("residence_type", { length: 20 })
+      .notNull()
+      .default("primary"),
     version: integer("version").notNull().default(1),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("wcr_character_idx").on(table.characterId),
@@ -21,5 +34,7 @@ export const worldCharacterResidences = profileSchema.table(
   ],
 );
 
-export type WorldCharacterResidenceRecord = typeof worldCharacterResidences.$inferSelect;
-export type NewWorldCharacterResidenceRecord = typeof worldCharacterResidences.$inferInsert;
+export type WorldCharacterResidenceRecord =
+  typeof worldCharacterResidences.$inferSelect;
+export type NewWorldCharacterResidenceRecord =
+  typeof worldCharacterResidences.$inferInsert;

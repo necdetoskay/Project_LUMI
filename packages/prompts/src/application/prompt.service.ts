@@ -15,7 +15,9 @@ export function __setTestPromptDb(db: Database | undefined): void {
   testDb = db;
 }
 
-export function __setTestPromptRepository(repo: PromptRepository | undefined): void {
+export function __setTestPromptRepository(
+  repo: PromptRepository | undefined,
+): void {
   testRepo = repo;
 }
 
@@ -42,7 +44,9 @@ export interface CreatePromptVersionServiceInput {
   outputSchema?: Record<string, unknown> | undefined;
 }
 
-export async function createPromptRegistry(input: CreatePromptRegistryServiceInput) {
+export async function createPromptRegistry(
+  input: CreatePromptRegistryServiceInput,
+) {
   const db = getDb();
   const repo = getRepo();
   const registry = PromptRegistry.create(input);
@@ -57,7 +61,9 @@ export async function createPromptRegistry(input: CreatePromptRegistryServiceInp
   });
 }
 
-export async function createPromptVersion(input: CreatePromptVersionServiceInput) {
+export async function createPromptVersion(
+  input: CreatePromptVersionServiceInput,
+) {
   const db = getDb();
   const repo = getRepo();
   const version = PromptVersion.create(input);
@@ -128,7 +134,10 @@ export async function activatePromptVersion(
   });
 
   if (!version.isPublished()) {
-    throw new ValidationError("VERSION_NOT_PUBLISHED", "Only published versions can be activated");
+    throw new ValidationError(
+      "VERSION_NOT_PUBLISHED",
+      "Only published versions can be activated",
+    );
   }
 
   return db.transaction(async (tx) =>
@@ -167,7 +176,12 @@ export async function renderActivePrompt(
 
   version.assertRenderable();
 
-  return renderPrompt(version.templateBody, version.id, version.variableSchema, values);
+  return renderPrompt(
+    version.templateBody,
+    version.id,
+    version.variableSchema,
+    values,
+  );
 }
 
 function asVariableDefinitions(value: unknown): PromptVariableDefinition[] {

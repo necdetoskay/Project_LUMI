@@ -24,7 +24,11 @@ export class LlmGenerationError extends Error {
 }
 
 export class LlmConfigError extends Error {
-  public code: "LLM_KEY_MISSING" | "LLM_TASK_MISSING" | "LLM_TASK_DISABLED" | "LLM_PROVIDER_DISABLED";
+  public code:
+    | "LLM_KEY_MISSING"
+    | "LLM_TASK_MISSING"
+    | "LLM_TASK_DISABLED"
+    | "LLM_PROVIDER_DISABLED";
   constructor(code: LlmConfigError["code"], message: string) {
     super(message);
     this.name = "LlmConfigError";
@@ -76,7 +80,13 @@ export interface GenerationParams {
   contentBoundary: string;
   requireParentApprovalForAi: boolean;
   generationNonce: string;
-  selectedArchetype?: { title: string; description: string; personalityHook: string; storyPromise: string; themeTags: string[] };
+  selectedArchetype?: {
+    title: string;
+    description: string;
+    personalityHook: string;
+    storyPromise: string;
+    themeTags: string[];
+  };
 }
 
 function getRepos(db: ReturnType<typeof getProfileDb> = getProfileDb()) {
@@ -116,7 +126,13 @@ function buildLlmPrompt(params: {
   requireParentApprovalForAi: boolean;
   locale: string;
   generationNonce: string;
-  selectedArchetype?: { title: string; description: string; personalityHook: string; storyPromise: string; themeTags: string[] };
+  selectedArchetype?: {
+    title: string;
+    description: string;
+    personalityHook: string;
+    storyPromise: string;
+    themeTags: string[];
+  };
 }): string {
   const packageCount = params.originMode === "auto" ? 4 : 1;
   const archInfo = params.selectedArchetype
@@ -182,7 +198,9 @@ async function attemptLlmGeneration(
     requireParentApprovalForAi: params.requireParentApprovalForAi,
     locale: params.locale,
     generationNonce: params.generationNonce,
-    ...(params.selectedArchetype ? { selectedArchetype: params.selectedArchetype } : {}),
+    ...(params.selectedArchetype
+      ? { selectedArchetype: params.selectedArchetype }
+      : {}),
   });
 
   const response = await callOpenRouter(apiKey, {
@@ -190,7 +208,8 @@ async function attemptLlmGeneration(
     messages: [
       {
         role: "system",
-        content: "Sen çocuk hikayeleri için karakter konseptleri üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+        content:
+          "Sen çocuk hikayeleri için karakter konseptleri üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
       },
       { role: "user", content: prompt },
     ],
@@ -213,10 +232,17 @@ async function attemptLlmGeneration(
     const subtype = validateOriginDisplaySubtype(pkg.subtype);
     const originConcept = validateOriginConcept(pkg.originConcept);
     const universeSeed = validateUniverseSeed(
-      deterministicHashedSeed(pkg.originConcept, params.ageBand, params.characterType, params.generationNonce),
+      deterministicHashedSeed(
+        pkg.originConcept,
+        params.ageBand,
+        params.characterType,
+        params.generationNonce,
+      ),
     );
     const tones = (pkg.toneVector as ToneVector[]).filter((t) =>
-      ["wonder", "warmth", "mystery", "humor", "courage", "curiosity"].includes(t),
+      ["wonder", "warmth", "mystery", "humor", "courage", "curiosity"].includes(
+        t,
+      ),
     );
     if (tones.length === 0) tones.push("wonder", "curiosity");
 
@@ -250,15 +276,24 @@ function hasSimilarConceptToPrevious(
   incoming: { subtype: string; originConcept: string },
 ): boolean {
   const incomingWords = new Set(
-    (incoming.subtype + " " + incoming.originConcept).toLowerCase().split(/\s+/).filter(w => w.length > 3),
+    (incoming.subtype + " " + incoming.originConcept)
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3),
   );
   if (incomingWords.size === 0) return false;
   for (const prev of previousBatch) {
     const prevWords = new Set(
-      (prev.subtype + " " + prev.originConcept).toLowerCase().split(/\s+/).filter(w => w.length > 3),
+      (prev.subtype + " " + prev.originConcept)
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3),
     );
-    const intersection = new Set([...incomingWords].filter(w => prevWords.has(w)));
-    const ratio = intersection.size / Math.min(incomingWords.size, prevWords.size);
+    const intersection = new Set(
+      [...incomingWords].filter((w) => prevWords.has(w)),
+    );
+    const ratio =
+      intersection.size / Math.min(incomingWords.size, prevWords.size);
     if (ratio > 0.4) return true;
   }
   return false;
@@ -273,12 +308,23 @@ async function executeWithRetry(
   previousBatch?: { subtype: string; originConcept: string }[],
 ): Promise<GenerationResult> {
   const attempt = async (nonce: string): Promise<GenerationResult> => {
-    const attemptParams: GenerationParams = { ...params, generationNonce: nonce };
-    const result = await attemptLlmGeneration(attemptParams, apiKey, modelId, temperature, maxTokens);
+    const attemptParams: GenerationParams = {
+      ...params,
+      generationNonce: nonce,
+    };
+    const result = await attemptLlmGeneration(
+      attemptParams,
+      apiKey,
+      modelId,
+      temperature,
+      maxTokens,
+    );
 
     const expectedCount = params.originMode === "auto" ? 4 : 1;
     if (result.candidates.length !== expectedCount) {
-      throw new LlmGenerationError(`Expected ${expectedCount} packages from LLM, got ${result.candidates.length}`);
+      throw new LlmGenerationError(
+        `Expected ${expectedCount} packages from LLM, got ${result.candidates.length}`,
+      );
     }
 
     const titles = result.candidates.map((c) => c.subtype.toLowerCase());
@@ -289,12 +335,17 @@ async function executeWithRetry(
 
     if (previousBatch && previousBatch.length > 0) {
       const similarToPrev = result.candidates.some((c) =>
-        hasSimilarConceptToPrevious(previousBatch, { subtype: c.subtype, originConcept: c.originConcept }),
+        hasSimilarConceptToPrevious(previousBatch, {
+          subtype: c.subtype,
+          originConcept: c.originConcept,
+        }),
       );
       if (!similarToPrev) {
         return result;
       }
-      throw new LlmGenerationError("Similar concepts to previous batch detected");
+      throw new LlmGenerationError(
+        "Similar concepts to previous batch detected",
+      );
     }
 
     return result;
@@ -312,7 +363,9 @@ async function executeWithRetry(
     return await attempt(nonce2);
   } catch (secondErr) {
     if (secondErr instanceof LlmGenerationError) throw secondErr;
-    throw new LlmGenerationError((secondErr as Error).message ?? "LLM retry call failed");
+    throw new LlmGenerationError(
+      (secondErr as Error).message ?? "LLM retry call failed",
+    );
   }
 }
 
@@ -324,11 +377,20 @@ export async function generateOriginPackages(
   handoffOriginMode: string,
   handoffPreferenceHints?: Record<string, unknown>,
   previousBatchConcepts?: { subtype: string; originConcept: string }[],
-  selectedArchetype?: { title: string; description: string; personalityHook: string; storyPromise: string; themeTags: string[] },
+  selectedArchetype?: {
+    title: string;
+    description: string;
+    personalityHook: string;
+    storyPromise: string;
+    themeTags: string[];
+  },
 ): Promise<GenerationResult> {
   const repos = getRepos();
 
-  const household = await repos.householdRepo.findByIdForUser(householdId, userId);
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
@@ -380,16 +442,28 @@ export async function generateOriginPackages(
   );
 
   if (!providerSettings?.encryptedApiKey) {
-    throw new LlmConfigError("LLM_KEY_MISSING", "OpenRouter API key not configured. Go to Settings > AI Bağlantısı to add your key.");
+    throw new LlmConfigError(
+      "LLM_KEY_MISSING",
+      "OpenRouter API key not configured. Go to Settings > AI Bağlantısı to add your key.",
+    );
   }
   if (!providerSettings.enabled) {
-    throw new LlmConfigError("LLM_PROVIDER_DISABLED", "OpenRouter provider is disabled. Enable it in Settings > AI Bağlantısı.");
+    throw new LlmConfigError(
+      "LLM_PROVIDER_DISABLED",
+      "OpenRouter provider is disabled. Enable it in Settings > AI Bağlantısı.",
+    );
   }
   if (!llmSettings) {
-    throw new LlmConfigError("LLM_TASK_MISSING", "Character origin generation task not configured. Ensure your API key is saved in Settings.");
+    throw new LlmConfigError(
+      "LLM_TASK_MISSING",
+      "Character origin generation task not configured. Ensure your API key is saved in Settings.",
+    );
   }
   if (!llmSettings.enabled) {
-    throw new LlmConfigError("LLM_TASK_DISABLED", "Character origin generation task is disabled. Enable it in Settings.");
+    throw new LlmConfigError(
+      "LLM_TASK_DISABLED",
+      "Character origin generation task is disabled. Enable it in Settings.",
+    );
   }
 
   let apiKey: string;
@@ -411,8 +485,6 @@ export async function generateOriginPackages(
   } catch (err) {
     if (err instanceof LlmConfigError) throw err;
     if (err instanceof LlmGenerationError) throw err;
-    throw new LlmGenerationError(
-      (err as Error).message ?? "LLM call failed",
-    );
+    throw new LlmGenerationError((err as Error).message ?? "LLM call failed");
   }
 }

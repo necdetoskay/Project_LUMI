@@ -5,7 +5,9 @@ const publicEnvironmentSchema = z.object({
 });
 
 const serverEnvironmentSchema = z.object({
-  DATABASE_URL: z.url().default("postgresql://lumi:lumi_local_only@localhost:15432/lumi"),
+  DATABASE_URL: z
+    .url()
+    .default("postgresql://lumi:lumi_local_only@localhost:15432/lumi"),
   REDIS_URL: z.url().default("redis://localhost:16379"),
   AUTH_COOKIE_SECURE: z
     .enum(["true", "false"])

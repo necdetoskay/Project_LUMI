@@ -23,16 +23,15 @@ export class Household {
   private state: HouseholdState;
   private readonly members: Map<string, HouseholdMemberState>;
 
-  private constructor(state: HouseholdState, members: HouseholdMemberState[] = []) {
+  private constructor(
+    state: HouseholdState,
+    members: HouseholdMemberState[] = [],
+  ) {
     this.state = { ...state };
     this.members = new Map(members.map((m) => [m.userId, { ...m }]));
   }
 
-  static create(input: {
-    id: string;
-    name: string;
-    slug: string;
-  }): Household {
+  static create(input: { id: string; name: string; slug: string }): Household {
     const name = validateHouseholdName(input.name);
     const slug = validateSlug(input.slug);
 
@@ -72,13 +71,14 @@ export class Household {
 
   isOwner(userId: string): boolean {
     const member = this.members.get(userId);
-    return member !== undefined && member.membershipRole === "owner" && member.isActive;
+    return (
+      member !== undefined &&
+      member.membershipRole === "owner" &&
+      member.isActive
+    );
   }
 
-  addMember(input: {
-    userId: string;
-    membershipRole: MembershipRole;
-  }): void {
+  addMember(input: { userId: string; membershipRole: MembershipRole }): void {
     if (this.state.deletedAt) {
       throw new ValidationError(
         "HOUSEHOLD_ARCHIVED",

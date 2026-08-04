@@ -70,14 +70,16 @@ export class DrizzleLlmTaskModelSettingsRepository
         })
         .where(eq(llmTaskModelSettings.id, existing.id))
         .returning();
-      if (!record) throw new Error("LLM task model settings update returned no record");
+      if (!record)
+        throw new Error("LLM task model settings update returned no record");
       return record as LlmTaskModelSettingsRecord;
     }
     const [record] = await this.db
       .insert(llmTaskModelSettings)
       .values(input)
       .returning();
-    if (!record) throw new Error("LLM task model settings creation returned no record");
+    if (!record)
+      throw new Error("LLM task model settings creation returned no record");
     return record as LlmTaskModelSettingsRecord;
   }
 }

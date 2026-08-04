@@ -19,49 +19,64 @@ export const householdsRelations = relations(households, ({ many, one }) => ({
   characterOriginPackages: many(characterOriginPackages),
 }));
 
-export const householdMembersRelations = relations(householdMembers, ({ one }) => ({
-  household: one(households, {
-    fields: [householdMembers.householdId],
-    references: [households.id],
+export const householdMembersRelations = relations(
+  householdMembers,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [householdMembers.householdId],
+      references: [households.id],
+    }),
   }),
-}));
+);
 
-export const childProfilesRelations = relations(childProfiles, ({ one, many }) => ({
-  household: one(households, {
-    fields: [childProfiles.householdId],
-    references: [households.id],
+export const childProfilesRelations = relations(
+  childProfiles,
+  ({ one, many }) => ({
+    household: one(households, {
+      fields: [childProfiles.householdId],
+      references: [households.id],
+    }),
+    preferences: one(childPreferences),
+    handoffs: many(firstRunHandoffs),
+    lumiCharacters: many(lumiCharacters),
+    characterOriginPackages: many(characterOriginPackages),
+    handoffConsumptions: many(firstRunHandoffConsumptions),
   }),
-  preferences: one(childPreferences),
-  handoffs: many(firstRunHandoffs),
-  lumiCharacters: many(lumiCharacters),
-  characterOriginPackages: many(characterOriginPackages),
-  handoffConsumptions: many(firstRunHandoffConsumptions),
-}));
+);
 
-export const childPreferencesRelations = relations(childPreferences, ({ one }) => ({
-  childProfile: one(childProfiles, {
-    fields: [childPreferences.childProfileId],
-    references: [childProfiles.id],
+export const childPreferencesRelations = relations(
+  childPreferences,
+  ({ one }) => ({
+    childProfile: one(childProfiles, {
+      fields: [childPreferences.childProfileId],
+      references: [childProfiles.id],
+    }),
   }),
-}));
+);
 
-export const firstRunHandoffsRelations = relations(firstRunHandoffs, ({ one }) => ({
-  childProfile: one(childProfiles, {
-    fields: [firstRunHandoffs.childProfileId],
-    references: [childProfiles.id],
+export const firstRunHandoffsRelations = relations(
+  firstRunHandoffs,
+  ({ one }) => ({
+    childProfile: one(childProfiles, {
+      fields: [firstRunHandoffs.childProfileId],
+      references: [childProfiles.id],
+    }),
+    consumption: one(firstRunHandoffConsumptions, {
+      fields: [firstRunHandoffs.id],
+      references: [firstRunHandoffConsumptions.handoffId],
+    }),
   }),
-  consumption: one(firstRunHandoffConsumptions, {
-    fields: [firstRunHandoffs.id],
-    references: [firstRunHandoffConsumptions.handoffId],
-  }),
-}));
+);
 
-export const parentalSettingsRelations = relations(parentalSettings, ({ one }) => ({
-  household: one(households, {
-    fields: [parentalSettings.householdId],
-    references: [households.id],
+export const parentalSettingsRelations = relations(
+  parentalSettings,
+  ({ one }) => ({
+    household: one(households, {
+      fields: [parentalSettings.householdId],
+      references: [households.id],
+    }),
   }),
-}));
+);
 
 export const policyAuditLogRelations = relations(policyAuditLog, () => ({}));
 

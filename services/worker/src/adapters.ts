@@ -46,7 +46,10 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
     private readonly logger: Logger,
   ) {}
 
-  async discoverAbsentWorlds(limit: number, now: Date): Promise<WorldCandidate[]> {
+  async discoverAbsentWorlds(
+    limit: number,
+    now: Date,
+  ): Promise<WorldCandidate[]> {
     if (!this.rawCandidates) return [];
 
     let parsed: unknown;
@@ -54,12 +57,20 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
       parsed = JSON.parse(this.rawCandidates);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error("worker.discovery.invalid_json", "invalid worker world candidate JSON", { error: message });
+      this.logger.error(
+        "worker.discovery.invalid_json",
+        "invalid worker world candidate JSON",
+        { error: message },
+      );
       return [];
     }
 
     if (!Array.isArray(parsed)) {
-      this.logger.error("worker.discovery.invalid_shape", "worker world candidate JSON must be an array", {});
+      this.logger.error(
+        "worker.discovery.invalid_shape",
+        "worker world candidate JSON must be an array",
+        {},
+      );
       return [];
     }
 
@@ -67,12 +78,20 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
     for (const item of parsed) {
       const record = parseCandidate(item);
       if (!record) {
-        this.logger.warn("worker.discovery.skip", "skipping invalid worker world candidate", {});
+        this.logger.warn(
+          "worker.discovery.skip",
+          "skipping invalid worker world candidate",
+          {},
+        );
         continue;
       }
       const childLastSeenAt = new Date(record.childLastSeenAt);
       if (Number.isNaN(childLastSeenAt.getTime())) {
-        this.logger.warn("worker.discovery.skip", "skipping candidate with invalid childLastSeenAt", { worldId: record.worldId });
+        this.logger.warn(
+          "worker.discovery.skip",
+          "skipping candidate with invalid childLastSeenAt",
+          { worldId: record.worldId },
+        );
         continue;
       }
       candidates.push({ ...record, childLastSeenAt, now });
@@ -95,7 +114,10 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
     private readonly logger: Logger,
   ) {}
 
-  async fetchClock(worldId: string, householdId: string): Promise<WorldClockSnapshot | null> {
+  async fetchClock(
+    worldId: string,
+    householdId: string,
+  ): Promise<WorldClockSnapshot | null> {
     const clock = await this.repo.findClock(worldId);
     if (!clock || clock.householdId !== householdId) return null;
     return toClockSnapshot(clock as WorldClockState);
@@ -114,7 +136,11 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
     householdId: string,
     unresolvedOnly: boolean,
   ): Promise<SimulationScheduledEvent[]> {
-    return this.repo.findScheduledEvents(worldId, householdId, unresolvedOnly) as Promise<SimulationScheduledEvent[]>;
+    return this.repo.findScheduledEvents(
+      worldId,
+      householdId,
+      unresolvedOnly,
+    ) as Promise<SimulationScheduledEvent[]>;
   }
 
   async updateClock(state: WorldClockState): Promise<void> {
@@ -126,11 +152,17 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
     eventType: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    this.logger.info("worker.world_event", "simulation world event recorded", { worldId, eventType, payload });
+    this.logger.info("worker.world_event", "simulation world event recorded", {
+      worldId,
+      eventType,
+      payload,
+    });
   }
 
   async freezeWorld(worldId: string): Promise<void> {
-    this.logger.info("worker.world.freeze", "world frozen by absence policy", { worldId });
+    this.logger.info("worker.world.freeze", "world frozen by absence policy", {
+      worldId,
+    });
   }
 }
 

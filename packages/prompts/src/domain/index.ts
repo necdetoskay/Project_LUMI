@@ -14,7 +14,10 @@ export {
   resolveVariableValue,
   validateVariableDefinition,
 } from "./prompt-variable";
-export type { PromptVariableDefinition, PromptVariableType } from "./prompt-variable";
+export type {
+  PromptVariableDefinition,
+  PromptVariableType,
+} from "./prompt-variable";
 
 export { PromptActivation } from "./prompt-activation";
 export type { CreatePromptActivationInput } from "./prompt-activation";

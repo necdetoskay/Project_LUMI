@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { evaluateRule, evaluateOptionAvailability } from "../../../src/application/choice/rule-evaluator";
-import type { ChoiceRuleContext, ChoiceAvailabilityRule } from "../../../src/domain/choice";
+import {
+  evaluateRule,
+  evaluateOptionAvailability,
+} from "../../../src/application/choice/rule-evaluator";
+import type {
+  ChoiceRuleContext,
+  ChoiceAvailabilityRule,
+} from "../../../src/domain/choice";
 
-function buildContext(overrides: Partial<ChoiceRuleContext> = {}): ChoiceRuleContext {
+function buildContext(
+  overrides: Partial<ChoiceRuleContext> = {},
+): ChoiceRuleContext {
   return {
     sessionStatus: "active",
     activeSceneId: "scene-1",
@@ -24,37 +32,73 @@ describe("evaluateRule", () => {
   }> = [
     {
       name: "eq on session status",
-      rule: { ruleId: "r1", version: 1, conditions: [{ path: "sessionStatus", operator: "eq", value: "active" }] },
+      rule: {
+        ruleId: "r1",
+        version: 1,
+        conditions: [
+          { path: "sessionStatus", operator: "eq", value: "active" },
+        ],
+      },
       context: buildContext(),
       expected: true,
     },
     {
       name: "neq on session status",
-      rule: { ruleId: "r2", version: 1, conditions: [{ path: "sessionStatus", operator: "neq", value: "completed" }] },
+      rule: {
+        ruleId: "r2",
+        version: 1,
+        conditions: [
+          { path: "sessionStatus", operator: "neq", value: "completed" },
+        ],
+      },
       context: buildContext(),
       expected: true,
     },
     {
       name: "gt on score",
-      rule: { ruleId: "r3", version: 1, conditions: [{ path: "scores.kindness", operator: "gt", value: 3 }] },
+      rule: {
+        ruleId: "r3",
+        version: 1,
+        conditions: [{ path: "scores.kindness", operator: "gt", value: 3 }],
+      },
       context: buildContext(),
       expected: true,
     },
     {
       name: "lte on score",
-      rule: { ruleId: "r4", version: 1, conditions: [{ path: "scores.kindness", operator: "lte", value: 5 }] },
+      rule: {
+        ruleId: "r4",
+        version: 1,
+        conditions: [{ path: "scores.kindness", operator: "lte", value: 5 }],
+      },
       context: buildContext(),
       expected: true,
     },
     {
       name: "has_flag on participant flag",
-      rule: { ruleId: "r5", version: 1, conditions: [{ path: "flags.brave", operator: "has_flag", value: true }] },
+      rule: {
+        ruleId: "r5",
+        version: 1,
+        conditions: [
+          { path: "flags.brave", operator: "has_flag", value: true },
+        ],
+      },
       context: buildContext(),
       expected: true,
     },
     {
       name: "in operator",
-      rule: { ruleId: "r6", version: 1, conditions: [{ path: "sessionStatus", operator: "in", value: ["active", "paused"] }] },
+      rule: {
+        ruleId: "r6",
+        version: 1,
+        conditions: [
+          {
+            path: "sessionStatus",
+            operator: "in",
+            value: ["active", "paused"],
+          },
+        ],
+      },
       context: buildContext(),
       expected: true,
     },
@@ -88,13 +132,21 @@ describe("evaluateRule", () => {
     },
     {
       name: "missing flag returns false",
-      rule: { ruleId: "r9", version: 1, conditions: [{ path: "flags.wise", operator: "has_flag", value: true }] },
+      rule: {
+        ruleId: "r9",
+        version: 1,
+        conditions: [{ path: "flags.wise", operator: "has_flag", value: true }],
+      },
       context: buildContext(),
       expected: false,
     },
     {
       name: "history count check",
-      rule: { ruleId: "r10", version: 1, conditions: [{ path: "history.count", operator: "eq", value: 0 }] },
+      rule: {
+        ruleId: "r10",
+        version: 1,
+        conditions: [{ path: "history.count", operator: "eq", value: 0 }],
+      },
       context: buildContext(),
       expected: true,
     },

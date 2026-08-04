@@ -27,10 +27,31 @@ export const worldsRelations = relations(worlds, ({ many }) => ({
 export const worldRegionsRelations = relations(worldRegions, () => ({}));
 export const worldLocationsRelations = relations(worldLocations, () => ({}));
 export const worldHomesRelations = relations(worldHomes, () => ({}));
-export const worldBootstrapManifestsRelations = relations(worldBootstrapManifests, () => ({}));
-export const worldCheckpointsRelations = relations(worldCheckpoints, () => ({}));
-export const worldCharacterLocationsRelations = relations(worldCharacterLocations, () => ({}));
-export const worldCharacterMovementEventsRelations = relations(worldCharacterMovementEvents, () => ({}));
-export const worldEnvironmentSnapshotsRelations = relations(worldEnvironmentSnapshots, () => ({}));
-export const worldLocationConnectionsRelations = relations(worldLocationConnections, () => ({}));
-export const worldCharacterResidencesRelations = relations(worldCharacterResidences, () => ({}));
+export const worldBootstrapManifestsRelations = relations(
+  worldBootstrapManifests,
+  () => ({}),
+);
+export const worldCheckpointsRelations = relations(
+  worldCheckpoints,
+  () => ({}),
+);
+export const worldCharacterLocationsRelations = relations(
+  worldCharacterLocations,
+  () => ({}),
+);
+export const worldCharacterMovementEventsRelations = relations(
+  worldCharacterMovementEvents,
+  () => ({}),
+);
+export const worldEnvironmentSnapshotsRelations = relations(
+  worldEnvironmentSnapshots,
+  () => ({}),
+);
+export const worldLocationConnectionsRelations = relations(
+  worldLocationConnections,
+  () => ({}),
+);
+export const worldCharacterResidencesRelations = relations(
+  worldCharacterResidences,
+  () => ({}),
+);

@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { ensureParentPolicyDoesNotLoosenSafety, DEFAULT_SAFETY_BASELINE } from "../../src/policy";
+import {
+  ensureParentPolicyDoesNotLoosenSafety,
+  DEFAULT_SAFETY_BASELINE,
+} from "../../src/policy";
 import type { ParentPolicyItem } from "../../src/ports";
-import { testParentPolicy, createLooseningParentPolicy } from "../fixtures/contexts";
+import {
+  testParentPolicy,
+  createLooseningParentPolicy,
+} from "../fixtures/contexts";
 
 describe("ensureParentPolicyDoesNotLoosenSafety", () => {
   it("allows a compliant parent policy", () => {
-    const result = ensureParentPolicyDoesNotLoosenSafety(testParentPolicy, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      testParentPolicy,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(true);
     expect(result.violations).toHaveLength(0);
@@ -15,10 +24,15 @@ describe("ensureParentPolicyDoesNotLoosenSafety", () => {
 
   it("rejects a parent policy that loosens content boundary", () => {
     const loosening = createLooseningParentPolicy();
-    const result = ensureParentPolicyDoesNotLoosenSafety(loosening, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      loosening,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
-    expect(result.violations.some((v) => v.field === "contentBoundary")).toBe(true);
+    expect(result.violations.some((v) => v.field === "contentBoundary")).toBe(
+      true,
+    );
     expect(result.sanitizedPolicy.contentBoundary).toBe("strict");
   });
 
@@ -27,10 +41,15 @@ describe("ensureParentPolicyDoesNotLoosenSafety", () => {
       ...testParentPolicy,
       requireParentApprovalForAi: false,
     };
-    const result = ensureParentPolicyDoesNotLoosenSafety(policy, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      policy,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
-    expect(result.violations.some((v) => v.field === "requireParentApprovalForAi")).toBe(true);
+    expect(
+      result.violations.some((v) => v.field === "requireParentApprovalForAi"),
+    ).toBe(true);
     expect(result.sanitizedPolicy.requireParentApprovalForAi).toBe(true);
   });
 
@@ -39,11 +58,18 @@ describe("ensureParentPolicyDoesNotLoosenSafety", () => {
       ...testParentPolicy,
       maxDailyStories: 100,
     };
-    const result = ensureParentPolicyDoesNotLoosenSafety(policy, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      policy,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
-    expect(result.violations.some((v) => v.field === "maxDailyStories")).toBe(true);
-    expect(result.sanitizedPolicy.maxDailyStories).toBe(DEFAULT_SAFETY_BASELINE.maxDailyStoriesCap);
+    expect(result.violations.some((v) => v.field === "maxDailyStories")).toBe(
+      true,
+    );
+    expect(result.sanitizedPolicy.maxDailyStories).toBe(
+      DEFAULT_SAFETY_BASELINE.maxDailyStoriesCap,
+    );
   });
 
   it("rejects a parent policy that allows forbidden image generation", () => {
@@ -51,10 +77,15 @@ describe("ensureParentPolicyDoesNotLoosenSafety", () => {
       ...testParentPolicy,
       allowImageGeneration: true,
     };
-    const result = ensureParentPolicyDoesNotLoosenSafety(policy, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      policy,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
-    expect(result.violations.some((v) => v.field === "allowImageGeneration")).toBe(true);
+    expect(
+      result.violations.some((v) => v.field === "allowImageGeneration"),
+    ).toBe(true);
     expect(result.sanitizedPolicy.allowImageGeneration).toBe(false);
   });
 
@@ -63,17 +94,25 @@ describe("ensureParentPolicyDoesNotLoosenSafety", () => {
       ...testParentPolicy,
       forbiddenThemes: ["profanity"],
     };
-    const result = ensureParentPolicyDoesNotLoosenSafety(policy, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      policy,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
-    expect(result.violations.some((v) => v.field === "forbiddenThemes")).toBe(true);
+    expect(result.violations.some((v) => v.field === "forbiddenThemes")).toBe(
+      true,
+    );
     expect(result.sanitizedPolicy.forbiddenThemes).toContain("violence");
     expect(result.sanitizedPolicy.forbiddenThemes).toContain("profanity");
   });
 
   it("sanitizes multiple violations at once", () => {
     const loosening = createLooseningParentPolicy();
-    const result = ensureParentPolicyDoesNotLoosenSafety(loosening, DEFAULT_SAFETY_BASELINE);
+    const result = ensureParentPolicyDoesNotLoosenSafety(
+      loosening,
+      DEFAULT_SAFETY_BASELINE,
+    );
 
     expect(result.allowed).toBe(false);
     expect(result.violations.length).toBeGreaterThan(1);

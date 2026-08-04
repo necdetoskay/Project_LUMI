@@ -16,7 +16,9 @@ export const inventoryDomainEvents = profileSchema.table(
     actorUserId: uuid("actor_user_id"),
     payload: jsonb("payload").notNull().default({}),
     idempotencyKey: varchar("idempotency_key", { length: 200 }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   () => ({
     itemIdx: sql`CREATE INDEX IF NOT EXISTS inv_events_item_idx ON ${profileSchema}.inventory_domain_events (item_instance_id, created_at DESC)`,
@@ -24,6 +26,7 @@ export const inventoryDomainEvents = profileSchema.table(
   }),
 );
 
-export type InventoryDomainEventRecord = typeof inventoryDomainEvents.$inferSelect;
-export type NewInventoryDomainEventRecord = typeof inventoryDomainEvents.$inferInsert;
-
+export type InventoryDomainEventRecord =
+  typeof inventoryDomainEvents.$inferSelect;
+export type NewInventoryDomainEventRecord =
+  typeof inventoryDomainEvents.$inferInsert;

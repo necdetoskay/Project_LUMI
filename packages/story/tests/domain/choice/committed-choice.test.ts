@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CommittedChoice, assertSingleCommit } from "../../../src/domain/choice/committed-choice";
+import {
+  CommittedChoice,
+  assertSingleCommit,
+} from "../../../src/domain/choice/committed-choice";
 import { ValidationError } from "../../../src/domain/errors";
 
 describe("CommittedChoice", () => {
@@ -37,6 +40,8 @@ describe("CommittedChoice", () => {
       ruleVersion: 1,
     }).getState();
 
-    expect(() => assertSingleCommit(state, "option-b")).toThrow(ValidationError);
+    expect(() => assertSingleCommit(state, "option-b")).toThrow(
+      ValidationError,
+    );
   });
 });

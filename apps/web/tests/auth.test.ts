@@ -30,7 +30,10 @@ vi.mock("@/lib/auth/tokens", () => ({
 }));
 
 import { buildAuthAuditEvent } from "@/lib/auth/audit";
-import { checkAuthRateLimit, resetAuthRateLimitStore } from "@/lib/auth/rate-limit";
+import {
+  checkAuthRateLimit,
+  resetAuthRateLimitStore,
+} from "@/lib/auth/rate-limit";
 import {
   getParentFromSessionToken,
   loginParent,
@@ -196,7 +199,10 @@ describe("refreshParentSession", () => {
         };
       }
 
-      if (query.includes("UPDATE parent_sessions") && query.includes("WHERE id = $1")) {
+      if (
+        query.includes("UPDATE parent_sessions") &&
+        query.includes("WHERE id = $1")
+      ) {
         expect(values).toEqual(["session-1", "session-2"]);
         return { rows: [] };
       }
@@ -234,7 +240,9 @@ describe("refreshParentSession", () => {
   });
 
   it("rejects a missing session token before opening a transaction", async () => {
-    await expect(refreshParentSession(undefined)).rejects.toThrow("INVALID_SESSION");
+    await expect(refreshParentSession(undefined)).rejects.toThrow(
+      "INVALID_SESSION",
+    );
     expect(mockConnect).not.toHaveBeenCalled();
   });
 
@@ -502,9 +510,9 @@ describe("resetParentPassword", () => {
       }),
     ).rejects.toThrow("INVALID_RESET_TOKEN");
 
-    expect(
-      mockQuery.mock.calls.some(([q]) => String(q) === "ROLLBACK"),
-    ).toBe(true);
+    expect(mockQuery.mock.calls.some(([q]) => String(q) === "ROLLBACK")).toBe(
+      true,
+    );
     expect(mockRelease).toHaveBeenCalledTimes(1);
   });
 });

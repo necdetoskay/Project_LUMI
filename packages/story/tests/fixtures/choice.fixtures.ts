@@ -1,6 +1,9 @@
 import type { CreateChoicePointServiceInput } from "../../src/application/choice/choice.service";
 
-export function createStaticChoiceFixture(storyVersionId: string, sceneId: string): CreateChoicePointServiceInput {
+export function createStaticChoiceFixture(
+  storyVersionId: string,
+  sceneId: string,
+): CreateChoicePointServiceInput {
   return {
     storyVersionId,
     sceneId,
@@ -33,7 +36,9 @@ export function createInteractiveConditionalFixture(
         availabilityRule: {
           ruleId: "needs-brave-flag",
           version: 1,
-          conditions: [{ path: "flags.brave", operator: "has_flag", value: true }],
+          conditions: [
+            { path: "flags.brave", operator: "has_flag", value: true },
+          ],
         },
         consequencePreviews: [
           {

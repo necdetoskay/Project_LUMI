@@ -32,10 +32,7 @@ export class DrizzlePromptRepository implements PromptRepository {
     return row!;
   }
 
-  async publishVersion(
-    tx: { update: QueryExecutor["update"] },
-    id: string,
-  ) {
+  async publishVersion(tx: { update: QueryExecutor["update"] }, id: string) {
     const [row] = await tx
       .update(promptVersions)
       .set({ status: "published", publishedAt: new Date() })
@@ -128,10 +125,7 @@ export class DrizzlePromptRepository implements PromptRepository {
     return version;
   }
 
-  async getVersionById(
-    tx: { select: QueryExecutor["select"] },
-    id: string,
-  ) {
+  async getVersionById(tx: { select: QueryExecutor["select"] }, id: string) {
     const [row] = await tx
       .select()
       .from(promptVersions)

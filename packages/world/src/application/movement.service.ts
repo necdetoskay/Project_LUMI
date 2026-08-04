@@ -1,4 +1,8 @@
-import { NotFoundError, AuthorizationError, ValidationError } from "../domain/errors";
+import {
+  NotFoundError,
+  AuthorizationError,
+  ValidationError,
+} from "../domain/errors";
 import type { MoveType } from "../domain/world-types";
 import { DrizzleWorldRepository } from "../db/repositories/drizzle/drizzle-world.repository";
 import { getWorldDb } from "./db";
@@ -30,28 +34,45 @@ export interface MoveCharacterResult {
   eventId: string;
 }
 
-export async function moveCharacterToLocation(input: MoveCharacterInput): Promise<MoveCharacterResult> {
+export async function moveCharacterToLocation(
+  input: MoveCharacterInput,
+): Promise<MoveCharacterResult> {
   const db = getDb();
   const repo = new DrizzleWorldRepository();
 
   const result = await db.transaction(async (tx) => {
-    const worldRecord = await repo.findWorldByCharacterId(tx, input.characterId);
-    if (!worldRecord) throw new NotFoundError("World for character", input.characterId);
+    const worldRecord = await repo.findWorldByCharacterId(
+      tx,
+      input.characterId,
+    );
+    if (!worldRecord)
+      throw new NotFoundError("World for character", input.characterId);
 
     if (input.worldId && worldRecord.id !== input.worldId) {
-      throw new AuthorizationError("World ID mismatch: character does not belong to the specified world");
+      throw new AuthorizationError(
+        "World ID mismatch: character does not belong to the specified world",
+      );
     }
 
     if (worldRecord.householdId !== input.householdId) {
-      throw new AuthorizationError("Character world does not belong to this household");
+      throw new AuthorizationError(
+        "Character world does not belong to this household",
+      );
     }
 
     if (worldRecord.lifecycleStatus === "archived") {
-      throw new ValidationError("WORLD_ARCHIVED", "Cannot move character: world is archived");
+      throw new ValidationError(
+        "WORLD_ARCHIVED",
+        "Cannot move character: world is archived",
+      );
     }
 
-    const targetLocation = await repo.findLocationById(tx, input.targetLocationId);
-    if (!targetLocation) throw new NotFoundError("Location", input.targetLocationId);
+    const targetLocation = await repo.findLocationById(
+      tx,
+      input.targetLocationId,
+    );
+    if (!targetLocation)
+      throw new NotFoundError("Location", input.targetLocationId);
 
     if (targetLocation.accessibilityStatus !== "open") {
       throw new ValidationError(
@@ -61,18 +82,30 @@ export async function moveCharacterToLocation(input: MoveCharacterInput): Promis
     }
 
     if (targetLocation.worldId !== worldRecord.id) {
-      throw new AuthorizationError("Target location does not belong to character's world");
+      throw new AuthorizationError(
+        "Target location does not belong to character's world",
+      );
     }
 
-    const currentLocation = await repo.findCharacterLocation(tx, input.characterId);
+    const currentLocation = await repo.findCharacterLocation(
+      tx,
+      input.characterId,
+    );
     const previousLocationId = currentLocation?.locationId ?? null;
 
     if (currentLocation?.locationId === input.targetLocationId) {
-      throw new ValidationError("ALREADY_AT_LOCATION", "Character is already at this location");
+      throw new ValidationError(
+        "ALREADY_AT_LOCATION",
+        "Character is already at this location",
+      );
     }
 
     if (previousLocationId !== null) {
-      const connection = await repo.findConnectionBetweenLocations(tx, previousLocationId, input.targetLocationId);
+      const connection = await repo.findConnectionBetweenLocations(
+        tx,
+        previousLocationId,
+        input.targetLocationId,
+      );
       if (!connection) {
         throw new ValidationError(
           "NO_CONNECTION",
@@ -81,7 +114,8 @@ export async function moveCharacterToLocation(input: MoveCharacterInput): Promis
       }
     }
 
-    const moveType: MoveType = input.moveType ?? (previousLocationId === null ? "arrival" : "movement");
+    const moveType: MoveType =
+      input.moveType ?? (previousLocationId === null ? "arrival" : "movement");
 
     await repo.upsertCharacterLocation(tx, {
       characterId: input.characterId,
@@ -101,7 +135,12 @@ export async function moveCharacterToLocation(input: MoveCharacterInput): Promis
       createdAt: new Date(),
     });
 
-    const eventType = moveType === "arrival" ? "CHARACTER_ARRIVED" as never : moveType === "return_home" ? "CHARACTER_RETURNED_HOME" as never : "CHARACTER_MOVED" as never;
+    const eventType =
+      moveType === "arrival"
+        ? ("CHARACTER_ARRIVED" as never)
+        : moveType === "return_home"
+          ? ("CHARACTER_RETURNED_HOME" as never)
+          : ("CHARACTER_MOVED" as never);
 
     await recordDomainEventWithTx(tx, {
       worldId: worldRecord.id,

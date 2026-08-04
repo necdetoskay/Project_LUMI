@@ -7,7 +7,9 @@ export const worldCharacterLocations = profileSchema.table(
     characterId: uuid("character_id").primaryKey(),
     worldId: uuid("world_id").notNull(),
     locationId: uuid("location_id").notNull(),
-    enteredAt: timestamp("entered_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    enteredAt: timestamp("entered_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     version: integer("version").notNull().default(1),
   },
   (table) => [
@@ -16,5 +18,7 @@ export const worldCharacterLocations = profileSchema.table(
   ],
 );
 
-export type WorldCharacterLocationRecord = typeof worldCharacterLocations.$inferSelect;
-export type NewWorldCharacterLocationRecord = typeof worldCharacterLocations.$inferInsert;
+export type WorldCharacterLocationRecord =
+  typeof worldCharacterLocations.$inferSelect;
+export type NewWorldCharacterLocationRecord =
+  typeof worldCharacterLocations.$inferInsert;

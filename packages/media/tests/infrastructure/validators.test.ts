@@ -10,7 +10,9 @@ describe("StaticSafetyValidator", () => {
   const validator = new StaticSafetyValidator();
 
   it("passes a clean prompt", () => {
-    expect(validator.validatePrompt("a cheerful meadow with flowers")).toEqual([]);
+    expect(validator.validatePrompt("a cheerful meadow with flowers")).toEqual(
+      [],
+    );
   });
 
   it("rejects forbidden terms in prompt", () => {
@@ -45,9 +47,7 @@ describe("StaticConsistencyValidator", () => {
     const bytes = new TextEncoder().encode(
       `image:req:${IDENTITY.referenceKey}:${IDENTITY.traitHashes.join(":")}`,
     );
-    expect(
-      validator.validateImageAgainstIdentity(IDENTITY, bytes),
-    ).toEqual([]);
+    expect(validator.validateImageAgainstIdentity(IDENTITY, bytes)).toEqual([]);
   });
 
   it("flags missing trait hashes", () => {

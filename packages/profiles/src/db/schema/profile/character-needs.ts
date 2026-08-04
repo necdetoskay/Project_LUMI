@@ -1,4 +1,10 @@
-import { index, primaryKey, real, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  primaryKey,
+  real,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { profileSchema } from "../schemas";
 import { lumiCharacters } from "./lumi-characters";
 

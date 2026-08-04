@@ -11,7 +11,8 @@ import { observeHandler } from "@/lib/observability/observed-api-route";
 
 function getRateLimitIdentifier(request: Request, email: unknown) {
   const clientIp = getClientIp(request);
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "unknown";
+  const normalizedEmail =
+    typeof email === "string" ? email.trim().toLowerCase() : "unknown";
   return `${clientIp}:${normalizedEmail}`;
 }
 
@@ -20,7 +21,10 @@ export const POST = observeHandler(async (request: Request) => {
   const clientIp = getClientIp(request);
   const email = typeof body.email === "string" ? body.email : undefined;
   const formRequest = isFormRequest(request);
-  const rateLimit = checkAuthRateLimit("register", getRateLimitIdentifier(request, email));
+  const rateLimit = checkAuthRateLimit(
+    "register",
+    getRateLimitIdentifier(request, email),
+  );
 
   if (!rateLimit.allowed) {
     logAuthAuditEvent({
@@ -70,25 +74,37 @@ export const POST = observeHandler(async (request: Request) => {
         clientIp,
         email,
         outcome: "invalid_input",
-        reason: firstIssue === "PASSWORD_MISMATCH" ? firstIssue : "INVALID_REGISTER_INPUT",
+        reason:
+          firstIssue === "PASSWORD_MISMATCH"
+            ? firstIssue
+            : "INVALID_REGISTER_INPUT",
       });
 
       if (formRequest) {
         return redirectWithQuery(request, "/register", {
           email,
-          error: firstIssue === "PASSWORD_MISMATCH" ? "password_mismatch" : "invalid_register_input",
+          error:
+            firstIssue === "PASSWORD_MISMATCH"
+              ? "password_mismatch"
+              : "invalid_register_input",
         });
       }
 
       return NextResponse.json(
         {
-          error: firstIssue === "PASSWORD_MISMATCH" ? "PASSWORD_MISMATCH" : "INVALID_REGISTER_INPUT",
+          error:
+            firstIssue === "PASSWORD_MISMATCH"
+              ? "PASSWORD_MISMATCH"
+              : "INVALID_REGISTER_INPUT",
         },
         { status: 400 },
       );
     }
 
-    if (error instanceof Error && error.message === "PARENT_EMAIL_ALREADY_EXISTS") {
+    if (
+      error instanceof Error &&
+      error.message === "PARENT_EMAIL_ALREADY_EXISTS"
+    ) {
       logAuthAuditEvent({
         action: "register",
         clientIp,
@@ -104,7 +120,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
       }
 
-      return NextResponse.json({ error: "PARENT_EMAIL_ALREADY_EXISTS" }, { status: 409 });
+      return NextResponse.json(
+        { error: "PARENT_EMAIL_ALREADY_EXISTS" },
+        { status: 409 },
+      );
     }
 
     logAuthAuditEvent({

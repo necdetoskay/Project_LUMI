@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
-import { getCharacterById, getCharacterDomain } from "@lumi/profiles/application";
+import {
+  getCharacterById,
+  getCharacterDomain,
+} from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const GET = observeHandler(
@@ -23,7 +26,11 @@ export const GET = observeHandler(
 
       try {
         if (domain) {
-          const character = await getCharacterDomain(parent.id, householdId, id);
+          const character = await getCharacterDomain(
+            parent.id,
+            householdId,
+            id,
+          );
           return NextResponse.json({ character });
         }
         const character = await getCharacterById(parent.id, householdId, id);
@@ -43,11 +50,20 @@ export const GET = observeHandler(
             { status: 404 },
           );
         }
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json({ error: "NOT_FOUND", message: "Character not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to read character" },
@@ -56,6 +72,5 @@ export const GET = observeHandler(
       }
     });
   },
-  "/api/characters/{id}"
-
+  "/api/characters/{id}",
 );

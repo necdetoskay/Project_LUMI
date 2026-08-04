@@ -8,7 +8,12 @@ describe("PromptRenderer", () => {
   const definitions: PromptVariableDefinition[] = [
     { name: "childName", type: "string", required: true },
     { name: "age", type: "number", required: true },
-    { name: "mood", type: "enum", enumValues: ["happy", "sad"], default: "happy" },
+    {
+      name: "mood",
+      type: "enum",
+      enumValues: ["happy", "sad"],
+      default: "happy",
+    },
     { name: "extra", type: "json", required: false },
   ];
 
@@ -21,17 +26,20 @@ describe("PromptRenderer", () => {
     );
     expect(result.renderedText).toBe("Hello Ada, age 7, mood happy.");
     expect(result.versionId).toBe(versionId);
-    expect(result.resolvedVariables).toEqual({ childName: "Ada", age: 7, mood: "happy", extra: undefined });
+    expect(result.resolvedVariables).toEqual({
+      childName: "Ada",
+      age: 7,
+      mood: "happy",
+      extra: undefined,
+    });
     expect(result.tokenEstimate).toBeGreaterThan(0);
   });
 
   it("uses default value when variable is missing", () => {
-    const result = renderPrompt(
-      "Mood: {{mood}}",
-      versionId,
-      definitions,
-      { childName: "Ada", age: 7 },
-    );
+    const result = renderPrompt("Mood: {{mood}}", versionId, definitions, {
+      childName: "Ada",
+      age: 7,
+    });
     expect(result.renderedText).toBe("Mood: happy");
   });
 
@@ -43,7 +51,10 @@ describe("PromptRenderer", () => {
 
   it("throws on type mismatch", () => {
     expect(() =>
-      renderPrompt("Age: {{age}}", versionId, definitions, { childName: "Ada", age: "seven" }),
+      renderPrompt("Age: {{age}}", versionId, definitions, {
+        childName: "Ada",
+        age: "seven",
+      }),
     ).toThrow(ValidationError);
   });
 
@@ -59,12 +70,11 @@ describe("PromptRenderer", () => {
   });
 
   it("serializes json variables", () => {
-    const result = renderPrompt(
-      "Extra: {{extra}}",
-      versionId,
-      definitions,
-      { childName: "Ada", age: 7, extra: { key: "value" } },
-    );
+    const result = renderPrompt("Extra: {{extra}}", versionId, definitions, {
+      childName: "Ada",
+      age: 7,
+      extra: { key: "value" },
+    });
     expect(result.renderedText).toBe('Extra: \\{"key":"value"\\}');
   });
 
@@ -75,7 +85,9 @@ describe("PromptRenderer", () => {
       [{ name: "childName", type: "string" }],
       { childName: "Ada" },
     );
-    expect(result.tokenEstimate).toBe(Math.ceil(result.renderedText.length / 4));
+    expect(result.tokenEstimate).toBe(
+      Math.ceil(result.renderedText.length / 4),
+    );
   });
 
   it("handles unknown placeholders by leaving them unresolved", () => {

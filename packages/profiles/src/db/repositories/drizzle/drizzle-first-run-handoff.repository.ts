@@ -9,7 +9,9 @@ import {
 } from "../../../db/schema/profile";
 import type { FirstRunHandoffRepository } from "../interfaces/first-run-handoff.repository";
 
-export class DrizzleFirstRunHandoffRepository implements FirstRunHandoffRepository {
+export class DrizzleFirstRunHandoffRepository
+  implements FirstRunHandoffRepository
+{
   constructor(private readonly db: QueryExecutor) {}
 
   async findById(
@@ -36,10 +38,7 @@ export class DrizzleFirstRunHandoffRepository implements FirstRunHandoffReposito
         ),
       )
       .where(
-        and(
-          eq(firstRunHandoffs.id, id),
-          isNull(firstRunHandoffs.deletedAt),
-        ),
+        and(eq(firstRunHandoffs.id, id), isNull(firstRunHandoffs.deletedAt)),
       )
       .limit(1);
     return (record as FirstRunHandoffRecord) ?? null;
@@ -104,7 +103,9 @@ export class DrizzleFirstRunHandoffRepository implements FirstRunHandoffReposito
     return rows as FirstRunHandoffRecord[];
   }
 
-  async create(input: NewFirstRunHandoffRecord): Promise<FirstRunHandoffRecord> {
+  async create(
+    input: NewFirstRunHandoffRecord,
+  ): Promise<FirstRunHandoffRecord> {
     const [record] = await this.db
       .insert(firstRunHandoffs)
       .values(input)
@@ -124,10 +125,7 @@ export class DrizzleFirstRunHandoffRepository implements FirstRunHandoffReposito
       .update(firstRunHandoffs)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(
-        and(
-          eq(firstRunHandoffs.id, id),
-          isNull(firstRunHandoffs.deletedAt),
-        ),
+        and(eq(firstRunHandoffs.id, id), isNull(firstRunHandoffs.deletedAt)),
       );
   }
 }

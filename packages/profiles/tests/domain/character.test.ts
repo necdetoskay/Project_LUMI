@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { LumiCharacter, validateSafetyBounds, matchesOriginPackageContract } from "../../src/domain";
+import {
+  LumiCharacter,
+  validateSafetyBounds,
+  matchesOriginPackageContract,
+} from "../../src/domain";
 import { ValidationError } from "../../src/domain/errors";
 
 describe("LumiCharacter", () => {

@@ -32,7 +32,10 @@ export class StorySession {
       householdId: validateId(input.householdId, "householdId"),
       childProfileId: validateId(input.childProfileId, "childProfileId"),
       worldId: validateId(input.worldId, "worldId"),
-      storyDefinitionId: validateId(input.storyDefinitionId, "storyDefinitionId"),
+      storyDefinitionId: validateId(
+        input.storyDefinitionId,
+        "storyDefinitionId",
+      ),
       storyVersionId: validateId(input.storyVersionId, "storyVersionId"),
       currentSceneId: null,
       sessionStatus: "created",
@@ -89,9 +92,11 @@ export class StorySession {
   }
 
   isTerminal(): boolean {
-    return this.state.sessionStatus === "completed"
-      || this.state.sessionStatus === "abandoned"
-      || this.state.sessionStatus === "failed";
+    return (
+      this.state.sessionStatus === "completed" ||
+      this.state.sessionStatus === "abandoned" ||
+      this.state.sessionStatus === "failed"
+    );
   }
 
   private assertNotTerminal(action: string): void {
@@ -112,7 +117,10 @@ export class StorySession {
   start(entrySceneId: string): void {
     this.assertNotTerminal("start");
     if (this.state.sessionStatus === "active") {
-      throw new ValidationError("SESSION_ALREADY_ACTIVE", "Session is already active");
+      throw new ValidationError(
+        "SESSION_ALREADY_ACTIVE",
+        "Session is already active",
+      );
     }
     this.state.sessionStatus = "active";
     this.state.currentSceneId = entrySceneId;
@@ -175,7 +183,10 @@ export class StorySession {
   abandon(reason?: string): void {
     this.assertNotTerminal("abandon");
     if (this.state.sessionStatus === "completed") {
-      throw new ValidationError("SESSION_ALREADY_COMPLETED", "A completed session cannot be abandoned");
+      throw new ValidationError(
+        "SESSION_ALREADY_COMPLETED",
+        "A completed session cannot be abandoned",
+      );
     }
     this.state.sessionStatus = "abandoned";
     this.state.abandonmentReason = reason?.trim() ?? null;

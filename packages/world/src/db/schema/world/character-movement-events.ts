@@ -12,14 +12,21 @@ export const worldCharacterMovementEvents = profileSchema.table(
     fromLocationId: uuid("from_location_id"),
     toLocationId: uuid("to_location_id").notNull(),
     moveType: varchar("move_type", { length: 20 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("wcme_character_idx").on(table.characterId, table.createdAt),
     index("wcme_world_idx").on(table.worldId),
-    check("wcme_move_type_check", sql`${table.moveType} IN ('arrival', 'movement', 'return_home')`),
+    check(
+      "wcme_move_type_check",
+      sql`${table.moveType} IN ('arrival', 'movement', 'return_home')`,
+    ),
   ],
 );
 
-export type WorldCharacterMovementEventRecord = typeof worldCharacterMovementEvents.$inferSelect;
-export type NewWorldCharacterMovementEventRecord = typeof worldCharacterMovementEvents.$inferInsert;
+export type WorldCharacterMovementEventRecord =
+  typeof worldCharacterMovementEvents.$inferSelect;
+export type NewWorldCharacterMovementEventRecord =
+  typeof worldCharacterMovementEvents.$inferInsert;

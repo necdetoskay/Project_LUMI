@@ -1,4 +1,9 @@
-import type { RegionState, RegionType, RegionAccessibilityStatus, DiscoveryStatus } from "./world-types";
+import type {
+  RegionState,
+  RegionType,
+  RegionAccessibilityStatus,
+  DiscoveryStatus,
+} from "./world-types";
 import { validateDisplayName, validateRegionKey } from "./validation";
 
 export interface CreateRegionInput {

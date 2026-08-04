@@ -15,7 +15,10 @@ export const GET = observeHandler(async (request: Request) => {
 
     if (!householdId) {
       return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+        {
+          error: "VALIDATION_ERROR",
+          message: "householdId query parameter is required",
+        },
         { status: 400 },
       );
     }
@@ -26,7 +29,10 @@ export const GET = observeHandler(async (request: Request) => {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       if (message.includes("not a member")) {
-        return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        return NextResponse.json(
+          { error: "FORBIDDEN", message },
+          { status: 403 },
+        );
       }
       return NextResponse.json(
         { error: "INTERNAL_ERROR", message: "Failed to list profiles" },
@@ -68,9 +74,16 @@ export const POST = observeHandler(async (request: Request) => {
       const err = error as Error & { code?: string };
       const message = err.message ?? "Unknown error";
       if (message.includes("not a member")) {
-        return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        return NextResponse.json(
+          { error: "FORBIDDEN", message },
+          { status: 403 },
+        );
       }
-      if (err.name === "ValidationError" || message.includes("validation") || message.includes("ValidationError")) {
+      if (
+        err.name === "ValidationError" ||
+        message.includes("validation") ||
+        message.includes("ValidationError")
+      ) {
         return NextResponse.json(
           { error: "VALIDATION_ERROR", message },
           { status: 400 },

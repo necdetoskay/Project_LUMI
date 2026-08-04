@@ -30,20 +30,32 @@ export function ensureParentPolicyDoesNotLoosenSafety(
   let allowTts = parentPolicy.allowTts;
   const forbiddenThemes = new Set(parentPolicy.forbiddenThemes);
 
-  if (!isBoundaryAtLeastAsRestrictive(parentPolicy.contentBoundary, baseline.contentBoundary)) {
+  if (
+    !isBoundaryAtLeastAsRestrictive(
+      parentPolicy.contentBoundary,
+      baseline.contentBoundary,
+    )
+  ) {
     violations.push({
       code: "POLICY_LOOSENS_CONTENT_BOUNDARY",
       field: "contentBoundary",
       message: `Parent content boundary '${parentPolicy.contentBoundary}' is less restrictive than safety baseline '${baseline.contentBoundary}'`,
     });
-    contentBoundary = stricterBoundary(parentPolicy.contentBoundary, baseline.contentBoundary);
+    contentBoundary = stricterBoundary(
+      parentPolicy.contentBoundary,
+      baseline.contentBoundary,
+    );
   }
 
-  if (baseline.requireParentApprovalForAi && !parentPolicy.requireParentApprovalForAi) {
+  if (
+    baseline.requireParentApprovalForAi &&
+    !parentPolicy.requireParentApprovalForAi
+  ) {
     violations.push({
       code: "POLICY_REMOVES_AI_APPROVAL",
       field: "requireParentApprovalForAi",
-      message: "Parent policy cannot disable AI approval when safety baseline requires it",
+      message:
+        "Parent policy cannot disable AI approval when safety baseline requires it",
     });
     requireParentApprovalForAi = true;
   }
@@ -68,11 +80,15 @@ export function ensureParentPolicyDoesNotLoosenSafety(
     maxDailyStories = baseline.maxDailyStoriesCap;
   }
 
-  if (baseline.allowImageGeneration === false && parentPolicy.allowImageGeneration) {
+  if (
+    baseline.allowImageGeneration === false &&
+    parentPolicy.allowImageGeneration
+  ) {
     violations.push({
       code: "POLICY_ALLOWS_FORBIDDEN_IMAGES",
       field: "allowImageGeneration",
-      message: "Parent policy cannot allow image generation when safety baseline forbids it",
+      message:
+        "Parent policy cannot allow image generation when safety baseline forbids it",
     });
     allowImageGeneration = false;
   }

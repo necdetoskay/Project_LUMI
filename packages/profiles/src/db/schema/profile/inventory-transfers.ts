@@ -23,8 +23,13 @@ export const inventoryTransfers = profileSchema.table(
     sourceId: uuid("source_id"),
     idempotencyKey: varchar("idempotency_key", { length: 200 }),
     failureReason: varchar("failure_reason", { length: 500 }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
-    committedAt: timestamp("committed_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    committedAt: timestamp("committed_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     failedAt: timestamp("failed_at", { withTimezone: true, mode: "date" }),
   },
   () => ({
@@ -35,5 +40,3 @@ export const inventoryTransfers = profileSchema.table(
 
 export type InventoryTransferRecord = typeof inventoryTransfers.$inferSelect;
 export type NewInventoryTransferRecord = typeof inventoryTransfers.$inferInsert;
-
-

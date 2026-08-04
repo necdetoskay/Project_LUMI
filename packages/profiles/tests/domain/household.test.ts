@@ -3,7 +3,11 @@ import { Household } from "../../src/domain/household";
 import { ValidationError } from "../../src/domain/errors";
 
 describe("Household", () => {
-  const validInput = { id: crypto.randomUUID(), name: "My Family", slug: "my-family" };
+  const validInput = {
+    id: crypto.randomUUID(),
+    name: "My Family",
+    slug: "my-family",
+  };
 
   it("creates a household with valid input", () => {
     const household = Household.create(validInput);
@@ -14,7 +18,9 @@ describe("Household", () => {
   });
 
   it("rejects empty name", () => {
-    expect(() => Household.create({ ...validInput, name: "   " })).toThrow(ValidationError);
+    expect(() => Household.create({ ...validInput, name: "   " })).toThrow(
+      ValidationError,
+    );
   });
 
   it("rejects name over 160 characters", () => {
@@ -36,7 +42,9 @@ describe("Household", () => {
   });
 
   it("rejects empty slug", () => {
-    expect(() => Household.create({ ...validInput, slug: "x" })).toThrow(ValidationError);
+    expect(() => Household.create({ ...validInput, slug: "x" })).toThrow(
+      ValidationError,
+    );
   });
 
   it("supports archive", () => {

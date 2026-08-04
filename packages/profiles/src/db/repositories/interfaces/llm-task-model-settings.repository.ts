@@ -15,5 +15,7 @@ export interface LlmTaskModelSettingsRepository {
     taskType: string,
   ): Promise<LlmTaskModelSettingsRecord | null>;
 
-  upsert(input: NewLlmTaskModelSettingsRecord): Promise<LlmTaskModelSettingsRecord>;
+  upsert(
+    input: NewLlmTaskModelSettingsRecord,
+  ): Promise<LlmTaskModelSettingsRecord>;
 }
