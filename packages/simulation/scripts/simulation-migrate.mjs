@@ -5,7 +5,7 @@ import pg from "pg";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function loadEnvFile(path: string): void {
+function loadEnvFile(path) {
   if (!existsSync(path)) return;
   const content = readFileSync(path, "utf-8");
   for (const line of content.split(/\r?\n/)) {
@@ -14,7 +14,10 @@ function loadEnvFile(path: string): void {
     const idx = trimmed.indexOf("=");
     if (idx === -1) continue;
     const key = trimmed.slice(0, idx).trim();
-    const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, "");
+    const value = trimmed
+      .slice(idx + 1)
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
     process.env[key] ??= value;
   }
 }
@@ -27,7 +30,7 @@ const DATABASE_URL =
 
 const MIGRATION_DIR = resolve(__dirname, "..", "migrations");
 
-async function ensureLedger(pool: pg.Pool): Promise<void> {
+async function ensureLedger(pool) {
   await pool.query(`CREATE SCHEMA IF NOT EXISTS simulation;`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS simulation._simulation_migration_ledger (
@@ -38,7 +41,7 @@ async function ensureLedger(pool: pg.Pool): Promise<void> {
   `);
 }
 
-async function getAppliedFiles(pool: pg.Pool): Promise<Set<string>> {
+async function getAppliedFiles(pool) {
   try {
     const result = await pool.query(
       "SELECT filename FROM simulation._simulation_migration_ledger ORDER BY id",
@@ -49,7 +52,7 @@ async function getAppliedFiles(pool: pg.Pool): Promise<Set<string>> {
   }
 }
 
-async function main(): Promise<void> {
+async function main() {
   const files = readdirSync(MIGRATION_DIR)
     .filter((f) => f.endsWith(".sql"))
     .sort();
