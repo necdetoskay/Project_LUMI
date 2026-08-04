@@ -29,12 +29,20 @@ function normalizeKey(key: string): string {
 
 function matchesDenylist(key: string, denylist: string[]): boolean {
   const normalized = normalizeKey(key);
-  return denylist.some((pattern) => normalized.includes(pattern.toLowerCase()) || key.toLowerCase().includes(pattern.toLowerCase()));
+  return denylist.some(
+    (pattern) =>
+      normalized.includes(pattern.toLowerCase()) ||
+      key.toLowerCase().includes(pattern.toLowerCase()),
+  );
 }
 
 function matchesAllowlist(key: string, allowlist: string[]): boolean {
   const normalized = normalizeKey(key);
-  return allowlist.some((pattern) => normalized.includes(pattern.toLowerCase()) || key.toLowerCase().includes(pattern.toLowerCase()));
+  return allowlist.some(
+    (pattern) =>
+      normalized.includes(pattern.toLowerCase()) ||
+      key.toLowerCase().includes(pattern.toLowerCase()),
+  );
 }
 
 export function redact(value: unknown, options: RedactOptions = {}): unknown {
@@ -45,7 +53,10 @@ export function redact(value: unknown, options: RedactOptions = {}): unknown {
   } = options;
 
   const effectiveDenylist = denylist.filter(
-    (pattern) => !allowlist.some((allowed) => normalizeKey(allowed) === normalizeKey(pattern)),
+    (pattern) =>
+      !allowlist.some(
+        (allowed) => normalizeKey(allowed) === normalizeKey(pattern),
+      ),
   );
 
   if (value === null || value === undefined) {

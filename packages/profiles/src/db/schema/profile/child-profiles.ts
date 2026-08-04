@@ -1,10 +1,4 @@
-import {
-  check,
-  index,
-  jsonb,
-  varchar,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { check, index, jsonb, varchar, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import type { ChildProfileMetadata } from "../../../domain/types";

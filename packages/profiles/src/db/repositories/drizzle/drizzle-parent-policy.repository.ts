@@ -66,13 +66,20 @@ export class DrizzleParentPolicyRepository implements ParentPolicyRepository {
     }
 
     const updateValues: Record<string, unknown> = {};
-    if (input.maxDailyStories !== undefined) updateValues.maxDailyStories = input.maxDailyStories;
-    if (input.contentBoundary !== undefined) updateValues.contentBoundary = input.contentBoundary;
-    if (input.timeLimitMinutes !== undefined) updateValues.timeLimitMinutes = input.timeLimitMinutes;
-    if (input.requireParentApprovalForAi !== undefined) updateValues.requireParentApprovalForAi = input.requireParentApprovalForAi;
-    if (input.allowImageGeneration !== undefined) updateValues.allowImageGeneration = input.allowImageGeneration;
+    if (input.maxDailyStories !== undefined)
+      updateValues.maxDailyStories = input.maxDailyStories;
+    if (input.contentBoundary !== undefined)
+      updateValues.contentBoundary = input.contentBoundary;
+    if (input.timeLimitMinutes !== undefined)
+      updateValues.timeLimitMinutes = input.timeLimitMinutes;
+    if (input.requireParentApprovalForAi !== undefined)
+      updateValues.requireParentApprovalForAi =
+        input.requireParentApprovalForAi;
+    if (input.allowImageGeneration !== undefined)
+      updateValues.allowImageGeneration = input.allowImageGeneration;
     if (input.allowTts !== undefined) updateValues.allowTts = input.allowTts;
-    if (input.safetyMetadata !== undefined) updateValues.safetyMetadata = input.safetyMetadata;
+    if (input.safetyMetadata !== undefined)
+      updateValues.safetyMetadata = input.safetyMetadata;
 
     if (Object.keys(updateValues).length === 0) {
       throw new Error("No policy values to update");

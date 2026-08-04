@@ -1,4 +1,13 @@
-import { check, index, integer, jsonb, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { primaryId, timestampColumns } from "./common";
@@ -16,7 +25,10 @@ export const promptVersions = promptsSchema.table(
     modelPreferences: jsonb("model_preferences").notNull().default({}),
     outputSchema: jsonb("output_schema").notNull().default({}),
     ...timestampColumns,
-    publishedAt: timestamp("published_at", { withTimezone: true, mode: "date" }),
+    publishedAt: timestamp("published_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [

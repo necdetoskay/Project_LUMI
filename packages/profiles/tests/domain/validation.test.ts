@@ -32,7 +32,9 @@ describe("validation", () => {
     });
 
     it("rejects too long", () => {
-      expect(() => validateDisplayName("x".repeat(121))).toThrow(ValidationError);
+      expect(() => validateDisplayName("x".repeat(121))).toThrow(
+        ValidationError,
+      );
     });
   });
 

@@ -18,7 +18,9 @@ export const inventoryEntries = profileSchema.table(
     slotKey: varchar("slot_key", { length: 80 }),
     sortOrder: integer("sort_order").notNull().default(0),
     quantity: integer("quantity").notNull().default(1),
-    entryStatus: varchar("entry_status", { length: 20 }).notNull().default("active"),
+    entryStatus: varchar("entry_status", { length: 20 })
+      .notNull()
+      .default("active"),
     metadata: jsonb("metadata").notNull().default({}),
     ...timestampColumns,
   },
@@ -31,4 +33,3 @@ export const inventoryEntries = profileSchema.table(
 
 export type InventoryEntryRecord = typeof inventoryEntries.$inferSelect;
 export type NewInventoryEntryRecord = typeof inventoryEntries.$inferInsert;
-

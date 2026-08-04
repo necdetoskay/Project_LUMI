@@ -29,7 +29,10 @@ export const worldClocks = simulationSchema.table(
   },
   (table) => [
     index("wc_household_world_idx").on(table.householdId, table.worldId),
-    check("wc_season_check", sql`${table.season} IN ('spring','summer','autumn','winter')`),
+    check(
+      "wc_season_check",
+      sql`${table.season} IN ('spring','summer','autumn','winter')`,
+    ),
   ],
 );
 

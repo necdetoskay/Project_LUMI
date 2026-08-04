@@ -29,8 +29,14 @@ export class World {
       characterId: input.characterId,
       universeSeed: validateSeed(input.universeSeed, "universeSeed"),
       originSeed: validateSeed(input.originSeed, "originSeed"),
-      acceptedCandidateSeed: validateSeed(input.acceptedCandidateSeed, "acceptedCandidateSeed"),
-      generatorVersion: validateSeed(input.generatorVersion, "generatorVersion"),
+      acceptedCandidateSeed: validateSeed(
+        input.acceptedCandidateSeed,
+        "acceptedCandidateSeed",
+      ),
+      generatorVersion: validateSeed(
+        input.generatorVersion,
+        "generatorVersion",
+      ),
       vectorVersion: validateSeed(input.vectorVersion, "vectorVersion"),
       lifecycleStatus: "active",
       version: 1,
@@ -44,8 +50,15 @@ export class World {
   }
 
   static fromState(state: WorldState): World {
-    if (!(WORLD_LIFECYCLE_STATUSES as readonly string[]).includes(state.lifecycleStatus)) {
-      throw new ValidationError("INVALID_WORLD_LIFECYCLE_STATUS", "Reconstituted world has invalid lifecycle status");
+    if (
+      !(WORLD_LIFECYCLE_STATUSES as readonly string[]).includes(
+        state.lifecycleStatus,
+      )
+    ) {
+      throw new ValidationError(
+        "INVALID_WORLD_LIFECYCLE_STATUS",
+        "Reconstituted world has invalid lifecycle status",
+      );
     }
     return new World(state);
   }
@@ -80,7 +93,10 @@ export class World {
 
   archive(): void {
     if (this.state.lifecycleStatus === "archived") {
-      throw new ValidationError("WORLD_ALREADY_ARCHIVED", "World is already archived");
+      throw new ValidationError(
+        "WORLD_ALREADY_ARCHIVED",
+        "World is already archived",
+      );
     }
     this.state.lifecycleStatus = "archived";
     this.state.archivedAt = new Date();

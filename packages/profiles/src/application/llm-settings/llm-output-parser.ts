@@ -62,7 +62,9 @@ function validateLlmPackage(
 
   if (!pkg.characterType || typeof pkg.characterType !== "string") {
     errors.push(`${prefix}.characterType: missing or not a string`);
-  } else if (!(CHARACTER_TYPES as readonly string[]).includes(pkg.characterType)) {
+  } else if (
+    !(CHARACTER_TYPES as readonly string[]).includes(pkg.characterType)
+  ) {
     errors.push(
       `${prefix}.characterType: invalid value "${pkg.characterType}". Must be one of: ${CHARACTER_TYPES.join(", ")}`,
     );
@@ -88,7 +90,10 @@ function validateLlmPackage(
     }
   }
 
-  if (!pkg.startingRegionArchetype || typeof pkg.startingRegionArchetype !== "string") {
+  if (
+    !pkg.startingRegionArchetype ||
+    typeof pkg.startingRegionArchetype !== "string"
+  ) {
     errors.push(`${prefix}.startingRegionArchetype: missing or not a string`);
   }
 
@@ -159,9 +164,13 @@ export function parseAndValidateLlmOutput(raw: string): LlmOutputParseResult {
   for (let i = 0; i < pkgList.length; i++) {
     const validation = validateLlmPackage(pkgList[i]!, i);
     if (validation.valid) {
-      const concept = (pkgList[i]!.originConcept as string).trim().toLowerCase();
+      const concept = (pkgList[i]!.originConcept as string)
+        .trim()
+        .toLowerCase();
       if (seenConcepts.has(concept)) {
-        result.errors.push(`package[${i}]: duplicate origin concept detected (redundant suggestion)`);
+        result.errors.push(
+          `package[${i}]: duplicate origin concept detected (redundant suggestion)`,
+        );
         continue;
       }
       seenConcepts.add(concept);

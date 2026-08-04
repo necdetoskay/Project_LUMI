@@ -29,7 +29,10 @@ export const BROAD_CHARACTER_KINDS = [
 ] as const;
 export type BroadCharacterKind = (typeof BROAD_CHARACTER_KINDS)[number];
 
-export const CHARACTER_TYPE_TO_KIND: Record<CharacterType, BroadCharacterKind[]> = {
+export const CHARACTER_TYPE_TO_KIND: Record<
+  CharacterType,
+  BroadCharacterKind[]
+> = {
   explorer: ["human", "fantasy", "robot"],
   inventor: ["human", "robot", "fantasy"],
   storyteller: ["human", "fantasy"],
@@ -101,7 +104,8 @@ export const CHARACTER_LIFECYCLE_STAGES = [
   "adulthood",
   "elder",
 ] as const;
-export type CharacterLifecycleStage = (typeof CHARACTER_LIFECYCLE_STAGES)[number];
+export type CharacterLifecycleStage =
+  (typeof CHARACTER_LIFECYCLE_STAGES)[number];
 
 export const TRAIT_DIMENSIONS = [
   "courage",

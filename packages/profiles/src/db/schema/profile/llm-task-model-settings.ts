@@ -1,4 +1,13 @@
-import { boolean, check, index, integer, real, text, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  real,
+  text,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { primaryId, timestampColumns } from "../common";
@@ -26,10 +35,14 @@ export const llmTaskModelSettings = profileSchema.table(
     householdId: varchar("household_id", { length: 128 })
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
-    provider: varchar("provider", { length: 40 }).notNull().default("openrouter"),
+    provider: varchar("provider", { length: 40 })
+      .notNull()
+      .default("openrouter"),
     taskType: varchar("task_type", { length: 60 }).notNull(),
     modelId: text("model_id").notNull(),
-    reasoningLevel: varchar("reasoning_level", { length: 20 }).notNull().default("medium"),
+    reasoningLevel: varchar("reasoning_level", { length: 20 })
+      .notNull()
+      .default("medium"),
     temperature: real("temperature").notNull().default(0.8),
     maxOutputTokens: integer("max_output_tokens").notNull().default(1800),
     enabled: boolean("enabled").notNull().default(true),
@@ -67,5 +80,7 @@ export const llmTaskModelSettings = profileSchema.table(
   ],
 );
 
-export type LlmTaskModelSettingsRecord = typeof llmTaskModelSettings.$inferSelect;
-export type NewLlmTaskModelSettingsRecord = typeof llmTaskModelSettings.$inferInsert;
+export type LlmTaskModelSettingsRecord =
+  typeof llmTaskModelSettings.$inferSelect;
+export type NewLlmTaskModelSettingsRecord =
+  typeof llmTaskModelSettings.$inferInsert;

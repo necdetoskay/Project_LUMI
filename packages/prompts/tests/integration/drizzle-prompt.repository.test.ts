@@ -7,7 +7,9 @@ import { createDatabase } from "../../src/db/client";
 import { DrizzlePromptRepository } from "../../src/db/repositories/drizzle/drizzle-prompt.repository";
 
 const enabled = process.env.PROMPT_TEST_ENABLE_DESTRUCTIVE === "true";
-const dbUrl = process.env.DATABASE_URL ?? "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
+const dbUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
 
 describe("DrizzlePromptRepository integration", () => {
   let pool: pg.Pool | undefined;
@@ -44,7 +46,9 @@ describe("DrizzlePromptRepository integration", () => {
 
   afterAll(async () => {
     if (pool) {
-      await pool.query("DROP SCHEMA IF EXISTS prompts CASCADE").catch(() => undefined);
+      await pool
+        .query("DROP SCHEMA IF EXISTS prompts CASCADE")
+        .catch(() => undefined);
       await pool.end();
     }
   });
@@ -185,7 +189,9 @@ describe("DrizzlePromptRepository integration", () => {
       archivedAt: null,
     });
     await repo.publishVersion(db, v1.id);
-    await db.transaction(async (tx) => repo.activateVersion(tx, registry.id, v1.id, householdId));
+    await db.transaction(async (tx) =>
+      repo.activateVersion(tx, registry.id, v1.id, householdId),
+    );
 
     const v2 = await repo.createVersion(db, {
       registryId: registry.id,
@@ -201,7 +207,9 @@ describe("DrizzlePromptRepository integration", () => {
       archivedAt: null,
     });
     await repo.publishVersion(db, v2.id);
-    await db.transaction(async (tx) => repo.activateVersion(tx, registry.id, v2.id, householdId));
+    await db.transaction(async (tx) =>
+      repo.activateVersion(tx, registry.id, v2.id, householdId),
+    );
 
     const activeVersion = await repo.getActiveVersion(db, registry.id);
     expect(activeVersion?.id).toBe(v2.id);

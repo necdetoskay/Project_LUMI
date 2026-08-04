@@ -27,7 +27,8 @@ async function resetAuthTables() {
 
 describe("auth PostgreSQL integration", () => {
   beforeAll(async () => {
-    const allowDestructive = process.env.AUTH_TEST_ENABLE_DESTRUCTIVE === "true";
+    const allowDestructive =
+      process.env.AUTH_TEST_ENABLE_DESTRUCTIVE === "true";
 
     if (!allowDestructive) {
       console.warn(
@@ -40,7 +41,9 @@ describe("auth PostgreSQL integration", () => {
       await getAuthPool().query(authSchemaSql);
       databaseAvailable = true;
     } catch (error) {
-      console.warn("Skipping auth PostgreSQL integration tests: database unavailable.");
+      console.warn(
+        "Skipping auth PostgreSQL integration tests: database unavailable.",
+      );
       console.warn(error);
     }
   });
@@ -90,7 +93,9 @@ describe("auth PostgreSQL integration", () => {
       session_count: "1",
     });
 
-    await expect(getParentFromSessionToken(result.session.token)).resolves.toEqual(result.parent);
+    await expect(
+      getParentFromSessionToken(result.session.token),
+    ).resolves.toEqual(result.parent);
   });
 
   it("creates a short session when remember-me is disabled", async () => {
@@ -113,11 +118,14 @@ describe("auth PostgreSQL integration", () => {
 
     const sessionState = await getAuthPool().query<{
       remember_me: boolean;
-    }>(`
+    }>(
+      `
       SELECT remember_me
       FROM parent_sessions
       WHERE id = $1
-    `, [loginResult.session.id]);
+    `,
+      [loginResult.session.id],
+    );
 
     expect(sessionState.rows[0]?.remember_me).toBe(false);
   });
@@ -139,11 +147,13 @@ describe("auth PostgreSQL integration", () => {
     expect(rotated.parent.email).toBe("parent@example.com");
     expect(rotated.session.id).not.toBe(registerResult.session.id);
 
-    await expect(refreshParentSession(registerResult.session.token)).rejects.toThrow(
-      "REUSED_SESSION",
-    );
+    await expect(
+      refreshParentSession(registerResult.session.token),
+    ).rejects.toThrow("REUSED_SESSION");
 
-    await expect(getParentFromSessionToken(rotated.session.token)).resolves.toBeNull();
+    await expect(
+      getParentFromSessionToken(rotated.session.token),
+    ).resolves.toBeNull();
   });
 
   it("resets the password, revokes old sessions and allows login with the new password", async () => {
@@ -170,7 +180,9 @@ describe("auth PostgreSQL integration", () => {
       token: resetRequest.previewToken,
     });
 
-    await expect(getParentFromSessionToken(registerResult.session.token)).resolves.toBeNull();
+    await expect(
+      getParentFromSessionToken(registerResult.session.token),
+    ).resolves.toBeNull();
     await expect(
       loginParent({
         email: "parent@example.com",

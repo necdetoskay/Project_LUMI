@@ -43,13 +43,16 @@ export function renderPrompt(
   const resolved = applyVariables(definitions, values);
   const definedNames = new Set(definitions.map((def) => def.name));
 
-  const renderedText = template.replace(PLACEHOLDER_PATTERN, (match, name: string) => {
-    if (!definedNames.has(name)) {
-      return match;
-    }
-    const value = resolved[name];
-    return escapeValue(formatValue(value));
-  });
+  const renderedText = template.replace(
+    PLACEHOLDER_PATTERN,
+    (match, name: string) => {
+      if (!definedNames.has(name)) {
+        return match;
+      }
+      const value = resolved[name];
+      return escapeValue(formatValue(value));
+    },
+  );
 
   return {
     renderedText,
@@ -69,6 +72,9 @@ export function validateTemplateVariables(
     if (error instanceof ValidationError) {
       throw error;
     }
-    throw new ValidationError("RENDER_FAILED", "Failed to validate template variables");
+    throw new ValidationError(
+      "RENDER_FAILED",
+      "Failed to validate template variables",
+    );
   }
 }

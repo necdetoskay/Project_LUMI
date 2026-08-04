@@ -1,4 +1,12 @@
-import { beforeAll, beforeEach, afterAll, describe, it, expect, vi } from "vitest";
+import {
+  beforeAll,
+  beforeEach,
+  afterAll,
+  describe,
+  it,
+  expect,
+  vi,
+} from "vitest";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql, eq } from "drizzle-orm";
@@ -7,7 +15,9 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const mockCallOpenRouter = vi.hoisted(() => vi.fn());
-const mockDecryptApiKey = vi.hoisted(() => vi.fn(() => "sk-or-v1-test-decrypted-key"));
+const mockDecryptApiKey = vi.hoisted(() =>
+  vi.fn(() => "sk-or-v1-test-decrypted-key"),
+);
 
 vi.mock("../../src/application/llm-settings/openrouter-client", () => ({
   callOpenRouter: mockCallOpenRouter,
@@ -28,7 +38,12 @@ import { DrizzleLlmTaskModelSettingsRepository } from "../../src/db/repositories
 
 import { lumiCharacters } from "../../src/db/schema/profile/lumi-characters";
 import { archetypeSuggestionBatches } from "../../src/db/schema/profile/archetype-suggestion-batches";
-import { DomainError, NotFoundError, ValidationError, AuthorizationError } from "../../src/domain";
+import {
+  DomainError,
+  NotFoundError,
+  ValidationError,
+  AuthorizationError,
+} from "../../src/domain";
 import {
   createOrReplaceFirstRunHandoff,
   consumeHandoffAndCreateCharacter,
@@ -41,7 +56,8 @@ let queryClient: postgres.Sql | undefined;
 let db: ReturnType<typeof drizzle> | undefined;
 const databaseUrl = process.env.PROFILE_TEST_DATABASE_URL;
 const destructiveTestsEnabled =
-  Boolean(databaseUrl) && process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
+  Boolean(databaseUrl) &&
+  process.env.PROFILE_TEST_ENABLE_DESTRUCTIVE === "true";
 
 const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 const OTHER_USER_ID = "00000000-0000-0000-0000-000000000002";
@@ -148,7 +164,8 @@ async function setupArchetypeBatch(
       id: archetypeId,
       canonicalType: "explorer" as const,
       title: "Yıldız Haritacısı",
-      description: "Yıldız haritalarını takip eden küçük bir kaşif çocuk karakteri",
+      description:
+        "Yıldız haritalarını takip eden küçük bir kaşif çocuk karakteri",
       personalityHook: "Meraklı, sabırlı ve pusulasına güvenen",
       storyPromise: "Gökyüzündeki yıldızları birleştirip yeni yollar keşfeder",
       themeTags: ["keşif", "merak"],
@@ -204,7 +221,10 @@ async function setupArchetypeBatch(
   return { batchId, archetypeId, archetypes };
 }
 
-async function setupLlmConfig(householdId: string, userId: string = TEST_USER_ID) {
+async function setupLlmConfig(
+  householdId: string,
+  userId: string = TEST_USER_ID,
+) {
   const d = db!;
   const providerRepo = new DrizzleLlmProviderSettingsRepository(d as never);
   const taskRepo = new DrizzleLlmTaskModelSettingsRepository(d as never);
@@ -294,72 +314,71 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
     },
   );
 
-  itIfDb(
-    "rejects handoff without archetypeBatchId",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "NoBatch",
-        "6-8",
-      );
-      await expect(
-        createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-          householdId: household.id,
-          childProfileId: profile.id,
-          characterType: "explorer",
-          originMode: "auto",
-          archetypeBatchId: "",
-          archetypeId: crypto.randomUUID(),
-        }),
-      ).rejects.toThrow(ValidationError);
-    },
-  );
+  itIfDb("rejects handoff without archetypeBatchId", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "NoBatch",
+      "6-8",
+    );
+    await expect(
+      createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: "",
+        archetypeId: crypto.randomUUID(),
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
 
-  itIfDb(
-    "rejects handoff with non-existent archetypeBatchId",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "BadBatch",
-        "6-8",
-      );
-      await expect(
-        createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-          householdId: household.id,
-          childProfileId: profile.id,
-          characterType: "explorer",
-          originMode: "auto",
-          archetypeBatchId: crypto.randomUUID(),
-          archetypeId: crypto.randomUUID(),
-        }),
-      ).rejects.toThrow(ValidationError);
-    },
-  );
+  itIfDb("rejects handoff with non-existent archetypeBatchId", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "BadBatch",
+      "6-8",
+    );
+    await expect(
+      createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: crypto.randomUUID(),
+        archetypeId: crypto.randomUUID(),
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
 
-  itIfDb(
-    "rejects handoff with archetypeId not in the batch",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "NotInBatch",
-        "6-8",
-      );
-      const { batchId } = await setupArchetypeBatch(household.id, profile.id);
-      await expect(
-        createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-          householdId: household.id,
-          childProfileId: profile.id,
-          characterType: "explorer",
-          originMode: "auto",
-          archetypeBatchId: batchId,
-          archetypeId: crypto.randomUUID(),
-        }),
-      ).rejects.toThrow(ValidationError);
-    },
-  );
+  itIfDb("rejects handoff with archetypeId not in the batch", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "NotInBatch",
+      "6-8",
+    );
+    const { batchId } = await setupArchetypeBatch(household.id, profile.id);
+    await expect(
+      createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: batchId,
+        archetypeId: crypto.randomUUID(),
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
 
   itIfDb(
     "rejects handoff with archetypeId from a different household",
     async () => {
-      const setup1 = await setupHouseholdAndProfileWithPolicy("A", "6-8", TEST_USER_ID);
-      const setup2 = await setupHouseholdAndProfileWithPolicy("B", "6-8", OTHER_USER_ID);
+      const setup1 = await setupHouseholdAndProfileWithPolicy(
+        "A",
+        "6-8",
+        TEST_USER_ID,
+      );
+      const setup2 = await setupHouseholdAndProfileWithPolicy(
+        "B",
+        "6-8",
+        OTHER_USER_ID,
+      );
       const { batchId, archetypeId } = await setupArchetypeBatch(
         setup1.household.id,
         setup1.profile.id,
@@ -377,54 +396,83 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
     },
   );
 
-  itIfDb(
-    "rejects expired archetype batch",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "Expired",
-        "6-8",
-      );
-      const d = db!;
-      const batchRepo = new DrizzleArchetypeSuggestionBatchRepository(d as never);
-      const batchId = crypto.randomUUID();
-      const archetypeId = crypto.randomUUID();
-      await batchRepo.create({
-        id: batchId,
-        userId: TEST_USER_ID,
+  itIfDb("rejects expired archetype batch", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "Expired",
+      "6-8",
+    );
+    const d = db!;
+    const batchRepo = new DrizzleArchetypeSuggestionBatchRepository(d as never);
+    const batchId = crypto.randomUUID();
+    const archetypeId = crypto.randomUUID();
+    await batchRepo.create({
+      id: batchId,
+      userId: TEST_USER_ID,
+      householdId: household.id,
+      childProfileId: profile.id,
+      archetypes: [
+        {
+          id: archetypeId,
+          canonicalType: "explorer",
+          title: "Valid Title Here",
+          description: "A sufficiently long description text",
+          personalityHook: "Personality hook content",
+          storyPromise: "Story promise text",
+          themeTags: ["keşif", "merak"],
+        },
+        {
+          id: crypto.randomUUID(),
+          canonicalType: "inventor",
+          title: "Mucit Test",
+          description: "Mucit description long text here",
+          personalityHook: "Creative hook",
+          storyPromise: "Promise text",
+          themeTags: ["icat", "yaratıcılık"],
+        },
+        {
+          id: crypto.randomUUID(),
+          canonicalType: "storyteller",
+          title: "Hikayeci Test",
+          description: "Hikayeci description long text here",
+          personalityHook: "Storyteller hook",
+          storyPromise: "Promise text",
+          themeTags: ["masal", "hayal"],
+        },
+        {
+          id: crypto.randomUUID(),
+          canonicalType: "helper",
+          title: "Yardimci Test",
+          description: "Yardimci description long text here",
+          personalityHook: "Helper hook",
+          storyPromise: "Promise text",
+          themeTags: ["yardım", "empati"],
+        },
+        {
+          id: crypto.randomUUID(),
+          canonicalType: "dreamer",
+          title: "Rüya Test",
+          description: "Rüya description long text here",
+          personalityHook: "Dreamer hook",
+          storyPromise: "Promise text",
+          themeTags: ["rüya", "hayal"],
+        },
+      ],
+      modelId: "aion-labs/aion-3.0-mini",
+      generationNonce: crypto.randomUUID(),
+      excludedConcepts: [],
+      expiresAt: new Date(Date.now() - 1000),
+    });
+    await expect(
+      createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
         childProfileId: profile.id,
-        archetypes: [
-          {
-            id: archetypeId,
-            canonicalType: "explorer",
-            title: "Valid Title Here",
-            description: "A sufficiently long description text",
-            personalityHook: "Personality hook content",
-            storyPromise: "Story promise text",
-            themeTags: ["keşif", "merak"],
-          },
-          { id: crypto.randomUUID(), canonicalType: "inventor", title: "Mucit Test", description: "Mucit description long text here", personalityHook: "Creative hook", storyPromise: "Promise text", themeTags: ["icat", "yaratıcılık"] },
-          { id: crypto.randomUUID(), canonicalType: "storyteller", title: "Hikayeci Test", description: "Hikayeci description long text here", personalityHook: "Storyteller hook", storyPromise: "Promise text", themeTags: ["masal", "hayal"] },
-          { id: crypto.randomUUID(), canonicalType: "helper", title: "Yardimci Test", description: "Yardimci description long text here", personalityHook: "Helper hook", storyPromise: "Promise text", themeTags: ["yardım", "empati"] },
-          { id: crypto.randomUUID(), canonicalType: "dreamer", title: "Rüya Test", description: "Rüya description long text here", personalityHook: "Dreamer hook", storyPromise: "Promise text", themeTags: ["rüya", "hayal"] },
-        ],
-        modelId: "aion-labs/aion-3.0-mini",
-        generationNonce: crypto.randomUUID(),
-        excludedConcepts: [],
-        expiresAt: new Date(Date.now() - 1000),
-      });
-      await expect(
-        createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-          householdId: household.id,
-          childProfileId: profile.id,
-          characterType: "explorer",
-          originMode: "auto",
-          archetypeBatchId: batchId,
-          archetypeId,
-        }),
-      ).rejects.toThrow(ValidationError);
-    },
-  );
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: batchId,
+        archetypeId,
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
 
   itIfDb(
     "creates handoff with valid archetype batch and stores verified archetype in payload",
@@ -433,7 +481,10 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         "ValidBatch",
         "6-8",
       );
-      const { batchId, archetypeId, archetypes } = await setupArchetypeBatch(household.id, profile.id);
+      const { batchId, archetypeId, archetypes } = await setupArchetypeBatch(
+        household.id,
+        profile.id,
+      );
       const expected = archetypes[0]!;
       const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
@@ -446,7 +497,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       expect(handoff.characterType).toBe("explorer");
       expect(handoff.originMode).toBe("auto");
 
-      const status = await getCharacterBootstrapStatus(TEST_USER_ID, household.id, profile.id);
+      const status = await getCharacterBootstrapStatus(
+        TEST_USER_ID,
+        household.id,
+        profile.id,
+      );
       expect(status.latestHandoff?.id).toBe(handoff.id);
     },
   );
@@ -461,11 +516,46 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       mockCallOpenRouter.mockResolvedValueOnce({
         content: JSON.stringify({
           archetypes: [
-            { canonicalType: "explorer", title: "E1 title here", description: "E1 desc text long enough", personalityHook: "E1 hook", storyPromise: "E1 promise", themeTags: ["t1", "t2"] },
-            { canonicalType: "inventor", title: "I1 title here", description: "I1 desc text long enough", personalityHook: "I1 hook", storyPromise: "I1 promise", themeTags: ["t1", "t2"] },
-            { canonicalType: "storyteller", title: "S1 title here", description: "S1 desc text long enough", personalityHook: "S1 hook", storyPromise: "S1 promise", themeTags: ["t1", "t2"] },
-            { canonicalType: "helper", title: "H1 title here", description: "H1 desc text long enough", personalityHook: "H1 hook", storyPromise: "H1 promise", themeTags: ["t1", "t2"] },
-            { canonicalType: "dreamer", title: "D1 title here", description: "D1 desc text long enough", personalityHook: "D1 hook", storyPromise: "D1 promise", themeTags: ["t1", "t2"] },
+            {
+              canonicalType: "explorer",
+              title: "E1 title here",
+              description: "E1 desc text long enough",
+              personalityHook: "E1 hook",
+              storyPromise: "E1 promise",
+              themeTags: ["t1", "t2"],
+            },
+            {
+              canonicalType: "inventor",
+              title: "I1 title here",
+              description: "I1 desc text long enough",
+              personalityHook: "I1 hook",
+              storyPromise: "I1 promise",
+              themeTags: ["t1", "t2"],
+            },
+            {
+              canonicalType: "storyteller",
+              title: "S1 title here",
+              description: "S1 desc text long enough",
+              personalityHook: "S1 hook",
+              storyPromise: "S1 promise",
+              themeTags: ["t1", "t2"],
+            },
+            {
+              canonicalType: "helper",
+              title: "H1 title here",
+              description: "H1 desc text long enough",
+              personalityHook: "H1 hook",
+              storyPromise: "H1 promise",
+              themeTags: ["t1", "t2"],
+            },
+            {
+              canonicalType: "dreamer",
+              title: "D1 title here",
+              description: "D1 desc text long enough",
+              personalityHook: "D1 hook",
+              storyPromise: "D1 promise",
+              themeTags: ["t1", "t2"],
+            },
           ],
         }),
         model: "aion-labs/aion-3.0-mini",
@@ -473,7 +563,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       });
 
       await setupLlmConfig(household.id);
-      const result = await generateArchetypes(TEST_USER_ID, household.id, profile.id);
+      const result = await generateArchetypes(
+        TEST_USER_ID,
+        household.id,
+        profile.id,
+      );
       expect(result.archetypes).toHaveLength(5);
       expect(result.batchId).toBeTruthy();
       for (const a of result.archetypes) {
@@ -483,24 +577,27 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       expect(uniqueIds.size).toBe(5);
 
       const d = db!;
-      const stored = await d.select().from(archetypeSuggestionBatches).where(eq(archetypeSuggestionBatches.id, result.batchId)).limit(1);
+      const stored = await d
+        .select()
+        .from(archetypeSuggestionBatches)
+        .where(eq(archetypeSuggestionBatches.id, result.batchId))
+        .limit(1);
       expect(stored).toHaveLength(1);
-      expect((stored[0] as unknown as { archetypes: unknown[] }).archetypes).toHaveLength(5);
+      expect(
+        (stored[0] as unknown as { archetypes: unknown[] }).archetypes,
+      ).toHaveLength(5);
     },
   );
 
-  itIfDb(
-    "throws LlmConfigError when no LLM config exists",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "NoLLM",
-        "6-8",
-      );
-      await expect(
-        generateArchetypes(TEST_USER_ID, household.id, profile.id),
-      ).rejects.toThrow();
-    },
-  );
+  itIfDb("throws LlmConfigError when no LLM config exists", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "NoLLM",
+      "6-8",
+    );
+    await expect(
+      generateArchetypes(TEST_USER_ID, household.id, profile.id),
+    ).rejects.toThrow();
+  });
 
   itIfDb(
     "happy path with mock OpenRouter: handoff + packages + consume",
@@ -510,7 +607,10 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         "6-8",
       );
       await setupLlmConfig(household.id);
-      const { batchId, archetypeId } = await setupArchetypeBatch(household.id, profile.id);
+      const { batchId, archetypeId } = await setupArchetypeBatch(
+        household.id,
+        profile.id,
+      );
 
       const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
@@ -534,7 +634,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       const firstPkg = packages.packages[0]!;
       expect(firstPkg.broadKind).toBeTruthy();
 
-      const status = await getCharacterBootstrapStatus(TEST_USER_ID, household.id, profile.id);
+      const status = await getCharacterBootstrapStatus(
+        TEST_USER_ID,
+        household.id,
+        profile.id,
+      );
       expect(status.latestHandoff?.id).toBe(handoff.id);
       expect(status.handoffConsumed).toBe(false);
       expect(status.character).toBeNull();
@@ -552,12 +656,20 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       expect(result.character.householdId).toBe(household.id);
       expect(result.handoffConsumptionId).toBeTruthy();
 
-      const statusAfter = await getCharacterBootstrapStatus(TEST_USER_ID, household.id, profile.id);
+      const statusAfter = await getCharacterBootstrapStatus(
+        TEST_USER_ID,
+        household.id,
+        profile.id,
+      );
       expect(statusAfter.handoffConsumed).toBe(true);
       expect(statusAfter.consumedByUserId).toBe(TEST_USER_ID);
       expect(statusAfter.character?.id).toBe(result.character.id);
 
-      const characterRecord = await db!.select({ id: lumiCharacters.id, softDeleted: lumiCharacters.deletedAt })
+      const characterRecord = await db!
+        .select({
+          id: lumiCharacters.id,
+          softDeleted: lumiCharacters.deletedAt,
+        })
         .from(lumiCharacters)
         .where(eq(lumiCharacters.id, result.character.id))
         .limit(1);
@@ -566,36 +678,44 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
     },
   );
 
-  itIfDb(
-    "cannot start bootstrap using an archived child profile",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "Archived",
-        "9-12",
-      );
-      const childRepo = new DrizzleChildProfileRepository(db as never);
-      await childRepo.softDelete(profile.id, household.id);
+  itIfDb("cannot start bootstrap using an archived child profile", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "Archived",
+      "9-12",
+    );
+    const childRepo = new DrizzleChildProfileRepository(db as never);
+    await childRepo.softDelete(profile.id, household.id);
 
-      await expect(
-        createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-          householdId: household.id,
-          childProfileId: profile.id,
-          characterType: "explorer",
-          originMode: "auto",
-          archetypeBatchId: crypto.randomUUID(),
-          archetypeId: crypto.randomUUID(),
-        }),
-      ).rejects.toMatchObject({ code: "PROFILE_ARCHIVED" });
-    },
-  );
+    await expect(
+      createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: crypto.randomUUID(),
+        archetypeId: crypto.randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: "PROFILE_ARCHIVED" });
+  });
 
   itIfDb(
     "prevents cross-household origin package spoofing on consume",
     async () => {
-      const setup1 = await setupHouseholdAndProfileWithPolicy("HouseA", "6-8", TEST_USER_ID);
-      const setup2 = await setupHouseholdAndProfileWithPolicy("HouseB", "6-8", OTHER_USER_ID);
+      const setup1 = await setupHouseholdAndProfileWithPolicy(
+        "HouseA",
+        "6-8",
+        TEST_USER_ID,
+      );
+      const setup2 = await setupHouseholdAndProfileWithPolicy(
+        "HouseB",
+        "6-8",
+        OTHER_USER_ID,
+      );
       await setupLlmConfig(setup1.household.id);
-      const { batchId, archetypeId } = await setupArchetypeBatch(setup1.household.id, setup1.profile.id);
+      const { batchId, archetypeId } = await setupArchetypeBatch(
+        setup1.household.id,
+        setup1.profile.id,
+      );
 
       const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: setup1.household.id,
@@ -622,49 +742,55 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
     },
   );
 
-  itIfDb(
-    "cannot consume the same handoff twice",
-    async () => {
-      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
-        "Duplicate",
-        "3-5",
-      );
-      await setupLlmConfig(household.id);
-      const { batchId, archetypeId } = await setupArchetypeBatch(household.id, profile.id);
+  itIfDb("cannot consume the same handoff twice", async () => {
+    const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+      "Duplicate",
+      "3-5",
+    );
+    await setupLlmConfig(household.id);
+    const { batchId, archetypeId } = await setupArchetypeBatch(
+      household.id,
+      profile.id,
+    );
 
-      const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
-        householdId: household.id,
-        childProfileId: profile.id,
-        characterType: "explorer",
-        originMode: "auto",
-        archetypeBatchId: batchId,
-        archetypeId,
-      });
-      const packages = await generateAndPersistOriginPackages(
-        TEST_USER_ID,
-        household.id,
-        profile.id,
-      );
-      expect(packages.packages).toHaveLength(4);
+    const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+      householdId: household.id,
+      childProfileId: profile.id,
+      characterType: "explorer",
+      originMode: "auto",
+      archetypeBatchId: batchId,
+      archetypeId,
+    });
+    const packages = await generateAndPersistOriginPackages(
+      TEST_USER_ID,
+      household.id,
+      profile.id,
+    );
+    expect(packages.packages).toHaveLength(4);
 
-      const first = packages.packages[0]!;
-      await consumeHandoffAndCreateCharacter(TEST_USER_ID, {
+    const first = packages.packages[0]!;
+    await consumeHandoffAndCreateCharacter(TEST_USER_ID, {
+      householdId: household.id,
+      childProfileId: profile.id,
+      handoffId: handoff.id,
+      originPackageId: first.id,
+    });
+
+    const secondConsumeAttempt = consumeHandoffAndCreateCharacter(
+      TEST_USER_ID,
+      {
         householdId: household.id,
         childProfileId: profile.id,
         handoffId: handoff.id,
         originPackageId: first.id,
-      });
-
-      const secondConsumeAttempt = consumeHandoffAndCreateCharacter(TEST_USER_ID, {
-        householdId: household.id,
-        childProfileId: profile.id,
-        handoffId: handoff.id,
-        originPackageId: first.id,
-      });
-      await expect(secondConsumeAttempt).rejects.toThrow(DomainError);
-      await expect(secondConsumeAttempt).rejects.toHaveProperty("code", "HANDOFF_ALREADY_CONSUMED");
-    },
-  );
+      },
+    );
+    await expect(secondConsumeAttempt).rejects.toThrow(DomainError);
+    await expect(secondConsumeAttempt).rejects.toHaveProperty(
+      "code",
+      "HANDOFF_ALREADY_CONSUMED",
+    );
+  });
 
   itIfDb(
     "batch inserts happen in a transaction (partial write rollback on duplicate id)",
@@ -674,7 +800,10 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         "6-8",
       );
       await setupLlmConfig(household.id);
-      const { batchId, archetypeId } = await setupArchetypeBatch(household.id, profile.id);
+      const { batchId, archetypeId } = await setupArchetypeBatch(
+        household.id,
+        profile.id,
+      );
 
       await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
@@ -702,8 +831,14 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
 
       // Count packages in this batch
       const d = db!;
-      const { characterOriginPackages } = await import("../../src/db/schema/profile/character-origin-packages");
-      const before = await d.select({ id: characterOriginPackages.id, batchId: characterOriginPackages.generationBatchId })
+      const { characterOriginPackages } = await import(
+        "../../src/db/schema/profile/character-origin-packages"
+      );
+      const before = await d
+        .select({
+          id: characterOriginPackages.id,
+          batchId: characterOriginPackages.generationBatchId,
+        })
         .from(characterOriginPackages)
         .where(eq(characterOriginPackages.generationBatchId, firstBatch!));
       expect(before).toHaveLength(4);
@@ -717,8 +852,12 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       const providerRepo = new DrizzleLlmProviderSettingsRepository(d as never);
       const taskRepo = new DrizzleLlmTaskModelSettingsRepository(d as never);
       const householdId = crypto.randomUUID();
-      await d.execute(sql`INSERT INTO profile.households (id, name, slug) VALUES (${householdId}, ${"backfill-h-" + crypto.randomUUID().slice(0,8)}, ${"bf-" + crypto.randomUUID().slice(0,8)})`);
-      await d.execute(sql`INSERT INTO profile.household_members (household_id, user_id, membership_role) VALUES (${householdId}, ${TEST_USER_ID}, ${"owner"})`);
+      await d.execute(
+        sql`INSERT INTO profile.households (id, name, slug) VALUES (${householdId}, ${"backfill-h-" + crypto.randomUUID().slice(0, 8)}, ${"bf-" + crypto.randomUUID().slice(0, 8)})`,
+      );
+      await d.execute(
+        sql`INSERT INTO profile.household_members (household_id, user_id, membership_role) VALUES (${householdId}, ${TEST_USER_ID}, ${"owner"})`,
+      );
 
       await providerRepo.upsert({
         id: crypto.randomUUID(),
@@ -728,7 +867,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         encryptedApiKey: "test-encrypted-key",
         enabled: true,
       });
-      const taskBefore = await taskRepo.findByTaskType(TEST_USER_ID, householdId, "character_origin_generation");
+      const taskBefore = await taskRepo.findByTaskType(
+        TEST_USER_ID,
+        householdId,
+        "character_origin_generation",
+      );
       expect(taskBefore).toBeNull();
 
       // Simulate the migration backfill
@@ -741,7 +884,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
           AND NOT EXISTS (SELECT 1 FROM profile.llm_task_model_settings t WHERE t.user_id = profile.llm_provider_settings.user_id AND t.household_id = profile.llm_provider_settings.household_id AND t.task_type = 'character_origin_generation')
       `);
 
-      const taskAfter = await taskRepo.findByTaskType(TEST_USER_ID, householdId, "character_origin_generation");
+      const taskAfter = await taskRepo.findByTaskType(
+        TEST_USER_ID,
+        householdId,
+        "character_origin_generation",
+      );
       expect(taskAfter).toBeTruthy();
       expect(taskAfter!.modelId).toBe("aion-labs/aion-3.0-mini");
       expect(taskAfter!.enabled).toBe(true);
@@ -760,7 +907,9 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         slug: `s07-nopolicy-${crypto.randomUUID().slice(0, 8)}`,
       });
       await householdRepo.addMember({
-        householdId: household.id, userId: TEST_USER_ID, membershipRole: "owner",
+        householdId: household.id,
+        userId: TEST_USER_ID,
+        membershipRole: "owner",
       });
       const profile = await childRepo.create({
         id: crypto.randomUUID(),
@@ -768,7 +917,10 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         displayName: "NoPolicy Child",
         ageBand: "6-8",
       });
-      const { batchId, archetypeId } = await setupArchetypeBatch(household.id, profile.id);
+      const { batchId, archetypeId } = await setupArchetypeBatch(
+        household.id,
+        profile.id,
+      );
 
       const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
         householdId: household.id,
@@ -786,14 +938,20 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
         originPackageId: "ffffffff-ffff-ffff-ffff-ffffffffffff",
       });
       await expect(consumeAttempt).rejects.toThrow(ValidationError);
-      await expect(consumeAttempt).rejects.toHaveProperty("code", "MISSING_PARENT_POLICY");
+      await expect(consumeAttempt).rejects.toHaveProperty(
+        "code",
+        "MISSING_PARENT_POLICY",
+      );
     },
   );
 
   itIfDb(
     "unknown profile returns NotFoundError when querying bootstrap status for foreign household",
     async () => {
-      const { household } = await setupHouseholdAndProfileWithPolicy("Missing", "6-8");
+      const { household } = await setupHouseholdAndProfileWithPolicy(
+        "Missing",
+        "6-8",
+      );
       const fake = "ffffffff-ffff-ffff-ffff-ffffffffffff";
       await expect(
         getCharacterBootstrapStatus(TEST_USER_ID, household.id, fake),
@@ -822,7 +980,11 @@ describe("Character Bootstrap Application Service + DB Integration", () => {
       ).rejects.toThrow(AuthorizationError);
 
       await expect(
-        getCharacterBootstrapStatus(OTHER_USER_ID, ownerSetup.household.id, ownerSetup.profile.id),
+        getCharacterBootstrapStatus(
+          OTHER_USER_ID,
+          ownerSetup.household.id,
+          ownerSetup.profile.id,
+        ),
       ).rejects.toThrow(AuthorizationError);
     },
   );

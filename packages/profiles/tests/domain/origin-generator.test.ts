@@ -18,13 +18,25 @@ vi.mock("../../src/application/llm-settings/encryption", () => ({
 }));
 
 vi.mock("../../src/db", () => {
-  function MockHouseholdRepo() { return { findByIdForUser: mockFindByIdForUser }; }
-  function MockChildRepo() { return { findById: mockFindById }; }
-  function MockPolicyRepo() { return { findByHousehold: mockFindByHousehold }; }
-  function MockProviderRepo() { return { findByUserAndHousehold: mockFindByUserAndHousehold }; }
-  function MockTaskRepo() { return { findByTaskType: mockFindByTaskType }; }
+  function MockHouseholdRepo() {
+    return { findByIdForUser: mockFindByIdForUser };
+  }
+  function MockChildRepo() {
+    return { findById: mockFindById };
+  }
+  function MockPolicyRepo() {
+    return { findByHousehold: mockFindByHousehold };
+  }
+  function MockProviderRepo() {
+    return { findByUserAndHousehold: mockFindByUserAndHousehold };
+  }
+  function MockTaskRepo() {
+    return { findByTaskType: mockFindByTaskType };
+  }
   return {
-    getProfileDb: function () { return {}; },
+    getProfileDb: function () {
+      return {};
+    },
     DrizzleHouseholdRepository: MockHouseholdRepo,
     DrizzleChildProfileRepository: MockChildRepo,
     DrizzleParentPolicyRepository: MockPolicyRepo,
@@ -33,14 +45,21 @@ vi.mock("../../src/db", () => {
   };
 });
 
-import { generateOriginPackages, LlmGenerationError, LlmConfigError } from "../../src/application/llm-settings/origin-generator";
+import {
+  generateOriginPackages,
+  LlmGenerationError,
+  LlmConfigError,
+} from "../../src/application/llm-settings/origin-generator";
 
 const TEST_USER_ID = "user-001";
 const TEST_HOUSEHOLD_ID = "household-001";
 const TEST_CHILD_PROFILE_ID = "child-001";
 
 function setupValidMocks() {
-  mockFindByIdForUser.mockResolvedValue({ id: TEST_HOUSEHOLD_ID, name: "Test Household" });
+  mockFindByIdForUser.mockResolvedValue({
+    id: TEST_HOUSEHOLD_ID,
+    name: "Test Household",
+  });
   mockFindById.mockResolvedValue({
     id: TEST_CHILD_PROFILE_ID,
     householdId: TEST_HOUSEHOLD_ID,
@@ -54,7 +73,11 @@ function setupValidMocks() {
   });
 }
 
-function setupFullLlmMocks(modelId = "test-model", temperature = 0.85, maxTokens = 1800) {
+function setupFullLlmMocks(
+  modelId = "test-model",
+  temperature = 0.85,
+  maxTokens = 1800,
+) {
   mockFindByTaskType.mockResolvedValue({
     enabled: true,
     modelId,
@@ -109,40 +132,52 @@ function setupOpenRouterSuccess() {
           broadKind: "human",
           characterType: "explorer",
           subtype: "Ay Işığı Kütüphanecisi",
-          originConcept: "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
+          originConcept:
+            "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
           startingRegionArchetype: "orman kenarı",
           startingLocation: "Eski kütüphane girişi",
           homeArchetype: "Kitaplarla dolu bir kulübe",
           nearbyNpcSeed: "Bilge kitap kurdu",
           firstMysterySeed: "Kayıp sayfaların sırrı",
           toneVector: ["wonder", "curiosity"],
-          noveltyMarkers: ["Ay ışığında parlayan gözlük", "Kendi kendine açılan kitap"],
+          noveltyMarkers: [
+            "Ay ışığında parlayan gözlük",
+            "Kendi kendine açılan kitap",
+          ],
         },
         {
           broadKind: "fantasy",
           characterType: "explorer",
           subtype: "Bulut Tamircisi",
-          originConcept: "Bulutların üstünde uçan tamir araçlarıyla bulutları onaran bir çocuk",
+          originConcept:
+            "Bulutların üstünde uçan tamir araçlarıyla bulutları onaran bir çocuk",
           startingRegionArchetype: "bulut adası",
           startingLocation: "Bulut atölyesi",
           homeArchetype: "Uçan tamir kulübesi",
           nearbyNpcSeed: "Rüzgar ustası",
           firstMysterySeed: "Konuşan bulutların mesajı",
           toneVector: ["warmth", "humor"],
-          noveltyMarkers: ["Bulutları şekillendiren anahtar", "Onarılmış her buluttan çıkan melodi"],
+          noveltyMarkers: [
+            "Bulutları şekillendiren anahtar",
+            "Onarılmış her buluttan çıkan melodi",
+          ],
         },
         {
           broadKind: "animal",
           characterType: "explorer",
           subtype: "Zaman Bahçecisi",
-          originConcept: "Zamanın yavaş aktığı gizli bir bahçede çiçeklerle dans eden bir bahçıvan",
+          originConcept:
+            "Zamanın yavaş aktığı gizli bir bahçede çiçeklerle dans eden bir bahçıvan",
           startingRegionArchetype: "sessiz orman",
           startingLocation: "Gizli bahçe kapısı",
           homeArchetype: "Asma dallarından ev",
           nearbyNpcSeed: "Konuşan kaplumbağa",
           firstMysterySeed: "Hiç solmayan çiçeğin sırrı",
           toneVector: ["mystery", "wonder"],
-          noveltyMarkers: ["Zamanı durduran sulama kabı", "Çiçeklerle iletişim kuran şapka"],
+          noveltyMarkers: [
+            "Zamanı durduran sulama kabı",
+            "Çiçeklerle iletişim kuran şapka",
+          ],
         },
         {
           broadKind: "robot",
@@ -155,7 +190,10 @@ function setupOpenRouterSuccess() {
           nearbyNpcSeed: "Bilge saatçi",
           firstMysterySeed: "Yıldız haritasındaki gizemli işaret",
           toneVector: ["courage", "wonder"],
-          noveltyMarkers: ["Yıldız tozu üreten anten", "Mesajları ışığa dönüştüren ekran"],
+          noveltyMarkers: [
+            "Yıldız tozu üreten anten",
+            "Mesajları ışığa dönüştüren ekran",
+          ],
         },
       ],
     }),
@@ -219,7 +257,10 @@ describe("origin-generator", () => {
       );
 
       expect(mockCallOpenRouter).toHaveBeenCalledTimes(1);
-      const [, options] = mockCallOpenRouter.mock.calls[0] as [string, { model: string }];
+      const [, options] = mockCallOpenRouter.mock.calls[0] as [
+        string,
+        { model: string },
+      ];
       expect(options.model).toBe("test-model");
     });
   });
@@ -299,7 +340,9 @@ describe("origin-generator", () => {
           "explorer",
           "auto",
         );
-      } catch { /* expected */ }
+      } catch {
+        /* expected */
+      }
       expect(mockCallOpenRouter).not.toHaveBeenCalled();
     });
   });

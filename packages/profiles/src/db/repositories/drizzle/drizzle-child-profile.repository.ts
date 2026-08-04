@@ -14,7 +14,10 @@ import type { ChildProfileRepository } from "../interfaces/child-profile.reposit
 export class DrizzleChildProfileRepository implements ChildProfileRepository {
   constructor(private readonly db: QueryExecutor) {}
 
-  async findById(id: string, householdId: string): Promise<ChildProfileRecord | null> {
+  async findById(
+    id: string,
+    householdId: string,
+  ): Promise<ChildProfileRecord | null> {
     const [record] = await this.db
       .select()
       .from(childProfiles)

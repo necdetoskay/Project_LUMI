@@ -12,7 +12,10 @@ export const PATCH = observeHandler(
 
       if (!householdId) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
           { status: 400 },
         );
       }
@@ -21,7 +24,10 @@ export const PATCH = observeHandler(
         const body = (await request.json()) as Record<string, number>;
         if (!body || typeof body !== "object") {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "Emotion vector object is required" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "Emotion vector object is required",
+            },
             { status: 400 },
           );
         }
@@ -37,20 +43,38 @@ export const PATCH = observeHandler(
             { status: 404 },
           );
         }
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json({ error: "NOT_FOUND", message: "Character not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
         }
         if (err.name === "ValidationError") {
-          return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+          return NextResponse.json(
+            { error: err.code ?? "VALIDATION_ERROR", message },
+            { status: 400 },
+          );
         }
         if (err.name === "DomainError" && err.code === "VERSION_CONFLICT") {
-          return NextResponse.json({ error: "VERSION_CONFLICT", message }, { status: 409 });
+          return NextResponse.json(
+            { error: "VERSION_CONFLICT", message },
+            { status: 409 },
+          );
         }
         return NextResponse.json(
-          { error: "INTERNAL_ERROR", message: "Failed to update character emotions" },
+          {
+            error: "INTERNAL_ERROR",
+            message: "Failed to update character emotions",
+          },
           { status: 500 },
         );
       }

@@ -62,7 +62,10 @@ async function assertScope(
   userId: string,
   repos: ReturnType<typeof getRepos>,
 ): Promise<{ householdId: string }> {
-  const household = await repos.householdRepo.findByIdForUser(householdId, userId);
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
@@ -86,8 +89,17 @@ function toCharacterSubtype(v: unknown): "child_avatar" | "npc" {
   return "child_avatar";
 }
 
-function toLifecycleStage(v: unknown): "newborn" | "childhood" | "adolescence" | "adulthood" | "elder" {
-  if (typeof v === "string" && (v === "newborn" || v === "childhood" || v === "adolescence" || v === "adulthood" || v === "elder")) {
+function toLifecycleStage(
+  v: unknown,
+): "newborn" | "childhood" | "adolescence" | "adulthood" | "elder" {
+  if (
+    typeof v === "string" &&
+    (v === "newborn" ||
+      v === "childhood" ||
+      v === "adolescence" ||
+      v === "adulthood" ||
+      v === "elder")
+  ) {
     return v;
   }
   return "childhood";
@@ -115,14 +127,28 @@ function recordToCharacterState(record: LumiCharacterRecord): CharacterState {
     safetyBounds: record.safetyBounds as CharacterState["safetyBounds"],
     characterSubtype: toCharacterSubtype(rec.characterSubtype),
     lifecycleStage: toLifecycleStage(rec.lifecycleStage),
-    activeLocationId: typeof rec.activeLocationId === "string" ? rec.activeLocationId : null,
-    activeLocationType: typeof rec.activeLocationType === "string" ? rec.activeLocationType : null,
+    activeLocationId:
+      typeof rec.activeLocationId === "string" ? rec.activeLocationId : null,
+    activeLocationType:
+      typeof rec.activeLocationType === "string"
+        ? rec.activeLocationType
+        : null,
     version: typeof rec.version === "number" ? rec.version : 1,
     traits: {} as TraitVector,
     emotions: {} as EmotionVector,
     needs: [],
     goals: [],
-    influence: { emotional: 0, social: 0, cultural: 0, educational: 0, political: 0, environmental: 0, familial: 0, spiritual: 0, historical: 0 },
+    influence: {
+      emotional: 0,
+      social: 0,
+      cultural: 0,
+      educational: 0,
+      political: 0,
+      environmental: 0,
+      familial: 0,
+      spiritual: 0,
+      historical: 0,
+    },
     relationships: [],
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -134,25 +160,42 @@ function recordToCharacterState(record: LumiCharacterRecord): CharacterState {
 async function loadCharacterDomain(
   characterId: string,
   repos: ReturnType<typeof getRepos>,
-): Promise<{ traits: CharacterTraitStateRecord[]; emotions: CharacterEmotionStateRecord[]; needs: CharacterNeedRecord[]; goals: CharacterGoalRecord[]; influence: CharacterInfluenceRecord | null; relationships: CharacterRelationshipRecord[] }> {
-  const [traits, emotions, needs, goals, influence, relationships] = await Promise.all([
-    repos.domainRepo.getTraitStates(characterId),
-    repos.domainRepo.getEmotionStates(characterId),
-    repos.domainRepo.getNeeds(characterId),
-    repos.domainRepo.getGoals(characterId),
-    repos.domainRepo.getInfluence(characterId),
-    repos.domainRepo.getRelationships(characterId),
-  ]);
+): Promise<{
+  traits: CharacterTraitStateRecord[];
+  emotions: CharacterEmotionStateRecord[];
+  needs: CharacterNeedRecord[];
+  goals: CharacterGoalRecord[];
+  influence: CharacterInfluenceRecord | null;
+  relationships: CharacterRelationshipRecord[];
+}> {
+  const [traits, emotions, needs, goals, influence, relationships] =
+    await Promise.all([
+      repos.domainRepo.getTraitStates(characterId),
+      repos.domainRepo.getEmotionStates(characterId),
+      repos.domainRepo.getNeeds(characterId),
+      repos.domainRepo.getGoals(characterId),
+      repos.domainRepo.getInfluence(characterId),
+      repos.domainRepo.getRelationships(characterId),
+    ]);
   return { traits, emotions, needs, goals, influence, relationships };
 }
 
 function pickTraitDefaults(subtype: CharacterSubtype): TraitVector {
-  return subtype === "npc" ? { ...DEFAULT_NPC_TRAITS } : { ...DEFAULT_CHILD_AVATAR_TRAITS };
+  return subtype === "npc"
+    ? { ...DEFAULT_NPC_TRAITS }
+    : { ...DEFAULT_CHILD_AVATAR_TRAITS };
 }
 
 function combineState(
   base: CharacterState,
-  domain: { traits: CharacterTraitStateRecord[]; emotions: CharacterEmotionStateRecord[]; needs: CharacterNeedRecord[]; goals: CharacterGoalRecord[]; influence: CharacterInfluenceRecord | null; relationships: CharacterRelationshipRecord[] },
+  domain: {
+    traits: CharacterTraitStateRecord[];
+    emotions: CharacterEmotionStateRecord[];
+    needs: CharacterNeedRecord[];
+    goals: CharacterGoalRecord[];
+    influence: CharacterInfluenceRecord | null;
+    relationships: CharacterRelationshipRecord[];
+  },
 ): CharacterState {
   const traits: TraitVector = {};
   for (const t of domain.traits) {
@@ -171,7 +214,11 @@ function combineState(
   for (const e of domain.emotions) {
     emotions[e.dimension] = e.value;
   }
-  const needs: NeedState[] = domain.needs.map((n) => ({ needType: n.needType as NeedState["needType"], value: n.value, decay: n.decay }));
+  const needs: NeedState[] = domain.needs.map((n) => ({
+    needType: n.needType as NeedState["needType"],
+    value: n.value,
+    decay: n.decay,
+  }));
   const goals: GoalState[] = domain.goals.map((g) => ({
     id: g.id,
     needType: g.needType as GoalState["needType"],
@@ -182,21 +229,44 @@ function combineState(
     completedAt: g.completedAt,
   }));
   const influence: InfluenceVector = domain.influence
-    ? { emotional: domain.influence.emotional, social: domain.influence.social, cultural: domain.influence.cultural, educational: domain.influence.educational, political: domain.influence.political, environmental: domain.influence.environmental, familial: domain.influence.familial, spiritual: domain.influence.spiritual, historical: domain.influence.historical }
-    : { emotional: 0, social: 0, cultural: 0, educational: 0, political: 0, environmental: 0, familial: 0, spiritual: 0, historical: 0 };
-  const relationships: DirectionalRelationship[] = domain.relationships.map((r) => {
-    const rel: DirectionalRelationship = {
-      targetCharacterId: r.targetCharacterId,
-      trust: r.trust,
-      affinity: r.affinity,
-      familiarity: r.familiarity,
-      relationshipType: r.relationshipType as DirectionalRelationship["relationshipType"],
-    };
-    if (r.customTypeLabel) {
-      rel.customTypeLabel = r.customTypeLabel;
-    }
-    return rel;
-  });
+    ? {
+        emotional: domain.influence.emotional,
+        social: domain.influence.social,
+        cultural: domain.influence.cultural,
+        educational: domain.influence.educational,
+        political: domain.influence.political,
+        environmental: domain.influence.environmental,
+        familial: domain.influence.familial,
+        spiritual: domain.influence.spiritual,
+        historical: domain.influence.historical,
+      }
+    : {
+        emotional: 0,
+        social: 0,
+        cultural: 0,
+        educational: 0,
+        political: 0,
+        environmental: 0,
+        familial: 0,
+        spiritual: 0,
+        historical: 0,
+      };
+  const relationships: DirectionalRelationship[] = domain.relationships.map(
+    (r) => {
+      const rel: DirectionalRelationship = {
+        targetCharacterId: r.targetCharacterId,
+        trust: r.trust,
+        affinity: r.affinity,
+        familiarity: r.familiarity,
+        relationshipType:
+          r.relationshipType as DirectionalRelationship["relationshipType"],
+      };
+      if (r.customTypeLabel) {
+        rel.customTypeLabel = r.customTypeLabel;
+      }
+      return rel;
+    },
+  );
   return { ...base, traits, emotions, needs, goals, influence, relationships };
 }
 
@@ -208,7 +278,13 @@ async function emitEvent(
   actorUserId: string | null,
   additionalPayload: Record<string, unknown> = {},
 ): Promise<void> {
-  const event = createCharacterEvent(eventType, characterState, actorHouseholdId, actorUserId, additionalPayload);
+  const event = createCharacterEvent(
+    eventType,
+    characterState,
+    actorHouseholdId,
+    actorUserId,
+    additionalPayload,
+  );
   await repo.createDomainEvent({
     id: event.id,
     characterId: event.characterId,
@@ -294,7 +370,11 @@ export async function applyTraitDeltas(
   const character = LumiCharacter.fromState(full);
 
   if (character.isNpc()) {
-    throw new ValidationError("NPC_TRAIT_CHANGE_DISALLOWED", "NPC trait changes are out of scope", "characterSubtype");
+    throw new ValidationError(
+      "NPC_TRAIT_CHANGE_DISALLOWED",
+      "NPC trait changes are out of scope",
+      "characterSubtype",
+    );
   }
 
   const resolvedDeltas = character.applyTraitDeltas(deltas);
@@ -330,14 +410,32 @@ export async function applyTraitDeltas(
       });
     }
 
-    await emitEvent(txRepos, "CHARACTER_TRAIT_CHANGED", updatedState, householdId, userId, {
-      deltas: resolvedDeltas.map((d) => ({ dimension: d.dimension, oldValue: d.oldValue, newValue: d.newValue, deltaMagnitude: d.deltaMagnitude })),
-    });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_TRAIT_CHANGED",
+      updatedState,
+      householdId,
+      userId,
+      {
+        deltas: resolvedDeltas.map((d) => ({
+          dimension: d.dimension,
+          oldValue: d.oldValue,
+          newValue: d.newValue,
+          deltaMagnitude: d.deltaMagnitude,
+        })),
+      },
+    );
   });
 
-  const reloadedRecord = await repos.characterRepo.findById(characterId, householdId);
+  const reloadedRecord = await repos.characterRepo.findById(
+    characterId,
+    householdId,
+  );
   const reloaded = await loadCharacterDomain(characterId, repos);
-  const finalState = combineState(recordToCharacterState(reloadedRecord!), reloaded);
+  const finalState = combineState(
+    recordToCharacterState(reloadedRecord!),
+    reloaded,
+  );
   return summaryFromState(finalState);
 }
 
@@ -377,12 +475,25 @@ export async function updateEmotions(
       });
     }
 
-    await emitEvent(txRepos, "CHARACTER_EMOTION_UPDATED", updatedState, householdId, userId, { emotions });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_EMOTION_UPDATED",
+      updatedState,
+      householdId,
+      userId,
+      { emotions },
+    );
   });
 
-  const reloadedRecord = await repos.characterRepo.findById(characterId, householdId);
+  const reloadedRecord = await repos.characterRepo.findById(
+    characterId,
+    householdId,
+  );
   const reloaded = await loadCharacterDomain(characterId, repos);
-  const finalState = combineState(recordToCharacterState(reloadedRecord!), reloaded);
+  const finalState = combineState(
+    recordToCharacterState(reloadedRecord!),
+    reloaded,
+  );
   return summaryFromState(finalState);
 }
 
@@ -423,12 +534,25 @@ export async function updateNeeds(
       });
     }
 
-    await emitEvent(txRepos, "CHARACTER_NEEDS_UPDATED", updatedState, householdId, userId, { needs });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_NEEDS_UPDATED",
+      updatedState,
+      householdId,
+      userId,
+      { needs },
+    );
   });
 
-  const reloadedRecord = await repos.characterRepo.findById(characterId, householdId);
+  const reloadedRecord = await repos.characterRepo.findById(
+    characterId,
+    householdId,
+  );
   const reloaded = await loadCharacterDomain(characterId, repos);
-  const finalState = combineState(recordToCharacterState(reloadedRecord!), reloaded);
+  const finalState = combineState(
+    recordToCharacterState(reloadedRecord!),
+    reloaded,
+  );
   return summaryFromState(finalState);
 }
 
@@ -477,7 +601,14 @@ export async function addGoal(
       status: "active",
     });
 
-    await emitEvent(txRepos, "CHARACTER_GOAL_ADDED", updatedState, householdId, userId, { goalId: newGoal.id, description: newGoal.description });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_GOAL_ADDED",
+      updatedState,
+      householdId,
+      userId,
+      { goalId: newGoal.id, description: newGoal.description },
+    );
   });
 
   return getCharacterDomain(userId, householdId, characterId);
@@ -510,9 +641,19 @@ export async function completeGoal(
       expectedVersion: base.version,
     });
 
-    await txRepos.updateGoal(goalId, characterId, { status: "completed", completedAt: new Date() });
+    await txRepos.updateGoal(goalId, characterId, {
+      status: "completed",
+      completedAt: new Date(),
+    });
 
-    await emitEvent(txRepos, "CHARACTER_GOAL_COMPLETED", updatedState, householdId, userId, { goalId });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_GOAL_COMPLETED",
+      updatedState,
+      householdId,
+      userId,
+      { goalId },
+    );
   });
 
   return getCharacterDomain(userId, householdId, characterId);
@@ -536,7 +677,8 @@ export async function upsertInfluence(
     cultural: influence.cultural ?? existingInfluence?.cultural ?? 0,
     educational: influence.educational ?? existingInfluence?.educational ?? 0,
     political: influence.political ?? existingInfluence?.political ?? 0,
-    environmental: influence.environmental ?? existingInfluence?.environmental ?? 0,
+    environmental:
+      influence.environmental ?? existingInfluence?.environmental ?? 0,
     familial: influence.familial ?? existingInfluence?.familial ?? 0,
     spiritual: influence.spiritual ?? existingInfluence?.spiritual ?? 0,
     historical: influence.historical ?? existingInfluence?.historical ?? 0,
@@ -561,7 +703,14 @@ export async function upsertInfluence(
 
     await txRepos.upsertInfluence(characterId, merged);
 
-    await emitEvent(txRepos, "CHARACTER_INFLUENCE_UPDATED", updatedState, householdId, userId, { influence: merged });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_INFLUENCE_UPDATED",
+      updatedState,
+      householdId,
+      userId,
+      { influence: merged },
+    );
   });
 
   return getCharacterDomain(userId, householdId, characterId);
@@ -604,10 +753,17 @@ export async function addRelationship(
       customTypeLabel: relationship.customTypeLabel ?? null,
     });
 
-    await emitEvent(txRepos, "CHARACTER_RELATIONSHIP_ADDED", updatedState, householdId, userId, {
-      targetCharacterId: relationship.targetCharacterId,
-      relationshipType: relationship.relationshipType,
-    });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_RELATIONSHIP_ADDED",
+      updatedState,
+      householdId,
+      userId,
+      {
+        targetCharacterId: relationship.targetCharacterId,
+        relationshipType: relationship.relationshipType,
+      },
+    );
   });
 
   return getCharacterDomain(userId, householdId, characterId);
@@ -643,10 +799,17 @@ export async function updateLocation(
       expectedVersion: base.version,
     });
 
-    await emitEvent(txRepos, "CHARACTER_LOCATION_CHANGED", updatedState, householdId, userId, {
-      locationId,
-      locationType,
-    });
+    await emitEvent(
+      txRepos,
+      "CHARACTER_LOCATION_CHANGED",
+      updatedState,
+      householdId,
+      userId,
+      {
+        locationId,
+        locationType,
+      },
+    );
   });
 
   return getCharacterDomain(userId, householdId, characterId);

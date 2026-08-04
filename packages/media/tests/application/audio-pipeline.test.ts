@@ -92,7 +92,11 @@ describe("AudioPipeline (TTS)", () => {
     const outcome = await pipeline.run({
       kind: "tts",
       job: makeTts({
-        durationPolicy: { ...AUDIO_POLICY, maxSeconds: 3600, maxBytes: 10 * 1024 * 1024 },
+        durationPolicy: {
+          ...AUDIO_POLICY,
+          maxSeconds: 3600,
+          maxBytes: 10 * 1024 * 1024,
+        },
       }),
     });
     expect(outcome.ok).toBe(false);

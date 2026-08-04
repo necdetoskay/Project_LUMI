@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
-import { ensureParentPolicyDoesNotLoosenSafety, DEFAULT_SAFETY_BASELINE } from "../policy";
+import {
+  ensureParentPolicyDoesNotLoosenSafety,
+  DEFAULT_SAFETY_BASELINE,
+} from "../policy";
 import type {
   ContextFinding,
   ContextItem,
@@ -91,8 +94,16 @@ export class ContextBuilder {
     const findings: ContextFinding[] = [];
 
     const [safetyResult, parentResult] = await Promise.all([
-      this.safeFetch("safety", () => this.deps.safetyPolicySource.fetch(validatedRequest), findings),
-      this.safeFetch("parent-policy", () => this.deps.parentPolicySource.fetch(validatedRequest), findings),
+      this.safeFetch(
+        "safety",
+        () => this.deps.safetyPolicySource.fetch(validatedRequest),
+        findings,
+      ),
+      this.safeFetch(
+        "parent-policy",
+        () => this.deps.parentPolicySource.fetch(validatedRequest),
+        findings,
+      ),
     ]);
 
     const safetyItem = safetyResult.items[0]?.content;
@@ -118,7 +129,10 @@ export class ContextBuilder {
 
     const guardedParent =
       parentItem !== undefined
-        ? ensureParentPolicyDoesNotLoosenSafety(parentItem, DEFAULT_SAFETY_BASELINE)
+        ? ensureParentPolicyDoesNotLoosenSafety(
+            parentItem,
+            DEFAULT_SAFETY_BASELINE,
+          )
         : undefined;
 
     if (guardedParent !== undefined && !guardedParent.allowed) {
@@ -142,13 +156,37 @@ export class ContextBuilder {
       worldResult,
       originResult,
     ] = await Promise.all([
-      this.safeFetch("working-story", () => this.deps.workingStorySource.fetch(validatedRequest), findings),
-      this.safeFetch("emotional-state", () => this.deps.emotionalStateSource.fetch(validatedRequest), findings),
-      this.safeFetch("long-term-memory", () => this.deps.longTermMemorySource.fetch(validatedRequest), findings),
-      this.safeFetch("knowledge", () => this.deps.knowledgeSource.fetch(validatedRequest), findings),
-      this.safeFetch("world", () => this.deps.worldSource.fetch(validatedRequest), findings),
+      this.safeFetch(
+        "working-story",
+        () => this.deps.workingStorySource.fetch(validatedRequest),
+        findings,
+      ),
+      this.safeFetch(
+        "emotional-state",
+        () => this.deps.emotionalStateSource.fetch(validatedRequest),
+        findings,
+      ),
+      this.safeFetch(
+        "long-term-memory",
+        () => this.deps.longTermMemorySource.fetch(validatedRequest),
+        findings,
+      ),
+      this.safeFetch(
+        "knowledge",
+        () => this.deps.knowledgeSource.fetch(validatedRequest),
+        findings,
+      ),
+      this.safeFetch(
+        "world",
+        () => this.deps.worldSource.fetch(validatedRequest),
+        findings,
+      ),
       this.deps.originPackageSource
-        ? this.safeFetch("origin-package", () => this.deps.originPackageSource!.fetch(validatedRequest), findings)
+        ? this.safeFetch(
+            "origin-package",
+            () => this.deps.originPackageSource!.fetch(validatedRequest),
+            findings,
+          )
         : Promise.resolve({ items: [], sourceRelevance: 0 }),
     ]);
 
@@ -169,7 +207,9 @@ export class ContextBuilder {
         priority: 1,
         budget: validatedBudget.parentPolicyTokens,
         result: {
-          items: effectiveParentPolicy ? [parentPolicyToItem(effectiveParentPolicy)] : [],
+          items: effectiveParentPolicy
+            ? [parentPolicyToItem(effectiveParentPolicy)]
+            : [],
           sourceRelevance: parentResult.sourceRelevance,
         },
       },
@@ -213,7 +253,12 @@ export class ContextBuilder {
 
     const sections: ContextSection[] = [];
     for (const config of sectionConfigs) {
-      const section = this.buildSection(config.name, config.priority, config.budget, config.result.items);
+      const section = this.buildSection(
+        config.name,
+        config.priority,
+        config.budget,
+        config.result.items,
+      );
       sections.push(section);
       if (section.truncated) {
         findings.push({
@@ -226,7 +271,11 @@ export class ContextBuilder {
     }
 
     const tokenUsage = this.computeTokenUsage(validatedBudget, sections);
-    const contentHash = computeContentHash(validatedRequest, validatedBudget, sections);
+    const contentHash = computeContentHash(
+      validatedRequest,
+      validatedBudget,
+      sections,
+    );
 
     return {
       request: validatedRequest,
@@ -283,7 +332,10 @@ export class ContextBuilder {
     };
   }
 
-  private computeTokenUsage(budget: TokenBudget, sections: ContextSection[]): TokenUsage {
+  private computeTokenUsage(
+    budget: TokenBudget,
+    sections: ContextSection[],
+  ): TokenUsage {
     const allocatedTokens =
       budget.safetyTokens +
       budget.parentPolicyTokens +
@@ -294,7 +346,10 @@ export class ContextBuilder {
       budget.worldTokens +
       (budget.originPackageTokens ?? 0);
 
-    const usedTokens = sections.reduce((sum, section) => sum + section.tokensUsed, 0);
+    const usedTokens = sections.reduce(
+      (sum, section) => sum + section.tokensUsed,
+      0,
+    );
 
     return {
       totalTokens: budget.totalTokens,
@@ -305,7 +360,9 @@ export class ContextBuilder {
   }
 }
 
-function parentPolicyToItem(policy: ParentPolicyItem): ContextItem<ParentPolicyItem> {
+function parentPolicyToItem(
+  policy: ParentPolicyItem,
+): ContextItem<ParentPolicyItem> {
   return {
     id: `parent-policy:${policy.householdId}`,
     type: "parent-policy",
@@ -391,7 +448,9 @@ function computeContentHash(
   return createHash("sha256").update(canonicalize(payload)).digest("hex");
 }
 
-export function safetyPolicyToItem(policy: SafetyPolicyItem): ContextItem<SafetyPolicyItem> {
+export function safetyPolicyToItem(
+  policy: SafetyPolicyItem,
+): ContextItem<SafetyPolicyItem> {
   return {
     id: "safety:baseline",
     type: "safety-policy",
@@ -406,7 +465,9 @@ export function safetyPolicyToItem(policy: SafetyPolicyItem): ContextItem<Safety
   };
 }
 
-export function workingStoryToItems(story: WorkingStoryItem): ContextItem<WorkingStoryItem>[] {
+export function workingStoryToItems(
+  story: WorkingStoryItem,
+): ContextItem<WorkingStoryItem>[] {
   return [
     {
       id: "working-story:mode",
@@ -432,7 +493,7 @@ export function workingStoryToItems(story: WorkingStoryItem): ContextItem<Workin
       priority: 1,
       relevance: 0.95,
     },
-      ...story.activeCharacterContexts.map(
+    ...story.activeCharacterContexts.map(
       (character): ContextItem<WorkingStoryItem> => ({
         id: `working-story:character:${character.characterId}`,
         type: "working-story-character",
@@ -474,7 +535,9 @@ export function workingStoryToItems(story: WorkingStoryItem): ContextItem<Workin
   ];
 }
 
-export function emotionalStateToItems(state: EmotionalStateItem): ContextItem<EmotionalStateItem>[] {
+export function emotionalStateToItems(
+  state: EmotionalStateItem,
+): ContextItem<EmotionalStateItem>[] {
   return [
     {
       id: `emotional-state:${state.characterId}`,
@@ -496,7 +559,9 @@ export function emotionalStateToItems(state: EmotionalStateItem): ContextItem<Em
   ];
 }
 
-export function longTermMemoryToItems(memory: LongTermMemoryItem): ContextItem<LongTermMemoryItem>[] {
+export function longTermMemoryToItems(
+  memory: LongTermMemoryItem,
+): ContextItem<LongTermMemoryItem>[] {
   return [
     {
       id: `long-term-memory:${memory.memoryId}`,
@@ -517,7 +582,9 @@ export function longTermMemoryToItems(memory: LongTermMemoryItem): ContextItem<L
   ];
 }
 
-export function knowledgeToItems(knowledge: KnowledgeItem): ContextItem<KnowledgeItem>[] {
+export function knowledgeToItems(
+  knowledge: KnowledgeItem,
+): ContextItem<KnowledgeItem>[] {
   return [
     {
       id: "knowledge:known",
@@ -583,7 +650,9 @@ export function worldToItems(world: WorldItem): ContextItem<WorldItem>[] {
   ];
 }
 
-export function originPackageToItems(origin: OriginPackageItem): ContextItem<OriginPackageItem>[] {
+export function originPackageToItems(
+  origin: OriginPackageItem,
+): ContextItem<OriginPackageItem>[] {
   return [
     {
       id: `origin-package:${origin.originType}`,

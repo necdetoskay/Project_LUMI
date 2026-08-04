@@ -1,12 +1,27 @@
 import { ValidationError, DomainError } from "./errors";
 import {
-  OWNER_TYPES, ITEM_CATEGORIES, ITEM_TYPES, RARITIES, STACK_MODES,
-  DURABILITY_MODES, TRANSFER_TYPES, ENTRY_STATUSES,
-  INVENTORY_TYPES, validateItemMetadata,
-  type OwnerType, type ItemCategory, type ItemType, type Rarity,
-  type StackMode, type DurabilityMode, type TransferType,
-  type OwnershipType, type EntryStatus, type CapacityMode,
-  type InventoryType, type ItemDefinitionInput,
+  OWNER_TYPES,
+  ITEM_CATEGORIES,
+  ITEM_TYPES,
+  RARITIES,
+  STACK_MODES,
+  DURABILITY_MODES,
+  TRANSFER_TYPES,
+  ENTRY_STATUSES,
+  INVENTORY_TYPES,
+  validateItemMetadata,
+  type OwnerType,
+  type ItemCategory,
+  type ItemType,
+  type Rarity,
+  type StackMode,
+  type DurabilityMode,
+  type TransferType,
+  type OwnershipType,
+  type EntryStatus,
+  type CapacityMode,
+  type InventoryType,
+  type ItemDefinitionInput,
 } from "./inventory-types";
 
 export interface ItemDefinitionState {
@@ -69,7 +84,10 @@ export interface InventoryState {
   metadata: Record<string, unknown>;
 }
 
-export const DEFAULT_CAPACITY: Record<OwnerType, { mode: CapacityMode; value: number }> = {
+export const DEFAULT_CAPACITY: Record<
+  OwnerType,
+  { mode: CapacityMode; value: number }
+> = {
   household: { mode: "unlimited", value: 0 },
   child_profile: { mode: "unlimited", value: 0 },
   character: { mode: "slot", value: 20 },
@@ -78,102 +96,187 @@ export const DEFAULT_CAPACITY: Record<OwnerType, { mode: CapacityMode; value: nu
 
 export function validateOwnerType(value: string): OwnerType {
   if (!(OWNER_TYPES as readonly string[]).includes(value as OwnerType)) {
-    throw new ValidationError("INVALID_OWNER_TYPE", `Owner type must be one of: ${OWNER_TYPES.join(", ")}`, "ownerType");
+    throw new ValidationError(
+      "INVALID_OWNER_TYPE",
+      `Owner type must be one of: ${OWNER_TYPES.join(", ")}`,
+      "ownerType",
+    );
   }
   return value as OwnerType;
 }
 
 export function validateItemCategory(value: string): ItemCategory {
   if (!(ITEM_CATEGORIES as readonly string[]).includes(value as ItemCategory)) {
-    throw new ValidationError("INVALID_ITEM_CATEGORY", `Item category must be one of: ${ITEM_CATEGORIES.join(", ")}`, "category");
+    throw new ValidationError(
+      "INVALID_ITEM_CATEGORY",
+      `Item category must be one of: ${ITEM_CATEGORIES.join(", ")}`,
+      "category",
+    );
   }
   return value as ItemCategory;
 }
 
 export function validateItemType(value: string): ItemType {
   if (!(ITEM_TYPES as readonly string[]).includes(value as ItemType)) {
-    throw new ValidationError("INVALID_ITEM_TYPE", `Item type must be one of: ${ITEM_TYPES.join(", ")}`, "itemType");
+    throw new ValidationError(
+      "INVALID_ITEM_TYPE",
+      `Item type must be one of: ${ITEM_TYPES.join(", ")}`,
+      "itemType",
+    );
   }
   return value as ItemType;
 }
 
 export function validateRarity(value: string): Rarity {
   if (!(RARITIES as readonly string[]).includes(value as Rarity)) {
-    throw new ValidationError("INVALID_RARITY", `Rarity must be one of: ${RARITIES.join(", ")}`, "rarity");
+    throw new ValidationError(
+      "INVALID_RARITY",
+      `Rarity must be one of: ${RARITIES.join(", ")}`,
+      "rarity",
+    );
   }
   return value as Rarity;
 }
 
 export function validateStackMode(value: string): StackMode {
   if (!(STACK_MODES as readonly string[]).includes(value as StackMode)) {
-    throw new ValidationError("INVALID_STACK_MODE", `Stack mode must be one of: ${STACK_MODES.join(", ")}`, "stackMode");
+    throw new ValidationError(
+      "INVALID_STACK_MODE",
+      `Stack mode must be one of: ${STACK_MODES.join(", ")}`,
+      "stackMode",
+    );
   }
   return value as StackMode;
 }
 
 export function validateDurabilityMode(value: string): DurabilityMode {
-  if (!(DURABILITY_MODES as readonly string[]).includes(value as DurabilityMode)) {
-    throw new ValidationError("INVALID_DURABILITY_MODE", `Durability mode must be one of: ${DURABILITY_MODES.join(", ")}`, "durabilityMode");
+  if (
+    !(DURABILITY_MODES as readonly string[]).includes(value as DurabilityMode)
+  ) {
+    throw new ValidationError(
+      "INVALID_DURABILITY_MODE",
+      `Durability mode must be one of: ${DURABILITY_MODES.join(", ")}`,
+      "durabilityMode",
+    );
   }
   return value as DurabilityMode;
 }
 
 export function validateTransferType(value: string): TransferType {
   if (!(TRANSFER_TYPES as readonly string[]).includes(value as TransferType)) {
-    throw new ValidationError("INVALID_TRANSFER_TYPE", `Transfer type must be one of: ${TRANSFER_TYPES.join(", ")}`, "transferType");
+    throw new ValidationError(
+      "INVALID_TRANSFER_TYPE",
+      `Transfer type must be one of: ${TRANSFER_TYPES.join(", ")}`,
+      "transferType",
+    );
   }
   return value as TransferType;
 }
 
 export function validateEntryStatus(value: string): EntryStatus {
   if (!(ENTRY_STATUSES as readonly string[]).includes(value as EntryStatus)) {
-    throw new ValidationError("INVALID_ENTRY_STATUS", `Entry status must be one of: ${ENTRY_STATUSES.join(", ")}`, "entryStatus");
+    throw new ValidationError(
+      "INVALID_ENTRY_STATUS",
+      `Entry status must be one of: ${ENTRY_STATUSES.join(", ")}`,
+      "entryStatus",
+    );
   }
   return value as EntryStatus;
 }
 
 export function validateInventoryType(value: string): InventoryType {
-  if (!(INVENTORY_TYPES as readonly string[]).includes(value as InventoryType)) {
-    throw new ValidationError("INVALID_INVENTORY_TYPE", `Inventory type must be one of: ${INVENTORY_TYPES.join(", ")}`, "inventoryType");
+  if (
+    !(INVENTORY_TYPES as readonly string[]).includes(value as InventoryType)
+  ) {
+    throw new ValidationError(
+      "INVALID_INVENTORY_TYPE",
+      `Inventory type must be one of: ${INVENTORY_TYPES.join(", ")}`,
+      "inventoryType",
+    );
   }
   return value as InventoryType;
 }
 
 export function validateDefinitionKey(value: string): string {
   if (!value || value.trim().length < 1 || value.length > 120) {
-    throw new ValidationError("INVALID_DEFINITION_KEY", "Definition key must be 1-120 characters", "definitionKey");
+    throw new ValidationError(
+      "INVALID_DEFINITION_KEY",
+      "Definition key must be 1-120 characters",
+      "definitionKey",
+    );
   }
   if (!/^[a-z0-9_]+$/.test(value)) {
-    throw new ValidationError("INVALID_DEFINITION_KEY_FORMAT", "Definition key must be lowercase alphanumeric with underscores", "definitionKey");
+    throw new ValidationError(
+      "INVALID_DEFINITION_KEY_FORMAT",
+      "Definition key must be lowercase alphanumeric with underscores",
+      "definitionKey",
+    );
   }
   return value.trim();
 }
 
 export function validateItemDefinitionInput(input: ItemDefinitionInput): void {
   validateDefinitionKey(input.definitionKey);
-  if (!input.displayName || input.displayName.trim().length < 1 || input.displayName.length > 200) {
-    throw new ValidationError("INVALID_DISPLAY_NAME", "Display name must be 1-200 characters", "displayName");
+  if (
+    !input.displayName ||
+    input.displayName.trim().length < 1 ||
+    input.displayName.length > 200
+  ) {
+    throw new ValidationError(
+      "INVALID_DISPLAY_NAME",
+      "Display name must be 1-200 characters",
+      "displayName",
+    );
   }
   validateItemCategory(input.category);
   validateItemType(input.itemType);
   validateRarity(input.rarity);
   validateStackMode(input.stackMode);
   validateDurabilityMode(input.durabilityMode);
-  if (input.durabilityMode !== "none" && (input.defaultDurability === undefined || input.defaultDurability === null || input.defaultDurability <= 0)) {
-    throw new ValidationError("INVALID_DEFAULT_DURABILITY", "Default durability required when durability mode is not 'none'", "defaultDurability");
+  if (
+    input.durabilityMode !== "none" &&
+    (input.defaultDurability === undefined ||
+      input.defaultDurability === null ||
+      input.defaultDurability <= 0)
+  ) {
+    throw new ValidationError(
+      "INVALID_DEFAULT_DURABILITY",
+      "Default durability required when durability mode is not 'none'",
+      "defaultDurability",
+    );
   }
-  if (input.stackMode === "stackable" && (input.maxStackSize === undefined || input.maxStackSize === null || input.maxStackSize < 2)) {
-    throw new ValidationError("INVALID_MAX_STACK_SIZE", "Max stack size must be >= 2 for stackable items", "maxStackSize");
+  if (
+    input.stackMode === "stackable" &&
+    (input.maxStackSize === undefined ||
+      input.maxStackSize === null ||
+      input.maxStackSize < 2)
+  ) {
+    throw new ValidationError(
+      "INVALID_MAX_STACK_SIZE",
+      "Max stack size must be >= 2 for stackable items",
+      "maxStackSize",
+    );
   }
-  if (!Array.isArray(input.allowedOwnerTypes) || input.allowedOwnerTypes.length === 0) {
-    throw new ValidationError("MISSING_ALLOWED_OWNER_TYPES", "At least one allowed owner type is required", "allowedOwnerTypes");
+  if (
+    !Array.isArray(input.allowedOwnerTypes) ||
+    input.allowedOwnerTypes.length === 0
+  ) {
+    throw new ValidationError(
+      "MISSING_ALLOWED_OWNER_TYPES",
+      "At least one allowed owner type is required",
+      "allowedOwnerTypes",
+    );
   }
   for (const ot of input.allowedOwnerTypes) {
     validateOwnerType(ot);
   }
   const metaResult = validateItemMetadata(input.category, input.metadata);
   if (!metaResult.valid) {
-    throw new ValidationError("METADATA_VALIDATION_FAILED", `Metadata validation failed: ${metaResult.errors.join("; ")}`, "metadata");
+    throw new ValidationError(
+      "METADATA_VALIDATION_FAILED",
+      `Metadata validation failed: ${metaResult.errors.join("; ")}`,
+      "metadata",
+    );
   }
 }
 
@@ -191,30 +294,58 @@ export function validateItemInstanceCreateInput(
   definition: ItemDefinitionState,
 ): void {
   if (!input.itemDefinitionId) {
-    throw new ValidationError("MISSING_DEFINITION_ID", "Item definition ID is required", "itemDefinitionId");
+    throw new ValidationError(
+      "MISSING_DEFINITION_ID",
+      "Item definition ID is required",
+      "itemDefinitionId",
+    );
   }
   validateOriginType(input.originType);
   if (definition.durabilityMode !== "none") {
     if (input.customProperties && typeof input.customProperties !== "object") {
-      throw new ValidationError("INVALID_CUSTOM_PROPERTIES", "Custom properties must be an object", "customProperties");
+      throw new ValidationError(
+        "INVALID_CUSTOM_PROPERTIES",
+        "Custom properties must be an object",
+        "customProperties",
+      );
     }
   }
   const qty = input.quantity ?? 1;
   if (qty < 1) {
-    throw new ValidationError("INVALID_QUANTITY", "Quantity must be >= 1", "quantity");
+    throw new ValidationError(
+      "INVALID_QUANTITY",
+      "Quantity must be >= 1",
+      "quantity",
+    );
   }
   if (definition.stackMode === "non_stackable" && qty > 1) {
-    throw new ValidationError("NON_STACKABLE_QUANTITY", "Non-stackable items cannot have quantity > 1", "quantity");
+    throw new ValidationError(
+      "NON_STACKABLE_QUANTITY",
+      "Non-stackable items cannot have quantity > 1",
+      "quantity",
+    );
   }
-  if (definition.stackMode === "stackable" && definition.maxStackSize && qty > definition.maxStackSize) {
-    throw new ValidationError("EXCEEDS_MAX_STACK", `Quantity ${qty} exceeds max stack size ${definition.maxStackSize}`, "quantity");
+  if (
+    definition.stackMode === "stackable" &&
+    definition.maxStackSize &&
+    qty > definition.maxStackSize
+  ) {
+    throw new ValidationError(
+      "EXCEEDS_MAX_STACK",
+      `Quantity ${qty} exceeds max stack size ${definition.maxStackSize}`,
+      "quantity",
+    );
   }
 }
 
 export function validateOriginType(value: string): void {
   const valid = ["generated", "discovered", "gifted", "crafted", "story"];
   if (!valid.includes(value)) {
-    throw new ValidationError("INVALID_ORIGIN_TYPE", `Origin type must be one of: ${valid.join(", ")}`, "originType");
+    throw new ValidationError(
+      "INVALID_ORIGIN_TYPE",
+      `Origin type must be one of: ${valid.join(", ")}`,
+      "originType",
+    );
   }
 }
 
@@ -274,24 +405,50 @@ export class InventoryDomainService {
     currentOwnership: OwnershipState | null,
   ): void {
     if (definition.lifecycleStatus !== "active") {
-      throw new DomainError("DEFINITION_NOT_ACTIVE", `Item definition '${definition.definitionKey}' is not active`);
+      throw new DomainError(
+        "DEFINITION_NOT_ACTIVE",
+        `Item definition '${definition.definitionKey}' is not active`,
+      );
     }
     if (instance.lifecycleStatus !== "active") {
-      throw new DomainError("INSTANCE_NOT_ACTIVE", `Item instance '${instance.id}' is not active`);
+      throw new DomainError(
+        "INSTANCE_NOT_ACTIVE",
+        `Item instance '${instance.id}' is not active`,
+      );
     }
-    if (!(definition.allowedOwnerTypes as readonly string[]).includes(targetOwnerType)) {
-      throw new ValidationError("OWNER_TYPE_NOT_ALLOWED", `Owner type '${targetOwnerType}' is not allowed for this item`, "ownerType");
+    if (
+      !(definition.allowedOwnerTypes as readonly string[]).includes(
+        targetOwnerType,
+      )
+    ) {
+      throw new ValidationError(
+        "OWNER_TYPE_NOT_ALLOWED",
+        `Owner type '${targetOwnerType}' is not allowed for this item`,
+        "ownerType",
+      );
     }
     if (currentOwnership && currentOwnership.status === "active") {
-      throw new DomainError("ITEM_ALREADY_OWNED", `Item instance '${instance.id}' already has an active owner`);
+      throw new DomainError(
+        "ITEM_ALREADY_OWNED",
+        `Item instance '${instance.id}' already has an active owner`,
+      );
     }
     if (definition.stackMode === "non_stackable" && instance.quantity > 1) {
-      throw new DomainError("NON_STACKABLE_MULTIPLE", "Non-stackable items cannot be acquired in quantity > 1");
+      throw new DomainError(
+        "NON_STACKABLE_MULTIPLE",
+        "Non-stackable items cannot be acquired in quantity > 1",
+      );
     }
     if (targetInventory.isLocked) {
-      throw new DomainError("INVENTORY_LOCKED", `Target inventory '${targetInventory.id}' is locked`);
+      throw new DomainError(
+        "INVENTORY_LOCKED",
+        `Target inventory '${targetInventory.id}' is locked`,
+      );
     }
-    if (targetInventory.capacityMode === "slot" && targetInventory.capacityValue !== null) {
+    if (
+      targetInventory.capacityMode === "slot" &&
+      targetInventory.capacityValue !== null
+    ) {
       this.validateCapacity(targetInventory);
     }
   }
@@ -305,21 +462,44 @@ export class InventoryDomainService {
     targetInventory: InventoryState,
   ): void {
     if (!definition.isTransferable) {
-      throw new DomainError("ITEM_NOT_TRANSFERABLE", `Item '${definition.definitionKey}' is not transferable`);
+      throw new DomainError(
+        "ITEM_NOT_TRANSFERABLE",
+        `Item '${definition.definitionKey}' is not transferable`,
+      );
     }
     if (instance.lifecycleStatus !== "active") {
-      throw new DomainError("INSTANCE_NOT_ACTIVE", `Item instance '${instance.id}' is not active`);
+      throw new DomainError(
+        "INSTANCE_NOT_ACTIVE",
+        `Item instance '${instance.id}' is not active`,
+      );
     }
     if (sourceOwnership.status !== "active") {
-      throw new DomainError("SOURCE_NOT_ACTIVE_OWNER", "Source does not have active ownership of this item");
+      throw new DomainError(
+        "SOURCE_NOT_ACTIVE_OWNER",
+        "Source does not have active ownership of this item",
+      );
     }
-    if (!(definition.allowedOwnerTypes as readonly string[]).includes(targetOwnerType)) {
-      throw new ValidationError("OWNER_TYPE_NOT_ALLOWED", `Owner type '${targetOwnerType}' is not allowed for this item`, "ownerType");
+    if (
+      !(definition.allowedOwnerTypes as readonly string[]).includes(
+        targetOwnerType,
+      )
+    ) {
+      throw new ValidationError(
+        "OWNER_TYPE_NOT_ALLOWED",
+        `Owner type '${targetOwnerType}' is not allowed for this item`,
+        "ownerType",
+      );
     }
     if (targetInventory.isLocked) {
-      throw new DomainError("INVENTORY_LOCKED", `Target inventory '${targetInventory.id}' is locked`);
+      throw new DomainError(
+        "INVENTORY_LOCKED",
+        `Target inventory '${targetInventory.id}' is locked`,
+      );
     }
-    if (targetInventory.capacityMode === "slot" && targetInventory.capacityValue !== null) {
+    if (
+      targetInventory.capacityMode === "slot" &&
+      targetInventory.capacityValue !== null
+    ) {
       this.validateCapacity(targetInventory);
     }
   }
@@ -330,16 +510,28 @@ export class InventoryDomainService {
     ownership: OwnershipState,
   ): void {
     if (!definition.isConsumable) {
-      throw new DomainError("ITEM_NOT_CONSUMABLE", `Item '${definition.definitionKey}' is not consumable`);
+      throw new DomainError(
+        "ITEM_NOT_CONSUMABLE",
+        `Item '${definition.definitionKey}' is not consumable`,
+      );
     }
     if (instance.lifecycleStatus !== "active") {
-      throw new DomainError("INSTANCE_NOT_ACTIVE", `Item instance '${instance.id}' is not active`);
+      throw new DomainError(
+        "INSTANCE_NOT_ACTIVE",
+        `Item instance '${instance.id}' is not active`,
+      );
     }
     if (ownership.status !== "active") {
-      throw new DomainError("NOT_OWNER", "Cannot consume an item you do not own");
+      throw new DomainError(
+        "NOT_OWNER",
+        "Cannot consume an item you do not own",
+      );
     }
     if (instance.quantity < 1) {
-      throw new DomainError("ZERO_QUANTITY", "Cannot consume an item with zero quantity");
+      throw new DomainError(
+        "ZERO_QUANTITY",
+        "Cannot consume an item with zero quantity",
+      );
     }
   }
 
@@ -348,19 +540,27 @@ export class InventoryDomainService {
     ownership: OwnershipState,
   ): void {
     if (instance.lifecycleStatus === "archived") {
-      throw new DomainError("ALREADY_ARCHIVED", `Item instance '${instance.id}' is already archived`);
+      throw new DomainError(
+        "ALREADY_ARCHIVED",
+        `Item instance '${instance.id}' is already archived`,
+      );
     }
     if (ownership.status !== "active") {
-      throw new DomainError("NOT_OWNER", "Cannot archive an item you do not own");
+      throw new DomainError(
+        "NOT_OWNER",
+        "Cannot archive an item you do not own",
+      );
     }
   }
 
   private validateCapacity(inventory: InventoryState): void {
     if (inventory.capacityValue !== null && inventory.capacityValue <= 0) {
-      throw new DomainError("INVENTORY_FULL", `Inventory '${inventory.id}' is full`);
+      throw new DomainError(
+        "INVENTORY_FULL",
+        `Inventory '${inventory.id}' is full`,
+      );
     }
   }
 }
 
 export const inventoryDomainService = new InventoryDomainService();
-

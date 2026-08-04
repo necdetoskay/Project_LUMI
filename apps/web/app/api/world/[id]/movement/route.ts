@@ -4,7 +4,12 @@ import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { getOwnedHousehold } from "@lumi/profiles/application";
-import { moveCharacterToLocation, getCharacterCurrentLocation, getCharacterMovementHistory, assertWorldAccess } from "@lumi/world";
+import {
+  moveCharacterToLocation,
+  getCharacterCurrentLocation,
+  getCharacterMovementHistory,
+  assertWorldAccess,
+} from "@lumi/world";
 
 const moveBodySchema = z.object({
   characterId: z.string().uuid(),
@@ -32,7 +37,10 @@ export const POST = observeHandler(
 
         const household = await getOwnedHousehold(parent.id);
         if (!household) {
-          return NextResponse.json({ error: "FORBIDDEN", message: "User does not own a household" }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: "User does not own a household" },
+            { status: 403 },
+          );
         }
 
         await assertWorldAccess(worldId, household.id);
@@ -49,14 +57,26 @@ export const POST = observeHandler(
       } catch (error) {
         const err = error as Error & { code?: string };
         const message = err.message ?? "Unknown error";
-        if (err.name === "AuthorizationError" || message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json({ error: "NOT_FOUND", message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message },
+            { status: 404 },
+          );
         }
         if (err.name === "ValidationError") {
-          return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+          return NextResponse.json(
+            { error: err.code ?? "VALIDATION_ERROR", message },
+            { status: 400 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to move character" },
@@ -76,7 +96,10 @@ export const GET = observeHandler(
       try {
         const household = await getOwnedHousehold(parent.id);
         if (!household) {
-          return NextResponse.json({ error: "FORBIDDEN", message: "User does not own a household" }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: "User does not own a household" },
+            { status: 403 },
+          );
         }
 
         await assertWorldAccess(worldId, household.id);
@@ -86,7 +109,10 @@ export const GET = observeHandler(
 
         if (!characterId) {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "characterId query parameter is required" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "characterId query parameter is required",
+            },
             { status: 400 },
           );
         }
@@ -97,13 +123,22 @@ export const GET = observeHandler(
       } catch (error) {
         const err = error as Error;
         if (err.name === "NotFoundError") {
-          return NextResponse.json({ error: "NOT_FOUND", message: err.message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: err.message },
+            { status: 404 },
+          );
         }
         if (err.name === "AuthorizationError") {
-          return NextResponse.json({ error: "FORBIDDEN", message: err.message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: err.message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
-          { error: "INTERNAL_ERROR", message: err.message ?? "Failed to get character location" },
+          {
+            error: "INTERNAL_ERROR",
+            message: err.message ?? "Failed to get character location",
+          },
           { status: 500 },
         );
       }

@@ -33,10 +33,7 @@ export async function createHousehold(
   const existing = await householdRepo.findByUserId(userId);
   const activeHousehold = existing.find((h) => h.role === "owner");
   if (activeHousehold) {
-    throw new DomainError(
-      "HOUSEHOLD_EXISTS",
-      "User already owns a household",
-    );
+    throw new DomainError("HOUSEHOLD_EXISTS", "User already owns a household");
   }
 
   const household = await householdRepo.create({
@@ -121,8 +118,6 @@ export async function assertHouseholdOwnership(
   const { householdRepo } = getRepos();
   const isOwner = await householdRepo.isOwner(householdId, userId);
   if (!isOwner) {
-    throw new AuthorizationError(
-      "User does not own this household",
-    );
+    throw new AuthorizationError("User does not own this household");
   }
 }

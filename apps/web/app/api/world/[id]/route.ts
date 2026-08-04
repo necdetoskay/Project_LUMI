@@ -17,7 +17,10 @@ export const GET = observeHandler(
       try {
         const household = await getOwnedHousehold(parent.id);
         if (!household) {
-          return NextResponse.json({ error: "FORBIDDEN", message: "User does not own a household" }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: "User does not own a household" },
+            { status: 403 },
+          );
         }
 
         await assertWorldAccess(id, household.id);
@@ -27,13 +30,22 @@ export const GET = observeHandler(
       } catch (error) {
         const err = error as Error;
         if (err.name === "NotFoundError") {
-          return NextResponse.json({ error: "NOT_FOUND", message: err.message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: err.message },
+            { status: 404 },
+          );
         }
         if (err.name === "AuthorizationError") {
-          return NextResponse.json({ error: "FORBIDDEN", message: err.message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: err.message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
-          { error: "INTERNAL_ERROR", message: err.message ?? "Failed to get world" },
+          {
+            error: "INTERNAL_ERROR",
+            message: err.message ?? "Failed to get world",
+          },
           { status: 500 },
         );
       }
@@ -52,14 +64,20 @@ export const PATCH = observeHandler(
         const parsed = archiveBodySchema.safeParse(raw);
         if (!parsed.success) {
           return NextResponse.json(
-            { error: "VALIDATION_ERROR", message: "Only 'archive' action is supported" },
+            {
+              error: "VALIDATION_ERROR",
+              message: "Only 'archive' action is supported",
+            },
             { status: 400 },
           );
         }
 
         const household = await getOwnedHousehold(parent.id);
         if (!household) {
-          return NextResponse.json({ error: "FORBIDDEN", message: "User does not own a household" }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: "User does not own a household" },
+            { status: 403 },
+          );
         }
 
         await assertWorldAccess(id, household.id);
@@ -70,13 +88,22 @@ export const PATCH = observeHandler(
         const err = error as Error & { code?: string };
         const message = err.message ?? "Unknown error";
         if (err.name === "NotFoundError") {
-          return NextResponse.json({ error: "NOT_FOUND", message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message },
+            { status: 404 },
+          );
         }
         if (err.name === "AuthorizationError") {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         if (err.name === "ValidationError") {
-          return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+          return NextResponse.json(
+            { error: err.code ?? "VALIDATION_ERROR", message },
+            { status: 400 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to update world" },

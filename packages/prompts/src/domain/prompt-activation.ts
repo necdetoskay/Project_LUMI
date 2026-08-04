@@ -65,7 +65,10 @@ export class PromptActivation {
 
   activate(versionId: string): void {
     if (this.isActive()) {
-      throw new ValidationError("ACTIVATION_ALREADY_ACTIVE", "Activation is already active");
+      throw new ValidationError(
+        "ACTIVATION_ALREADY_ACTIVE",
+        "Activation is already active",
+      );
     }
     this.state.activeVersionId = validateId(versionId, "versionId");
     this.state.activatedAt = new Date();
@@ -74,7 +77,10 @@ export class PromptActivation {
 
   deactivate(): void {
     if (!this.isActive()) {
-      throw new ValidationError("ACTIVATION_ALREADY_INACTIVE", "Activation is already inactive");
+      throw new ValidationError(
+        "ACTIVATION_ALREADY_INACTIVE",
+        "Activation is already inactive",
+      );
     }
     this.state.deactivatedAt = new Date();
   }

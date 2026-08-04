@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createNoopMetricsAdapter, createSafeMetricsAdapter, validateLabels } from "../src/metrics";
+import {
+  createNoopMetricsAdapter,
+  createSafeMetricsAdapter,
+  validateLabels,
+} from "../src/metrics";
 import type { MetricsAdapter } from "../src/metrics";
 
 describe("createNoopMetricsAdapter", () => {
@@ -34,15 +38,25 @@ describe("createSafeMetricsAdapter", () => {
     safe.recordError("test.error");
 
     expect(mock.incrementCounter).toHaveBeenCalledWith("test", 1, undefined);
-    expect(mock.recordHistogram).toHaveBeenCalledWith("latency", 200, undefined);
+    expect(mock.recordHistogram).toHaveBeenCalledWith(
+      "latency",
+      200,
+      undefined,
+    );
     expect(mock.recordError).toHaveBeenCalledWith("test.error", undefined);
   });
 
   it("does not throw when underlying adapter throws", () => {
     const throwing: MetricsAdapter = {
-      incrementCounter: () => { throw new Error("adapter down"); },
-      recordHistogram: () => { throw new Error("adapter down"); },
-      recordError: () => { throw new Error("adapter down"); },
+      incrementCounter: () => {
+        throw new Error("adapter down");
+      },
+      recordHistogram: () => {
+        throw new Error("adapter down");
+      },
+      recordError: () => {
+        throw new Error("adapter down");
+      },
     };
 
     const safe = createSafeMetricsAdapter(throwing);
@@ -54,9 +68,15 @@ describe("createSafeMetricsAdapter", () => {
 
   it("does not break business flow", () => {
     const throwing: MetricsAdapter = {
-      incrementCounter: () => { throw new Error("adapter down"); },
-      recordHistogram: () => { throw new Error("adapter down"); },
-      recordError: () => { throw new Error("adapter down"); },
+      incrementCounter: () => {
+        throw new Error("adapter down");
+      },
+      recordHistogram: () => {
+        throw new Error("adapter down");
+      },
+      recordError: () => {
+        throw new Error("adapter down");
+      },
     };
 
     const safe = createSafeMetricsAdapter(throwing);

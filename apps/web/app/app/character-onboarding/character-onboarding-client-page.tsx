@@ -61,12 +61,15 @@ export default function CharacterOnboardingClientPage() {
   const [archetypes, setArchetypes] = useState<ArchetypeSuggestion[]>([]);
   const [archetypeModelId, setArchetypeModelId] = useState<string | null>(null);
   const [archetypeBatchId, setArchetypeBatchId] = useState<string | null>(null);
-  const [selectedArchetype, setSelectedArchetype] = useState<ArchetypeSuggestion | null>(null);
+  const [selectedArchetype, setSelectedArchetype] =
+    useState<ArchetypeSuggestion | null>(null);
   const [archetypesLoading, setArchetypesLoading] = useState<boolean>(false);
   const [archetypesError, setArchetypesError] = useState<string | null>(null);
 
   const [packages, setPackages] = useState<OriginPackage[]>([]);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+    null,
+  );
   const [nameOverride, setNameOverride] = useState<string>("");
   const [subtypeOverride, setSubtypeOverride] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -125,7 +128,8 @@ export default function CharacterOnboardingClientPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.fallbackReason ?? data.message ?? "Arketipler üretilemedi";
+        const msg =
+          data.fallbackReason ?? data.message ?? "Arketipler üretilemedi";
         setArchetypesError(msg);
         return;
       }
@@ -162,7 +166,10 @@ export default function CharacterOnboardingClientPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.fallbackReason ?? data.message ?? "Arketipler yeniden üretilemedi";
+        const msg =
+          data.fallbackReason ??
+          data.message ??
+          "Arketipler yeniden üretilemedi";
         setArchetypesError(msg);
         return;
       }
@@ -177,13 +184,34 @@ export default function CharacterOnboardingClientPage() {
   }, [householdId, childProfileId, archetypes]);
 
   useEffect(() => {
-    if (step === 1 && householdId && childProfileId && archetypes.length === 0 && !archetypesLoading && !archetypesError) {
+    if (
+      step === 1 &&
+      householdId &&
+      childProfileId &&
+      archetypes.length === 0 &&
+      !archetypesLoading &&
+      !archetypesError
+    ) {
       loadArchetypes();
     }
-  }, [step, householdId, childProfileId, archetypes.length, archetypesLoading, archetypesError, loadArchetypes]);
+  }, [
+    step,
+    householdId,
+    childProfileId,
+    archetypes.length,
+    archetypesLoading,
+    archetypesError,
+    loadArchetypes,
+  ]);
 
   const createHandoff = useCallback(async () => {
-    if (!householdId || !childProfileId || !selectedArchetype || !archetypeBatchId) return;
+    if (
+      !householdId ||
+      !childProfileId ||
+      !selectedArchetype ||
+      !archetypeBatchId
+    )
+      return;
     setSubmitting(true);
     setError(null);
     try {
@@ -211,7 +239,13 @@ export default function CharacterOnboardingClientPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [householdId, childProfileId, selectedArchetype, archetypeBatchId, originMode]);
+  }, [
+    householdId,
+    childProfileId,
+    selectedArchetype,
+    archetypeBatchId,
+    originMode,
+  ]);
 
   const selectedPkg = useMemo(
     () => packages.find((p) => p.id === selectedPackageId) ?? null,
@@ -235,9 +269,14 @@ export default function CharacterOnboardingClientPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.generationSource === "llm_config_error" || data.generationSource === "llm_error") {
+        if (
+          data.generationSource === "llm_config_error" ||
+          data.generationSource === "llm_error"
+        ) {
           setGenSource({
-            generationSource: data.generationSource as "llm_config_error" | "llm_error",
+            generationSource: data.generationSource as
+              | "llm_config_error"
+              | "llm_error",
             modelId: null,
             fallbackReason: data.fallbackReason ?? "Bilinmeyen hata",
           });
@@ -273,7 +312,8 @@ export default function CharacterOnboardingClientPage() {
   }, [selectedPkg]);
 
   const createCharacter = useCallback(async () => {
-    if (!householdId || !childProfileId || !handoffId || !selectedPackageId) return;
+    if (!householdId || !childProfileId || !handoffId || !selectedPackageId)
+      return;
     setSubmitting(true);
     setError(null);
     try {
@@ -342,7 +382,8 @@ export default function CharacterOnboardingClientPage() {
             Karakterin hazır!
           </h1>
           <p className="mt-3 text-on-surface-variant">
-            {createdCharacter.name} adlı karakteriniz için ilk maceralara hazırsınız.
+            {createdCharacter.name} adlı karakteriniz için ilk maceralara
+            hazırsınız.
           </p>
         </header>
         <div className="rounded-2xl border border-outline-variant bg-white p-8">
@@ -354,7 +395,9 @@ export default function CharacterOnboardingClientPage() {
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm hover:bg-[#4c29cf]"
               href="/app/profiles"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
               Profillere dön
             </a>
             <a
@@ -376,18 +419,26 @@ export default function CharacterOnboardingClientPage() {
           <a className="transition-colors hover:text-primary" href="/app">
             Dashboard
           </a>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
-          <a className="transition-colors hover:text-primary" href="/app/profiles">
+          <span className="material-symbols-outlined text-sm">
+            chevron_right
+          </span>
+          <a
+            className="transition-colors hover:text-primary"
+            href="/app/profiles"
+          >
             Profiller
           </a>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
+          <span className="material-symbols-outlined text-sm">
+            chevron_right
+          </span>
           <span className="text-primary">Karakter Başlangıcı</span>
         </nav>
         <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
           Karakter Başlangıç Akışı
         </h1>
         <p className="mt-1 text-on-surface-variant">
-          Adım 1: arketip seç &mdash; Adım 2: önerileri incele &mdash; Adım 3: onayla
+          Adım 1: arketip seç &mdash; Adım 2: önerileri incele &mdash; Adım 3:
+          onayla
         </p>
         <div className="mt-4 flex items-center gap-2">
           {([1, 2, 3] as const).map((n) => (
@@ -405,7 +456,9 @@ export default function CharacterOnboardingClientPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant bg-white p-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-on-surface">Karakter arketipi seç</h2>
+              <h2 className="text-xl font-bold text-on-surface">
+                Karakter arketipi seç
+              </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
                 Yapay zeka ile size özel 5 farklı karakter arketipi oluşturuldu.
               </p>
@@ -422,7 +475,9 @@ export default function CharacterOnboardingClientPage() {
               disabled={archetypesLoading}
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              <span className="material-symbols-outlined text-[18px]">
+                refresh
+              </span>
               {archetypesLoading ? "Oluşturuluyor" : "Yeniden üret"}
             </button>
           </div>
@@ -435,7 +490,9 @@ export default function CharacterOnboardingClientPage() {
 
           {archetypesError && (
             <div className="rounded-2xl border border-error-container bg-error-fixed/10 px-5 py-4 text-sm text-error">
-              <span className="font-semibold">AI arketip oluşturma başarısız oldu:</span>{" "}
+              <span className="font-semibold">
+                AI arketip oluşturma başarısız oldu:
+              </span>{" "}
               {archetypesError}
               <div className="mt-2">
                 <button
@@ -474,7 +531,9 @@ export default function CharacterOnboardingClientPage() {
                     <span className="inline-flex items-center rounded-full bg-primary-fixed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
                       {a.canonicalType}
                     </span>
-                    <p className="mt-3 text-lg font-bold text-on-surface">{a.title}</p>
+                    <p className="mt-3 text-lg font-bold text-on-surface">
+                      {a.title}
+                    </p>
                     <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                       {a.description}
                     </p>
@@ -524,7 +583,9 @@ export default function CharacterOnboardingClientPage() {
                   disabled={!selectedArchetype || submitting}
                   className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    arrow_forward
+                  </span>
                   {submitting ? "Devam ediliyor" : "Bu arketipi kullan"}
                 </button>
               </div>
@@ -537,9 +598,14 @@ export default function CharacterOnboardingClientPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant bg-white p-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-on-surface">Origin önerileri</h2>
+              <h2 className="text-xl font-bold text-on-surface">
+                Origin önerileri
+              </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
-                Seçilen arketip: {selectedArchetype?.title ?? selectedArchetype?.canonicalType ?? "-"}
+                Seçilen arketip:{" "}
+                {selectedArchetype?.title ??
+                  selectedArchetype?.canonicalType ??
+                  "-"}
                 &mdash; Mod: {originMode}
               </p>
               {genSource?.generationSource === "llm" && genSource.modelId && (
@@ -555,7 +621,9 @@ export default function CharacterOnboardingClientPage() {
               disabled={submitting}
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+              <span className="material-symbols-outlined text-[18px]">
+                auto_awesome
+              </span>
               {submitting
                 ? "Üretiliyor"
                 : packages.length > 0
@@ -580,15 +648,21 @@ export default function CharacterOnboardingClientPage() {
           )}
 
           {genSource?.generationSource === "llm_error" && (
-            <div data-testid="origin-generation-error" className="rounded-2xl border border-error-container bg-error-fixed/10 px-5 py-4 text-sm text-error">
+            <div
+              data-testid="origin-generation-error"
+              className="rounded-2xl border border-error-container bg-error-fixed/10 px-5 py-4 text-sm text-error"
+            >
               <span className="font-semibold">AI önerisi başarısız oldu:</span>{" "}
               {genSource.fallbackReason ?? "Bilinmeyen hata"}
             </div>
           )}
 
-          {packages.length === 0 && genSource?.generationSource !== "llm_config_error" && genSource?.generationSource !== "llm_error" ? (
+          {packages.length === 0 &&
+          genSource?.generationSource !== "llm_config_error" &&
+          genSource?.generationSource !== "llm_error" ? (
             <div className="rounded-2xl border border-dashed border-outline-variant bg-white px-8 py-16 text-center text-on-surface-variant">
-              Henüz öneri üretilmedi. Yukarıdaki butonu kullanarak ilk adımı başlatın.
+              Henüz öneri üretilmedi. Yukarıdaki butonu kullanarak ilk adımı
+              başlatın.
             </div>
           ) : packages.length > 0 ? (
             <>
@@ -596,7 +670,8 @@ export default function CharacterOnboardingClientPage() {
                 {packages.map((p) => {
                   const concept =
                     p.originConcept ?? p.payload?.originConcept ?? "";
-                  const home = p.homeArchetype ?? p.payload?.homeArchetype ?? "";
+                  const home =
+                    p.homeArchetype ?? p.payload?.homeArchetype ?? "";
                   const location =
                     p.startingLocation ?? p.payload?.startingLocation ?? "";
                   return (
@@ -619,12 +694,16 @@ export default function CharacterOnboardingClientPage() {
                           {p.originMode}
                         </span>
                       </div>
-                      <p className="text-lg font-bold text-on-surface">{p.subtype}</p>
+                      <p className="text-lg font-bold text-on-surface">
+                        {p.subtype}
+                      </p>
                       <p className="mt-2 text-sm leading-6 text-on-surface-variant line-clamp-4">
                         {concept}
                       </p>
                       <div className="mt-4 space-y-1 text-xs text-on-surface-variant">
-                        <p>Bolge: {p.payload?.startingRegionArchetype ?? "-"}</p>
+                        <p>
+                          Bolge: {p.payload?.startingRegionArchetype ?? "-"}
+                        </p>
                         <p>Yer: {location}</p>
                         <p>Ev: {home}</p>
                       </div>
@@ -652,7 +731,9 @@ export default function CharacterOnboardingClientPage() {
                   className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
                 >
                   Seçimi onayla ve özelleştir
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    arrow_forward
+                  </span>
                 </button>
               </div>
             </>
@@ -667,8 +748,8 @@ export default function CharacterOnboardingClientPage() {
               Seçilen öneri: {selectedPkg.subtype}
             </h2>
             <p className="mt-1 text-sm text-on-surface-variant">
-              İsterseniz ad ve alt türü özelleştirebilir, geri kalan alanları önerideki gibi
-              bırakabilirsiniz.
+              İsterseniz ad ve alt türü özelleştirebilir, geri kalan alanları
+              önerideki gibi bırakabilirsiniz.
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -706,7 +787,8 @@ export default function CharacterOnboardingClientPage() {
                   Konsept
                 </p>
                 <p className="mt-1 leading-6">
-                  {selectedPkg.originConcept ?? selectedPkg.payload?.originConcept}
+                  {selectedPkg.originConcept ??
+                    selectedPkg.payload?.originConcept}
                 </p>
               </div>
               <div>
@@ -714,7 +796,8 @@ export default function CharacterOnboardingClientPage() {
                   Ev
                 </p>
                 <p className="mt-1">
-                  {selectedPkg.homeArchetype ?? selectedPkg.payload?.homeArchetype}
+                  {selectedPkg.homeArchetype ??
+                    selectedPkg.payload?.homeArchetype}
                 </p>
               </div>
               <div>
@@ -740,8 +823,12 @@ export default function CharacterOnboardingClientPage() {
               disabled={submitting}
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-[18px]">check</span>
-              {submitting ? "Karakter kaydediliyor" : "Karakteri oluştur ve handoff'u tüket"}
+              <span className="material-symbols-outlined text-[18px]">
+                check
+              </span>
+              {submitting
+                ? "Karakter kaydediliyor"
+                : "Karakteri oluştur ve handoff'u tüket"}
             </button>
           </div>
         </section>

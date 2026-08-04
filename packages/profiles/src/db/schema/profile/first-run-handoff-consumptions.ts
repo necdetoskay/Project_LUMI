@@ -38,9 +38,7 @@ export const firstRunHandoffConsumptions = profileSchema.table(
     index("first_run_handoff_consumptions_profile_idx").on(
       table.childProfileId,
     ),
-    index("first_run_handoff_consumptions_household_idx").on(
-      table.householdId,
-    ),
+    index("first_run_handoff_consumptions_household_idx").on(table.householdId),
   ],
 );
 

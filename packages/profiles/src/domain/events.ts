@@ -41,7 +41,8 @@ export function createCharacterEvent(
     characterId: character.id,
     childProfileId: character.childProfileId,
     householdId: character.householdId,
-    characterSubtype: (character as unknown as Record<string, unknown>).characterSubtype,
+    characterSubtype: (character as unknown as Record<string, unknown>)
+      .characterSubtype,
     ...additionalPayload,
   };
 
@@ -50,7 +51,9 @@ export function createCharacterEvent(
     characterId: character.id,
     eventType,
     eventVersion: 1,
-    aggregateVersion: (character as unknown as Record<string, unknown>).version as number ?? 1,
+    aggregateVersion:
+      ((character as unknown as Record<string, unknown>).version as number) ??
+      1,
     actorHouseholdId,
     actorUserId,
     payload: safePayload,

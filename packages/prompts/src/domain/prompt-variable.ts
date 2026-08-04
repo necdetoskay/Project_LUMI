@@ -1,20 +1,37 @@
 import { ValidationError } from "./errors";
-import type { PromptVariableDefinition, PromptVariableType } from "./prompt-types";
+import type {
+  PromptVariableDefinition,
+  PromptVariableType,
+} from "./prompt-types";
 import { PROMPT_VARIABLE_TYPES } from "./prompt-types";
 
 export { PROMPT_VARIABLE_TYPES };
 export type { PromptVariableDefinition, PromptVariableType };
 
-export function validateVariableDefinition(def: PromptVariableDefinition): void {
+export function validateVariableDefinition(
+  def: PromptVariableDefinition,
+): void {
   if (!def.name || typeof def.name !== "string") {
-    throw new ValidationError("INVALID_VARIABLE", "Variable name is required", "name");
+    throw new ValidationError(
+      "INVALID_VARIABLE",
+      "Variable name is required",
+      "name",
+    );
   }
   if (!(PROMPT_VARIABLE_TYPES as readonly string[]).includes(def.type)) {
-    throw new ValidationError("INVALID_VARIABLE", `Invalid variable type: ${def.type}`, "type");
+    throw new ValidationError(
+      "INVALID_VARIABLE",
+      `Invalid variable type: ${def.type}`,
+      "type",
+    );
   }
   if (def.type === "enum") {
     if (!Array.isArray(def.enumValues) || def.enumValues.length === 0) {
-      throw new ValidationError("INVALID_VARIABLE", "enum variables require enumValues", "enumValues");
+      throw new ValidationError(
+        "INVALID_VARIABLE",
+        "enum variables require enumValues",
+        "enumValues",
+      );
     }
   }
 }
@@ -32,7 +49,11 @@ export function resolveVariableValue(
 
   if (value === undefined) {
     if (def.required) {
-      throw new ValidationError("MISSING_REQUIRED_VARIABLE", `Variable ${def.name} is required`, def.name);
+      throw new ValidationError(
+        "MISSING_REQUIRED_VARIABLE",
+        `Variable ${def.name} is required`,
+        def.name,
+      );
     }
     return undefined;
   }
@@ -40,25 +61,41 @@ export function resolveVariableValue(
   switch (def.type) {
     case "string": {
       if (typeof value !== "string") {
-        throw new ValidationError("TYPE_MISMATCH", `Variable ${def.name} must be a string`, def.name);
+        throw new ValidationError(
+          "TYPE_MISMATCH",
+          `Variable ${def.name} must be a string`,
+          def.name,
+        );
       }
       return value;
     }
     case "number": {
       if (typeof value !== "number" || !Number.isFinite(value)) {
-        throw new ValidationError("TYPE_MISMATCH", `Variable ${def.name} must be a number`, def.name);
+        throw new ValidationError(
+          "TYPE_MISMATCH",
+          `Variable ${def.name} must be a number`,
+          def.name,
+        );
       }
       return value;
     }
     case "boolean": {
       if (typeof value !== "boolean") {
-        throw new ValidationError("TYPE_MISMATCH", `Variable ${def.name} must be a boolean`, def.name);
+        throw new ValidationError(
+          "TYPE_MISMATCH",
+          `Variable ${def.name} must be a boolean`,
+          def.name,
+        );
       }
       return value;
     }
     case "enum": {
       if (typeof value !== "string") {
-        throw new ValidationError("TYPE_MISMATCH", `Variable ${def.name} must be a string enum value`, def.name);
+        throw new ValidationError(
+          "TYPE_MISMATCH",
+          `Variable ${def.name} must be a string enum value`,
+          def.name,
+        );
       }
       const allowed = def.enumValues ?? [];
       if (!allowed.includes(value)) {
@@ -71,13 +108,27 @@ export function resolveVariableValue(
       return value;
     }
     case "json": {
-      if (value === null || (typeof value !== "object" && typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean")) {
-        throw new ValidationError("TYPE_MISMATCH", `Variable ${def.name} must be JSON-serializable`, def.name);
+      if (
+        value === null ||
+        (typeof value !== "object" &&
+          typeof value !== "string" &&
+          typeof value !== "number" &&
+          typeof value !== "boolean")
+      ) {
+        throw new ValidationError(
+          "TYPE_MISMATCH",
+          `Variable ${def.name} must be JSON-serializable`,
+          def.name,
+        );
       }
       return value;
     }
     default: {
-      throw new ValidationError("INVALID_VARIABLE", `Unsupported variable type: ${def.type}`, def.name);
+      throw new ValidationError(
+        "INVALID_VARIABLE",
+        `Unsupported variable type: ${def.type}`,
+        def.name,
+      );
     }
   }
 }

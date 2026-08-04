@@ -57,7 +57,10 @@ export async function getStoryEvents(storySessionId: string) {
   return repo.findEventsBySession(db, storySessionId);
 }
 
-export async function getStoryEventCountByType(storySessionId: string, eventType: StoryEventType): Promise<number> {
+export async function getStoryEventCountByType(
+  storySessionId: string,
+  eventType: StoryEventType,
+): Promise<number> {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const events = await repo.findEventsBySession(db, storySessionId);

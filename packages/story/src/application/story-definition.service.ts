@@ -1,5 +1,10 @@
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
-import { StoryDefinition, StoryVersion, StoryScene, StorySceneTransition } from "../domain";
+import {
+  StoryDefinition,
+  StoryVersion,
+  StoryScene,
+  StorySceneTransition,
+} from "../domain";
 import { ValidationError, NotFoundError } from "../domain/errors";
 import { getStoryDb } from "./db";
 import { hashObject } from "./hash";
@@ -37,7 +42,9 @@ export interface CreateStoryDefinitionServiceInput {
   defaultLanguage: string;
 }
 
-export async function createStoryDefinition(input: CreateStoryDefinitionServiceInput) {
+export async function createStoryDefinition(
+  input: CreateStoryDefinitionServiceInput,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   assertKnownStoryType(input.storyType);
@@ -82,7 +89,9 @@ export interface CreateStoryVersionServiceInput {
   storyMode: StoryMode;
 }
 
-export async function createStoryVersion(input: CreateStoryVersionServiceInput) {
+export async function createStoryVersion(
+  input: CreateStoryVersionServiceInput,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const version = StoryVersion.create({
@@ -135,7 +144,6 @@ export interface SaveSceneGraphInput {
   transitions: TransitionGraphInput[];
 }
 
-
 export async function saveSceneGraph(input: SaveSceneGraphInput) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
@@ -176,7 +184,10 @@ export async function saveSceneGraph(input: SaveSceneGraphInput) {
     const fromSceneId = sceneMap.get(t.fromSceneKey);
     const toSceneId = sceneMap.get(t.toSceneKey);
     if (!fromSceneId || !toSceneId) {
-      throw new ValidationError("INVALID_TRANSITION", `Transition references unknown scene keys: ${t.fromSceneKey} -> ${t.toSceneKey}`);
+      throw new ValidationError(
+        "INVALID_TRANSITION",
+        `Transition references unknown scene keys: ${t.fromSceneKey} -> ${t.toSceneKey}`,
+      );
     }
     assertKnownTransitionType(t.transitionType);
     return StorySceneTransition.create({
@@ -243,7 +254,10 @@ export async function saveSceneGraph(input: SaveSceneGraphInput) {
   });
 }
 
-export async function publishStoryVersion(storyDefinitionId: string, storyVersionId: string) {
+export async function publishStoryVersion(
+  storyDefinitionId: string,
+  storyVersionId: string,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
 
@@ -282,7 +296,8 @@ export async function publishStoryVersion(storyDefinitionId: string, storyVersio
     sourceType: definitionRecord.sourceType,
     lifecycle: definitionRecord.lifecycle,
     childProfileId: definitionRecord.childProfileId ?? null,
-    currentPublishedVersionId: definitionRecord.currentPublishedVersionId ?? null,
+    currentPublishedVersionId:
+      definitionRecord.currentPublishedVersionId ?? null,
     archivedAt: definitionRecord.archivedAt ?? null,
   });
   definition.setCurrentPublishedVersion(storyVersionId);
@@ -337,7 +352,10 @@ export async function getStoryVersionGraph(storyVersionId: string) {
   if (!version) {
     throw new NotFoundError("StoryVersion", storyVersionId);
   }
-  const definition = await repo.findDefinitionById(db, version.storyDefinitionId);
+  const definition = await repo.findDefinitionById(
+    db,
+    version.storyDefinitionId,
+  );
   const scenes = await repo.findScenesByVersion(db, storyVersionId);
   const transitions = await repo.findTransitionsByVersion(db, storyVersionId);
   return {
@@ -348,12 +366,22 @@ export async function getStoryVersionGraph(storyVersionId: string) {
   };
 }
 
-export async function getStoryVersionGraphByNumber(storyDefinitionId: string, versionNumber: number) {
+export async function getStoryVersionGraphByNumber(
+  storyDefinitionId: string,
+  versionNumber: number,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
-  const version = await repo.findVersionByDefinitionAndNumber(db, storyDefinitionId, versionNumber);
+  const version = await repo.findVersionByDefinitionAndNumber(
+    db,
+    storyDefinitionId,
+    versionNumber,
+  );
   if (!version) {
-    throw new NotFoundError("StoryVersion", `${storyDefinitionId}#${versionNumber}`);
+    throw new NotFoundError(
+      "StoryVersion",
+      `${storyDefinitionId}#${versionNumber}`,
+    );
   }
   return getStoryVersionGraph(version.id);
 }

@@ -21,7 +21,9 @@ let _promptDb: Database | undefined;
 
 export function getPromptDb(): Database {
   if (_promptDb) return _promptDb;
-  const url = process.env.DATABASE_URL ?? "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
+  const url =
+    process.env.DATABASE_URL ??
+    "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
   _promptDb = createDatabase(url);
   return _promptDb;
 }

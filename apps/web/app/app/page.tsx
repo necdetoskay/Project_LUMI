@@ -6,7 +6,9 @@ import { getParentFromSessionToken } from "@/lib/auth/service";
 import { getOnboardingState } from "@lumi/profiles/application";
 
 export default async function ProtectedAppPage() {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
 
   if (!parent) {
     redirect("/login");
@@ -14,7 +16,9 @@ export default async function ProtectedAppPage() {
 
   const state = await getOnboardingState(parent.id);
   const setupComplete = state.hasHousehold && state.childProfileCount > 0;
-  const primarySetupLabel = state.hasHousehold ? "Çocuk profili ekle" : "Aile evreni oluştur";
+  const primarySetupLabel = state.hasHousehold
+    ? "Çocuk profili ekle"
+    : "Aile evreni oluştur";
   const firstProfile = state.childProfiles[0];
 
   return (
@@ -28,7 +32,8 @@ export default async function ProtectedAppPage() {
             Hoş geldin {parent.displayName}
           </h1>
           <p className="mt-3 max-w-[44rem] text-base leading-7 text-on-surface-variant md:text-lg">
-            Aile evrenini kur, çocuk profillerini yönet ve ilk karakter başlatma akışına buradan devam et.
+            Aile evrenini kur, çocuk profillerini yönet ve ilk karakter başlatma
+            akışına buradan devam et.
           </p>
         </div>
 
@@ -53,7 +58,9 @@ export default async function ProtectedAppPage() {
             className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
             href="/app/settings"
           >
-            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span className="material-symbols-outlined text-[20px]">
+              settings
+            </span>
             Ayarlar
           </Link>
           <form action="/api/auth/logout" method="post">
@@ -71,7 +78,11 @@ export default async function ProtectedAppPage() {
         <StatusCard
           icon="public"
           label="Aile evreni"
-          title={state.hasHousehold ? state.householdName ?? "Kuruldu" : "Henüz kurulmadı"}
+          title={
+            state.hasHousehold
+              ? (state.householdName ?? "Kuruldu")
+              : "Henüz kurulmadı"
+          }
           body={
             state.hasHousehold
               ? "Aile alanın hazır. Yeni çocuk profili ekleyebilir veya mevcut profilleri yönetebilirsin."
@@ -90,7 +101,11 @@ export default async function ProtectedAppPage() {
               : "Henüz çocuk profili yok. Karakter ve hikaye akışından önce en az bir profil eklenmeli."
           }
           href={state.hasHousehold ? "/app/onboarding" : "/app/onboarding"}
-          cta={state.childProfileCount > 0 ? "Yeni profil ekle" : "İlk profili ekle"}
+          cta={
+            state.childProfileCount > 0
+              ? "Yeni profil ekle"
+              : "İlk profili ekle"
+          }
         />
         <StatusCard
           icon="auto_awesome"
@@ -101,7 +116,11 @@ export default async function ProtectedAppPage() {
               ? "Seçili çocuk profili için manual veya auto origin package ile ilk karakteri başlatabilirsin."
               : "Karakter başlatmak için önce aile evreni ve en az bir çocuk profili gerekiyor."
           }
-          href={firstProfile ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}` : "/app/onboarding"}
+          href={
+            firstProfile
+              ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}`
+              : "/app/onboarding"
+          }
           cta={setupComplete ? "Karakter başlat" : "Kuruluma devam et"}
         />
       </section>
@@ -113,7 +132,9 @@ export default async function ProtectedAppPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
                 Profil listesi
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-on-surface">Çocuklar</h2>
+              <h2 className="mt-2 text-2xl font-bold text-on-surface">
+                Çocuklar
+              </h2>
             </div>
             <Link
               className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
@@ -126,9 +147,13 @@ export default async function ProtectedAppPage() {
           {state.childProfiles.length === 0 ? (
             <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-5 py-10 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-                <span className="material-symbols-outlined text-[28px]">person_add</span>
+                <span className="material-symbols-outlined text-[28px]">
+                  person_add
+                </span>
               </div>
-              <h3 className="text-lg font-bold text-on-surface">Çocuk profili yok</h3>
+              <h3 className="text-lg font-bold text-on-surface">
+                Çocuk profili yok
+              </h3>
               <p className="mx-auto mt-2 max-w-[34rem] text-sm leading-6 text-on-surface-variant">
                 Bu ekrandan kuruluma giderek ilk çocuk profilini ekleyebilirsin.
               </p>
@@ -148,11 +173,17 @@ export default async function ProtectedAppPage() {
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-                      <span className="material-symbols-outlined text-[24px]">face</span>
+                      <span className="material-symbols-outlined text-[24px]">
+                        face
+                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-bold text-on-surface">{profile.displayName}</h3>
-                      <p className="mt-1 text-sm text-on-surface-variant">Yaş grubu: {profile.ageBand}</p>
+                      <h3 className="text-lg font-bold text-on-surface">
+                        {profile.displayName}
+                      </h3>
+                      <p className="mt-1 text-sm text-on-surface-variant">
+                        Yaş grubu: {profile.ageBand}
+                      </p>
                     </div>
                   </div>
                   <div className="mt-5 flex flex-col gap-2 sm:flex-row">
@@ -190,7 +221,11 @@ export default async function ProtectedAppPage() {
           <div className="mt-6 flex flex-col gap-3">
             <Link
               className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
-              href={setupComplete && firstProfile ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}` : "/app/onboarding"}
+              href={
+                setupComplete && firstProfile
+                  ? `/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}`
+                  : "/app/onboarding"
+              }
             >
               {setupComplete ? "Karakter başlat" : "Kuruluma git"}
             </Link>

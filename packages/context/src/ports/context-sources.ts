@@ -96,23 +96,33 @@ export interface OriginPackageItem {
 }
 
 export interface SafetyPolicySource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<SafetyPolicyItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<SafetyPolicyItem>>;
 }
 
 export interface ParentPolicySource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<ParentPolicyItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<ParentPolicyItem>>;
 }
 
 export interface WorkingStorySource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<WorkingStoryItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<WorkingStoryItem>>;
 }
 
 export interface EmotionalStateSource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<EmotionalStateItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<EmotionalStateItem>>;
 }
 
 export interface LongTermMemorySource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<LongTermMemoryItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<LongTermMemoryItem>>;
 }
 
 export interface KnowledgeSource {
@@ -124,7 +134,9 @@ export interface WorldSource {
 }
 
 export interface OriginPackageSource {
-  fetch(request: ContextRequest): Promise<ContextSourceResult<OriginPackageItem>>;
+  fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<OriginPackageItem>>;
 }
 
 export interface ContextSection {

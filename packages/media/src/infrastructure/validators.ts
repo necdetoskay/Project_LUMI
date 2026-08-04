@@ -1,9 +1,6 @@
 import { TextDecoder } from "node:util";
 
-import type {
-  ConsistencyFinding,
-  SafetyFinding,
-} from "../domain/findings";
+import type { ConsistencyFinding, SafetyFinding } from "../domain/findings";
 import type { CharacterVisualIdentity } from "../domain/identity";
 import type {
   MediaConsistencyValidatorPort,

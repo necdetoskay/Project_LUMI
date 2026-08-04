@@ -48,7 +48,9 @@ export function buildAuthAuditEvent(input: BuildAuthAuditEventInput) {
   return {
     action: input.action,
     clientIpHash: hashValue(input.clientIp),
-    emailHash: input.email ? hashValue(input.email.trim().toLowerCase()) : undefined,
+    emailHash: input.email
+      ? hashValue(input.email.trim().toLowerCase())
+      : undefined,
     event: "auth.audit",
     outcome: input.outcome,
     parentId: input.parentId,
@@ -61,6 +63,8 @@ export function logAuthAuditEvent(input: BuildAuthAuditEventInput) {
   logger.info("auth.audit", `${input.action}:${input.outcome}`, {
     ...(redact(buildAuthAuditEvent(input)) as Record<string, unknown>),
     clientIpHash: hashValue(input.clientIp),
-    emailHash: input.email ? hashValue(input.email.trim().toLowerCase()) : undefined,
+    emailHash: input.email
+      ? hashValue(input.email.trim().toLowerCase())
+      : undefined,
   });
 }

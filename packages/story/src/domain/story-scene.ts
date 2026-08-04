@@ -1,6 +1,10 @@
 import type { SceneType, TransitionType } from "./story-types";
 import { ValidationError } from "./errors";
-import { validateNarrativeText, validateSceneKey, validateSequence } from "./validation";
+import {
+  validateNarrativeText,
+  validateSceneKey,
+  validateSequence,
+} from "./validation";
 
 export interface CreateStorySceneInput {
   storyVersionId: string;
@@ -88,10 +92,16 @@ export class StorySceneTransition {
   ): void {
     for (const t of transitions) {
       if (t.storyVersionId !== versionId) {
-        throw new ValidationError("INVALID_TRANSITION_SCOPE", "Transition must belong to the same story version");
+        throw new ValidationError(
+          "INVALID_TRANSITION_SCOPE",
+          "Transition must belong to the same story version",
+        );
       }
       if (!sceneIds.has(t.fromSceneId) || !sceneIds.has(t.toSceneId)) {
-        throw new ValidationError("INVALID_TRANSITION_SCOPE", "Transition endpoints must reference scenes in the same version");
+        throw new ValidationError(
+          "INVALID_TRANSITION_SCOPE",
+          "Transition endpoints must reference scenes in the same version",
+        );
       }
     }
   }

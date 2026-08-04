@@ -51,5 +51,7 @@ export const archetypeSuggestionBatches = profileSchema.table(
   },
 );
 
-export type ArchetypeSuggestionBatchRecord = typeof archetypeSuggestionBatches.$inferSelect;
-export type NewArchetypeSuggestionBatchRecord = typeof archetypeSuggestionBatches.$inferInsert;
+export type ArchetypeSuggestionBatchRecord =
+  typeof archetypeSuggestionBatches.$inferSelect;
+export type NewArchetypeSuggestionBatchRecord =
+  typeof archetypeSuggestionBatches.$inferInsert;

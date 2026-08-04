@@ -18,7 +18,10 @@ export const characterGoals = profileSchema.table(
     completedAt: timestamp("completed_at"),
   },
   (table) => ({
-    charIdx: index("character_goals_char_idx").on(table.characterId, table.status),
+    charIdx: index("character_goals_char_idx").on(
+      table.characterId,
+      table.status,
+    ),
   }),
 );
 

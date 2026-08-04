@@ -113,16 +113,27 @@ describe("PromptService", () => {
     });
     const result = await publishPromptVersion(versionId);
     expect(result!.status).toBe("published");
-    expect(mockRepo.publishVersion).toHaveBeenCalledWith(expect.anything(), versionId);
+    expect(mockRepo.publishVersion).toHaveBeenCalledWith(
+      expect.anything(),
+      versionId,
+    );
   });
 
   it("rejects publishing an already published version", async () => {
-    vi.mocked(mockRepo.getVersionById).mockResolvedValueOnce(publishedVersionRecord());
-    await expect(publishPromptVersion(versionId)).rejects.toThrow(ValidationError);
+    vi.mocked(mockRepo.getVersionById).mockResolvedValueOnce(
+      publishedVersionRecord(),
+    );
+    await expect(publishPromptVersion(versionId)).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it("activates a published version", async () => {
-    const result = await activatePromptVersion(registryId, versionId, householdId);
+    const result = await activatePromptVersion(
+      registryId,
+      versionId,
+      householdId,
+    );
     expect(result.activeVersionId).toBe(versionId);
     expect(mockRepo.activateVersion).toHaveBeenCalledWith(
       expect.anything(),
@@ -138,9 +149,9 @@ describe("PromptService", () => {
       status: "draft",
       publishedAt: null,
     });
-    await expect(activatePromptVersion(registryId, versionId, householdId)).rejects.toThrow(
-      ValidationError,
-    );
+    await expect(
+      activatePromptVersion(registryId, versionId, householdId),
+    ).rejects.toThrow(ValidationError);
   });
 
   it("gets the active version", async () => {
@@ -155,6 +166,8 @@ describe("PromptService", () => {
   });
 
   it("throws when rendering active prompt with missing variable", async () => {
-    await expect(renderActivePrompt(registryId, {})).rejects.toThrow(ValidationError);
+    await expect(renderActivePrompt(registryId, {})).rejects.toThrow(
+      ValidationError,
+    );
   });
 });

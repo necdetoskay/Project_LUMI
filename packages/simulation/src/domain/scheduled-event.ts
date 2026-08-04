@@ -50,7 +50,11 @@ export interface CreateScheduledEventInput {
   payload?: Record<string, unknown>;
 }
 
-export type SimulationRunStatus = "planned" | "running" | "completed" | "failed";
+export type SimulationRunStatus =
+  | "planned"
+  | "running"
+  | "completed"
+  | "failed";
 
 export interface SimulationRunState {
   id: string;

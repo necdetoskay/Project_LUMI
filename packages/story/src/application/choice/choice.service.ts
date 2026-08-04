@@ -37,7 +37,10 @@ export interface CreateChoicePointServiceInput extends CreateChoicePointInput {
   options: CreateChoiceOptionServiceInput[];
 }
 
-export type CreateChoiceOptionServiceInput = Omit<CreateChoiceOptionInput, "choicePointId"> & {
+export type CreateChoiceOptionServiceInput = Omit<
+  CreateChoiceOptionInput,
+  "choicePointId"
+> & {
   choicePointId?: string | undefined;
 };
 
@@ -47,7 +50,9 @@ export async function createChoicePoint(input: CreateChoicePointServiceInput) {
 
   const point = ChoicePoint.create(input);
   const pointState = point.getState();
-  const options = input.options.map((o) => ChoiceOption.create({ ...o, choicePointId: point.id }));
+  const options = input.options.map((o) =>
+    ChoiceOption.create({ ...o, choicePointId: point.id }),
+  );
 
   return db.transaction(async (tx) => {
     const pointRecord = await repo.createChoicePoint(tx, pointState);
@@ -109,7 +114,14 @@ export async function evaluateChoicePointAvailability(
   activeSceneId: string,
   storyVersionId: string,
   checkpointHash: string,
-): Promise<{ point: unknown; options: Array<{ option: unknown; available: boolean; reason?: string | undefined }> }> {
+): Promise<{
+  point: unknown;
+  options: Array<{
+    option: unknown;
+    available: boolean;
+    reason?: string | undefined;
+  }>;
+}> {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
 
@@ -119,8 +131,17 @@ export async function evaluateChoicePointAvailability(
   }
 
   const options = await repo.findChoiceOptionsByPoint(db, choicePointId);
-  const committedChoices = await repo.findCommittedChoicesBySession(db, sessionId);
-  const context = buildRuleContext(sessionId, activeSceneId, storyVersionId, checkpointHash, committedChoices);
+  const committedChoices = await repo.findCommittedChoicesBySession(
+    db,
+    sessionId,
+  );
+  const context = buildRuleContext(
+    sessionId,
+    activeSceneId,
+    storyVersionId,
+    checkpointHash,
+    committedChoices,
+  );
 
   const evaluatedOptions = options.map((option) => {
     const rule = option.availabilityRule as ChoiceAvailabilityRule | null;
@@ -153,7 +174,11 @@ export async function commitChoice(input: CommitChoiceInput) {
     throw new NotFoundError("ChoiceOption", input.optionId);
   }
 
-  const existing = await repo.findCommittedChoiceByPoint(db, input.storySessionId, input.choicePointId);
+  const existing = await repo.findCommittedChoiceByPoint(
+    db,
+    input.storySessionId,
+    input.choicePointId,
+  );
   if (existing) {
     assertSingleCommit(existing, input.optionId);
     return existing;
@@ -163,11 +188,20 @@ export async function commitChoice(input: CommitChoiceInput) {
   if (!session) {
     throw new NotFoundError("StorySession", input.storySessionId);
   }
-  if (session.sessionStatus !== "active" && session.sessionStatus !== "paused") {
-    throw new ValidationError("SESSION_NOT_ACTIVE", "Choices can only be committed in active or paused sessions");
+  if (
+    session.sessionStatus !== "active" &&
+    session.sessionStatus !== "paused"
+  ) {
+    throw new ValidationError(
+      "SESSION_NOT_ACTIVE",
+      "Choices can only be committed in active or paused sessions",
+    );
   }
 
-  const committedChoices = await repo.findCommittedChoicesBySession(db, input.storySessionId);
+  const committedChoices = await repo.findCommittedChoicesBySession(
+    db,
+    input.storySessionId,
+  );
   const context = buildRuleContext(
     input.storySessionId,
     session.currentSceneId ?? input.evidenceSceneId,
@@ -175,10 +209,14 @@ export async function commitChoice(input: CommitChoiceInput) {
     await hashSessionContext(session),
     committedChoices,
   );
-  const optionAvailability = option.availabilityRule as ChoiceAvailabilityRule | null;
+  const optionAvailability =
+    option.availabilityRule as ChoiceAvailabilityRule | null;
   const availability = evaluateOptionAvailability(optionAvailability, context);
   if (!availability.available) {
-    throw new ValidationError("OPTION_NOT_AVAILABLE", availability.reason ?? "This option is not available");
+    throw new ValidationError(
+      "OPTION_NOT_AVAILABLE",
+      availability.reason ?? "This option is not available",
+    );
   }
 
   const committed = CommittedChoice.create({
@@ -206,7 +244,10 @@ export async function commitChoice(input: CommitChoiceInput) {
 
   return db.transaction(async (tx) => {
     const record = await repo.createCommittedChoice(tx, committed.getState());
-    const consequenceRecord = await repo.createChoiceConsequence(tx, consequence.getState());
+    const consequenceRecord = await repo.createChoiceConsequence(
+      tx,
+      consequence.getState(),
+    );
 
     await recordStoryEventWithTx(tx, {
       storySessionId: input.storySessionId,
@@ -261,7 +302,9 @@ export async function getChoiceHistory(sessionId: string) {
   return repo.findCommittedChoicesBySession(db, sessionId);
 }
 
-export async function createOutcomeCandidate(input: CreateOutcomeCandidateInput) {
+export async function createOutcomeCandidate(
+  input: CreateOutcomeCandidateInput,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const candidate = OutcomeCandidate.create(input);

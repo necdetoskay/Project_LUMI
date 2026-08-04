@@ -3,7 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const appDir = __dirname;
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100";
 const appUrl = new URL(baseURL);
-const appPort = Number(appUrl.port || (appUrl.protocol === "https:" ? 443 : 80));
+const appPort = Number(
+  appUrl.port || (appUrl.protocol === "https:" ? 443 : 80),
+);
 const mockPort = Number(process.env.MOCK_OPENROUTER_PORT ?? 18999);
 const mockBaseUrl = `http://127.0.0.1:${mockPort}/api/v1`;
 
@@ -41,7 +43,8 @@ export default defineConfig({
       env: {
         OPENROUTER_API_BASE_URL: mockBaseUrl,
         LUMI_SETTINGS_ENCRYPTION_KEY:
-          process.env.LUMI_SETTINGS_ENCRYPTION_KEY ?? "lumi-playwright-encryption-key",
+          process.env.LUMI_SETTINGS_ENCRYPTION_KEY ??
+          "lumi-playwright-encryption-key",
         NEXT_DIST_DIR: ".next-e2e",
       },
     },

@@ -20,7 +20,15 @@ export async function getWorldDetail(worldId: string) {
   const worldRecord = await repo.findWorldById(db, worldId);
   if (!worldRecord) throw new NotFoundError("World", worldId);
 
-  const [regions, locations, home, checkpoints, manifest, connections, envSnapshots] = await Promise.all([
+  const [
+    regions,
+    locations,
+    home,
+    checkpoints,
+    manifest,
+    connections,
+    envSnapshots,
+  ] = await Promise.all([
     repo.findRegionsByWorldId(db, worldId),
     repo.findLocationsByWorldId(db, worldId),
     repo.findHomeByWorldId(db, worldId),

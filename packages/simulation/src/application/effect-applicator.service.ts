@@ -34,8 +34,13 @@ export class EffectApplicator {
     return 0;
   }
 
-  async advanceWorldClock(input: AdvanceWorldClockInput): Promise<WorldClockState | null> {
-    const snapshot = await this.worldSource.fetchClock(input.worldId, input.householdId);
+  async advanceWorldClock(
+    input: AdvanceWorldClockInput,
+  ): Promise<WorldClockState | null> {
+    const snapshot = await this.worldSource.fetchClock(
+      input.worldId,
+      input.householdId,
+    );
     if (!snapshot) {
       const clock = WorldClock.create({
         worldId: input.worldId,

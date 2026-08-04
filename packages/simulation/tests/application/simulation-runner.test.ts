@@ -35,7 +35,9 @@ function makeNpcSnapshot(overrides: Partial<NpcSnapshot> = {}): NpcSnapshot {
   };
 }
 
-function makeClockSnapshot(overrides: Partial<WorldClockSnapshot> = {}): WorldClockSnapshot {
+function makeClockSnapshot(
+  overrides: Partial<WorldClockSnapshot> = {},
+): WorldClockSnapshot {
   return {
     worldId: WORLD_ID,
     householdId: HOUSEHOLD_ID,
@@ -63,7 +65,12 @@ class InMemoryStore implements SimulationStorePort {
   async findRun(runId: string): Promise<SimulationRunState | null> {
     return this.runs.find((r) => r.id === runId) ?? null;
   }
-  async findLatestRun(_worldId: string, _householdId: string): Promise<SimulationRunState | null> { return null; }
+  async findLatestRun(
+    _worldId: string,
+    _householdId: string,
+  ): Promise<SimulationRunState | null> {
+    return null;
+  }
   async saveEffect(effect: SimulationEffect): Promise<boolean> {
     const key = `${effect.householdId}:${effect.idempotencyKey}`;
     if (this.idempotency[key]) return false;
@@ -71,28 +78,57 @@ class InMemoryStore implements SimulationStorePort {
     this.effects.push(effect);
     return true;
   }
-  async findEffectsByRun(_runId: string): Promise<SimulationEffect[]> { return []; }
-  async findCommittedEffects(_worldId: string, _householdId: string, after?: Date): Promise<SimulationEffect[]> {
-    return this.effects.filter((e) => e.status === "committed" && (!after || (e.committedAt && e.committedAt >= after)));
+  async findEffectsByRun(_runId: string): Promise<SimulationEffect[]> {
+    return [];
   }
-  async findPendingEffects(_worldId: string, _householdId: string): Promise<SimulationEffect[]> {
+  async findCommittedEffects(
+    _worldId: string,
+    _householdId: string,
+    after?: Date,
+  ): Promise<SimulationEffect[]> {
+    return this.effects.filter(
+      (e) =>
+        e.status === "committed" &&
+        (!after || (e.committedAt && e.committedAt >= after)),
+    );
+  }
+  async findPendingEffects(
+    _worldId: string,
+    _householdId: string,
+  ): Promise<SimulationEffect[]> {
     return this.effects.filter((e) => e.status === "pending");
   }
-  async updateEffectStatus(_effectId: string, _status: string, _committedAt?: Date): Promise<void> {}
+  async updateEffectStatus(
+    _effectId: string,
+    _status: string,
+    _committedAt?: Date,
+  ): Promise<void> {}
   async saveScheduledEvent(event: SimulationScheduledEvent): Promise<void> {
     this.events.push(event);
   }
-  async updateScheduledEventResolved(eventId: string, resolvedAt: Date): Promise<void> {
+  async updateScheduledEventResolved(
+    eventId: string,
+    resolvedAt: Date,
+  ): Promise<void> {
     const event = this.events.find((e) => e.id === eventId);
     if (event) {
       event.resolved = true;
       event.resolvedAt = resolvedAt;
     }
   }
-  async findIdempotencyRecord(_householdId: string, _operationType: string, key: string): Promise<string | undefined> {
+  async findIdempotencyRecord(
+    _householdId: string,
+    _operationType: string,
+    key: string,
+  ): Promise<string | undefined> {
     return this.idempotency[key];
   }
-  async recordIdempotency(_householdId: string, _operationType: string, key: string, ref: string): Promise<void> {
+  async recordIdempotency(
+    _householdId: string,
+    _operationType: string,
+    key: string,
+    ref: string,
+  ): Promise<void> {
     this.idempotency[key] = ref;
   }
 }
@@ -101,13 +137,17 @@ class InMemoryWorldSource implements WorldSourcePort {
   clock: WorldClockSnapshot;
   npcs: NpcSnapshot[] = [];
   events: SimulationScheduledEvent[] = [];
-  recordedEvents: Array<{ type: string; payload: Record<string, unknown> }> = [];
+  recordedEvents: Array<{ type: string; payload: Record<string, unknown> }> =
+    [];
 
   constructor(clock: WorldClockSnapshot) {
     this.clock = clock;
   }
 
-  async fetchClock(_worldId: string, _householdId: string): Promise<WorldClockSnapshot | null> {
+  async fetchClock(
+    _worldId: string,
+    _householdId: string,
+  ): Promise<WorldClockSnapshot | null> {
     return this.clock;
   }
   async fetchNpcsForWorld(): Promise<NpcSnapshot[]> {
@@ -116,11 +156,21 @@ class InMemoryWorldSource implements WorldSourcePort {
   async fetchChildLastSeen(): Promise<Date | null> {
     return CHILD_LAST_SEEN;
   }
-  async fetchScheduledEvents(_worldId: string, _householdId: string, unresolvedOnly: boolean): Promise<SimulationScheduledEvent[]> {
-    return unresolvedOnly ? this.events.filter((e) => !e.resolved) : this.events;
+  async fetchScheduledEvents(
+    _worldId: string,
+    _householdId: string,
+    unresolvedOnly: boolean,
+  ): Promise<SimulationScheduledEvent[]> {
+    return unresolvedOnly
+      ? this.events.filter((e) => !e.resolved)
+      : this.events;
   }
   async updateClock(): Promise<void> {}
-  async recordWorldEvent(_worldId: string, type: string, payload: Record<string, unknown>): Promise<void> {
+  async recordWorldEvent(
+    _worldId: string,
+    type: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
     this.recordedEvents.push({ type, payload });
   }
   async freezeWorld(): Promise<void> {}
@@ -139,20 +189,13 @@ function createRunner(
   npcSource: InMemoryNpcSource,
 ) {
   const budgetPlanner = new BudgetPlanner();
-  return new SimulationRunner(
-    store,
-    worldSource,
-    npcSource,
-    budgetPlanner,
-  );
+  return new SimulationRunner(store, worldSource, npcSource, budgetPlanner);
 }
 
 describe("SimulationRunner", () => {
   it("freezes and produces no effects for 14-day absence", async () => {
     const store = new InMemoryStore();
-    const worldSource = new InMemoryWorldSource(
-      makeClockSnapshot(),
-    );
+    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
     worldSource.npcs = [
       makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.8 }),
       makeNpcSnapshot({ npcId: NPC_B, relationshipToCharacter: 0.5 }),
@@ -281,7 +324,9 @@ describe("SimulationRunner", () => {
       }
     }
 
-    const committedCount = store.effects.filter((e) => e.status === "committed").length;
+    const committedCount = store.effects.filter(
+      (e) => e.status === "committed",
+    ).length;
     if (committedCount > 0) {
       expect(worldSource.recordedEvents.length).toBe(committedCount);
       for (const event of worldSource.recordedEvents) {
@@ -297,8 +342,16 @@ describe("SimulationRunner", () => {
       makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
     ];
     worldSource.events = [
-      makeScheduledEvent({ critical: true, playerPreserved: true, resolved: false }),
-      makeScheduledEvent({ critical: false, playerPreserved: false, resolved: false }),
+      makeScheduledEvent({
+        critical: true,
+        playerPreserved: true,
+        resolved: false,
+      }),
+      makeScheduledEvent({
+        critical: false,
+        playerPreserved: false,
+        resolved: false,
+      }),
     ];
     const npcSource = new InMemoryNpcSource();
     npcSource.npcs = worldSource.npcs;

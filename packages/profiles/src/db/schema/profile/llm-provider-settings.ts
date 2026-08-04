@@ -1,4 +1,11 @@
-import { boolean, check, index, text, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  text,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { primaryId, timestampColumns } from "../common";
@@ -16,7 +23,9 @@ export const llmProviderSettings = profileSchema.table(
     householdId: varchar("household_id", { length: 128 })
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
-    provider: varchar("provider", { length: 40 }).notNull().default("openrouter"),
+    provider: varchar("provider", { length: 40 })
+      .notNull()
+      .default("openrouter"),
     encryptedApiKey: text("encrypted_api_key"),
     enabled: boolean("enabled").notNull().default(false),
     ...timestampColumns,
@@ -36,4 +45,5 @@ export const llmProviderSettings = profileSchema.table(
 );
 
 export type LlmProviderSettingsRecord = typeof llmProviderSettings.$inferSelect;
-export type NewLlmProviderSettingsRecord = typeof llmProviderSettings.$inferInsert;
+export type NewLlmProviderSettingsRecord =
+  typeof llmProviderSettings.$inferInsert;

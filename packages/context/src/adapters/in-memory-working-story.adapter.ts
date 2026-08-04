@@ -9,7 +9,9 @@ import { workingStoryToItems } from "../application";
 export class InMemoryWorkingStoryAdapter implements WorkingStorySource {
   constructor(private readonly story: WorkingStoryItem) {}
 
-  async fetch(_request: ContextRequest): Promise<ContextSourceResult<WorkingStoryItem>> {
+  async fetch(
+    _request: ContextRequest,
+  ): Promise<ContextSourceResult<WorkingStoryItem>> {
     void _request;
     return {
       sourceRelevance: 1,

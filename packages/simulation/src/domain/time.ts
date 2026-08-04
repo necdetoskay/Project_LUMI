@@ -4,7 +4,15 @@ export type TimePhase = (typeof TIME_PHASES)[number];
 export const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
 export type Season = (typeof SEASONS)[number];
 
-export const TIME_OF_DAY = ["dawn", "morning", "noon", "afternoon", "evening", "dusk", "night"] as const;
+export const TIME_OF_DAY = [
+  "dawn",
+  "morning",
+  "noon",
+  "afternoon",
+  "evening",
+  "dusk",
+  "night",
+] as const;
 export type TimeOfDay = (typeof TIME_OF_DAY)[number];
 
 export interface AbsencePolicySegment {
@@ -92,7 +100,9 @@ export interface AbsencePolicyResult {
   frozen: boolean;
 }
 
-export function computeAbsencePolicy(absence: AbsenceInfo): AbsencePolicyResult {
+export function computeAbsencePolicy(
+  absence: AbsenceInfo,
+): AbsencePolicyResult {
   const days = absence.absentDays;
   for (const segment of ABSENCE_POLICY) {
     if (days >= segment.minDays && days < segment.maxDays) {
@@ -113,7 +123,9 @@ export function computeAbsencePolicy(absence: AbsenceInfo): AbsencePolicyResult 
   };
 }
 
-export function assertKnownTimePhase(value: string): asserts value is TimePhase {
+export function assertKnownTimePhase(
+  value: string,
+): asserts value is TimePhase {
   if (!TIME_PHASES.includes(value as never)) {
     throw new Error(`Invalid time phase: ${value}`);
   }

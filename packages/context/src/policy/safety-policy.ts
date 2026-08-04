@@ -18,7 +18,12 @@ export const BOUNDARY_RANK: Record<SafetyContentBoundary, number> = {
 export const DEFAULT_SAFETY_BASELINE: SafetyBaseline = {
   contentBoundary: "strict",
   requireParentApprovalForAi: true,
-  forbiddenThemes: ["violence", "substance_abuse", "sexual_content", "profanity"],
+  forbiddenThemes: [
+    "violence",
+    "substance_abuse",
+    "sexual_content",
+    "profanity",
+  ],
   maxDailyStoriesCap: 50,
   allowImageGeneration: false,
   allowTts: true,

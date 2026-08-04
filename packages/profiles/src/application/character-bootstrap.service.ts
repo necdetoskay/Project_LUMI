@@ -121,13 +121,19 @@ function cleanPreferenceHints(
 ): StoryPreferenceMetadata | undefined {
   if (!input) return undefined;
   const out: StoryPreferenceMetadata = {};
-  if (Array.isArray(input.preferredThemes) && input.preferredThemes.length > 0) {
+  if (
+    Array.isArray(input.preferredThemes) &&
+    input.preferredThemes.length > 0
+  ) {
     out.preferredThemes = [...input.preferredThemes];
   }
   if (Array.isArray(input.avoidedThemes) && input.avoidedThemes.length > 0) {
     out.avoidedThemes = [...input.avoidedThemes];
   }
-  if (Array.isArray(input.favoriteCharacterTypes) && input.favoriteCharacterTypes.length > 0) {
+  if (
+    Array.isArray(input.favoriteCharacterTypes) &&
+    input.favoriteCharacterTypes.length > 0
+  ) {
     out.favoriteCharacterTypes = [...input.favoriteCharacterTypes];
   }
   return out;
@@ -161,7 +167,10 @@ async function assertScopeAndProfileAlive(
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
-  const profile = await repos.childRepo.findByIdIncludingDeleted(childProfileId, householdId);
+  const profile = await repos.childRepo.findByIdIncludingDeleted(
+    childProfileId,
+    householdId,
+  );
   if (!profile) {
     throw new NotFoundError("ChildProfile", childProfileId);
   }
@@ -194,7 +203,11 @@ function deriveSafetyBounds(
 export async function createOrReplaceFirstRunHandoff(
   userId: string,
   input: CreateHandoffInput,
-): Promise<{ id: string; characterType: CharacterType; originMode: OriginMode }> {
+): Promise<{
+  id: string;
+  characterType: CharacterType;
+  originMode: OriginMode;
+}> {
   const repos = getRepos();
   await assertScopeAndProfileAlive(
     input.householdId,
@@ -232,7 +245,10 @@ export async function createOrReplaceFirstRunHandoff(
     );
   }
 
-  const batch = await repos.batchRepo.findById(input.archetypeBatchId, input.householdId);
+  const batch = await repos.batchRepo.findById(
+    input.archetypeBatchId,
+    input.householdId,
+  );
   if (!batch) {
     throw new ValidationError(
       "ARCHETYPE_BATCH_NOT_FOUND",
@@ -254,9 +270,8 @@ export async function createOrReplaceFirstRunHandoff(
       "archetypeBatchId",
     );
   }
-  const persistedArchetype: PersistedArchetypeSuggestion | undefined = batch.archetypes.find(
-    (a) => a.id === input.archetypeId,
-  );
+  const persistedArchetype: PersistedArchetypeSuggestion | undefined =
+    batch.archetypes.find((a) => a.id === input.archetypeId);
   if (!persistedArchetype) {
     throw new ValidationError(
       "ARCHETYPE_NOT_IN_BATCH",
@@ -272,11 +287,16 @@ export async function createOrReplaceFirstRunHandoff(
     );
   }
   if (
-    !persistedArchetype.title || persistedArchetype.title.length < 2 ||
-    !persistedArchetype.description || persistedArchetype.description.length < 10 ||
-    !persistedArchetype.personalityHook || persistedArchetype.personalityHook.length < 5 ||
-    !persistedArchetype.storyPromise || persistedArchetype.storyPromise.length < 5 ||
-    !Array.isArray(persistedArchetype.themeTags) || persistedArchetype.themeTags.length < 2
+    !persistedArchetype.title ||
+    persistedArchetype.title.length < 2 ||
+    !persistedArchetype.description ||
+    persistedArchetype.description.length < 10 ||
+    !persistedArchetype.personalityHook ||
+    persistedArchetype.personalityHook.length < 5 ||
+    !persistedArchetype.storyPromise ||
+    persistedArchetype.storyPromise.length < 5 ||
+    !Array.isArray(persistedArchetype.themeTags) ||
+    persistedArchetype.themeTags.length < 2
   ) {
     throw new DomainError(
       "INVALID_ARCHETYPE_DATA",
@@ -360,10 +380,7 @@ export async function getCharacterBootstrapStatus(
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
-  const profile = await repos.childRepo.findById(
-    childProfileId,
-    householdId,
-  );
+  const profile = await repos.childRepo.findById(childProfileId, householdId);
   if (!profile) {
     throw new NotFoundError("ChildProfile", childProfileId);
   }
@@ -391,10 +408,7 @@ export async function getCharacterBootstrapStatus(
     householdId,
   );
   const originPackageCount = (
-    await repos.originPkgRepo.listByChildProfile(
-      childProfileId,
-      householdId,
-    )
+    await repos.originPkgRepo.listByChildProfile(childProfileId, householdId)
   ).length;
 
   let character: CharacterSummary | null = null;
@@ -459,10 +473,7 @@ export async function generateAndPersistOriginPackages(
     childProfileId,
     householdId,
   ))!;
-  const policy = await repos.policyRepo.findByHousehold(
-    householdId,
-    userId,
-  );
+  const policy = await repos.policyRepo.findByHousehold(householdId, userId);
   if (!policy) {
     throw new ValidationError(
       "MISSING_PARENT_POLICY",
@@ -497,13 +508,17 @@ export async function generateAndPersistOriginPackages(
     requireParentApprovalForAi: policy.requireParentApprovalForAi,
   });
 
-  const previousBatch = await repos.originPkgRepo.findLatestLlmBatch(childProfileId, householdId);
-  const previousBatchConcepts = previousBatch.length > 0
-    ? previousBatch.map((r) => ({
-        subtype: r.subtype,
-        originConcept: r.payload.originConcept,
-      }))
-    : undefined;
+  const previousBatch = await repos.originPkgRepo.findLatestLlmBatch(
+    childProfileId,
+    householdId,
+  );
+  const previousBatchConcepts =
+    previousBatch.length > 0
+      ? previousBatch.map((r) => ({
+          subtype: r.subtype,
+          originConcept: r.payload.originConcept,
+        }))
+      : undefined;
 
   const selectedArchetype = handoff.payload.selectedArchetype;
 
@@ -616,7 +631,6 @@ export async function consumeHandoffAndCreateCharacter(
       txRepos,
     );
 
-
     const profile = (await txRepos.childRepo.findById(
       input.childProfileId,
       input.householdId,
@@ -685,9 +699,11 @@ export async function consumeHandoffAndCreateCharacter(
     });
 
     const overrides = input.manualOverrides ?? {};
-    const fallbackName = `${(originPackage.subtype.split(" ").slice(0, 2).join(" ") || "Lumi")} ${profile.displayName}`;
+    const fallbackName = `${originPackage.subtype.split(" ").slice(0, 2).join(" ") || "Lumi"} ${profile.displayName}`;
     const finalName = validateCharacterName(
-      (overrides.name && overrides.name.trim()) || fallbackName.slice(0, 118) || "Lumi Karakter",
+      (overrides.name && overrides.name.trim()) ||
+        fallbackName.slice(0, 118) ||
+        "Lumi Karakter",
     );
     const finalDisplaySubtype = validateOriginDisplaySubtype(
       (overrides.subtype && overrides.subtype.trim()) || originPackage.subtype,
@@ -748,7 +764,9 @@ export async function consumeHandoffAndCreateCharacter(
       firstMysterySeed: state.firstMysterySeed,
       universeSeed: state.universeSeed,
       safetyBounds: state.safetyBounds,
-      ...(state.preferenceHints ? { preferenceHints: state.preferenceHints } : {}),
+      ...(state.preferenceHints
+        ? { preferenceHints: state.preferenceHints }
+        : {}),
     })) as LumiCharacterRecord;
 
     await txRepos.originPkgRepo.markAccepted(
@@ -806,20 +824,22 @@ export async function listCharactersByChildProfile(
     householdId,
   );
   if (!record) return [];
-  return [{
-    id: record.id,
-    householdId: record.householdId,
-    childProfileId: record.childProfileId,
-    name: record.name,
-    broadKind: record.broadKind as BroadCharacterKind,
-    characterType: record.characterType as CharacterType,
-    subtype: record.subtype,
-    originMode: record.originMode as OriginMode,
-    originConcept: record.originConcept,
-    startingLocation: record.startingLocation,
-    homeArchetype: record.homeArchetype,
-    createdAt: record.createdAt,
-  }];
+  return [
+    {
+      id: record.id,
+      householdId: record.householdId,
+      childProfileId: record.childProfileId,
+      name: record.name,
+      broadKind: record.broadKind as BroadCharacterKind,
+      characterType: record.characterType as CharacterType,
+      subtype: record.subtype,
+      originMode: record.originMode as OriginMode,
+      originConcept: record.originConcept,
+      startingLocation: record.startingLocation,
+      homeArchetype: record.homeArchetype,
+      createdAt: record.createdAt,
+    },
+  ];
 }
 
 export async function listCharactersByHousehold(

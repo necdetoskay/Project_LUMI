@@ -8,7 +8,9 @@ import {
 export class InMemoryParentPolicyAdapter implements ParentPolicySource {
   constructor(private readonly policy: ParentPolicyItem) {}
 
-  async fetch(_request: ContextRequest): Promise<ContextSourceResult<ParentPolicyItem>> {
+  async fetch(
+    _request: ContextRequest,
+  ): Promise<ContextSourceResult<ParentPolicyItem>> {
     void _request;
     return {
       sourceRelevance: 1,

@@ -82,7 +82,11 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     const { expectedVersion, ...updateData } = input;
     const result = await this.db
       .update(lumiCharacters)
-      .set({ ...updateData, updatedAt: new Date(), version: sql`${lumiCharacters.version} + 1` })
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+        version: sql`${lumiCharacters.version} + 1`,
+      })
       .where(
         and(
           eq(lumiCharacters.id, id),

@@ -1,4 +1,8 @@
-import type { SimulationStorePort, WorldSourcePort, NpcSourcePort } from "../ports";
+import type {
+  SimulationStorePort,
+  WorldSourcePort,
+  NpcSourcePort,
+} from "../ports";
 import type {
   SimulationEffect,
   SimulationRunState,
@@ -68,7 +72,10 @@ export class SimulationRunner {
     const policy: AbsencePolicyResult = computeAbsencePolicy(absence);
     const { phase, budgetTokens, frozen } = policy;
 
-    const clockSnapshot = await this.worldSource.fetchClock(input.worldId, input.householdId);
+    const clockSnapshot = await this.worldSource.fetchClock(
+      input.worldId,
+      input.householdId,
+    );
     const clockHash = clockSnapshot?.clockHash ?? "";
 
     if (frozen) {
@@ -80,7 +87,12 @@ export class SimulationRunner {
         childAbsentDays: absence.absentDays,
         timePhase: phase,
         budgetTokens: 0,
-        runHash: hashStable({ worldId: input.worldId, phase, seed: input.seed, clockHash }),
+        runHash: hashStable({
+          worldId: input.worldId,
+          phase,
+          seed: input.seed,
+          clockHash,
+        }),
         status: "completed",
         startedAt: input.now,
         completedAt: input.now,
@@ -92,7 +104,10 @@ export class SimulationRunner {
       return { runState, effects: [], committedCount: 0, frozen: true };
     }
 
-    const npcs = await this.npcSource.fetchSnapshots(input.worldId, input.householdId);
+    const npcs = await this.npcSource.fetchSnapshots(
+      input.worldId,
+      input.householdId,
+    );
     const budgetPlan: BudgetPlan = this.budgetPlanner.plan(
       input.worldId,
       input.householdId,
@@ -102,12 +117,7 @@ export class SimulationRunner {
       input.now,
     );
 
-    const effects = await this.generateEffects(
-      input,
-      policy,
-      budgetPlan,
-      npcs,
-    );
+    const effects = await this.generateEffects(input, policy, budgetPlan, npcs);
 
     const committedEffects = effects.filter((e) => e.status === "committed");
     for (const effect of committedEffects) {
@@ -187,7 +197,8 @@ export class SimulationRunner {
       const npc = npcs.find((n) => n.npcId === alloc.npcId);
       if (!npc) continue;
 
-      const shouldDecide = segment.allowNpcDecisions && alloc.tokens > 0 && rng.random() < 0.4;
+      const shouldDecide =
+        segment.allowNpcDecisions && alloc.tokens > 0 && rng.random() < 0.4;
       if (shouldDecide) {
         effects.push({
           id: crypto.randomUUID(),
@@ -291,7 +302,11 @@ export class SimulationRunner {
     return effects;
   }
 
-  private pickNpcAction(npc: NpcSnapshot, phase: string, rng: SeededRng): string {
+  private pickNpcAction(
+    npc: NpcSnapshot,
+    phase: string,
+    rng: SeededRng,
+  ): string {
     const actions = [
       "rested at home",
       "tended the garden",

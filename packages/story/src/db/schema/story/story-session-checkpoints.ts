@@ -1,4 +1,12 @@
-import { check, index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
@@ -14,17 +22,27 @@ export const storySessionCheckpoints = storySchema.table(
     sessionState: jsonb("session_state").notNull().default({}),
     contentHash: varchar("content_hash", { length: 128 }).notNull(),
     sequenceNumber: integer("sequence_number").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    index("story_session_checkpoint_session_idx").on(table.storySessionId, table.sequenceNumber),
+    index("story_session_checkpoint_session_idx").on(
+      table.storySessionId,
+      table.sequenceNumber,
+    ),
     check(
       "story_session_checkpoint_type_check",
       sql`${table.checkpointType} IN ('automatic', 'manual', 'choice', 'chapter', 'recovery')`,
     ),
-    check("story_session_checkpoint_sequence_check", sql`${table.sequenceNumber} >= 0`),
+    check(
+      "story_session_checkpoint_sequence_check",
+      sql`${table.sequenceNumber} >= 0`,
+    ),
   ],
 );
 
-export type StorySessionCheckpointRecord = typeof storySessionCheckpoints.$inferSelect;
-export type NewStorySessionCheckpointRecord = typeof storySessionCheckpoints.$inferInsert;
+export type StorySessionCheckpointRecord =
+  typeof storySessionCheckpoints.$inferSelect;
+export type NewStorySessionCheckpointRecord =
+  typeof storySessionCheckpoints.$inferInsert;

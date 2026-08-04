@@ -4,7 +4,8 @@ const mockFindChildProfileForUser = vi.fn();
 const mockUpdateChildProfile = vi.fn();
 
 vi.mock("@lumi/profiles/application", () => ({
-  findChildProfileForUser: (...args: unknown[]) => mockFindChildProfileForUser(...args),
+  findChildProfileForUser: (...args: unknown[]) =>
+    mockFindChildProfileForUser(...args),
   updateChildProfile: (...args: unknown[]) => mockUpdateChildProfile(...args),
 }));
 
@@ -16,8 +17,14 @@ vi.mock("@/lib/auth/with-parent", () => ({
 import { AuthorizationError } from "@lumi/profiles/domain";
 
 type RouteModule = {
-  GET?: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response>;
-  PATCH?: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response>;
+  GET?: (
+    request: Request,
+    ctx: { params: Promise<{ id: string }> },
+  ) => Promise<Response>;
+  PATCH?: (
+    request: Request,
+    ctx: { params: Promise<{ id: string }> },
+  ) => Promise<Response>;
 };
 
 const PROFILE_ID = "22222222-2222-2222-2222-222222222222";
@@ -32,8 +39,12 @@ function makeRequest(url: string, options: RequestInit = {}): Request {
 describe("S07 - Child Profile Detail API", () => {
   describe("GET /api/child-profiles/[id]", () => {
     it("returns 400 when householdId is missing", async () => {
-      const route = await import("@/app/api/child-profiles/[id]/route") as RouteModule;
-      const req = makeRequest(`http://localhost/api/child-profiles/${PROFILE_ID}`);
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}`,
+      );
       const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
       const res = await route.GET!(req, ctx);
       expect(res.status).toBe(400);
@@ -44,8 +55,12 @@ describe("S07 - Child Profile Detail API", () => {
     it("returns 404 for non-existent profile", async () => {
       mockFindChildProfileForUser.mockResolvedValueOnce(null);
 
-      const route = await import("@/app/api/child-profiles/[id]/route") as RouteModule;
-      const req = makeRequest(`http://localhost/api/child-profiles/${PROFILE_ID}?householdId=h1`);
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}?householdId=h1`,
+      );
       const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
       const res = await route.GET!(req, ctx);
       expect(res.status).toBe(404);
@@ -58,8 +73,12 @@ describe("S07 - Child Profile Detail API", () => {
         new AuthorizationError("User is not a member of this household"),
       );
 
-      const route = await import("@/app/api/child-profiles/[id]/route") as RouteModule;
-      const req = makeRequest(`http://localhost/api/child-profiles/${PROFILE_ID}?householdId=other-family`);
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}?householdId=other-family`,
+      );
       const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
       const res = await route.GET!(req, ctx);
       expect(res.status).toBe(403);
@@ -78,8 +97,12 @@ describe("S07 - Child Profile Detail API", () => {
       };
       mockFindChildProfileForUser.mockResolvedValueOnce(mockProfile);
 
-      const route = await import("@/app/api/child-profiles/[id]/route") as RouteModule;
-      const req = makeRequest(`http://localhost/api/child-profiles/${PROFILE_ID}?householdId=h1`);
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}?householdId=h1`,
+      );
       const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
       const res = await route.GET!(req, ctx);
       expect(res.status).toBe(200);

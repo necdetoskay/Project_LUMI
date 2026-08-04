@@ -25,7 +25,9 @@ export const POST = observeHandler(async (request: Request) => {
     });
 
     if (formRequest) {
-      return redirectWithQuery(request, "/login", { success: "password_reset" });
+      return redirectWithQuery(request, "/login", {
+        success: "password_reset",
+      });
     }
 
     return NextResponse.json({ ok: true });
@@ -36,19 +38,28 @@ export const POST = observeHandler(async (request: Request) => {
         action: "reset_password",
         clientIp,
         outcome: "invalid_input",
-        reason: firstIssue === "PASSWORD_MISMATCH" ? firstIssue : "INVALID_RESET_INPUT",
+        reason:
+          firstIssue === "PASSWORD_MISMATCH"
+            ? firstIssue
+            : "INVALID_RESET_INPUT",
       });
 
       if (formRequest) {
         return redirectWithQuery(request, "/reset-password", {
-          error: firstIssue === "PASSWORD_MISMATCH" ? "password_mismatch" : "invalid_reset_input",
+          error:
+            firstIssue === "PASSWORD_MISMATCH"
+              ? "password_mismatch"
+              : "invalid_reset_input",
           token,
         });
       }
 
       return NextResponse.json(
         {
-          error: firstIssue === "PASSWORD_MISMATCH" ? "PASSWORD_MISMATCH" : "INVALID_RESET_INPUT",
+          error:
+            firstIssue === "PASSWORD_MISMATCH"
+              ? "PASSWORD_MISMATCH"
+              : "INVALID_RESET_INPUT",
         },
         { status: 400 },
       );
@@ -69,7 +80,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
       }
 
-      return NextResponse.json({ error: "INVALID_RESET_TOKEN" }, { status: 401 });
+      return NextResponse.json(
+        { error: "INVALID_RESET_TOKEN" },
+        { status: 401 },
+      );
     }
 
     logAuthAuditEvent({
@@ -86,6 +100,9 @@ export const POST = observeHandler(async (request: Request) => {
       });
     }
 
-    return NextResponse.json({ error: "PASSWORD_RESET_FAILED" }, { status: 500 });
+    return NextResponse.json(
+      { error: "PASSWORD_RESET_FAILED" },
+      { status: 500 },
+    );
   }
 });

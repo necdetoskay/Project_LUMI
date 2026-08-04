@@ -51,7 +51,14 @@ describe("BudgetPlanner", () => {
     ];
     const now = new Date("2026-08-05T10:00:00Z");
 
-    const plan = planner.plan(WORLD_ID, HOUSEHOLD_ID, "reduced", 200, npcs, now);
+    const plan = planner.plan(
+      WORLD_ID,
+      HOUSEHOLD_ID,
+      "reduced",
+      200,
+      npcs,
+      now,
+    );
 
     expect(plan.totalBudget).toBe(100);
   });
@@ -62,7 +69,14 @@ describe("BudgetPlanner", () => {
     ];
     const now = new Date("2026-08-08T10:00:00Z");
 
-    const plan = planner.plan(WORLD_ID, HOUSEHOLD_ID, "limited", 200, npcs, now);
+    const plan = planner.plan(
+      WORLD_ID,
+      HOUSEHOLD_ID,
+      "limited",
+      200,
+      npcs,
+      now,
+    );
 
     expect(plan.totalBudget).toBe(40);
   });
@@ -103,7 +117,9 @@ describe("BudgetPlanner", () => {
 
     const plan = planner.plan(WORLD_ID, HOUSEHOLD_ID, "normal", 200, npcs, now);
 
-    const lowNpc = plan.relevanceBubble!.entities.find((e) => e.entityId === NPC_B);
+    const lowNpc = plan.relevanceBubble!.entities.find(
+      (e) => e.entityId === NPC_B,
+    );
     expect(lowNpc).toBeFalsy();
   });
 });

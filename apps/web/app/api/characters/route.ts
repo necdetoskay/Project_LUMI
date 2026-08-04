@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
-import { listCharactersByHousehold, listCharactersByChildProfile } from "@lumi/profiles/application";
+import {
+  listCharactersByHousehold,
+  listCharactersByChildProfile,
+} from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const GET = observeHandler(async (request: Request) => {
@@ -37,8 +40,14 @@ export const GET = observeHandler(async (request: Request) => {
     } catch (error) {
       const err = error as Error & { code?: string };
       const message = err.message ?? "Unknown error";
-      if (err.name === "AuthorizationError" || message.includes("not a member")) {
-        return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+      if (
+        err.name === "AuthorizationError" ||
+        message.includes("not a member")
+      ) {
+        return NextResponse.json(
+          { error: "FORBIDDEN", message },
+          { status: 403 },
+        );
       }
       return NextResponse.json(
         { error: "INTERNAL_ERROR", message: "Failed to list characters" },

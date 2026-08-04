@@ -9,8 +9,12 @@ export type AuthenticatedHandler = (parent: {
   displayName: string;
 }) => Promise<NextResponse>;
 
-export async function withParent(handler: AuthenticatedHandler): Promise<NextResponse> {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+export async function withParent(
+  handler: AuthenticatedHandler,
+): Promise<NextResponse> {
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
 
   if (!parent) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });

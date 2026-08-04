@@ -23,7 +23,9 @@ describe("validation", () => {
     });
 
     it("rejects invalid status", () => {
-      expect(() => validateWorldLifecycleStatus("invalid")).toThrow(ValidationError);
+      expect(() => validateWorldLifecycleStatus("invalid")).toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -41,7 +43,9 @@ describe("validation", () => {
     });
 
     it("rejects too long", () => {
-      expect(() => validateDisplayName("x".repeat(201))).toThrow(ValidationError);
+      expect(() => validateDisplayName("x".repeat(201))).toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -84,7 +88,9 @@ describe("validation", () => {
       expect(validateRegionAccessibilityStatus("open")).toBe("open");
     });
     it("rejects invalid", () => {
-      expect(() => validateRegionAccessibilityStatus("nope")).toThrow(ValidationError);
+      expect(() => validateRegionAccessibilityStatus("nope")).toThrow(
+        ValidationError,
+      );
     });
   });
 

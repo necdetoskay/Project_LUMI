@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { clearParentSessionCookie, getParentSessionCookie } from "@/lib/auth/http";
+import {
+  clearParentSessionCookie,
+  getParentSessionCookie,
+} from "@/lib/auth/http";
 import { revokeParentSession } from "@/lib/auth/service";
 import { isFormRequest, redirectWithQuery } from "@/lib/http/response";
 import { observeHandler } from "@/lib/observability/observed-api-route";

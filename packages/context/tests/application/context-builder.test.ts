@@ -27,17 +27,28 @@ import {
   createMinimalRequest,
 } from "../fixtures/contexts";
 
-function createBuilder(budget = testBudget, overrides: Partial<{
-  safetyPolicy: typeof testSafetyPolicy;
-  parentPolicy: typeof testParentPolicy;
-}> = {}) {
+function createBuilder(
+  budget = testBudget,
+  overrides: Partial<{
+    safetyPolicy: typeof testSafetyPolicy;
+    parentPolicy: typeof testParentPolicy;
+  }> = {},
+) {
   return new ContextBuilder(
     {
-      safetyPolicySource: new InMemorySafetyPolicyAdapter(overrides.safetyPolicy ?? testSafetyPolicy),
-      parentPolicySource: new InMemoryParentPolicyAdapter(overrides.parentPolicy ?? testParentPolicy),
+      safetyPolicySource: new InMemorySafetyPolicyAdapter(
+        overrides.safetyPolicy ?? testSafetyPolicy,
+      ),
+      parentPolicySource: new InMemoryParentPolicyAdapter(
+        overrides.parentPolicy ?? testParentPolicy,
+      ),
       workingStorySource: new InMemoryWorkingStoryAdapter(testWorkingStory),
-      emotionalStateSource: new InMemoryEmotionalStateAdapter([testEmotionalState]),
-      longTermMemorySource: new InMemoryLongTermMemoryAdapter(testLongTermMemories),
+      emotionalStateSource: new InMemoryEmotionalStateAdapter([
+        testEmotionalState,
+      ]),
+      longTermMemorySource: new InMemoryLongTermMemoryAdapter(
+        testLongTermMemories,
+      ),
       knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
       worldSource: new InMemoryWorldAdapter(testWorld),
       originPackageSource: new InMemoryOriginPackageAdapter(testOriginPackage),
@@ -64,8 +75,14 @@ describe("ContextBuilder", () => {
     it("produces a different manifest when the snapshot changes", async () => {
       const builder = createBuilder();
 
-      const first = await builder.build({ ...testRequest, snapshot: { seed: 1 } });
-      const second = await builder.build({ ...testRequest, snapshot: { seed: 2 } });
+      const first = await builder.build({
+        ...testRequest,
+        snapshot: { seed: 1 },
+      });
+      const second = await builder.build({
+        ...testRequest,
+        snapshot: { seed: 2 },
+      });
 
       expect(first.contentHash).not.toBe(second.contentHash);
     });
@@ -103,8 +120,12 @@ describe("ContextBuilder", () => {
       const builder = createBuilder(tightBudget);
       const manifest = await builder.build(testRequest);
 
-      expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(tightBudget.totalTokens);
-      expect(manifest.findings.some((f) => f.code === "SECTION_TRUNCATED")).toBe(true);
+      expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(
+        tightBudget.totalTokens,
+      );
+      expect(
+        manifest.findings.some((f) => f.code === "SECTION_TRUNCATED"),
+      ).toBe(true);
     });
 
     it("keeps safety section intact even when other sections truncate", async () => {
@@ -114,7 +135,9 @@ describe("ContextBuilder", () => {
       const safetySection = manifest.sections.find((s) => s.name === "safety");
       expect(safetySection).toBeDefined();
       expect(safetySection!.items.length).toBeGreaterThan(0);
-      expect(safetySection!.tokensUsed).toBeLessThanOrEqual(tightBudget.safetyTokens);
+      expect(safetySection!.tokensUsed).toBeLessThanOrEqual(
+        tightBudget.safetyTokens,
+      );
     });
   });
 
@@ -129,8 +152,12 @@ describe("ContextBuilder", () => {
           },
           parentPolicySource: new InMemoryParentPolicyAdapter(testParentPolicy),
           workingStorySource: new InMemoryWorkingStoryAdapter(testWorkingStory),
-          emotionalStateSource: new InMemoryEmotionalStateAdapter([testEmotionalState]),
-          longTermMemorySource: new InMemoryLongTermMemoryAdapter(testLongTermMemories),
+          emotionalStateSource: new InMemoryEmotionalStateAdapter([
+            testEmotionalState,
+          ]),
+          longTermMemorySource: new InMemoryLongTermMemoryAdapter(
+            testLongTermMemories,
+          ),
           knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
           worldSource: new InMemoryWorldAdapter(testWorld),
         },
@@ -139,8 +166,14 @@ describe("ContextBuilder", () => {
 
       const manifest = await failingBuilder.build(testRequest);
 
-      expect(manifest.findings.some((f) => f.code === "SOURCE_FETCH_FAILED" && f.section === "safety")).toBe(true);
-      expect(manifest.sections.find((s) => s.name === "safety")!.items).toHaveLength(0);
+      expect(
+        manifest.findings.some(
+          (f) => f.code === "SOURCE_FETCH_FAILED" && f.section === "safety",
+        ),
+      ).toBe(true);
+      expect(
+        manifest.sections.find((s) => s.name === "safety")!.items,
+      ).toHaveLength(0);
     });
 
     it("records a finding when parent policy is empty", async () => {
@@ -151,8 +184,12 @@ describe("ContextBuilder", () => {
             fetch: async () => ({ items: [], sourceRelevance: 0 }),
           },
           workingStorySource: new InMemoryWorkingStoryAdapter(testWorkingStory),
-          emotionalStateSource: new InMemoryEmotionalStateAdapter([testEmotionalState]),
-          longTermMemorySource: new InMemoryLongTermMemoryAdapter(testLongTermMemories),
+          emotionalStateSource: new InMemoryEmotionalStateAdapter([
+            testEmotionalState,
+          ]),
+          longTermMemorySource: new InMemoryLongTermMemoryAdapter(
+            testLongTermMemories,
+          ),
           knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
           worldSource: new InMemoryWorldAdapter(testWorld),
         },
@@ -161,40 +198,66 @@ describe("ContextBuilder", () => {
 
       const manifest = await builder.build(testRequest);
 
-      expect(manifest.findings.some((f) => f.code === "MISSING_PARENT_POLICY")).toBe(true);
+      expect(
+        manifest.findings.some((f) => f.code === "MISSING_PARENT_POLICY"),
+      ).toBe(true);
     });
   });
 
   describe("safety override", () => {
     it("sanitizes a parent policy that tries to loosen safety rules", async () => {
-      const builder = createBuilder(testBudget, { parentPolicy: createLooseningParentPolicy() });
+      const builder = createBuilder(testBudget, {
+        parentPolicy: createLooseningParentPolicy(),
+      });
       const manifest = await builder.build(testRequest);
 
-      const parentSection = manifest.sections.find((s) => s.name === "parent-policy");
+      const parentSection = manifest.sections.find(
+        (s) => s.name === "parent-policy",
+      );
       expect(parentSection).toBeDefined();
-      const policy = parentSection!.items[0]?.content as { contentBoundary: string; requireParentApprovalForAi: boolean };
+      const policy = parentSection!.items[0]?.content as {
+        contentBoundary: string;
+        requireParentApprovalForAi: boolean;
+      };
       expect(policy.contentBoundary).toBe("strict");
       expect(policy.requireParentApprovalForAi).toBe(true);
-      expect(manifest.findings.some((f) => f.code === "POLICY_LOOSENS_CONTENT_BOUNDARY")).toBe(true);
+      expect(
+        manifest.findings.some(
+          (f) => f.code === "POLICY_LOOSENS_CONTENT_BOUNDARY",
+        ),
+      ).toBe(true);
     });
 
     it("keeps a compliant parent policy unchanged", async () => {
-      const builder = createBuilder(testBudget, { parentPolicy: testParentPolicy });
+      const builder = createBuilder(testBudget, {
+        parentPolicy: testParentPolicy,
+      });
       const manifest = await builder.build(testRequest);
 
-      const parentSection = manifest.sections.find((s) => s.name === "parent-policy");
+      const parentSection = manifest.sections.find(
+        (s) => s.name === "parent-policy",
+      );
       expect(parentSection).toBeDefined();
-      const policy = parentSection!.items[0]?.content as { contentBoundary: string; maxDailyStories: number };
+      const policy = parentSection!.items[0]?.content as {
+        contentBoundary: string;
+        maxDailyStories: number;
+      };
       expect(policy.contentBoundary).toBe("strict");
       expect(policy.maxDailyStories).toBe(5);
-      expect(manifest.findings.some((f) => f.section === "parent-policy" && f.severity === "warning")).toBe(false);
+      expect(
+        manifest.findings.some(
+          (f) => f.section === "parent-policy" && f.severity === "warning",
+        ),
+      ).toBe(false);
     });
   });
 
   describe("validation", () => {
     it("rejects an invalid request", async () => {
       const builder = createBuilder();
-      await expect(builder.build({ ...testRequest, householdId: "" })).rejects.toThrow();
+      await expect(
+        builder.build({ ...testRequest, householdId: "" }),
+      ).rejects.toThrow();
     });
 
     it("accepts a minimal valid request", async () => {
@@ -203,8 +266,12 @@ describe("ContextBuilder", () => {
           safetyPolicySource: new InMemorySafetyPolicyAdapter(testSafetyPolicy),
           parentPolicySource: new InMemoryParentPolicyAdapter(testParentPolicy),
           workingStorySource: new InMemoryWorkingStoryAdapter(testWorkingStory),
-          emotionalStateSource: new InMemoryEmotionalStateAdapter([testEmotionalState]),
-          longTermMemorySource: new InMemoryLongTermMemoryAdapter(testLongTermMemories),
+          emotionalStateSource: new InMemoryEmotionalStateAdapter([
+            testEmotionalState,
+          ]),
+          longTermMemorySource: new InMemoryLongTermMemoryAdapter(
+            testLongTermMemories,
+          ),
           knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
           worldSource: new InMemoryWorldAdapter(testWorld),
         },
@@ -213,7 +280,9 @@ describe("ContextBuilder", () => {
 
       const manifest = await builder.build(createMinimalRequest());
       expect(manifest.sections.length).toBe(8);
-      expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(testBudget.totalTokens);
+      expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(
+        testBudget.totalTokens,
+      );
     });
   });
 });

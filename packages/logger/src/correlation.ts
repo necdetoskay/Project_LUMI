@@ -2,7 +2,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 export const correlationStorage = new AsyncLocalStorage<string>();
 
-const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_V4_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function generateCorrelationId(): string {
   return crypto.randomUUID();

@@ -105,9 +105,14 @@ export class WorldClock {
 
   advance(realElapsedSeconds: number): AdvanceClockResult {
     const GAME_SECONDS_PER_REAL_SECOND = 120;
-    const totalGameSeconds = Math.floor(realElapsedSeconds * GAME_SECONDS_PER_REAL_SECOND);
+    const totalGameSeconds = Math.floor(
+      realElapsedSeconds * GAME_SECONDS_PER_REAL_SECOND,
+    );
 
-    let totalMinutes = this.state.currentHour * MINUTES_PER_HOUR + this.state.currentMinute + totalGameSeconds / 60;
+    let totalMinutes =
+      this.state.currentHour * MINUTES_PER_HOUR +
+      this.state.currentMinute +
+      totalGameSeconds / 60;
 
     const totalDayMinutes = HOURS_PER_DAY * MINUTES_PER_HOUR;
     const fullDays = Math.floor(totalMinutes / totalDayMinutes);

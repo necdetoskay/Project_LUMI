@@ -1,4 +1,12 @@
-import { check, index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId, timestampColumns } from "./common";
 import { storySchema } from "./schemas";
@@ -13,19 +21,32 @@ export const storySessions = storySchema.table(
     storyDefinitionId: uuid("story_definition_id").notNull(),
     storyVersionId: uuid("story_version_id").notNull(),
     currentSceneId: uuid("current_scene_id"),
-    sessionStatus: varchar("session_status", { length: 20 }).notNull().default("created"),
-    playbackMode: varchar("playback_mode", { length: 20 }).notNull().default("reading"),
+    sessionStatus: varchar("session_status", { length: 20 })
+      .notNull()
+      .default("created"),
+    playbackMode: varchar("playback_mode", { length: 20 })
+      .notNull()
+      .default("reading"),
     startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }),
-    lastInteractedAt: timestamp("last_interacted_at", { withTimezone: true, mode: "date" }),
+    lastInteractedAt: timestamp("last_interacted_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     pausedAt: timestamp("paused_at", { withTimezone: true, mode: "date" }),
-    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     abandonmentReason: varchar("abandonment_reason", { length: 500 }),
     contextSnapshot: jsonb("context_snapshot").notNull().default({}),
     version: integer("version").notNull().default(1),
     ...timestampColumns,
   },
   (table) => [
-    index("story_session_child_status_idx").on(table.childProfileId, table.sessionStatus),
+    index("story_session_child_status_idx").on(
+      table.childProfileId,
+      table.sessionStatus,
+    ),
     index("story_session_world_idx").on(table.worldId),
     index("story_session_version_idx").on(table.storyVersionId),
     index("story_session_last_interacted_idx").on(table.lastInteractedAt),

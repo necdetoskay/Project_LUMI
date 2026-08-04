@@ -9,7 +9,9 @@ import { originPackageToItems } from "../application";
 export class InMemoryOriginPackageAdapter implements OriginPackageSource {
   constructor(private readonly origin: OriginPackageItem) {}
 
-  async fetch(_request: ContextRequest): Promise<ContextSourceResult<OriginPackageItem>> {
+  async fetch(
+    _request: ContextRequest,
+  ): Promise<ContextSourceResult<OriginPackageItem>> {
     void _request;
     return {
       sourceRelevance: 0.8,

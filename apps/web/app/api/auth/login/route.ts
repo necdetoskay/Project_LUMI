@@ -11,7 +11,8 @@ import { observeHandler } from "@/lib/observability/observed-api-route";
 
 function getRateLimitIdentifier(request: Request, email: unknown) {
   const clientIp = getClientIp(request);
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "unknown";
+  const normalizedEmail =
+    typeof email === "string" ? email.trim().toLowerCase() : "unknown";
   return `${clientIp}:${normalizedEmail}`;
 }
 
@@ -20,7 +21,10 @@ export const POST = observeHandler(async (request: Request) => {
   const clientIp = getClientIp(request);
   const email = typeof body.email === "string" ? body.email : undefined;
   const formRequest = isFormRequest(request);
-  const rateLimit = checkAuthRateLimit("login", getRateLimitIdentifier(request, email));
+  const rateLimit = checkAuthRateLimit(
+    "login",
+    getRateLimitIdentifier(request, email),
+  );
 
   if (!rateLimit.allowed) {
     logAuthAuditEvent({
@@ -79,7 +83,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
       }
 
-      return NextResponse.json({ error: "INVALID_LOGIN_INPUT" }, { status: 400 });
+      return NextResponse.json(
+        { error: "INVALID_LOGIN_INPUT" },
+        { status: 400 },
+      );
     }
 
     if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
@@ -98,7 +105,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
       }
 
-      return NextResponse.json({ error: "INVALID_CREDENTIALS" }, { status: 401 });
+      return NextResponse.json(
+        { error: "INVALID_CREDENTIALS" },
+        { status: 401 },
+      );
     }
 
     logAuthAuditEvent({

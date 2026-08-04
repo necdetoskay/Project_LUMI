@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { StoryVersion, StoryScene, StorySceneTransition } from "../../src/domain";
+import {
+  StoryVersion,
+  StoryScene,
+  StorySceneTransition,
+} from "../../src/domain";
 import { ValidationError } from "../../src/domain/errors";
 
 describe("StoryVersion", () => {

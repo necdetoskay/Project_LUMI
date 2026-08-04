@@ -15,7 +15,10 @@ export const GET = observeHandler(
       try {
         const household = await getOwnedHousehold(parent.id);
         if (!household) {
-          return NextResponse.json({ error: "FORBIDDEN", message: "User does not own a household" }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: "User does not own a household" },
+            { status: 403 },
+          );
         }
 
         await assertWorldAccess(worldId, household.id);
@@ -23,7 +26,10 @@ export const GET = observeHandler(
         const world = await getWorldById(worldId);
         if (!world) {
           return NextResponse.json(
-            { error: "NOT_FOUND", message: `World with id ${worldId} not found` },
+            {
+              error: "NOT_FOUND",
+              message: `World with id ${worldId} not found`,
+            },
             { status: 404 },
           );
         }
@@ -42,13 +48,22 @@ export const GET = observeHandler(
       } catch (error) {
         const err = error as Error;
         if (err.name === "NotFoundError") {
-          return NextResponse.json({ error: "NOT_FOUND", message: err.message }, { status: 404 });
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: err.message },
+            { status: 404 },
+          );
         }
         if (err.name === "AuthorizationError") {
-          return NextResponse.json({ error: "FORBIDDEN", message: err.message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message: err.message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
-          { error: "INTERNAL_ERROR", message: err.message ?? "Failed to list locations" },
+          {
+            error: "INTERNAL_ERROR",
+            message: err.message ?? "Failed to list locations",
+          },
           { status: 500 },
         );
       }

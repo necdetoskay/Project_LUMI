@@ -3,10 +3,7 @@ import { createHash } from "node:crypto";
 import type { StoredAsset } from "../domain/asset";
 import { CostLimitExceededError } from "../domain/errors";
 import { computeMediaFingerprint } from "../domain/fingerprint";
-import type {
-  ConsistencyFinding,
-  SafetyFinding,
-} from "../domain/findings";
+import type { ConsistencyFinding, SafetyFinding } from "../domain/findings";
 import type { CharacterVisualIdentity } from "../domain/identity";
 import type { ImageJobRequest, MediaJobResult } from "../domain/media-jobs";
 import type {
@@ -161,11 +158,10 @@ export class ImagePipeline {
 
     let consistencyFindings: ConsistencyFinding[] = [];
     if (job.identity) {
-      consistencyFindings =
-        this.deps.consistency.validateImageAgainstIdentity(
-          job.identity,
-          providerImage.bytes,
-        );
+      consistencyFindings = this.deps.consistency.validateImageAgainstIdentity(
+        job.identity,
+        providerImage.bytes,
+      );
       if (consistencyFindings.some((f) => f.severity === "error")) {
         return {
           ok: false,

@@ -9,7 +9,12 @@ import { ValidationError } from "../../src/domain/errors";
 describe("PromptVariable", () => {
   describe("validation", () => {
     it("validates a string variable", () => {
-      expect(resolveVariableValue({ name: "x", type: "string", required: true }, "hello")).toBe("hello");
+      expect(
+        resolveVariableValue(
+          { name: "x", type: "string", required: true },
+          "hello",
+        ),
+      ).toBe("hello");
     });
 
     it("validates a number variable", () => {
@@ -23,18 +28,26 @@ describe("PromptVariable", () => {
     });
 
     it("validates a boolean variable", () => {
-      expect(resolveVariableValue({ name: "x", type: "boolean" }, true)).toBe(true);
+      expect(resolveVariableValue({ name: "x", type: "boolean" }, true)).toBe(
+        true,
+      );
     });
 
     it("validates an enum variable", () => {
       expect(
-        resolveVariableValue({ name: "x", type: "enum", enumValues: ["a", "b"] }, "a"),
+        resolveVariableValue(
+          { name: "x", type: "enum", enumValues: ["a", "b"] },
+          "a",
+        ),
       ).toBe("a");
     });
 
     it("rejects invalid enum value", () => {
       expect(() =>
-        resolveVariableValue({ name: "x", type: "enum", enumValues: ["a", "b"] }, "c"),
+        resolveVariableValue(
+          { name: "x", type: "enum", enumValues: ["a", "b"] },
+          "c",
+        ),
       ).toThrow(ValidationError);
     });
 
@@ -45,30 +58,50 @@ describe("PromptVariable", () => {
     });
 
     it("validates a json variable", () => {
-      expect(resolveVariableValue({ name: "x", type: "json" }, { a: 1 })).toEqual({ a: 1 });
+      expect(
+        resolveVariableValue({ name: "x", type: "json" }, { a: 1 }),
+      ).toEqual({ a: 1 });
     });
 
     it("rejects undefined value for required variable", () => {
       expect(() =>
-        resolveVariableValue({ name: "x", type: "string", required: true }, undefined),
+        resolveVariableValue(
+          { name: "x", type: "string", required: true },
+          undefined,
+        ),
       ).toThrow(ValidationError);
     });
 
     it("allows undefined value for optional variable", () => {
-      expect(resolveVariableValue({ name: "x", type: "string" }, undefined)).toBeUndefined();
+      expect(
+        resolveVariableValue({ name: "x", type: "string" }, undefined),
+      ).toBeUndefined();
     });
 
     it("falls back to default value", () => {
-      expect(resolveVariableValue({ name: "x", type: "string", default: "fallback" }, undefined)).toBe("fallback");
+      expect(
+        resolveVariableValue(
+          { name: "x", type: "string", default: "fallback" },
+          undefined,
+        ),
+      ).toBe("fallback");
     });
 
     it("uses provided value over default", () => {
-      expect(resolveVariableValue({ name: "x", type: "string", default: "fallback" }, "provided")).toBe("provided");
+      expect(
+        resolveVariableValue(
+          { name: "x", type: "string", default: "fallback" },
+          "provided",
+        ),
+      ).toBe("provided");
     });
 
     it("validates default value type", () => {
       expect(() =>
-        resolveVariableValue({ name: "x", type: "number", default: "not-a-number" }, undefined),
+        resolveVariableValue(
+          { name: "x", type: "number", default: "not-a-number" },
+          undefined,
+        ),
       ).toThrow(ValidationError);
     });
   });
@@ -92,7 +125,11 @@ describe("PromptVariable", () => {
   describe("validateVariableDefinition", () => {
     it("accepts a valid definition", () => {
       expect(() =>
-        validateVariableDefinition({ name: "x", type: "string", required: true }),
+        validateVariableDefinition({
+          name: "x",
+          type: "string",
+          required: true,
+        }),
       ).not.toThrow();
     });
 

@@ -39,7 +39,10 @@ export function validatePolicyInput(
   }
 
   if (input.timeLimitMinutes !== undefined && input.timeLimitMinutes !== null) {
-    if (!Number.isInteger(input.timeLimitMinutes) || input.timeLimitMinutes < 1) {
+    if (
+      !Number.isInteger(input.timeLimitMinutes) ||
+      input.timeLimitMinutes < 1
+    ) {
       errors.push({
         code: "INVALID_TIME_LIMIT",
         field: "timeLimitMinutes",
@@ -58,9 +61,10 @@ export function validatePolicyInput(
   return { valid: errors.length === 0, errors, warnings };
 }
 
-export function checkGuardianPermission(
-  input: GuardianPermissionCheck,
-): { allowed: boolean; reason?: string } {
+export function checkGuardianPermission(input: GuardianPermissionCheck): {
+  allowed: boolean;
+  reason?: string;
+} {
   const { parentPolicy, requestedAction } = input;
 
   if (requestedAction === "ai_content_generation") {
@@ -73,7 +77,10 @@ export function checkGuardianPermission(
   }
 
   if (requestedAction === "image_generation") {
-    if (parentPolicy.contentBoundary === "strict" && !parentPolicy.requireParentApprovalForAi) {
+    if (
+      parentPolicy.contentBoundary === "strict" &&
+      !parentPolicy.requireParentApprovalForAi
+    ) {
       return {
         allowed: true,
         reason: "Image generation allowed under strict boundary",
@@ -108,7 +115,11 @@ export function validateAgeBandConsistency(
     });
   }
 
-  if (!Number.isInteger(interactionLevel) || interactionLevel < 0 || interactionLevel > 5) {
+  if (
+    !Number.isInteger(interactionLevel) ||
+    interactionLevel < 0 ||
+    interactionLevel > 5
+  ) {
     errors.push({
       code: "INVALID_INTERACTION_LEVEL",
       field: "interactionLevel",
@@ -120,8 +131,7 @@ export function validateAgeBandConsistency(
     warnings.push({
       code: "HIGH_INTERACTION_YOUNG_AGE",
       field: "interactionLevel",
-      message:
-        "High interaction level may not be suitable for age band 3-5",
+      message: "High interaction level may not be suitable for age band 3-5",
     });
   }
 

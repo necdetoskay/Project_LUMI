@@ -49,7 +49,9 @@ describe("StoryDefinition", () => {
     });
     definition.archive();
     expect(definition.lifecycle).toBe("archived");
-    expect(() => definition.setCurrentPublishedVersion(crypto.randomUUID())).toThrow(ValidationError);
+    expect(() =>
+      definition.setCurrentPublishedVersion(crypto.randomUUID()),
+    ).toThrow(ValidationError);
   });
 
   it("rejects invalid slug", () => {

@@ -41,7 +41,10 @@ export function safeError(error: unknown): Record<string, unknown> {
       result.cause = redactSecrets(String(error.cause));
     }
 
-    if ("code" in error && typeof (error as Record<string, unknown>).code === "string") {
+    if (
+      "code" in error &&
+      typeof (error as Record<string, unknown>).code === "string"
+    ) {
       result.code = (error as Record<string, unknown>).code;
     }
 

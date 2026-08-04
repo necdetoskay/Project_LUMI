@@ -12,11 +12,7 @@ import {
   StaticSafetyValidator,
 } from "../../src/infrastructure";
 import type { MediaPolicyConfig } from "../../src/application/policy-enforcer.service";
-import {
-  AUDIO_MODEL,
-  AUDIO_POLICY,
-  SCOPE,
-} from "../fixtures/media.fixtures";
+import { AUDIO_MODEL, AUDIO_POLICY, SCOPE } from "../fixtures/media.fixtures";
 
 const LIMITS: MediaPolicyConfig = {
   maxImageCostUsd: 0.1,

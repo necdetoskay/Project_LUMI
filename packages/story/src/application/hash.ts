@@ -17,6 +17,8 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-export async function hashObject(value: Record<string, unknown>): Promise<string> {
+export async function hashObject(
+  value: Record<string, unknown>,
+): Promise<string> {
   return sha256Hex(stableStringify(value));
 }

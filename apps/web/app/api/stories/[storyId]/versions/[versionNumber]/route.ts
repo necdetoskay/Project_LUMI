@@ -21,7 +21,10 @@ function handleStoryError(error: unknown) {
     return NextResponse.json({ error: "NOT_FOUND", message }, { status: 404 });
   }
   if (err.name === "ValidationError") {
-    return NextResponse.json({ error: err.code ?? "VALIDATION_ERROR", message }, { status: 400 });
+    return NextResponse.json(
+      { error: err.code ?? "VALIDATION_ERROR", message },
+      { status: 400 },
+    );
   }
   return NextResponse.json(
     { error: "INTERNAL_ERROR", message: "Story version request failed" },
@@ -29,47 +32,62 @@ function handleStoryError(error: unknown) {
   );
 }
 
-export const GET = observeHandler(async (request: Request, { params }: { params: Promise<{ storyId: string; versionNumber: string }> }) => {
-  return withParent(async (parent) => {
-    const { searchParams } = new URL(request.url);
-    const householdId = searchParams.get("householdId");
-    if (!householdId) {
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
-        { status: 400 },
-      );
-    }
-
-    const parsedParams = paramsSchema.safeParse(await params);
-    if (!parsedParams.success) {
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: parsedParams.error.message },
-        { status: 400 },
-      );
-    }
-
-    const { storyId, versionNumber } = parsedParams.data;
-
-    const household = await getOwnedHousehold(parent.id);
-    if (!household || household.id !== householdId) {
-      return NextResponse.json(
-        { error: "FORBIDDEN", message: "User does not have access to this household" },
-        { status: 403 },
-      );
-    }
-
-    try {
-      const graph = await getStoryVersionGraphByNumber(storyId, versionNumber);
-      if (graph.definition && graph.definition.householdId !== householdId) {
+export const GET = observeHandler(
+  async (
+    request: Request,
+    { params }: { params: Promise<{ storyId: string; versionNumber: string }> },
+  ) => {
+    return withParent(async (parent) => {
+      const { searchParams } = new URL(request.url);
+      const householdId = searchParams.get("householdId");
+      if (!householdId) {
         return NextResponse.json(
-          { error: "NOT_FOUND", message: "Story not found" },
-          { status: 404 },
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
+          { status: 400 },
         );
       }
 
-      return NextResponse.json(graph);
-    } catch (error) {
-      return handleStoryError(error);
-    }
-  });
-}, "/api/stories/{storyId}/versions/{versionNumber}");
+      const parsedParams = paramsSchema.safeParse(await params);
+      if (!parsedParams.success) {
+        return NextResponse.json(
+          { error: "VALIDATION_ERROR", message: parsedParams.error.message },
+          { status: 400 },
+        );
+      }
+
+      const { storyId, versionNumber } = parsedParams.data;
+
+      const household = await getOwnedHousehold(parent.id);
+      if (!household || household.id !== householdId) {
+        return NextResponse.json(
+          {
+            error: "FORBIDDEN",
+            message: "User does not have access to this household",
+          },
+          { status: 403 },
+        );
+      }
+
+      try {
+        const graph = await getStoryVersionGraphByNumber(
+          storyId,
+          versionNumber,
+        );
+        if (graph.definition && graph.definition.householdId !== householdId) {
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Story not found" },
+            { status: 404 },
+          );
+        }
+
+        return NextResponse.json(graph);
+      } catch (error) {
+        return handleStoryError(error);
+      }
+    });
+  },
+  "/api/stories/{storyId}/versions/{versionNumber}",
+);

@@ -74,5 +74,8 @@ export type {
   CommitChoiceInput,
 } from "./choice/choice.service";
 
-export { evaluateRule, evaluateOptionAvailability } from "./choice/rule-evaluator";
+export {
+  evaluateRule,
+  evaluateOptionAvailability,
+} from "./choice/rule-evaluator";
 export { hashObject } from "./hash";

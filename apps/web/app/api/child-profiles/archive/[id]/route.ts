@@ -6,10 +6,7 @@ import { archiveChildProfile } from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const POST = observeHandler(
-  (
-    request: Request,
-    { params }: { params: Promise<{ id: string }> },
-  ) => {
+  (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     return withParent(async (parent) => {
       const profileId = (await params).id;
       const body = await readRequestBody(request);
@@ -26,9 +23,13 @@ export const POST = observeHandler(
         await archiveChildProfile(parent.id, profileId, parsed.householdId);
         return NextResponse.json({ success: true });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         if (message.includes("not a member")) {
-          return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to archive profile" },
@@ -37,6 +38,5 @@ export const POST = observeHandler(
       }
     });
   },
-  "/api/child-profiles/archive/{id}"
-
+  "/api/child-profiles/archive/{id}",
 );

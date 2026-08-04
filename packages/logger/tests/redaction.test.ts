@@ -124,12 +124,18 @@ describe("redact", () => {
   });
 
   it("uses custom placeholder", () => {
-    const result = redact({ password: "secret" }, { placeholder: "***" }) as Record<string, unknown>;
+    const result = redact(
+      { password: "secret" },
+      { placeholder: "***" },
+    ) as Record<string, unknown>;
     expect(result.password).toBe("***");
   });
 
   it("uses custom denylist", () => {
-    const result = redact({ apiKey: "abc123", name: "test" }, { denylist: ["apiKey"] }) as Record<string, unknown>;
+    const result = redact(
+      { apiKey: "abc123", name: "test" },
+      { denylist: ["apiKey"] },
+    ) as Record<string, unknown>;
     expect(result.apiKey).toBe("[REDACTED]");
     expect(result.name).toBe("test");
   });

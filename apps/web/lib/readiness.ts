@@ -87,7 +87,10 @@ export function checkTcpUrl(urlText: string, timeoutMs = DEFAULT_TIMEOUT_MS) {
   });
 }
 
-export function checkRedisPing(urlText: string, timeoutMs = DEFAULT_TIMEOUT_MS) {
+export function checkRedisPing(
+  urlText: string,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+) {
   const url = new URL(urlText);
   const port = getPort(url);
 
@@ -133,7 +136,9 @@ export async function getReadiness(): Promise<ReadinessCheck> {
 
   if (postgres.status === "ok") {
     try {
-      const pool = new pg.Pool({ connectionString: serverEnvironment.DATABASE_URL });
+      const pool = new pg.Pool({
+        connectionString: serverEnvironment.DATABASE_URL,
+      });
       try {
         const [profileResult, authResult] = await Promise.all([
           pool.query("SELECT to_regclass('profile.households') AS r"),
@@ -151,7 +156,9 @@ export async function getReadiness(): Promise<ReadinessCheck> {
 
   const schemaOk = profileSchemaReady && authSchemaReady;
   const status: ServiceStatus =
-    postgres.status === "ok" && redis.status === "ok" && schemaOk ? "ok" : "error";
+    postgres.status === "ok" && redis.status === "ok" && schemaOk
+      ? "ok"
+      : "error";
 
   return {
     checkedAt: new Date().toISOString(),

@@ -1,19 +1,53 @@
 import { ValidationError } from "../errors";
 
-export const CHOICE_POINT_TYPES = ["single", "multiple", "timed", "hidden", "conditional"] as const;
+export const CHOICE_POINT_TYPES = [
+  "single",
+  "multiple",
+  "timed",
+  "hidden",
+  "conditional",
+] as const;
 export type ChoicePointType = (typeof CHOICE_POINT_TYPES)[number];
 
-export const CHOICE_OPTION_STATUSES = ["available", "locked", "hidden", "disabled"] as const;
+export const CHOICE_OPTION_STATUSES = [
+  "available",
+  "locked",
+  "hidden",
+  "disabled",
+] as const;
 export type ChoiceOptionStatus = (typeof CHOICE_OPTION_STATUSES)[number];
 
-export const RULE_OPERATORS = ["eq", "neq", "gt", "gte", "lt", "lte", "in", "not_in", "has_flag"] as const;
+export const RULE_OPERATORS = [
+  "eq",
+  "neq",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "in",
+  "not_in",
+  "has_flag",
+] as const;
 export type RuleOperator = (typeof RULE_OPERATORS)[number];
 
-export const CONSEQUENCE_TYPES = ["scene_transition", "state_update", "flag_set", "flag_remove", "score_delta", "outcome_candidate"] as const;
+export const CONSEQUENCE_TYPES = [
+  "scene_transition",
+  "state_update",
+  "flag_set",
+  "flag_remove",
+  "score_delta",
+  "outcome_candidate",
+] as const;
 export type ConsequenceType = (typeof CONSEQUENCE_TYPES)[number];
 
-export const OUTCOME_CANDIDATE_STATUSES = ["pending", "committed", "rejected", "superseded"] as const;
-export type OutcomeCandidateStatus = (typeof OUTCOME_CANDIDATE_STATUSES)[number];
+export const OUTCOME_CANDIDATE_STATUSES = [
+  "pending",
+  "committed",
+  "rejected",
+  "superseded",
+] as const;
+export type OutcomeCandidateStatus =
+  (typeof OUTCOME_CANDIDATE_STATUSES)[number];
 
 export interface RuleCondition {
   path: string;
@@ -41,30 +75,54 @@ export interface ChoiceRuleContext {
   storyVersionId: string;
   participantFlags: Record<string, boolean>;
   sessionScores: Record<string, number>;
-  choiceHistory: ReadonlyArray<{ choicePointId: string; optionId: string; committedAt: Date }>;
+  choiceHistory: ReadonlyArray<{
+    choicePointId: string;
+    optionId: string;
+    committedAt: Date;
+  }>;
   checkpointHash: string;
 }
 
-export function assertKnownChoicePointType(value: string): asserts value is ChoicePointType {
+export function assertKnownChoicePointType(
+  value: string,
+): asserts value is ChoicePointType {
   if (!(CHOICE_POINT_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_CHOICE_POINT_TYPE", `Invalid choice point type: ${value}`);
+    throw new ValidationError(
+      "INVALID_CHOICE_POINT_TYPE",
+      `Invalid choice point type: ${value}`,
+    );
   }
 }
 
-export function assertKnownRuleOperator(value: string): asserts value is RuleOperator {
+export function assertKnownRuleOperator(
+  value: string,
+): asserts value is RuleOperator {
   if (!(RULE_OPERATORS as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_RULE_OPERATOR", `Invalid rule operator: ${value}`);
+    throw new ValidationError(
+      "INVALID_RULE_OPERATOR",
+      `Invalid rule operator: ${value}`,
+    );
   }
 }
 
-export function assertKnownConsequenceType(value: string): asserts value is ConsequenceType {
+export function assertKnownConsequenceType(
+  value: string,
+): asserts value is ConsequenceType {
   if (!(CONSEQUENCE_TYPES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_CONSEQUENCE_TYPE", `Invalid consequence type: ${value}`);
+    throw new ValidationError(
+      "INVALID_CONSEQUENCE_TYPE",
+      `Invalid consequence type: ${value}`,
+    );
   }
 }
 
-export function assertKnownOutcomeCandidateStatus(value: string): asserts value is OutcomeCandidateStatus {
+export function assertKnownOutcomeCandidateStatus(
+  value: string,
+): asserts value is OutcomeCandidateStatus {
   if (!(OUTCOME_CANDIDATE_STATUSES as readonly string[]).includes(value)) {
-    throw new ValidationError("INVALID_OUTCOME_CANDIDATE_STATUS", `Invalid outcome candidate status: ${value}`);
+    throw new ValidationError(
+      "INVALID_OUTCOME_CANDIDATE_STATUS",
+      `Invalid outcome candidate status: ${value}`,
+    );
   }
 }

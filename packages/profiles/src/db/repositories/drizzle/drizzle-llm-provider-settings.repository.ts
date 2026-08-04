@@ -50,14 +50,16 @@ export class DrizzleLlmProviderSettingsRepository
         })
         .where(eq(llmProviderSettings.id, existing.id))
         .returning();
-      if (!record) throw new Error("LLM provider settings update returned no record");
+      if (!record)
+        throw new Error("LLM provider settings update returned no record");
       return record as LlmProviderSettingsRecord;
     }
     const [record] = await this.db
       .insert(llmProviderSettings)
       .values(input)
       .returning();
-    if (!record) throw new Error("LLM provider settings creation returned no record");
+    if (!record)
+      throw new Error("LLM provider settings creation returned no record");
     return record as LlmProviderSettingsRecord;
   }
 
@@ -82,7 +84,11 @@ export class DrizzleLlmProviderSettingsRepository
     householdId: string,
     provider: string,
   ): Promise<LlmProviderSettingsRecord> {
-    const existing = await this.findByUserAndHousehold(userId, householdId, provider);
+    const existing = await this.findByUserAndHousehold(
+      userId,
+      householdId,
+      provider,
+    );
     if (!existing) {
       throw new Error("LLM provider settings not found");
     }
@@ -95,7 +101,8 @@ export class DrizzleLlmProviderSettingsRepository
       })
       .where(eq(llmProviderSettings.id, existing.id))
       .returning();
-    if (!record) throw new Error("LLM provider settings update returned no record");
+    if (!record)
+      throw new Error("LLM provider settings update returned no record");
     return record as LlmProviderSettingsRecord;
   }
 }

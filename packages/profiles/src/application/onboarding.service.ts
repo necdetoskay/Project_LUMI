@@ -36,7 +36,8 @@ function isMissingSchemaError(err: unknown): boolean {
   }
   if (err instanceof Error) {
     return (
-      err.message?.includes("relation") && err.message?.includes("does not exist")
+      err.message?.includes("relation") &&
+      err.message?.includes("does not exist")
     );
   }
   return false;

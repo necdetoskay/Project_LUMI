@@ -49,7 +49,11 @@ export class ParentPolicy {
     safetyMetadata?: ParentPolicyMetadata;
   }): ParentPolicy {
     const maxDailyStories = input.maxDailyStories ?? 3;
-    if (!Number.isInteger(maxDailyStories) || maxDailyStories < 0 || maxDailyStories > 50) {
+    if (
+      !Number.isInteger(maxDailyStories) ||
+      maxDailyStories < 0 ||
+      maxDailyStories > 50
+    ) {
       throw new ValidationError(
         "INVALID_DAILY_LIMIT",
         "maxDailyStories must be between 0 and 50",
@@ -67,7 +71,10 @@ export class ParentPolicy {
     }
 
     const timeLimitMinutes = input.timeLimitMinutes ?? null;
-    if (timeLimitMinutes !== null && (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0)) {
+    if (
+      timeLimitMinutes !== null &&
+      (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0)
+    ) {
       throw new ValidationError(
         "INVALID_TIME_LIMIT",
         "timeLimitMinutes must be a positive integer or null",
@@ -97,10 +104,17 @@ export class ParentPolicy {
     return { ...this.state };
   }
 
-  update(input: Partial<Omit<ParentPolicyState, "householdId" | "createdAt" | "updatedAt">>): void {
-
+  update(
+    input: Partial<
+      Omit<ParentPolicyState, "householdId" | "createdAt" | "updatedAt">
+    >,
+  ): void {
     if (input.maxDailyStories !== undefined) {
-      if (!Number.isInteger(input.maxDailyStories) || input.maxDailyStories < 0 || input.maxDailyStories > 50) {
+      if (
+        !Number.isInteger(input.maxDailyStories) ||
+        input.maxDailyStories < 0 ||
+        input.maxDailyStories > 50
+      ) {
         throw new ValidationError(
           "INVALID_DAILY_LIMIT",
           "maxDailyStories must be between 0 and 50",
@@ -122,7 +136,11 @@ export class ParentPolicy {
     }
 
     if (input.timeLimitMinutes !== undefined) {
-      if (input.timeLimitMinutes !== null && (!Number.isInteger(input.timeLimitMinutes) || input.timeLimitMinutes < 0)) {
+      if (
+        input.timeLimitMinutes !== null &&
+        (!Number.isInteger(input.timeLimitMinutes) ||
+          input.timeLimitMinutes < 0)
+      ) {
         throw new ValidationError(
           "INVALID_TIME_LIMIT",
           "timeLimitMinutes must be a positive integer or null",

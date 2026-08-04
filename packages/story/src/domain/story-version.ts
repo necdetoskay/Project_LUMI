@@ -83,7 +83,10 @@ export class StoryVersion {
   }
 
   assertMutable(): void {
-    if (this.state.publicationStatus === "published" || this.state.publicationStatus === "retired") {
+    if (
+      this.state.publicationStatus === "published" ||
+      this.state.publicationStatus === "retired"
+    ) {
       throw new ValidationError(
         "PUBLISHED_VERSION_IMMUTABLE",
         "Published story versions are immutable; corrections require a new version",
@@ -94,10 +97,16 @@ export class StoryVersion {
   freeze(contentHash: string): void {
     this.assertMutable();
     if (this.state.publicationStatus !== "draft") {
-      throw new ValidationError("VERSION_ALREADY_FROZEN", "Version is not in draft state and cannot be frozen");
+      throw new ValidationError(
+        "VERSION_ALREADY_FROZEN",
+        "Version is not in draft state and cannot be frozen",
+      );
     }
     if (!contentHash || typeof contentHash !== "string") {
-      throw new ValidationError("INVALID_CONTENT_HASH", "contentHash is required to freeze a version");
+      throw new ValidationError(
+        "INVALID_CONTENT_HASH",
+        "contentHash is required to freeze a version",
+      );
     }
     this.state.contentHash = contentHash;
     this.state.publicationStatus = "frozen";
@@ -117,13 +126,19 @@ export class StoryVersion {
 
   retire(): void {
     if (this.state.publicationStatus !== "published") {
-      throw new ValidationError("VERSION_NOT_PUBLISHED", "Only a published version can be retired");
+      throw new ValidationError(
+        "VERSION_NOT_PUBLISHED",
+        "Only a published version can be retired",
+      );
     }
     this.state.publicationStatus = "retired";
     this.state.retiredAt = new Date();
   }
 
-  validatesGraph(scenes: StoryScene[], transitions: StorySceneTransition[]): void {
+  validatesGraph(
+    scenes: StoryScene[],
+    transitions: StorySceneTransition[],
+  ): void {
     this.assertMutable();
     const entryScenes = scenes.filter((s) => s.isEntry);
     if (entryScenes.length !== 1) {
@@ -156,5 +171,7 @@ export class StoryVersion {
   }
 }
 
-export const isValidStoryVersionStatus = (value: string): value is StoryVersionStatus =>
+export const isValidStoryVersionStatus = (
+  value: string,
+): value is StoryVersionStatus =>
   (STORY_VERSION_STATUS as readonly string[]).includes(value);

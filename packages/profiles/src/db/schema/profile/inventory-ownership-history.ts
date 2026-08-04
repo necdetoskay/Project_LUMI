@@ -21,13 +21,16 @@ export const inventoryOwnershipHistory = profileSchema.table(
     idempotencyKey: varchar("idempotency_key", { length: 200 }),
     actorHouseholdId: uuid("actor_household_id").notNull(),
     actorUserId: uuid("actor_user_id"),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   () => ({
     itemIdx: sql`CREATE INDEX IF NOT EXISTS inv_own_hist_item_idx ON ${profileSchema}.inventory_ownership_history (item_instance_id, created_at DESC)`,
   }),
 );
 
-export type InventoryOwnershipHistoryRecord = typeof inventoryOwnershipHistory.$inferSelect;
-export type NewInventoryOwnershipHistoryRecord = typeof inventoryOwnershipHistory.$inferInsert;
-
+export type InventoryOwnershipHistoryRecord =
+  typeof inventoryOwnershipHistory.$inferSelect;
+export type NewInventoryOwnershipHistoryRecord =
+  typeof inventoryOwnershipHistory.$inferInsert;

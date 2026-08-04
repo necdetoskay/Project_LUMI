@@ -59,18 +59,22 @@ export class RecapService {
   private summarizeEffect(effect: SimulationEffect): string {
     switch (effect.effectType) {
       case "npc_routine": {
-        const action = (effect.payload as Record<string, unknown>).action as string;
-        const npcName = effect.npcId ? `NPC ${effect.npcId.slice(0, 8)}` : "Bir karakter";
+        const action = (effect.payload as Record<string, unknown>)
+          .action as string;
+        const npcName = effect.npcId
+          ? `NPC ${effect.npcId.slice(0, 8)}`
+          : "Bir karakter";
         return `${npcName} ${action}`;
       }
-        case "environment_change": {
-        const desc = (effect.payload as Record<string, unknown>).description as string;
+      case "environment_change": {
+        const desc = (effect.payload as Record<string, unknown>)
+          .description as string;
         return desc ?? "Dünya biraz değişti.";
       }
-        case "scheduled_event_trigger": {
+      case "scheduled_event_trigger": {
         return "Bir etkinlik gelişti.";
       }
-        case "npc_relationship_change":
+      case "npc_relationship_change":
         return "Karakterler arasındaki ilişki hafifçe değişti.";
       case "location_condition_change":
         return "Bir yer durumu değişti.";
@@ -86,7 +90,12 @@ export class RecapService {
   }
 
   private detailEffect(effect: SimulationEffect): string {
-    const evidence = effect.evidence as Record<string, unknown> | null | undefined;
-    return typeof evidence?.source === "string" ? evidence.source : "simulation";
+    const evidence = effect.evidence as
+      | Record<string, unknown>
+      | null
+      | undefined;
+    return typeof evidence?.source === "string"
+      ? evidence.source
+      : "simulation";
   }
 }

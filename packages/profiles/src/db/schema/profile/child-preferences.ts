@@ -22,9 +22,7 @@ export const childPreferences = profileSchema.table(
     storyLength: varchar("story_length", { length: 20 })
       .notNull()
       .default("medium"),
-    interactionLevel: integer("interaction_level")
-      .notNull()
-      .default(2),
+    interactionLevel: integer("interaction_level").notNull().default(2),
     imageEnabled: boolean("image_enabled").notNull().default(true),
     audioEnabled: boolean("audio_enabled").notNull().default(false),
     metadata: jsonb("metadata")

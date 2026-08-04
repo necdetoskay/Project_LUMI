@@ -24,11 +24,16 @@ export async function assertStorySessionAccess(
     throw new NotFoundError("StorySession", storySessionId);
   }
   if (session.householdId !== householdId) {
-    throw new AuthorizationError("User does not have access to this story session");
+    throw new AuthorizationError(
+      "User does not have access to this story session",
+    );
   }
 }
 
-export async function getStorySessionOrForbidden(storySessionId: string, householdId: string) {
+export async function getStorySessionOrForbidden(
+  storySessionId: string,
+  householdId: string,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const session = await repo.findSessionById(db, storySessionId);
@@ -36,7 +41,9 @@ export async function getStorySessionOrForbidden(storySessionId: string, househo
     throw new NotFoundError("StorySession", storySessionId);
   }
   if (session.householdId !== householdId) {
-    throw new AuthorizationError("User does not have access to this story session");
+    throw new AuthorizationError(
+      "User does not have access to this story session",
+    );
   }
   return session;
 }

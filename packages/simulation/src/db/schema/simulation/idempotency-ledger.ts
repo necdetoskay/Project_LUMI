@@ -26,5 +26,7 @@ export const simulationIdempotencyLedger = simulationSchema.table(
   }),
 );
 
-export type SimulationIdempotencyLedgerRecord = typeof simulationIdempotencyLedger.$inferSelect;
-export type NewSimulationIdempotencyLedgerRecord = typeof simulationIdempotencyLedger.$inferInsert;
+export type SimulationIdempotencyLedgerRecord =
+  typeof simulationIdempotencyLedger.$inferSelect;
+export type NewSimulationIdempotencyLedgerRecord =
+  typeof simulationIdempotencyLedger.$inferInsert;

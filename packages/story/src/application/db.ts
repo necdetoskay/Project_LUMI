@@ -14,7 +14,10 @@ function loadEnvFile(path: string): void {
     const idx = trimmed.indexOf("=");
     if (idx === -1) continue;
     const key = trimmed.slice(0, idx).trim();
-    const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, "");
+    const value = trimmed
+      .slice(idx + 1)
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
     process.env[key] ??= value;
   }
 }
@@ -32,7 +35,9 @@ export function getStoryDb(): Database {
     loadEnvFile(candidate);
   }
 
-  const url = process.env.DATABASE_URL ?? "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
+  const url =
+    process.env.DATABASE_URL ??
+    "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
   dbInstance = createDatabase(url);
   return dbInstance;
 }

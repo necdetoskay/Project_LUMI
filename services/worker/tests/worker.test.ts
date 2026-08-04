@@ -1,9 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Logger } from "@lumi/logger";
-import type { NpcSourcePort, RelevanceSourcePort, SimulationStorePort, WorldSourcePort } from "@lumi/simulation/ports";
+import type {
+  NpcSourcePort,
+  RelevanceSourcePort,
+  SimulationStorePort,
+  WorldSourcePort,
+} from "@lumi/simulation/ports";
 import { BackgroundWorker } from "../src/worker";
 import { EnvWorldDiscoveryAdapter } from "../src/adapters";
-import { SimulationJobRunner, type WorldCandidate, type WorldDiscoveryPort } from "../src/job-runner";
+import {
+  SimulationJobRunner,
+  type WorldCandidate,
+  type WorldDiscoveryPort,
+} from "../src/job-runner";
 
 function createLogger(): Logger {
   return {
@@ -15,7 +24,9 @@ function createLogger(): Logger {
   } as unknown as Logger;
 }
 
-function makeCandidate(overrides: Partial<WorldCandidate> = {}): WorldCandidate {
+function makeCandidate(
+  overrides: Partial<WorldCandidate> = {},
+): WorldCandidate {
   return {
     worldId: crypto.randomUUID(),
     householdId: crypto.randomUUID(),
@@ -26,7 +37,9 @@ function makeCandidate(overrides: Partial<WorldCandidate> = {}): WorldCandidate 
   };
 }
 
-function createWorldSource(overrides: Partial<WorldSourcePort> = {}): WorldSourcePort {
+function createWorldSource(
+  overrides: Partial<WorldSourcePort> = {},
+): WorldSourcePort {
   return {
     fetchClock: vi.fn(async () => null),
     fetchNpcsForWorld: vi.fn(async () => []),
@@ -78,18 +91,25 @@ describe("EnvWorldDiscoveryAdapter", () => {
     ]);
 
     const adapter = new EnvWorldDiscoveryAdapter(raw, logger);
-    const result = await adapter.discoverAbsentWorlds(1, new Date("2026-08-04T00:00:00.000Z"));
+    const result = await adapter.discoverAbsentWorlds(
+      1,
+      new Date("2026-08-04T00:00:00.000Z"),
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0]?.worldId).toBe("00000000-0000-0000-0000-000000000001");
-    expect(result[0]?.childLastSeenAt).toEqual(new Date("2026-08-01T00:00:00.000Z"));
+    expect(result[0]?.childLastSeenAt).toEqual(
+      new Date("2026-08-01T00:00:00.000Z"),
+    );
   });
 
   it("logs and returns no candidates for invalid JSON", async () => {
     const logger = createLogger();
     const adapter = new EnvWorldDiscoveryAdapter("not-json", logger);
 
-    await expect(adapter.discoverAbsentWorlds(10, new Date())).resolves.toEqual([]);
+    await expect(adapter.discoverAbsentWorlds(10, new Date())).resolves.toEqual(
+      [],
+    );
     expect(logger.error).toHaveBeenCalledWith(
       "worker.discovery.invalid_json",
       "invalid worker world candidate JSON",
@@ -122,7 +142,10 @@ describe("SimulationJobRunner", () => {
       errors: 0,
       details: [],
     });
-    expect(discoverySource.discoverAbsentWorlds).toHaveBeenCalledWith(10, expect.any(Date));
+    expect(discoverySource.discoverAbsentWorlds).toHaveBeenCalledWith(
+      10,
+      expect.any(Date),
+    );
     expect(logger.info).toHaveBeenCalledWith(
       "worker.run.complete",
       "simulation run complete",
@@ -153,8 +176,16 @@ describe("SimulationJobRunner", () => {
 
     const result = await runner.run();
 
-    expect(result).toMatchObject({ processed: 0, skipped: 0, frozen: 1, errors: 0 });
-    expect(result.details[0]).toMatchObject({ worldId: candidate.worldId, status: "frozen" });
+    expect(result).toMatchObject({
+      processed: 0,
+      skipped: 0,
+      frozen: 1,
+      errors: 0,
+    });
+    expect(result.details[0]).toMatchObject({
+      worldId: candidate.worldId,
+      status: "frozen",
+    });
     expect(worldSource.freezeWorld).toHaveBeenCalledWith(candidate.worldId);
   });
 

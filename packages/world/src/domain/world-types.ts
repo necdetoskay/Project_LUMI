@@ -1,16 +1,43 @@
-export const WORLD_LIFECYCLE_STATUSES = ["active", "paused", "frozen", "archived"] as const;
+export const WORLD_LIFECYCLE_STATUSES = [
+  "active",
+  "paused",
+  "frozen",
+  "archived",
+] as const;
 export type WorldLifecycleStatus = (typeof WORLD_LIFECYCLE_STATUSES)[number];
 
-export const REGION_ACCESSIBILITY_STATUSES = ["open", "restricted", "blocked", "dangerous"] as const;
-export type RegionAccessibilityStatus = (typeof REGION_ACCESSIBILITY_STATUSES)[number];
+export const REGION_ACCESSIBILITY_STATUSES = [
+  "open",
+  "restricted",
+  "blocked",
+  "dangerous",
+] as const;
+export type RegionAccessibilityStatus =
+  (typeof REGION_ACCESSIBILITY_STATUSES)[number];
 
-export const DISCOVERY_STATUSES = ["unknown", "rumored", "discovered", "explored"] as const;
+export const DISCOVERY_STATUSES = [
+  "unknown",
+  "rumored",
+  "discovered",
+  "explored",
+] as const;
 export type DiscoveryStatus = (typeof DISCOVERY_STATUSES)[number];
 
-export const LOCATION_ACCESSIBILITY_STATUSES = ["open", "restricted", "blocked", "dangerous"] as const;
-export type LocationAccessibilityStatus = (typeof LOCATION_ACCESSIBILITY_STATUSES)[number];
+export const LOCATION_ACCESSIBILITY_STATUSES = [
+  "open",
+  "restricted",
+  "blocked",
+  "dangerous",
+] as const;
+export type LocationAccessibilityStatus =
+  (typeof LOCATION_ACCESSIBILITY_STATUSES)[number];
 
-export const OCCUPANCY_LEVELS = ["empty", "sparse", "moderate", "crowded"] as const;
+export const OCCUPANCY_LEVELS = [
+  "empty",
+  "sparse",
+  "moderate",
+  "crowded",
+] as const;
 export type OccupancyLevel = (typeof OCCUPANCY_LEVELS)[number];
 
 export const SAFETY_LEVELS = ["safe", "caution", "risky", "dangerous"] as const;
@@ -22,10 +49,44 @@ export type HomeType = (typeof HOME_TYPES)[number];
 export const RESIDENCE_TYPES = ["primary", "secondary", "guest"] as const;
 export type ResidenceType = (typeof RESIDENCE_TYPES)[number];
 
-export const REGION_TYPES = ["wilderness", "settlement", "water", "mountain", "forest", "sky", "underground", "magical", "urban", "coastal", "island", "custom"] as const;
+export const REGION_TYPES = [
+  "wilderness",
+  "settlement",
+  "water",
+  "mountain",
+  "forest",
+  "sky",
+  "underground",
+  "magical",
+  "urban",
+  "coastal",
+  "island",
+  "custom",
+] as const;
 export type RegionType = (typeof REGION_TYPES)[number];
 
-export const LOCATION_TYPES = ["town_square", "path", "building", "cave", "beach", "river_bank", "tree_house", "workshop", "market", "garden", "lookout", "dock", "reef", "lagoon", "coral_house", "cloud_platform", "nest", "den", "room", "custom"] as const;
+export const LOCATION_TYPES = [
+  "town_square",
+  "path",
+  "building",
+  "cave",
+  "beach",
+  "river_bank",
+  "tree_house",
+  "workshop",
+  "market",
+  "garden",
+  "lookout",
+  "dock",
+  "reef",
+  "lagoon",
+  "coral_house",
+  "cloud_platform",
+  "nest",
+  "den",
+  "room",
+  "custom",
+] as const;
 export type LocationType = (typeof LOCATION_TYPES)[number];
 
 export const MOVE_TYPES = ["arrival", "movement", "return_home"] as const;

@@ -1,4 +1,11 @@
-import { check, index, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
@@ -14,7 +21,9 @@ export const storyChoicePoints = storySchema.table(
     promptText: varchar("prompt_text", { length: 2000 }).notNull(),
     sequenceNumber: integer("sequence_number").notNull().default(0),
     ruleVersion: integer("rule_version").notNull().default(1),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("story_choice_point_version_idx").on(table.storyVersionId),
@@ -23,7 +32,10 @@ export const storyChoicePoints = storySchema.table(
       "story_choice_point_type_check",
       sql`${table.choicePointType} IN ('single', 'multiple', 'timed', 'hidden', 'conditional')`,
     ),
-    check("story_choice_point_rule_version_positive_check", sql`${table.ruleVersion} >= 1`),
+    check(
+      "story_choice_point_rule_version_positive_check",
+      sql`${table.ruleVersion} >= 1`,
+    ),
   ],
 );
 

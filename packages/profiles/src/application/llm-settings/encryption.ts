@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  scryptSync,
+} from "node:crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
@@ -13,7 +18,10 @@ function getEncryptionKey(): Buffer {
       "LUMI_SETTINGS_ENCRYPTION_KEY environment variable is required for API key encryption",
     );
   }
-  const salt = Buffer.from("lumi-settings-salt", "utf-8").subarray(0, SALT_LENGTH);
+  const salt = Buffer.from("lumi-settings-salt", "utf-8").subarray(
+    0,
+    SALT_LENGTH,
+  );
   return scryptSync(key, salt, KEY_LENGTH);
 }
 
@@ -33,7 +41,9 @@ export function decryptApiKey(encryptedBase64: string): string {
   const combined = Buffer.from(encryptedBase64, "base64");
   const iv = combined.subarray(0, IV_LENGTH);
   const tag = combined.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
-  const encryptedHex = combined.subarray(IV_LENGTH + TAG_LENGTH).toString("hex");
+  const encryptedHex = combined
+    .subarray(IV_LENGTH + TAG_LENGTH)
+    .toString("hex");
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
   let decrypted = decipher.update(encryptedHex, "hex", "utf-8");

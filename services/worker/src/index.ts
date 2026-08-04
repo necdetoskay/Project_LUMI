@@ -1,6 +1,9 @@
 import { createLogger } from "@lumi/logger";
 import { createDatabase } from "@lumi/simulation/db";
-import { DrizzleSimulationRepository, SimulationStoreAdapter } from "@lumi/simulation/db";
+import {
+  DrizzleSimulationRepository,
+  SimulationStoreAdapter,
+} from "@lumi/simulation/db";
 import { BackgroundWorker, type WorkerConfig } from "./worker";
 import {
   EmptyNpcSourceAdapter,
@@ -27,7 +30,10 @@ const seed = process.env.SIMULATION_SEED ?? "lumi-sim-v1";
 const worldSource = new SimulationRepositoryWorldSourceAdapter(repo, logger);
 const npcSource = new EmptyNpcSourceAdapter();
 const relevanceSource = new EmptyRelevanceSourceAdapter();
-const discoverySource = new EnvWorldDiscoveryAdapter(process.env.WORKER_WORLD_CANDIDATES_JSON, logger);
+const discoverySource = new EnvWorldDiscoveryAdapter(
+  process.env.WORKER_WORLD_CANDIDATES_JSON,
+  logger,
+);
 
 const worker = new BackgroundWorker(
   workerConfig,

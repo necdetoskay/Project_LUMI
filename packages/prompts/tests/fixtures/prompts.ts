@@ -7,18 +7,25 @@ export const versionId = "33333333-3333-3333-3333-333333333333";
 export const sampleVariables: PromptVariableDefinition[] = [
   { name: "childName", type: "string", required: true },
   { name: "age", type: "number", required: true },
-  { name: "mood", type: "enum", enumValues: ["happy", "sad"], default: "happy" },
+  {
+    name: "mood",
+    type: "enum",
+    enumValues: ["happy", "sad"],
+    default: "happy",
+  },
   { name: "extra", type: "json", required: false },
 ];
 
-export function createRegistryRecord(overrides?: Partial<{
-  id: string;
-  householdId: string;
-  promptKey: string;
-  purpose: string;
-  createdAt: Date;
-  updatedAt: Date;
-}>): {
+export function createRegistryRecord(
+  overrides?: Partial<{
+    id: string;
+    householdId: string;
+    promptKey: string;
+    purpose: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>,
+): {
   id: string;
   householdId: string;
   promptKey: string;
@@ -38,20 +45,22 @@ export function createRegistryRecord(overrides?: Partial<{
   };
 }
 
-export function createVersionRecord(overrides?: Partial<{
-  id: string;
-  registryId: string;
-  versionNumber: number;
-  status: "draft" | "published" | "archived";
-  templateBody: string;
-  variableSchema: PromptVariableDefinition[];
-  modelPreferences: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
-  publishedAt: Date | null;
-  archivedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}>): {
+export function createVersionRecord(
+  overrides?: Partial<{
+    id: string;
+    registryId: string;
+    versionNumber: number;
+    status: "draft" | "published" | "archived";
+    templateBody: string;
+    variableSchema: PromptVariableDefinition[];
+    modelPreferences: Record<string, unknown>;
+    outputSchema: Record<string, unknown>;
+    publishedAt: Date | null;
+    archivedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }>,
+): {
   id: string;
   registryId: string;
   versionNumber: number;

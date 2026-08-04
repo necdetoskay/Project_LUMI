@@ -1,4 +1,13 @@
-import { boolean, check, index, integer, jsonb, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
@@ -16,10 +25,15 @@ export const storyScenes = storySchema.table(
     isEntryScene: boolean("is_entry_scene").notNull().default(false),
     isTerminalScene: boolean("is_terminal_scene").notNull().default(false),
     metadata: jsonb("metadata").notNull().default({}),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    index("story_scene_version_idx").on(table.storyVersionId, table.sequenceNumber),
+    index("story_scene_version_idx").on(
+      table.storyVersionId,
+      table.sequenceNumber,
+    ),
     index("story_scene_key_idx").on(table.storyVersionId, table.sceneKey),
     check(
       "story_scene_type_check",

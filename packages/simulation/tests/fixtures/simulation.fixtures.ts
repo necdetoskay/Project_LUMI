@@ -1,4 +1,9 @@
-import type { SimulationEffect, SimulationRunState, SimulationScheduledEvent, WorldClockState } from "../../src/domain";
+import type {
+  SimulationEffect,
+  SimulationRunState,
+  SimulationScheduledEvent,
+  WorldClockState,
+} from "../../src/domain";
 
 export const WORLD_ID = "11111111-1111-1111-1111-111111111111";
 export const HOUSEHOLD_ID = "22222222-2222-2222-2222-222222222222";
@@ -6,7 +11,9 @@ export const NPC_A = "33333333-3333-3333-3333-333333333333";
 export const NPC_B = "44444444-4444-4444-4444-444444444444";
 export const CHILD_LAST_SEEN = new Date("2026-08-01T08:00:00Z");
 
-export function makeClock(overrides: Partial<WorldClockState> = {}): WorldClockState {
+export function makeClock(
+  overrides: Partial<WorldClockState> = {},
+): WorldClockState {
   const now = new Date();
   return {
     worldId: WORLD_ID,
@@ -24,7 +31,9 @@ export function makeClock(overrides: Partial<WorldClockState> = {}): WorldClockS
   };
 }
 
-export function makeSimulationRun(overrides: Partial<SimulationRunState> = {}): SimulationRunState {
+export function makeSimulationRun(
+  overrides: Partial<SimulationRunState> = {},
+): SimulationRunState {
   const now = new Date();
   return {
     id: crypto.randomUUID(),
@@ -44,7 +53,9 @@ export function makeSimulationRun(overrides: Partial<SimulationRunState> = {}): 
   };
 }
 
-export function makeCommittedEffect(overrides: Partial<SimulationEffect> = {}): SimulationEffect {
+export function makeCommittedEffect(
+  overrides: Partial<SimulationEffect> = {},
+): SimulationEffect {
   const now = new Date();
   return {
     id: crypto.randomUUID(),
@@ -70,11 +81,19 @@ export function makeCommittedEffect(overrides: Partial<SimulationEffect> = {}): 
   };
 }
 
-export function makePendingEffect(overrides: Partial<SimulationEffect> = {}): SimulationEffect {
-  return makeCommittedEffect({ status: "pending", committedAt: null, ...overrides });
+export function makePendingEffect(
+  overrides: Partial<SimulationEffect> = {},
+): SimulationEffect {
+  return makeCommittedEffect({
+    status: "pending",
+    committedAt: null,
+    ...overrides,
+  });
 }
 
-export function makeScheduledEvent(overrides: Partial<SimulationScheduledEvent> = {}): SimulationScheduledEvent {
+export function makeScheduledEvent(
+  overrides: Partial<SimulationScheduledEvent> = {},
+): SimulationScheduledEvent {
   const now = new Date();
   return {
     id: crypto.randomUUID(),

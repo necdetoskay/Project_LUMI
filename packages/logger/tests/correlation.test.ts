@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { generateCorrelationId, isValidCorrelationId, withCorrelation, getCorrelationId } from "../src/correlation";
+import {
+  generateCorrelationId,
+  isValidCorrelationId,
+  withCorrelation,
+  getCorrelationId,
+} from "../src/correlation";
 
 describe("generateCorrelationId", () => {
   it("generates a valid UUID v4", () => {
@@ -17,7 +22,9 @@ describe("generateCorrelationId", () => {
 
 describe("isValidCorrelationId", () => {
   it("accepts a valid UUID v4", () => {
-    expect(isValidCorrelationId("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+    expect(isValidCorrelationId("550e8400-e29b-41d4-a716-446655440000")).toBe(
+      true,
+    );
   });
 
   it("rejects short strings", () => {

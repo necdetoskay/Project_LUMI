@@ -8,17 +8,26 @@ import { DrizzleInventoryRepository } from "../db/repositories/drizzle/drizzle-i
 import { inventoryEntries } from "../db/schema/profile/inventory-entries";
 import { inventoryItemInstances } from "../db/schema/profile/inventory-item-instances";
 import {
-  AuthorizationError, NotFoundError, ValidationError, DomainError,
-  validateItemDefinitionInput, validateItemInstanceCreateInput,
-  validateOwnerType, validateTransferType,
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+  DomainError,
+  validateItemDefinitionInput,
+  validateItemInstanceCreateInput,
+  validateOwnerType,
+  validateTransferType,
   inventoryDomainService,
   combineItemInstance,
   createInventoryEvent,
   DEFAULT_CAPACITY,
-  type ItemDefinitionInput, type ItemInstanceCreateInput,
-  type ItemDefinitionState, type ItemInstanceState,
-  type InventoryState, type OwnershipState,
-  type OwnerType, type ResolvedItemInstance,
+  type ItemDefinitionInput,
+  type ItemInstanceCreateInput,
+  type ItemDefinitionState,
+  type ItemInstanceState,
+  type InventoryState,
+  type OwnershipState,
+  type OwnerType,
+  type ResolvedItemInstance,
 } from "../domain";
 import type { InventoryDomainEvent } from "../domain/inventory-events";
 import type { Database, QueryExecutor } from "../db/client";
@@ -47,7 +56,10 @@ async function assertScope(
   userId: string,
   repos: ReturnType<typeof getRepos>,
 ): Promise<void> {
-  const household = await repos.householdRepo.findByIdForUser(householdId, userId);
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
   if (!household) {
     throw new AuthorizationError("User is not a member of this household");
   }
@@ -58,7 +70,10 @@ async function assertItemInHousehold(
   householdId: string,
   repos: ReturnType<typeof getRepos>,
 ): Promise<Record<string, unknown>> {
-  const instance = await repos.inventoryRepo.findInstanceById(itemInstanceId, householdId);
+  const instance = await repos.inventoryRepo.findInstanceById(
+    itemInstanceId,
+    householdId,
+  );
   if (!instance) {
     throw new NotFoundError("ItemInstance", itemInstanceId);
   }
@@ -71,9 +86,17 @@ async function ensureInventoryRecord(
   householdId: string,
   repos: ReturnType<typeof getRepos>,
 ) {
-  let inv = await repos.inventoryRepo.findInventoryByOwner(ownerType, ownerId, "personal", householdId);
+  let inv = await repos.inventoryRepo.findInventoryByOwner(
+    ownerType,
+    ownerId,
+    "personal",
+    householdId,
+  );
   if (!inv) {
-    const caps = DEFAULT_CAPACITY[ownerType] ?? { mode: "unlimited" as const, value: 0 };
+    const caps = DEFAULT_CAPACITY[ownerType] ?? {
+      mode: "unlimited" as const,
+      value: 0,
+    };
     inv = await repos.inventoryRepo.createInventory({
       id: crypto.randomUUID(),
       householdId,
@@ -91,7 +114,9 @@ async function ensureInventoryRecord(
   return inv;
 }
 
-function toItemDefinitionState(rec: Record<string, unknown>): ItemDefinitionState {
+function toItemDefinitionState(
+  rec: Record<string, unknown>,
+): ItemDefinitionState {
   return {
     id: rec.id as string,
     definitionKey: rec.definitionKey as string,
@@ -109,7 +134,8 @@ function toItemDefinitionState(rec: Record<string, unknown>): ItemDefinitionStat
     isConsumable: rec.isConsumable as boolean,
     isStorySelectable: rec.isStorySelectable as boolean,
     allowedOwnerTypes: rec.allowedOwnerTypes as OwnerType[],
-    lifecycleStatus: rec.lifecycleStatus as ItemDefinitionState["lifecycleStatus"],
+    lifecycleStatus:
+      rec.lifecycleStatus as ItemDefinitionState["lifecycleStatus"],
     metadata: rec.metadata as Record<string, unknown>,
   };
 }
@@ -119,8 +145,10 @@ function toItemInstanceState(rec: Record<string, unknown>): ItemInstanceState {
     id: rec.id as string,
     itemDefinitionId: rec.itemDefinitionId as string,
     instanceName: (rec.instanceName as string) ?? null,
-    lifecycleStatus: rec.lifecycleStatus as ItemInstanceState["lifecycleStatus"],
-    conditionStatus: rec.conditionStatus as ItemInstanceState["conditionStatus"],
+    lifecycleStatus:
+      rec.lifecycleStatus as ItemInstanceState["lifecycleStatus"],
+    conditionStatus:
+      rec.conditionStatus as ItemInstanceState["conditionStatus"],
     durabilityCurrent: (rec.durabilityCurrent as number) ?? null,
     durabilityMax: (rec.durabilityMax as number) ?? null,
     quantity: rec.quantity as number,
@@ -130,7 +158,9 @@ function toItemInstanceState(rec: Record<string, unknown>): ItemInstanceState {
   };
 }
 
-function toOwnershipState(rec: Record<string, unknown> | null): OwnershipState | null {
+function toOwnershipState(
+  rec: Record<string, unknown> | null,
+): OwnershipState | null {
   if (!rec) return null;
   return {
     id: rec.id as string,
@@ -161,9 +191,14 @@ export async function createItemDefinition(
   await assertScope(householdId, userId, repos);
   validateItemDefinitionInput(input);
 
-  const existing = await repos.inventoryRepo.findDefinitionByKey(input.definitionKey);
+  const existing = await repos.inventoryRepo.findDefinitionByKey(
+    input.definitionKey,
+  );
   if (existing) {
-    throw new DomainError("DEFINITION_KEY_EXISTS", `Definition key '${input.definitionKey}' already exists`);
+    throw new DomainError(
+      "DEFINITION_KEY_EXISTS",
+      `Definition key '${input.definitionKey}' already exists`,
+    );
   }
 
   const record = await repos.inventoryRepo.createDefinition({
@@ -204,12 +239,23 @@ export async function acquireItem(
   const validatedOwnerType = validateOwnerType(targetOwnerType);
 
   if (idempotencyKey) {
-    const existing = await repos.inventoryRepo.findIdempotencyRecord(idempotencyKey, householdId, "acquire");
+    const existing = await repos.inventoryRepo.findIdempotencyRecord(
+      idempotencyKey,
+      householdId,
+      "acquire",
+    );
     if (existing) {
-      const inst = await repos.inventoryRepo.findInstanceById(existing.itemInstanceId, householdId);
+      const inst = await repos.inventoryRepo.findInstanceById(
+        existing.itemInstanceId,
+        householdId,
+      );
       if (inst) {
-        const def = await repos.inventoryRepo.findDefinitionById(inst.itemDefinitionId);
-        const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(inst.id);
+        const def = await repos.inventoryRepo.findDefinitionById(
+          inst.itemDefinitionId,
+        );
+        const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(
+          inst.id,
+        );
         return {
           instance: combineItemInstance(
             toItemInstanceState(inst as unknown as Record<string, unknown>),
@@ -218,17 +264,28 @@ export async function acquireItem(
           ),
           entryId: null,
           ownershipId: ownership?.id ?? null,
-          event: { id: "", itemInstanceId: inst.id, eventType: "ITEM_ACQUIRED", actorHouseholdId: householdId, actorUserId: userId, payload: {}, createdAt: new Date() },
+          event: {
+            id: "",
+            itemInstanceId: inst.id,
+            eventType: "ITEM_ACQUIRED",
+            actorHouseholdId: householdId,
+            actorUserId: userId,
+            payload: {},
+            createdAt: new Date(),
+          },
         };
       }
     }
   }
 
-  const definition = await repos.inventoryRepo.findDefinitionByKey(definitionKey);
+  const definition =
+    await repos.inventoryRepo.findDefinitionByKey(definitionKey);
   if (!definition) {
     throw new NotFoundError("ItemDefinition", definitionKey);
   }
-  const defState = toItemDefinitionState(definition as unknown as Record<string, unknown>);
+  const defState = toItemDefinitionState(
+    definition as unknown as Record<string, unknown>,
+  );
 
   const createInput: ItemInstanceCreateInput = input ?? {
     itemDefinitionId: definition.id,
@@ -236,10 +293,31 @@ export async function acquireItem(
   };
   validateItemInstanceCreateInput(createInput, defState);
 
-  if (createInput.customProperties && typeof createInput.customProperties === "object" && Object.keys(createInput.customProperties).length > 0) {
+  if (
+    createInput.customProperties &&
+    typeof createInput.customProperties === "object" &&
+    Object.keys(createInput.customProperties).length > 0
+  ) {
     for (const key of Object.keys(createInput.customProperties)) {
-      if (!["color", "size", "material", "flavor", "text", "power", "charge", "chargeMax", "isOpen", "isRead"].includes(key)) {
-        throw new ValidationError("INVALID_CUSTOM_PROPERTY", `Unknown custom property: ${key}`, key);
+      if (
+        ![
+          "color",
+          "size",
+          "material",
+          "flavor",
+          "text",
+          "power",
+          "charge",
+          "chargeMax",
+          "isOpen",
+          "isRead",
+        ].includes(key)
+      ) {
+        throw new ValidationError(
+          "INVALID_CUSTOM_PROPERTY",
+          `Unknown custom property: ${key}`,
+          key,
+        );
       }
     }
   }
@@ -268,23 +346,39 @@ export async function acquireItem(
         originId: createInput.originId ?? null,
       });
 
-      const inv = await ensureInventoryRecord(validatedOwnerType, targetOwnerId, householdId, { ...repos, inventoryRepo: txRepo });
+      const inv = await ensureInventoryRecord(
+        validatedOwnerType,
+        targetOwnerId,
+        householdId,
+        { ...repos, inventoryRepo: txRepo },
+      );
       const inventoryId = inv.id;
 
       const targetInv: InventoryState = {
         id: inv.id,
         ownerType: validatedOwnerType,
         ownerId: targetOwnerId,
-        inventoryType: (inv.inventoryType as InventoryState["inventoryType"]) ?? "personal",
+        inventoryType:
+          (inv.inventoryType as InventoryState["inventoryType"]) ?? "personal",
         displayName: inv.displayName,
-        capacityMode: (inv.capacityMode as InventoryState["capacityMode"]) ?? "unlimited",
+        capacityMode:
+          (inv.capacityMode as InventoryState["capacityMode"]) ?? "unlimited",
         capacityValue: inv.capacityValue,
         isLocked: inv.isLocked,
-        lifecycleStatus: (inv.lifecycleStatus as InventoryState["lifecycleStatus"]) ?? "active",
+        lifecycleStatus:
+          (inv.lifecycleStatus as InventoryState["lifecycleStatus"]) ??
+          "active",
         metadata: (inv.metadata as Record<string, unknown>) ?? {},
       };
 
-      inventoryDomainService.validateAcquire(defState, toItemInstanceState(instance as unknown as Record<string, unknown>), validatedOwnerType, targetOwnerId, targetInv, null);
+      inventoryDomainService.validateAcquire(
+        defState,
+        toItemInstanceState(instance as unknown as Record<string, unknown>),
+        validatedOwnerType,
+        targetOwnerId,
+        targetInv,
+        null,
+      );
 
       const ownership = await txRepo.createOwnership({
         id: crypto.randomUUID(),
@@ -314,19 +408,26 @@ export async function acquireItem(
         toOwnerType: validatedOwnerType,
         toOwnerId: targetOwnerId,
         ownershipType: "owned",
-        transferType: createInput.originType === "story" ? "story_reward" : "system_move",
+        transferType:
+          createInput.originType === "story" ? "story_reward" : "system_move",
         reason: `Acquired via ${createInput.originType}`,
         idempotencyKey: idempotencyKey ?? null,
         actorHouseholdId: householdId,
         actorUserId: userId,
       });
 
-      const event = createInventoryEvent("ITEM_ACQUIRED", instanceId, householdId, userId, {
-        definitionKey,
-        targetOwnerType: validatedOwnerType,
-        targetOwnerId,
-        quantity: createInput.quantity ?? 1,
-      });
+      const event = createInventoryEvent(
+        "ITEM_ACQUIRED",
+        instanceId,
+        householdId,
+        userId,
+        {
+          definitionKey,
+          targetOwnerType: validatedOwnerType,
+          targetOwnerId,
+          quantity: createInput.quantity ?? 1,
+        },
+      );
       await txRepo.createDomainEvent({
         id: event.id,
         itemInstanceId: instanceId,
@@ -361,7 +462,8 @@ export async function acquireItem(
       };
     });
   } catch (error) {
-    if (error instanceof DomainError || error instanceof ValidationError) throw error;
+    if (error instanceof DomainError || error instanceof ValidationError)
+      throw error;
     throw error;
   }
 
@@ -393,22 +495,46 @@ export async function transferItem(
   const validatedTransferType = validateTransferType(transferType);
 
   if (idempotencyKey) {
-    const existing = await repos.inventoryRepo.findTransferByIdempotencyKey(idempotencyKey, householdId, itemInstanceId, validatedTransferType);
+    const existing = await repos.inventoryRepo.findTransferByIdempotencyKey(
+      idempotencyKey,
+      householdId,
+      itemInstanceId,
+      validatedTransferType,
+    );
     if (existing && existing.status === "committed") {
       return null;
     }
   }
 
-  const instance = await assertItemInHousehold(itemInstanceId, householdId, repos);
+  const instance = await assertItemInHousehold(
+    itemInstanceId,
+    householdId,
+    repos,
+  );
   const instState = toItemInstanceState(instance);
 
-  const definition = await repos.inventoryRepo.findDefinitionById(instance.itemDefinitionId as string);
-  if (!definition) throw new NotFoundError("ItemDefinition", instance.itemDefinitionId as string);
-  const defState = toItemDefinitionState(definition as unknown as Record<string, unknown>);
+  const definition = await repos.inventoryRepo.findDefinitionById(
+    instance.itemDefinitionId as string,
+  );
+  if (!definition)
+    throw new NotFoundError(
+      "ItemDefinition",
+      instance.itemDefinitionId as string,
+    );
+  const defState = toItemDefinitionState(
+    definition as unknown as Record<string, unknown>,
+  );
 
-  const sourceOwnership = await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
-  if (!sourceOwnership) throw new DomainError("NO_ACTIVE_OWNERSHIP", "Item has no active ownership");
-  const sourceOwnState = toOwnershipState(sourceOwnership as unknown as Record<string, unknown>)!;
+  const sourceOwnership =
+    await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
+  if (!sourceOwnership)
+    throw new DomainError(
+      "NO_ACTIVE_OWNERSHIP",
+      "Item has no active ownership",
+    );
+  const sourceOwnState = toOwnershipState(
+    sourceOwnership as unknown as Record<string, unknown>,
+  )!;
 
   const rawDb = resolveDb();
   let result: {
@@ -422,10 +548,23 @@ export async function transferItem(
     await rawDb.transaction(async (tx) => {
       const txRepo = new DrizzleInventoryRepository(tx as never);
 
-      const txSourceOwn = await txRepo.findActiveOwnershipByItemForUpdate(itemInstanceId, tx);
-      if (!txSourceOwn) throw new DomainError("SOURCE_LOST_OWNERSHIP", "Source no longer has active ownership (concurrent transfer)");
-      if (txSourceOwn.ownerId !== fromOwnerId || txSourceOwn.ownerType !== validatedFromOwnerType) {
-        throw new DomainError("SOURCE_MISMATCH", "Current owner does not match specified source owner");
+      const txSourceOwn = await txRepo.findActiveOwnershipByItemForUpdate(
+        itemInstanceId,
+        tx,
+      );
+      if (!txSourceOwn)
+        throw new DomainError(
+          "SOURCE_LOST_OWNERSHIP",
+          "Source no longer has active ownership (concurrent transfer)",
+        );
+      if (
+        txSourceOwn.ownerId !== fromOwnerId ||
+        txSourceOwn.ownerType !== validatedFromOwnerType
+      ) {
+        throw new DomainError(
+          "SOURCE_MISMATCH",
+          "Current owner does not match specified source owner",
+        );
       }
 
       await txRepo.releaseOwnership(txSourceOwn.id);
@@ -444,24 +583,44 @@ export async function transferItem(
 
       const sourceEntry = await txRepo.findEntryByItemInstance(itemInstanceId);
       if (sourceEntry && sourceEntry.entryStatus === "active") {
-        await txRepo.updateEntry(sourceEntry.id, { entryStatus: "removed" as const });
+        await txRepo.updateEntry(sourceEntry.id, {
+          entryStatus: "removed" as const,
+        });
       }
 
-      const targetInv = await ensureInventoryRecord(validatedToOwnerType, toOwnerId, householdId, { ...repos, inventoryRepo: txRepo });
+      const targetInv = await ensureInventoryRecord(
+        validatedToOwnerType,
+        toOwnerId,
+        householdId,
+        { ...repos, inventoryRepo: txRepo },
+      );
       const targetInvState: InventoryState = {
         id: targetInv.id,
         ownerType: validatedToOwnerType,
         ownerId: toOwnerId,
-        inventoryType: (targetInv.inventoryType as InventoryState["inventoryType"]) ?? "personal",
+        inventoryType:
+          (targetInv.inventoryType as InventoryState["inventoryType"]) ??
+          "personal",
         displayName: targetInv.displayName,
-        capacityMode: (targetInv.capacityMode as InventoryState["capacityMode"]) ?? "unlimited",
+        capacityMode:
+          (targetInv.capacityMode as InventoryState["capacityMode"]) ??
+          "unlimited",
         capacityValue: targetInv.capacityValue,
         isLocked: targetInv.isLocked,
-        lifecycleStatus: (targetInv.lifecycleStatus as InventoryState["lifecycleStatus"]) ?? "active",
+        lifecycleStatus:
+          (targetInv.lifecycleStatus as InventoryState["lifecycleStatus"]) ??
+          "active",
         metadata: (targetInv.metadata as Record<string, unknown>) ?? {},
       };
 
-      inventoryDomainService.validateTransfer(defState, instState, sourceOwnState, validatedToOwnerType, toOwnerId, targetInvState);
+      inventoryDomainService.validateTransfer(
+        defState,
+        instState,
+        sourceOwnState,
+        validatedToOwnerType,
+        toOwnerId,
+        targetInvState,
+      );
 
       await txRepo.createEntry({
         id: crypto.randomUUID(),
@@ -505,13 +664,19 @@ export async function transferItem(
         actorUserId: userId,
       });
 
-      const event = createInventoryEvent("ITEM_TRANSFERRED", itemInstanceId, householdId, userId, {
-        fromOwnerType: validatedFromOwnerType,
-        fromOwnerId,
-        toOwnerType: validatedToOwnerType,
-        toOwnerId,
-        transferType: validatedTransferType,
-      });
+      const event = createInventoryEvent(
+        "ITEM_TRANSFERRED",
+        itemInstanceId,
+        householdId,
+        userId,
+        {
+          fromOwnerType: validatedFromOwnerType,
+          fromOwnerId,
+          toOwnerType: validatedToOwnerType,
+          toOwnerId,
+          transferType: validatedTransferType,
+        },
+      );
       await txRepo.createDomainEvent({
         id: event.id,
         itemInstanceId,
@@ -523,8 +688,12 @@ export async function transferItem(
       });
 
       result = {
-        fromOwnership: toOwnershipState(txSourceOwn as unknown as Record<string, unknown>),
-        toOwnership: toOwnershipState(newOwnership as unknown as Record<string, unknown>)!,
+        fromOwnership: toOwnershipState(
+          txSourceOwn as unknown as Record<string, unknown>,
+        ),
+        toOwnership: toOwnershipState(
+          newOwnership as unknown as Record<string, unknown>,
+        )!,
         history: {
           fromOwnerType: validatedFromOwnerType,
           fromOwnerId,
@@ -536,7 +705,8 @@ export async function transferItem(
       };
     });
   } catch (error) {
-    if (error instanceof DomainError || error instanceof ValidationError) throw error;
+    if (error instanceof DomainError || error instanceof ValidationError)
+      throw error;
     throw error;
   }
 
@@ -554,22 +724,50 @@ export async function consumeItem(
   await assertScope(householdId, userId, repos);
 
   if (idempotencyKey) {
-    const existing = await repos.inventoryRepo.findIdempotencyRecord(idempotencyKey, householdId, "consume");
+    const existing = await repos.inventoryRepo.findIdempotencyRecord(
+      idempotencyKey,
+      householdId,
+      "consume",
+    );
     if (existing) {
-      return { id: "", itemInstanceId, eventType: "ITEM_CONSUMED", actorHouseholdId: householdId, actorUserId: userId, payload: {}, createdAt: new Date() };
+      return {
+        id: "",
+        itemInstanceId,
+        eventType: "ITEM_CONSUMED",
+        actorHouseholdId: householdId,
+        actorUserId: userId,
+        payload: {},
+        createdAt: new Date(),
+      };
     }
   }
 
-  const instance = await assertItemInHousehold(itemInstanceId, householdId, repos);
+  const instance = await assertItemInHousehold(
+    itemInstanceId,
+    householdId,
+    repos,
+  );
   const instState = toItemInstanceState(instance);
 
-  const definition = await repos.inventoryRepo.findDefinitionById(instance.itemDefinitionId as string);
-  if (!definition) throw new NotFoundError("ItemDefinition", instance.itemDefinitionId as string);
-  const defState = toItemDefinitionState(definition as unknown as Record<string, unknown>);
+  const definition = await repos.inventoryRepo.findDefinitionById(
+    instance.itemDefinitionId as string,
+  );
+  if (!definition)
+    throw new NotFoundError(
+      "ItemDefinition",
+      instance.itemDefinitionId as string,
+    );
+  const defState = toItemDefinitionState(
+    definition as unknown as Record<string, unknown>,
+  );
 
-  const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
-  if (!ownership) throw new DomainError("NO_ACTIVE_OWNERSHIP", "Item has no active owner");
-  const ownState = toOwnershipState(ownership as unknown as Record<string, unknown>)!;
+  const ownership =
+    await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
+  if (!ownership)
+    throw new DomainError("NO_ACTIVE_OWNERSHIP", "Item has no active owner");
+  const ownState = toOwnershipState(
+    ownership as unknown as Record<string, unknown>,
+  )!;
 
   inventoryDomainService.validateConsume(defState, instState, ownState);
 
@@ -588,7 +786,10 @@ export async function consumeItem(
         });
         const entry = await txRepo.findEntryByItemInstance(itemInstanceId);
         if (entry && entry.entryStatus === "active") {
-          await txRepo.updateEntry(entry.id, { entryStatus: "removed" as const, quantity: 0 });
+          await txRepo.updateEntry(entry.id, {
+            entryStatus: "removed" as const,
+            quantity: 0,
+          });
         }
         await txRepo.releaseOwnership(ownership.id);
       } else {
@@ -616,10 +817,16 @@ export async function consumeItem(
         actorUserId: userId,
       });
 
-      event = createInventoryEvent("ITEM_CONSUMED", itemInstanceId, householdId, userId, {
-        quantity,
-        remainingQuantity: Math.max(0, newQty),
-      });
+      event = createInventoryEvent(
+        "ITEM_CONSUMED",
+        itemInstanceId,
+        householdId,
+        userId,
+        {
+          quantity,
+          remainingQuantity: Math.max(0, newQty),
+        },
+      );
       await txRepo.createDomainEvent({
         id: event.id,
         itemInstanceId,
@@ -643,7 +850,8 @@ export async function consumeItem(
       }
     });
   } catch (error) {
-    if (error instanceof DomainError || error instanceof ValidationError) throw error;
+    if (error instanceof DomainError || error instanceof ValidationError)
+      throw error;
     throw error;
   }
 
@@ -661,18 +869,38 @@ export async function archiveItem(
   await assertScope(householdId, userId, repos);
 
   if (idempotencyKey) {
-    const existing = await repos.inventoryRepo.findIdempotencyRecord(idempotencyKey, householdId, "archive");
+    const existing = await repos.inventoryRepo.findIdempotencyRecord(
+      idempotencyKey,
+      householdId,
+      "archive",
+    );
     if (existing) {
-      return { id: "", itemInstanceId, eventType: "ITEM_ARCHIVED", actorHouseholdId: householdId, actorUserId: userId, payload: {}, createdAt: new Date() };
+      return {
+        id: "",
+        itemInstanceId,
+        eventType: "ITEM_ARCHIVED",
+        actorHouseholdId: householdId,
+        actorUserId: userId,
+        payload: {},
+        createdAt: new Date(),
+      };
     }
   }
 
-  const instance = await assertItemInHousehold(itemInstanceId, householdId, repos);
+  const instance = await assertItemInHousehold(
+    itemInstanceId,
+    householdId,
+    repos,
+  );
   const instState = toItemInstanceState(instance);
 
-  const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
-  if (!ownership) throw new DomainError("NO_ACTIVE_OWNERSHIP", "Item has no active owner");
-  const ownState = toOwnershipState(ownership as unknown as Record<string, unknown>)!;
+  const ownership =
+    await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
+  if (!ownership)
+    throw new DomainError("NO_ACTIVE_OWNERSHIP", "Item has no active owner");
+  const ownState = toOwnershipState(
+    ownership as unknown as Record<string, unknown>,
+  )!;
 
   inventoryDomainService.validateArchive(instState, ownState);
 
@@ -695,9 +923,15 @@ export async function archiveItem(
 
       await txRepo.releaseOwnership(ownership.id);
 
-      event = createInventoryEvent("ITEM_ARCHIVED", itemInstanceId, householdId, userId, {
-        reason: reason ?? null,
-      });
+      event = createInventoryEvent(
+        "ITEM_ARCHIVED",
+        itemInstanceId,
+        householdId,
+        userId,
+        {
+          reason: reason ?? null,
+        },
+      );
       await txRepo.createDomainEvent({
         id: event.id,
         itemInstanceId,
@@ -721,7 +955,8 @@ export async function archiveItem(
       }
     });
   } catch (error) {
-    if (error instanceof DomainError || error instanceof ValidationError) throw error;
+    if (error instanceof DomainError || error instanceof ValidationError)
+      throw error;
     throw error;
   }
 
@@ -736,13 +971,19 @@ export async function getItem(
   const repos = getRepos();
   await assertScope(householdId, userId, repos);
 
-  const instance = await repos.inventoryRepo.findInstanceById(itemInstanceId, householdId);
+  const instance = await repos.inventoryRepo.findInstanceById(
+    itemInstanceId,
+    householdId,
+  );
   if (!instance) return null;
 
-  const definition = await repos.inventoryRepo.findDefinitionById(instance.itemDefinitionId);
+  const definition = await repos.inventoryRepo.findDefinitionById(
+    instance.itemDefinitionId,
+  );
   if (!definition) return null;
 
-  const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
+  const ownership =
+    await repos.inventoryRepo.findActiveOwnershipByItem(itemInstanceId);
 
   return combineItemInstance(
     toItemInstanceState(instance as unknown as Record<string, unknown>),
@@ -759,7 +1000,10 @@ export async function getItemHistory(
   const repos = getRepos();
   await assertScope(householdId, userId, repos);
 
-  const instance = await repos.inventoryRepo.findInstanceById(itemInstanceId, householdId);
+  const instance = await repos.inventoryRepo.findInstanceById(
+    itemInstanceId,
+    householdId,
+  );
   if (!instance) throw new NotFoundError("ItemInstance", itemInstanceId);
 
   const events = await repos.inventoryRepo.getDomainEvents(itemInstanceId);
@@ -775,31 +1019,49 @@ export async function listInventory(
   const repos = getRepos();
   await assertScope(householdId, userId, repos);
 
-  const inv = await repos.inventoryRepo.findInventoryByOwner(ownerType, ownerId, "personal", householdId);
+  const inv = await repos.inventoryRepo.findInventoryByOwner(
+    ownerType,
+    ownerId,
+    "personal",
+    householdId,
+  );
   if (!inv) return [];
 
-  const rows = await (repos.db as QueryExecutor).select({
-    id: inventoryItemInstances.id,
-    itemDefinitionId: inventoryItemInstances.itemDefinitionId,
-    instanceName: inventoryItemInstances.instanceName,
-    lifecycleStatus: inventoryItemInstances.lifecycleStatus,
-    conditionStatus: inventoryItemInstances.conditionStatus,
-    durabilityCurrent: inventoryItemInstances.durabilityCurrent,
-    durabilityMax: inventoryItemInstances.durabilityMax,
-    quantity: inventoryItemInstances.quantity,
-    customProperties: inventoryItemInstances.customProperties,
-    originType: inventoryItemInstances.originType,
-    originId: inventoryItemInstances.originId,
-  })
+  const rows = await (repos.db as QueryExecutor)
+    .select({
+      id: inventoryItemInstances.id,
+      itemDefinitionId: inventoryItemInstances.itemDefinitionId,
+      instanceName: inventoryItemInstances.instanceName,
+      lifecycleStatus: inventoryItemInstances.lifecycleStatus,
+      conditionStatus: inventoryItemInstances.conditionStatus,
+      durabilityCurrent: inventoryItemInstances.durabilityCurrent,
+      durabilityMax: inventoryItemInstances.durabilityMax,
+      quantity: inventoryItemInstances.quantity,
+      customProperties: inventoryItemInstances.customProperties,
+      originType: inventoryItemInstances.originType,
+      originId: inventoryItemInstances.originId,
+    })
     .from(inventoryEntries)
-    .innerJoin(inventoryItemInstances, eq(inventoryEntries.itemInstanceId, inventoryItemInstances.id))
-    .where(and(eq(inventoryEntries.inventoryId, inv.id), eq(inventoryEntries.entryStatus, "active")));
+    .innerJoin(
+      inventoryItemInstances,
+      eq(inventoryEntries.itemInstanceId, inventoryItemInstances.id),
+    )
+    .where(
+      and(
+        eq(inventoryEntries.inventoryId, inv.id),
+        eq(inventoryEntries.entryStatus, "active"),
+      ),
+    );
 
   const results: ResolvedItemInstance[] = [];
   for (const inst of rows) {
-    const def = await repos.inventoryRepo.findDefinitionById(inst.itemDefinitionId);
+    const def = await repos.inventoryRepo.findDefinitionById(
+      inst.itemDefinitionId,
+    );
     if (!def) continue;
-    const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(inst.id);
+    const ownership = await repos.inventoryRepo.findActiveOwnershipByItem(
+      inst.id,
+    );
     results.push(
       combineItemInstance(
         toItemInstanceState(inst as unknown as Record<string, unknown>),
@@ -810,7 +1072,3 @@ export async function listInventory(
   }
   return results;
 }
-
-
-
-

@@ -32,7 +32,9 @@ describe("safeError", () => {
   });
 
   it("redacts postgresql:// URL from error message", () => {
-    const err = new Error("Connection failed: postgresql://user:pass@localhost:15432/lumi");
+    const err = new Error(
+      "Connection failed: postgresql://user:pass@localhost:15432/lumi",
+    );
     const result = safeError(err);
     const msg = result.message as string;
     expect(msg).not.toContain("postgresql://user:pass@");
@@ -40,7 +42,9 @@ describe("safeError", () => {
   });
 
   it("redacts token value after 'token:' from error message", () => {
-    const err = new Error("Invalid token: eyJhbGciOiJIUzI1NiJ9.token-value-here");
+    const err = new Error(
+      "Invalid token: eyJhbGciOiJIUzI1NiJ9.token-value-here",
+    );
     const result = safeError(err);
     const msg = result.message as string;
     expect(msg).not.toContain("eyJhbGciOiJIUzI1NiJ9.token-value-here");
@@ -51,7 +55,9 @@ describe("safeError", () => {
     const cause = "Wrong password=supersecret123 for user admin";
     const err = new Error("auth failed", { cause });
     const result = safeError(err);
-    expect((result.cause as string).toLowerCase()).not.toContain("supersecret123");
+    expect((result.cause as string).toLowerCase()).not.toContain(
+      "supersecret123",
+    );
   });
 
   it("redacts secrets from error stack", () => {
@@ -70,7 +76,9 @@ describe("safeError", () => {
   it("redacts bearer tokens from error message", () => {
     const err = new Error("Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.dGVzdA");
     const result = safeError(err);
-    expect((result.message as string).toLowerCase()).not.toContain("bearer eyj");
+    expect((result.message as string).toLowerCase()).not.toContain(
+      "bearer eyj",
+    );
   });
 
   it("redacts sk- api keys from error message", () => {
@@ -80,9 +88,13 @@ describe("safeError", () => {
   });
 
   it("redacts cookie from error message", () => {
-    const err = new Error("Cookie parse error: cookie=session_id=abc123; secret=xyz");
+    const err = new Error(
+      "Cookie parse error: cookie=session_id=abc123; secret=xyz",
+    );
     const result = safeError(err);
-    expect((result.message as string).toLowerCase()).not.toContain("session_id=abc123");
-    expect((result.message as string)).toContain("[REDACTED]");
+    expect((result.message as string).toLowerCase()).not.toContain(
+      "session_id=abc123",
+    );
+    expect(result.message as string).toContain("[REDACTED]");
   });
 });

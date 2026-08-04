@@ -44,8 +44,14 @@ export const simulationEffects = simulationSchema.table(
       table.status,
       table.committedAt,
     ),
-    check("chk_sim_effect_status", sql`${table.status} IN ('pending','committed')`),
-    check("chk_sim_effect_severity", sql`${table.severity} IN ('low','moderate','high')`),
+    check(
+      "chk_sim_effect_status",
+      sql`${table.status} IN ('pending','committed')`,
+    ),
+    check(
+      "chk_sim_effect_severity",
+      sql`${table.severity} IN ('low','moderate','high')`,
+    ),
   ],
 );
 

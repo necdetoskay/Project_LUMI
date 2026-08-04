@@ -17,48 +17,65 @@ const bodySchema = z.object({
   idempotencyKey: z.string().min(1).optional(),
 });
 
-export const POST = observeHandler(async (request: Request, { params }: { params: Promise<{ sessionId: string }> }) => {
-  return withParent(async (parent) => {
-    const { searchParams } = new URL(request.url);
-    const householdId = searchParams.get("householdId");
-    if (!householdId) {
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "householdId query parameter is required" },
-        { status: 400 },
-      );
-    }
+export const POST = observeHandler(
+  async (
+    request: Request,
+    { params }: { params: Promise<{ sessionId: string }> },
+  ) => {
+    return withParent(async (parent) => {
+      const { searchParams } = new URL(request.url);
+      const householdId = searchParams.get("householdId");
+      if (!householdId) {
+        return NextResponse.json(
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
+          { status: 400 },
+        );
+      }
 
-    const raw = await readRequestBody(request);
-    const parsedBody = bodySchema.safeParse(raw);
-    const parsedParams = paramsSchema.safeParse(await params);
+      const raw = await readRequestBody(request);
+      const parsedBody = bodySchema.safeParse(raw);
+      const parsedParams = paramsSchema.safeParse(await params);
 
-    if (!parsedBody.success || !parsedParams.success) {
-      const issues = [
-        ...(parsedBody.success ? [] : [parsedBody.error.message]),
-        ...(parsedParams.success ? [] : [parsedParams.error.message]),
-      ];
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: issues.join("; ") },
-        { status: 400 },
-      );
-    }
+      if (!parsedBody.success || !parsedParams.success) {
+        const issues = [
+          ...(parsedBody.success ? [] : [parsedBody.error.message]),
+          ...(parsedParams.success ? [] : [parsedParams.error.message]),
+        ];
+        return NextResponse.json(
+          { error: "VALIDATION_ERROR", message: issues.join("; ") },
+          { status: 400 },
+        );
+      }
 
-    const { sessionId } = parsedParams.data;
-    const { expectedVersion, reason, idempotencyKey } = parsedBody.data;
+      const { sessionId } = parsedParams.data;
+      const { expectedVersion, reason, idempotencyKey } = parsedBody.data;
 
-    const household = await getOwnedHousehold(parent.id);
-    if (!household || household.id !== householdId) {
-      return NextResponse.json(
-        { error: "FORBIDDEN", message: "User does not have access to this household" },
-        { status: 403 },
-      );
-    }
+      const household = await getOwnedHousehold(parent.id);
+      if (!household || household.id !== householdId) {
+        return NextResponse.json(
+          {
+            error: "FORBIDDEN",
+            message: "User does not have access to this household",
+          },
+          { status: 403 },
+        );
+      }
 
-    try {
-      const result = await abandonSession({ sessionId, expectedVersion, reason, idempotencyKey });
-      return NextResponse.json(result);
-    } catch (error) {
-      return handleStoryError(error, "Failed to abandon session");
-    }
-  });
-}, "/api/stories/sessions/{sessionId}/abandon");
+      try {
+        const result = await abandonSession({
+          sessionId,
+          expectedVersion,
+          reason,
+          idempotencyKey,
+        });
+        return NextResponse.json(result);
+      } catch (error) {
+        return handleStoryError(error, "Failed to abandon session");
+      }
+    });
+  },
+  "/api/stories/sessions/{sessionId}/abandon",
+);
