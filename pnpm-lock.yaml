@@ -47,6 +47,9 @@ importers:
       '@lumi/profiles':
         specifier: workspace:*
         version: link:../../packages/profiles
+      '@lumi/simulation':
+        specifier: workspace:*
+        version: link:../../packages/simulation
       '@lumi/story':
         specifier: workspace:*
         version: link:../../packages/story
@@ -264,6 +267,43 @@ importers:
         specifier: 4.0.14
         version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(lightningcss@1.30.1)
 
+  packages/simulation:
+    dependencies:
+      '@lumi/profiles':
+        specifier: workspace:*
+        version: link:../profiles
+      '@lumi/world':
+        specifier: workspace:*
+        version: link:../world
+      drizzle-orm:
+        specifier: ^0.43.1
+        version: 0.43.1(@types/pg@8.20.0)(pg@8.22.0)(postgres@3.4.9)
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
+      zod:
+        specifier: 4.1.12
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.20.0
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.7.0)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.14
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(lightningcss@1.30.1)
+
   packages/story:
     dependencies:
       drizzle-orm:
@@ -316,6 +356,31 @@ importers:
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.7.0)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.14
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(lightningcss@1.30.1)
+
+  services/worker:
+    dependencies:
+      '@lumi/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+      '@lumi/simulation':
+        specifier: workspace:*
+        version: link:../../packages/simulation
+      '@lumi/world':
+        specifier: workspace:*
+        version: link:../../packages/world
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.7.0)

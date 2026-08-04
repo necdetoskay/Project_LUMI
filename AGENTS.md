@@ -13,6 +13,8 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - `packages/prompts` — versioned prompt registry and typed template renderer.
 - `packages/context` — deterministic context builder and safety/parent precedence policy.
 - `packages/npc-intelligence` — NPC perception/belief, need/goal evaluation, decision context, candidate/utility selection, decision traces.
+- `packages/simulation` — world time, calendar, and background simulation engine (absence policy, budget planning, idempotent runs, committed effects, recap builder).
+- `services/worker` — background job orchestrator that drives world simulation, dispatching idempotent runs and recording committed effects.
 - `tooling/*` — shared TypeScript, ESLint, and repository tooling.
 
 ## Local Contracts
@@ -43,3 +45,5 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 11 — Prompt Registry and Context Builder [tamamlandı]
 - Sprint 12 — Story Generation Pipeline [tamamlandı] (merge onay bekliyor: `agent/sprint-12-story-generation-pipeline`)
 - Sprint 13 — NPC Intelligence Foundation [tamamlandı] (merge onay bekliyor: `agent/sprint-13-npc-intelligence-foundation`)
+- Sprint 14 — Simulation Engine [askıya alındı] (WIP dalda: `agent/sprint-14-world-time-background-simulation`. Açık kapaklar: BudgetPlanner testi yanlış konumda `tests/application/`, worker test dosyası yok, `discoverAbsentWorlds()` stub ve `worker/src/index.ts` port bağlantıları `undefined as never`; kullanıcı onayıyla sprint 15'e geçildi, kalan işler `docs/08-backlog/` altında izlenecek)
+- Sprint 15 — Image, Voice and Audio Pipelines [aktif plan] (dal: `agent/sprint-15-*`)
