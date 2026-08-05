@@ -62,12 +62,18 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.0.2
         version: 2.0.2
+      drizzle-orm:
+        specifier: ^0.43.1
+        version: 0.43.1(@types/pg@8.20.0)(pg@8.22.0)(postgres@3.4.9)
       next:
         specifier: 16.2.12
         version: 16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       pg:
         specifier: ^8.22.0
         version: 8.22.0
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
       react:
         specifier: 19.2.8
         version: 19.2.8

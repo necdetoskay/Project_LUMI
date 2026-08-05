@@ -1,0 +1,17 @@
+.git
+.gitignore
+.turbo
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/coverage
+.env
+.env.local
+**/.env
+**/.env.local
+apps/web/.env.local
+*.log
+Dockerfile
+.dockerignore
+pnpm-debug.log*

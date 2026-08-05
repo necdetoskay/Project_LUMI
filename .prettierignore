@@ -10,3 +10,5 @@ LUMI_*
 Story Outcome & World State Commit Engine.txt
 apps/LUMI-*
 packages/LUMI-*
+Dockerfile
+.dockerignore

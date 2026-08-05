@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { newIdempotencyKey } from "@/lib/new-id";
+
 type ReaderOption = {
   option: {
     id: string;
@@ -384,7 +386,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
         `/api/stories/sessions/${encodeURIComponent(sessionId)}/${action}`,
         {
           expectedVersion: sessionVersion,
-          idempotencyKey: crypto.randomUUID(),
+          idempotencyKey: newIdempotencyKey(),
         },
       );
       await loadReader();
@@ -415,7 +417,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
           {
             optionId: option.option.id,
             evidenceSceneId: currentScene.id,
-            idempotencyKey: crypto.randomUUID(),
+            idempotencyKey: newIdempotencyKey(),
           },
         );
 
@@ -425,7 +427,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
             {
               expectedVersion: sessionVersion,
               nextSceneId: option.nextSceneId,
-              idempotencyKey: crypto.randomUUID(),
+              idempotencyKey: newIdempotencyKey(),
             },
           );
         } else {
