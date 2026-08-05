@@ -23,6 +23,15 @@ const bodySchema = z.object({
   characterId: z.string().uuid(),
   playbackMode: z.enum(["reading", "narrated", "mixed"]).optional(),
   idempotencyKey: z.string().min(1).optional(),
+  launchContext: z
+    .object({
+      sourceId: z.string().min(1),
+      sourceKind: z.enum(["world_state", "inventory", "origin"]),
+      sourceTitle: z.string().min(1),
+      sourceSummary: z.string().min(1).optional(),
+      sourceDetail: z.string().min(1).optional(),
+    })
+    .optional(),
 });
 
 function handleStoryError(error: unknown) {
@@ -92,6 +101,7 @@ export const POST = observeHandler(
         characterId,
         playbackMode,
         idempotencyKey,
+        launchContext,
       } = parsedBody.data;
 
       const household = await getOwnedHousehold(parent.id);
@@ -156,6 +166,17 @@ export const POST = observeHandler(
           playbackMode,
           idempotencyKey,
           actorUserId: parent.id,
+          contextSnapshot: launchContext
+            ? {
+                launchContext: {
+                  sourceId: launchContext.sourceId,
+                  sourceKind: launchContext.sourceKind,
+                  sourceTitle: launchContext.sourceTitle,
+                  sourceSummary: launchContext.sourceSummary ?? null,
+                  sourceDetail: launchContext.sourceDetail ?? null,
+                },
+              }
+            : undefined,
         });
 
         return NextResponse.json({ session: result }, { status: 201 });

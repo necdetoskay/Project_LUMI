@@ -31,6 +31,29 @@ const handoffSchema = z
   })
   .strict();
 
+function statusForDomainError(code?: string): number | null {
+  switch (code) {
+    case "FORBIDDEN":
+      return 403;
+    case "PROFILE_ARCHIVED":
+    case "ARCHETYPE_BATCH_NOT_FOUND":
+    case "ARCHETYPE_BATCH_PROFILE_MISMATCH":
+    case "ARCHETYPE_BATCH_EXPIRED":
+    case "ARCHETYPE_NOT_IN_BATCH":
+    case "ARCHETYPE_TYPE_MISMATCH":
+    case "INVALID_ARCHETYPE_DATA":
+      return 400;
+    case "HANDOFF_ALREADY_CONSUMED":
+    case "CHARACTER_ALREADY_EXISTS":
+    case "ALREADY_CONSUMED":
+      return 409;
+    case "NOT_FOUND":
+      return 404;
+    default:
+      return null;
+  }
+}
+
 export const POST = observeHandler((request: Request) => {
   return withParent(async (parent) => {
     try {
@@ -60,7 +83,7 @@ export const POST = observeHandler((request: Request) => {
           {
             error: "VALIDATION_ERROR",
             message: error.issues
-              .map((e: z.ZodIssue) => `${e.path.join(".")}: ${e.message}`)
+              .map((issue: z.ZodIssue) => `${issue.path.join(".")}: ${issue.message}`)
               .join("; "),
           },
           { status: 400 },
@@ -68,6 +91,15 @@ export const POST = observeHandler((request: Request) => {
       }
       const err = error as Error & { code?: string };
       const message = err.message ?? "Unknown error";
+      const status = statusForDomainError(err.code);
+
+      if (status) {
+        return NextResponse.json(
+          { error: err.code ?? "DOMAIN_ERROR", message },
+          { status },
+        );
+      }
+
       if (
         err.name === "AuthorizationError" ||
         message.includes("not a member")
@@ -77,31 +109,7 @@ export const POST = observeHandler((request: Request) => {
           { status: 403 },
         );
       }
-      if (
-        message.includes("ALREADY_CONSUMED") ||
-        message.includes("CHARACTER_ALREADY_EXISTS")
-      ) {
-        return NextResponse.json(
-          { error: "CONFLICT", message },
-          { status: 409 },
-        );
-      }
-      if (message.includes("PROFILE_ARCHIVED")) {
-        return NextResponse.json(
-          { error: "ARCHIVED_PROFILE", message },
-          { status: 409 },
-        );
-      }
-      if (
-        err.name === "ValidationError" ||
-        message.includes("ValidationError") ||
-        message.startsWith("INVALID_")
-      ) {
-        return NextResponse.json(
-          { error: "VALIDATION_ERROR", message },
-          { status: 400 },
-        );
-      }
+
       return NextResponse.json(
         { error: "INTERNAL_ERROR", message: "Failed to create handoff" },
         { status: 500 },
