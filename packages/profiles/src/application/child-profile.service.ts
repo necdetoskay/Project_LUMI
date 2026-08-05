@@ -148,3 +148,31 @@ export async function findChildProfileForUser(
     createdAt: profile.createdAt,
   };
 }
+
+export interface ChildPreferenceResult {
+  childProfileId: string;
+  storyLength: string;
+  interactionLevel: number;
+  imageEnabled: boolean;
+  audioEnabled: boolean;
+}
+
+export async function getChildProfilePreferences(
+  profileId: string,
+  userId: string,
+  householdId: string,
+): Promise<ChildPreferenceResult | null> {
+  await assertMembership(householdId, userId);
+
+  const { childRepo } = getRepos();
+  const preferences = await childRepo.findPreferences(profileId, householdId);
+  if (!preferences) return null;
+
+  return {
+    childProfileId: preferences.childProfileId,
+    storyLength: preferences.storyLength,
+    interactionLevel: preferences.interactionLevel,
+    imageEnabled: preferences.imageEnabled,
+    audioEnabled: preferences.audioEnabled,
+  };
+}
