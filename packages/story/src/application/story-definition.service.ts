@@ -526,5 +526,3 @@ export async function getStoryVersionById(storyVersionId: string) {
   }
   return record;
 }
-
-

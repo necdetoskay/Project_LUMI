@@ -299,7 +299,10 @@ export async function createWorldFromOrigin(
     const location = Location.create({
       worldId: worldRecord.id,
       regionId: regionRecord.id,
-      locationKey: slugifyKey(input.originPackage.startingLocation, "starter-location"),
+      locationKey: slugifyKey(
+        input.originPackage.startingLocation,
+        "starter-location",
+      ),
       displayName: input.originPackage.startingLocation,
       accessibilityStatus: "open",
       locationType: locationType,

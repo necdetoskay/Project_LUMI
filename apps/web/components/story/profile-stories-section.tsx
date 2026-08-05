@@ -124,7 +124,9 @@ export function ProfileStoriesSection({
       setSessions(nextSessions);
       setCatalog(nextCatalog);
       setLaunchOptions(nextLaunchOptions);
-      setSelectedStoryId((current) => current || nextCatalog[0]?.definition.id || "");
+      setSelectedStoryId(
+        (current) => current || nextCatalog[0]?.definition.id || "",
+      );
       setSelectedCharacterId(
         (current) => current || nextLaunchOptions[0]?.character.id || "",
       );
@@ -144,14 +146,16 @@ export function ProfileStoriesSection({
 
   const selectedLaunch = useMemo(
     () =>
-      launchOptions.find((entry) => entry.character.id === selectedCharacterId) ??
-      null,
+      launchOptions.find(
+        (entry) => entry.character.id === selectedCharacterId,
+      ) ?? null,
     [launchOptions, selectedCharacterId],
   );
   const selectedSource = useMemo(
     () =>
-      selectedLaunch?.storySources?.find((source) => source.id === selectedSourceId) ??
-      null,
+      selectedLaunch?.storySources?.find(
+        (source) => source.id === selectedSourceId,
+      ) ?? null,
     [selectedLaunch, selectedSourceId],
   );
   const rankedCatalog = useMemo(
@@ -169,7 +173,8 @@ export function ProfileStoriesSection({
   );
   const selectedStory = useMemo(
     () =>
-      rankedCatalog.find((entry) => entry.definition.id === selectedStoryId) ?? null,
+      rankedCatalog.find((entry) => entry.definition.id === selectedStoryId) ??
+      null,
     [rankedCatalog, selectedStoryId],
   );
   const topRecommendation = rankedCatalog[0] ?? null;
@@ -187,7 +192,8 @@ export function ProfileStoriesSection({
   useEffect(() => {
     const nextSourceId = selectedLaunch?.storySources?.[0]?.id ?? "";
     setSelectedSourceId((current) =>
-      current && selectedLaunch?.storySources?.some((source) => source.id === current)
+      current &&
+      selectedLaunch?.storySources?.some((source) => source.id === current)
         ? current
         : nextSourceId,
     );
@@ -220,7 +226,11 @@ export function ProfileStoriesSection({
   }, [rankedCatalog, recommendedStoryIds, selectedSource, selectedStoryId]);
 
   const handleLaunch = useCallback(async () => {
-    if (!householdId || !selectedStory?.version?.id || !selectedLaunch?.world?.id) {
+    if (
+      !householdId ||
+      !selectedStory?.version?.id ||
+      !selectedLaunch?.world?.id
+    ) {
       return;
     }
 
@@ -229,7 +239,9 @@ export function ProfileStoriesSection({
 
     try {
       const response = await fetch(
-        "/api/stories/" + encodeURIComponent(selectedStory.definition.id) + "/sessions",
+        "/api/stories/" +
+          encodeURIComponent(selectedStory.definition.id) +
+          "/sessions",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -266,7 +278,13 @@ export function ProfileStoriesSection({
     } finally {
       setSubmitting(false);
     }
-  }, [childProfileId, householdId, playbackMode, selectedLaunch, selectedStory]);
+  }, [
+    childProfileId,
+    householdId,
+    playbackMode,
+    selectedLaunch,
+    selectedStory,
+  ]);
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
@@ -274,16 +292,21 @@ export function ProfileStoriesSection({
         <div>
           <h2 className="text-xl font-bold text-on-surface">Hikayeler</h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Devam eden oturumlari surdurun ya da karakterin mevcut baglamindan yeni bir hikaye baslatin.
+            Devam eden oturumlari surdurun ya da karakterin mevcut baglamindan
+            yeni bir hikaye baslatin.
           </p>
         </div>
         <button
           className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:opacity-50"
           type="button"
           onClick={() => setLaunchOpen((current) => !current)}
-          disabled={loading || catalog.length === 0 || launchOptions.length === 0}
+          disabled={
+            loading || catalog.length === 0 || launchOptions.length === 0
+          }
         >
-          <span className="material-symbols-outlined text-[18px]">auto_stories</span>
+          <span className="material-symbols-outlined text-[18px]">
+            auto_stories
+          </span>
           {launchOpen ? "Kaynak secimini kapat" : "Yeni hikaye baslat"}
         </button>
       </div>
@@ -291,7 +314,9 @@ export function ProfileStoriesSection({
       {!loading && !error && sessions.length > 0 ? (
         <section className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px]">play_circle</span>
+            <span className="material-symbols-outlined text-[18px]">
+              play_circle
+            </span>
             Devam eden akislar
           </div>
           <p className="mt-2 text-sm leading-6 text-on-surface-variant">
@@ -310,7 +335,9 @@ export function ProfileStoriesSection({
                 <select
                   className="mt-2 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm font-medium text-on-surface"
                   value={selectedCharacterId}
-                  onChange={(event) => setSelectedCharacterId(event.target.value)}
+                  onChange={(event) =>
+                    setSelectedCharacterId(event.target.value)
+                  }
                 >
                   {launchOptions.map((entry) => (
                     <option key={entry.character.id} value={entry.character.id}>
@@ -336,13 +363,17 @@ export function ProfileStoriesSection({
 
             <div>
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-on-surface">Hikaye kaynagi sec</p>
+                <p className="text-sm font-semibold text-on-surface">
+                  Hikaye kaynagi sec
+                </p>
                 <p className="text-sm leading-6 text-on-surface-variant">
-                  Kullaniciya bos bir form gostermek yerine, eldeki baglamdan bir cikis noktasi oneriyoruz.
+                  Kullaniciya bos bir form gostermek yerine, eldeki baglamdan
+                  bir cikis noktasi oneriyoruz.
                 </p>
               </div>
 
-              {selectedLaunch?.storySources && selectedLaunch.storySources.length > 0 ? (
+              {selectedLaunch?.storySources &&
+              selectedLaunch.storySources.length > 0 ? (
                 <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
                   {selectedLaunch.storySources.map((source) => {
                     const isSelected = source.id === selectedSourceId;
@@ -361,27 +392,39 @@ export function ProfileStoriesSection({
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                           {sourceKindLabel(source.kind)}
                         </p>
-                        <h3 className="mt-2 text-base font-bold text-on-surface">{source.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">{source.summary}</p>
-                        <p className="mt-3 text-xs text-on-surface-variant">{source.detail}</p>
+                        <h3 className="mt-2 text-base font-bold text-on-surface">
+                          {source.title}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                          {source.summary}
+                        </p>
+                        <p className="mt-3 text-xs text-on-surface-variant">
+                          {source.detail}
+                        </p>
                       </button>
                     );
                   })}
                 </div>
               ) : (
                 <div className="mt-4 rounded-xl border border-dashed border-outline-variant bg-white px-5 py-6 text-sm text-on-surface-variant">
-                  Bu karakter icin henuz dunya veya canta tabanli bir cikis noktasi derlenemedi.
+                  Bu karakter icin henuz dunya veya canta tabanli bir cikis
+                  noktasi derlenemedi.
                 </div>
               )}
 
               <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                 <div className="rounded-xl border border-outline-variant bg-white p-4">
-                  <p className="text-sm font-semibold text-on-surface">Hikaye sec</p>
+                  <p className="text-sm font-semibold text-on-surface">
+                    Hikaye sec
+                  </p>
                   {selectedSource && topRecommendation ? (
                     <div className="mt-3 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                      <p className="font-semibold text-on-surface">Onerilen eslesme</p>
+                      <p className="font-semibold text-on-surface">
+                        Onerilen eslesme
+                      </p>
                       <p className="mt-2">
-                        {topRecommendation.definition.title} secilen baglamla daha uyumlu gorunuyor.
+                        {topRecommendation.definition.title} secilen baglamla
+                        daha uyumlu gorunuyor.
                       </p>
                     </div>
                   ) : null}
@@ -391,15 +434,23 @@ export function ProfileStoriesSection({
                     onChange={(event) => setSelectedStoryId(event.target.value)}
                   >
                     {rankedCatalog.map((entry) => (
-                      <option key={entry.definition.id} value={entry.definition.id}>
-                        {recommendedStoryIds.has(entry.definition.id) ? "Onerilen - " : ""}
-                        {entry.definition.title} - v{entry.version?.versionNumber}
+                      <option
+                        key={entry.definition.id}
+                        value={entry.definition.id}
+                      >
+                        {recommendedStoryIds.has(entry.definition.id)
+                          ? "Onerilen - "
+                          : ""}
+                        {entry.definition.title} - v
+                        {entry.version?.versionNumber}
                       </option>
                     ))}
                   </select>
                   {selectedSource ? (
                     <div className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                      <p className="font-semibold text-on-surface">Secilen baglam</p>
+                      <p className="font-semibold text-on-surface">
+                        Secilen baglam
+                      </p>
                       <p className="mt-2">{selectedSource.summary}</p>
                       {selectedStoryRecommendation ? (
                         <p className="mt-2 text-on-surface">
@@ -411,7 +462,9 @@ export function ProfileStoriesSection({
                 </div>
 
                 <div className="rounded-xl border border-outline-variant bg-white p-4">
-                  <p className="text-sm font-semibold text-on-surface">Baslatma ozeti</p>
+                  <p className="text-sm font-semibold text-on-surface">
+                    Baslatma ozeti
+                  </p>
                   <div className="mt-3 space-y-2 text-sm text-on-surface-variant">
                     <p>Karakter: {selectedLaunch?.character.name ?? "-"}</p>
                     <p>Dunya: {selectedLaunch?.world?.label ?? "-"}</p>
@@ -459,11 +512,13 @@ export function ProfileStoriesSection({
         </div>
       ) : launchOptions.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-8 text-sm text-on-surface-variant">
-          Yeni hikaye baslatmak icin once bu profile bagli bir karakter ve dunya hazir olmali.
+          Yeni hikaye baslatmak icin once bu profile bagli bir karakter ve dunya
+          hazir olmali.
         </div>
       ) : sessions.length === 0 && !launchOpen ? (
         <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-8 text-sm text-on-surface-variant">
-          Bu profilde henuz aktif bir hikaye yok. Yeni hikaye baslat diyerek karakterin mevcut baglamindan bir cikis noktasi sec.
+          Bu profilde henuz aktif bir hikaye yok. Yeni hikaye baslat diyerek
+          karakterin mevcut baglamindan bir cikis noktasi sec.
         </div>
       ) : null}
     </section>
@@ -587,4 +642,3 @@ function tokenizeSourceText(value: string): string[] {
     ),
   );
 }
-

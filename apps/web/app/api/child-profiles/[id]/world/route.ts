@@ -120,8 +120,10 @@ export const GET = observeHandler(
         );
 
         const primaryCharacter = requestedCharacterId
-          ? characters.find((character) => character.id === requestedCharacterId) ?? null
-          : characters[0] ?? null;
+          ? (characters.find(
+              (character) => character.id === requestedCharacterId,
+            ) ?? null)
+          : (characters[0] ?? null);
 
         if (requestedCharacterId && !primaryCharacter) {
           return NextResponse.json(
@@ -139,7 +141,10 @@ export const GET = observeHandler(
 
         const world = await getWorldForCharacter(primaryCharacter.id);
         if (!world) {
-          return NextResponse.json({ world: null, character: primaryCharacter });
+          return NextResponse.json({
+            world: null,
+            character: primaryCharacter,
+          });
         }
 
         const [detailResult, currentLocationResult] = await Promise.allSettled([
@@ -147,7 +152,8 @@ export const GET = observeHandler(
           getCharacterCurrentLocation(primaryCharacter.id),
         ]);
 
-        const detail = detailResult.status === "fulfilled" ? detailResult.value : null;
+        const detail =
+          detailResult.status === "fulfilled" ? detailResult.value : null;
         const currentLocation =
           currentLocationResult.status === "fulfilled" &&
           currentLocationResult.value &&
@@ -157,7 +163,10 @@ export const GET = observeHandler(
 
         const detailRegions = asArray(detail?.regions);
         const detailLocations = asArray(detail?.locations);
-        const locationsByRegion = new Map<string, Array<(typeof detailLocations)[number]>>();
+        const locationsByRegion = new Map<
+          string,
+          Array<(typeof detailLocations)[number]>
+        >();
         for (const location of detailLocations) {
           if (!location?.regionId) {
             continue;
@@ -176,7 +185,10 @@ export const GET = observeHandler(
           return {
             id: region.id,
             regionKey: region.regionKey,
-            displayName: regionLabel(region.discoveryStatus, region.displayName),
+            displayName: regionLabel(
+              region.discoveryStatus,
+              region.displayName,
+            ),
             regionType: canRevealLocations ? region.regionType : "unknown",
             accessibilityStatus: region.accessibilityStatus,
             discoveryStatus: region.discoveryStatus,
@@ -189,7 +201,9 @@ export const GET = observeHandler(
                   displayName: location.displayName,
                   locationType: location.locationType,
                   accessibilityStatus: location.accessibilityStatus,
-                  accessibilityHint: accessibilityHint(location.accessibilityStatus),
+                  accessibilityHint: accessibilityHint(
+                    location.accessibilityStatus,
+                  ),
                   isHome: location.isHome,
                   isCurrent: currentLocation?.id === location.id,
                   safetyLevel: location.safetyLevel ?? "unknown",

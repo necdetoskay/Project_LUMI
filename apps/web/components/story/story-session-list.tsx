@@ -80,7 +80,8 @@ export function StorySessionList({
             <div>
               <dt className="font-semibold text-on-surface">Versiyon</dt>
               <dd>
-                v{entry.version?.versionNumber ?? "-"} {entry.version?.title ?? ""}
+                v{entry.version?.versionNumber ?? "-"}{" "}
+                {entry.version?.title ?? ""}
               </dd>
             </div>
             <div>

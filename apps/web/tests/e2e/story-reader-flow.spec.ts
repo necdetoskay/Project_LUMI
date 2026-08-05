@@ -224,13 +224,17 @@ test.describe("Story reader E2E", () => {
 
     await page.goto("/app/stories/session-1");
 
-    await expect(page.getByRole("heading", { name: "Acilis" }).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Acilis" }).first(),
+    ).toBeVisible();
     await expect(page.getByText("Secim gecmisi")).toBeVisible();
     await expect(page.getByText("Secim 1")).toBeVisible();
     await expect(page.getByText("#2")).toBeVisible();
 
     await page.getByRole("button", { name: "Duraklat" }).click();
-    await expect(page.getByRole("button", { name: "Devam ettir" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Devam ettir" }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Checkpoint al" }).click();
     await expect(page.getByText("Manuel checkpoint kaydedildi.")).toBeVisible();
@@ -243,7 +247,9 @@ test.describe("Story reader E2E", () => {
     ).toBeVisible();
   });
 
-  test("recovers from an initial reader load failure after retry", async ({ page }) => {
+  test("recovers from an initial reader load failure after retry", async ({
+    page,
+  }) => {
     await registerAndLogin(page);
 
     await page.route(
@@ -357,7 +363,9 @@ test.describe("Story reader E2E", () => {
     await expect(page.getByText("Merhaba dunya")).toBeVisible();
   });
 
-  test("keeps story text available when scene media assets fail", async ({ page }) => {
+  test("keeps story text available when scene media assets fail", async ({
+    page,
+  }) => {
     await registerAndLogin(page);
 
     await page.route(
@@ -471,16 +479,26 @@ test.describe("Story reader E2E", () => {
 
     await expect(page.getByText("Merhaba dunya")).toBeVisible();
     await expect(
-      page.getByText("Sahne gorseli yuklenemedi. Okumaya metinle devam edebilirsin."),
+      page.getByText(
+        "Sahne gorseli yuklenemedi. Okumaya metinle devam edebilirsin.",
+      ),
     ).toBeVisible();
     await expect(
-      page.getByText("Ses oynatma su anda kullanilamiyor. Okumaya metinle devam edebilirsin."),
+      page.getByText(
+        "Ses oynatma su anda kullanilamiyor. Okumaya metinle devam edebilirsin.",
+      ),
     ).toBeVisible();
-    await expect(page.getByText("Bu sahnenin gorseli acilamadi.")).toBeVisible();
-    await expect(page.getByText("Bu sahnenin sesi su anda oynatilamiyor.")).toBeVisible();
+    await expect(
+      page.getByText("Bu sahnenin gorseli acilamadi."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Bu sahnenin sesi su anda oynatilamiyor."),
+    ).toBeVisible();
   });
 
-  test("keeps reading experience alive when history and checkpoint endpoints fail", async ({ page }) => {
+  test("keeps reading experience alive when history and checkpoint endpoints fail", async ({
+    page,
+  }) => {
     await registerAndLogin(page);
 
     await page.route(
@@ -570,7 +588,11 @@ test.describe("Story reader E2E", () => {
     await page.goto("/app/stories/session-1");
 
     await expect(page.getByText("Merhaba dunya")).toBeVisible();
-    await expect(page.getByText("Secim gecmisi su anda yuklenemedi.")).toBeVisible();
-    await expect(page.getByText("Checkpoint ozeti su anda yuklenemedi.")).toBeVisible();
+    await expect(
+      page.getByText("Secim gecmisi su anda yuklenemedi."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Checkpoint ozeti su anda yuklenemedi."),
+    ).toBeVisible();
   });
 });

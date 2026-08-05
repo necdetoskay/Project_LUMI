@@ -62,7 +62,8 @@ export function ProfileCharacterDetailSection({
   childProfileId: string;
   characterId: string;
 }) {
-  const [character, setCharacter] = useState<CharacterResponse["character"]>(null);
+  const [character, setCharacter] =
+    useState<CharacterResponse["character"]>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [world, setWorld] = useState<WorldResponse["world"]>(null);
   const [loading, setLoading] = useState(true);
@@ -150,7 +151,9 @@ export function ProfileCharacterDetailSection({
   if (loading) {
     return (
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <p className="text-sm text-on-surface-variant">Karakter yukleniyor...</p>
+        <p className="text-sm text-on-surface-variant">
+          Karakter yukleniyor...
+        </p>
       </section>
     );
   }
@@ -172,7 +175,10 @@ export function ProfileCharacterDetailSection({
           Dashboard
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a className="transition-colors hover:text-primary" href="/app/profiles">
+        <a
+          className="transition-colors hover:text-primary"
+          href="/app/profiles"
+        >
           Profiller
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -190,7 +196,9 @@ export function ProfileCharacterDetailSection({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-              <span className="material-symbols-outlined text-[32px]">sparkles</span>
+              <span className="material-symbols-outlined text-[32px]">
+                sparkles
+              </span>
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
@@ -205,8 +213,9 @@ export function ProfileCharacterDetailSection({
                 <Badge text={character.originMode} />
               </div>
               <p className="mt-4 max-w-[42rem] text-sm leading-6 text-on-surface-variant">
-                Karakterin kimligini, su anki dunya baglamini ve hikaye baslatmak icin
-                kullanilabilecek temel durumu burada gorebilirsiniz.
+                Karakterin kimligini, su anki dunya baglamini ve hikaye
+                baslatmak icin kullanilabilecek temel durumu burada
+                gorebilirsiniz.
               </p>
             </div>
           </div>
@@ -215,14 +224,18 @@ export function ProfileCharacterDetailSection({
               className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
               href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
             >
-              <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+              <span className="material-symbols-outlined text-[18px]">
+                travel_explore
+              </span>
               Haritayi ac
             </a>
             <a
               className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
               href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
               Profile don
             </a>
           </div>
@@ -232,19 +245,29 @@ export function ProfileCharacterDetailSection({
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-xl font-bold text-on-surface">Karakter ozeti</h2>
+            <h2 className="text-xl font-bold text-on-surface">
+              Karakter ozeti
+            </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoTile label="Karakter tipi" value={character.characterType} />
               <InfoTile label="Alt tur" value={character.subtype} />
-              <InfoTile label="Baslangic" value={character.startingLocation ?? "Belirlenmedi"} />
-              <InfoTile label="Yuva" value={character.homeArchetype ?? "Belirlenmedi"} />
+              <InfoTile
+                label="Baslangic"
+                value={character.startingLocation ?? "Belirlenmedi"}
+              />
+              <InfoTile
+                label="Yuva"
+                value={character.homeArchetype ?? "Belirlenmedi"}
+              />
             </div>
             {character.originConcept ? (
               <div className="mt-4 rounded-xl border border-outline-variant bg-surface-container-low p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
                   Origin concept
                 </p>
-                <p className="mt-2 text-sm leading-6 text-on-surface">{character.originConcept}</p>
+                <p className="mt-2 text-sm leading-6 text-on-surface">
+                  {character.originConcept}
+                </p>
               </div>
             ) : null}
           </section>
@@ -259,8 +282,12 @@ export function ProfileCharacterDetailSection({
                     className="rounded-xl border border-outline-variant bg-surface-container-low p-4"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-on-surface">{item.displayName}</p>
-                      <span className="text-xs text-on-surface-variant">x{item.quantity}</span>
+                      <p className="text-sm font-semibold text-on-surface">
+                        {item.displayName}
+                      </p>
+                      <span className="text-xs text-on-surface-variant">
+                        x{item.quantity}
+                      </span>
                     </div>
                     <p className="mt-2 text-xs text-on-surface-variant">
                       {item.category} | {item.rarity} | {item.conditionStatus}
@@ -294,13 +321,17 @@ export function ProfileCharacterDetailSection({
               />
               <InfoTile
                 label="Olusturma"
-                value={new Date(character.createdAt).toLocaleDateString("tr-TR")}
+                value={new Date(character.createdAt).toLocaleDateString(
+                  "tr-TR",
+                )}
               />
             </div>
           </section>
 
           <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">Siradaki adimlar</h2>
+            <h2 className="text-lg font-bold text-on-surface">
+              Siradaki adimlar
+            </h2>
             <div className="mt-4 space-y-3">
               <ActionLink
                 href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
@@ -357,12 +388,15 @@ function ActionLink({
       className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-4 transition-colors hover:border-primary/30 hover:bg-white"
       href={href}
     >
-      <span className="material-symbols-outlined text-[20px] text-primary">{icon}</span>
+      <span className="material-symbols-outlined text-[20px] text-primary">
+        {icon}
+      </span>
       <div>
         <p className="text-sm font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</p>
+        <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+          {description}
+        </p>
       </div>
     </a>
   );
 }
-

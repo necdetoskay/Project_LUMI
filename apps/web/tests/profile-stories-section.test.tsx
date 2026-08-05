@@ -19,11 +19,15 @@ describe("ProfileStoriesSection", () => {
 
         if (url === "/api/onboarding") {
           return Promise.resolve(
-            jsonResponse({ onboarding: { householdId: "household-1", hasHousehold: true } }),
+            jsonResponse({
+              onboarding: { householdId: "household-1", hasHousehold: true },
+            }),
           );
         }
 
-        if (url === "/api/child-profiles/child-1/stories?householdId=household-1") {
+        if (
+          url === "/api/child-profiles/child-1/stories?householdId=household-1"
+        ) {
           return Promise.resolve(
             jsonResponse({
               sessions: [],
@@ -40,7 +44,8 @@ describe("ProfileStoriesSection", () => {
                     versionNumber: 1,
                     title: "Ilk Surum",
                     storyMode: "interactive",
-                    summary: "Parlayan fener ile ilerleyen secimli bir yolculuk.",
+                    summary:
+                      "Parlayan fener ile ilerleyen secimli bir yolculuk.",
                   },
                 },
                 {
@@ -78,21 +83,24 @@ describe("ProfileStoriesSection", () => {
                       id: "world:world-1",
                       kind: "world_state",
                       title: "Sakin Koy",
-                      summary: "Sakin Koy cevresinde yeni bir hikaye baslayabilir.",
+                      summary:
+                        "Sakin Koy cevresinde yeni bir hikaye baslayabilir.",
                       detail: "Son dunya checkpoint'i hazir: #2",
                     },
                     {
                       id: "origin:character-1",
                       kind: "origin",
                       title: "Yuva Kenari",
-                      summary: "Karakterin cikis fikrinden ilerleyen bir baslangic.",
+                      summary:
+                        "Karakterin cikis fikrinden ilerleyen bir baslangic.",
                       detail: "Yuva izi: Agac Evi",
                     },
                     {
                       id: "inventory:item-1",
                       kind: "inventory",
                       title: "Parlayan Fener",
-                      summary: "tool esyasi hikaye icin dogrudan bir hareket noktasi sunuyor.",
+                      summary:
+                        "tool esyasi hikaye icin dogrudan bir hareket noktasi sunuyor.",
                       detail: "common | adet 1",
                     },
                   ],
@@ -112,7 +120,9 @@ describe("ProfileStoriesSection", () => {
       expect(screen.getByText("Hikayeler")).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Yeni hikaye baslat/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Yeni hikaye baslat/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Hikaye kaynagi sec")).toBeTruthy();
@@ -121,13 +131,17 @@ describe("ProfileStoriesSection", () => {
     expect(screen.getByText("Sakin Koy")).toBeTruthy();
     expect(screen.getByText("Parlayan Fener")).toBeTruthy();
     expect(screen.getByText("Onerilen eslesme")).toBeTruthy();
-    expect(screen.getByDisplayValue("Onerilen - Gecit Tetikte - v3")).toBeTruthy();
+    expect(
+      screen.getByDisplayValue("Onerilen - Gecit Tetikte - v3"),
+    ).toBeTruthy();
     expect(screen.getByText("Bu baglamdan hikaye baslat")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Parlayan Fener/i }));
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue("Onerilen - Orman Macerasi - v1")).toBeTruthy();
+      expect(
+        screen.getByDisplayValue("Onerilen - Orman Macerasi - v1"),
+      ).toBeTruthy();
     });
   });
 });

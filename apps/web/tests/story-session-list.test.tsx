@@ -41,7 +41,9 @@ describe("StorySessionList", () => {
 
     render(<StorySessionList sessions={sessions} />);
 
-    const link = screen.getByRole("link", { name: "Devam et" }) as HTMLAnchorElement;
+    const link = screen.getByRole("link", {
+      name: "Devam et",
+    }) as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("/app/stories/session-1");
   });
 });

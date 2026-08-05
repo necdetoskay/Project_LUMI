@@ -164,7 +164,9 @@ describe("story reader routes", () => {
       lifecycleStatus: "active",
       metadata: { name: "Ay Isigi Vadisi" },
     });
-    mockGetWorldDetail.mockResolvedValueOnce({ latestCheckpoint: { checkpointSequence: 2 } });
+    mockGetWorldDetail.mockResolvedValueOnce({
+      latestCheckpoint: { checkpointSequence: 2 },
+    });
     mockGetCharacterCurrentLocation.mockResolvedValueOnce({
       id: "loc-1",
       displayName: "Sakin Koy",
