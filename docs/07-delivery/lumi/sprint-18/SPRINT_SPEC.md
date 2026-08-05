@@ -49,8 +49,9 @@ Ebeveynin child profile, içerik politikaları, kullanım tercihleri ve güvenli
 > (`lumi-child-v1`), archive orchestration (child profile + world archive), lifecycle
 > audit trail; API routes `/api/privacy/consent`, `/api/privacy/consent/[id]`,
 > `/api/privacy/export`, `/api/privacy/archive`, `/api/privacy/audit`; privacy schema
-> migration `0001_privacy_schema.sql` applied to production. Purge (async job) and
-> T06 runbooks remain pending.
+> migration `0001_privacy_schema.sql` applied to production. T06 runbooks delivered
+> (2026-08-05): `PARENT_PANEL_RUNBOOK.md` and `SAFETY_OPERATIONS_RUNBOOK.md`. Purge
+> (async job) remains a planned follow-up slice outside this sprint.
 
 ## Requirements
 
