@@ -233,3 +233,4 @@ export interface StoryRepository {
     idempotencyKey: string,
   ): Promise<StoryIdempotencyLedgerRecord | undefined>;
 }
+

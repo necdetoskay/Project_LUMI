@@ -309,7 +309,7 @@ BEGIN
   IF NOT story.__story_constraint_exists('fk_story_session_characters_character') THEN
     ALTER TABLE story.story_session_characters
       ADD CONSTRAINT fk_story_session_characters_character
-      FOREIGN KEY (character_id) REFERENCES profile.characters(id);
+      FOREIGN KEY (character_id) REFERENCES profile.lumi_characters(id);
   END IF;
 END $$;
 
@@ -452,3 +452,4 @@ BEGIN
 END $$;
 
 COMMIT;
+

@@ -4,6 +4,7 @@ export {
   saveSceneGraph,
   publishStoryVersion,
   getStoryCatalog,
+  ensureStarterStoriesForHousehold,
   getStoryVersionGraph,
   getStoryVersionGraphByNumber,
   getStoryDefinitionById,
@@ -31,6 +32,7 @@ export {
   createManualCheckpoint,
   getSessionById,
   getActiveSessionForChildAndWorld,
+  listSessionsForChildProfile,
   __setTestSessionDb,
 } from "./story-session.service";
 export type {
@@ -79,3 +81,5 @@ export {
   evaluateOptionAvailability,
 } from "./choice/rule-evaluator";
 export { hashObject } from "./hash";
+
+

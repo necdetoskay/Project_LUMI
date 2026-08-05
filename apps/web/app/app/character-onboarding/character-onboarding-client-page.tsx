@@ -51,6 +51,21 @@ type GenerationSourceInfo = {
   fallbackReason: string | null;
 };
 
+type BootstrapStatusResponse = {
+  status?: {
+    latestHandoff: {
+      id: string;
+    } | null;
+    handoffConsumed: boolean;
+    character: {
+      id: string;
+      name: string;
+    } | null;
+    originPackageCount: number;
+  };
+  message?: string;
+};
+
 export default function CharacterOnboardingClientPage() {
   const [step, setStep] = useState<Step>(1);
   const [childProfileId, setChildProfileId] = useState<string | null>(null);
@@ -80,7 +95,43 @@ export default function CharacterOnboardingClientPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [existingCharacter, setExistingCharacter] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [genSource, setGenSource] = useState<GenerationSourceInfo | null>(null);
+
+  const loadBootstrapStatus = useCallback(
+    async (nextHouseholdId: string, nextChildProfileId: string) => {
+      try {
+        const res = await fetch(
+          `/api/character-bootstrap/status?householdId=${encodeURIComponent(nextHouseholdId)}&childProfileId=${encodeURIComponent(nextChildProfileId)}`,
+        );
+        const data = (await res.json()) as BootstrapStatusResponse;
+        if (!res.ok) {
+          return null;
+        }
+
+        const status = data.status ?? null;
+        if (status?.latestHandoff?.id) {
+          setHandoffId(status.latestHandoff.id);
+        }
+        if (status?.character) {
+          setExistingCharacter({
+            id: status.character.id,
+            name: status.character.name,
+          });
+        } else {
+          setExistingCharacter(null);
+        }
+
+        return status;
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -88,32 +139,35 @@ export default function CharacterOnboardingClientPage() {
     if (profile) {
       setChildProfileId(profile);
     } else {
-      setError("Onboarding başlatmak için bir çocuk profili seçin.");
+      setError("Onboarding baslatmak icin bir cocuk profili secin.");
     }
 
     fetch("/api/onboarding")
       .then((r) => r.json())
-      .then((data) => {
+      .then(async (data) => {
         const s = data.onboarding as {
           hasHousehold: boolean;
           householdId: string | null;
         };
         if (!s.hasHousehold || !s.householdId) {
-          setError("Öncesinde kurulum akışını tamamlayın.");
+          setError("Oncesinde kurulum akisina geri donun.");
           setLoading(false);
           return;
         }
         setHouseholdId(s.householdId);
+        if (profile) {
+          await loadBootstrapStatus(s.householdId, profile);
+        }
         setLoading(false);
       })
       .catch(() => {
-        setError("Hane bilgisi yüklenemedi");
+        setError("Hane bilgisi yuklenemedi");
         setLoading(false);
       });
-  }, []);
+  }, [loadBootstrapStatus]);
 
   const loadArchetypes = useCallback(async () => {
-    if (!householdId || !childProfileId) return;
+    if (!householdId || !childProfileId || existingCharacter) return;
     setArchetypesLoading(true);
     setArchetypesError(null);
     setSelectedArchetype(null);
@@ -141,10 +195,10 @@ export default function CharacterOnboardingClientPage() {
     } finally {
       setArchetypesLoading(false);
     }
-  }, [householdId, childProfileId]);
+  }, [householdId, childProfileId, existingCharacter]);
 
   const regenerateArchetypes = useCallback(async () => {
-    if (!householdId || !childProfileId) return;
+    if (!householdId || !childProfileId || existingCharacter) return;
     setArchetypesLoading(true);
     setArchetypesError(null);
     setSelectedArchetype(null);
@@ -181,7 +235,7 @@ export default function CharacterOnboardingClientPage() {
     } finally {
       setArchetypesLoading(false);
     }
-  }, [householdId, childProfileId, archetypes]);
+  }, [householdId, childProfileId, archetypes, existingCharacter]);
 
   useEffect(() => {
     if (
@@ -229,7 +283,17 @@ export default function CharacterOnboardingClientPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Handoff oluşturulamadı");
+        if (
+          res.status === 409 &&
+          (data.error === "HANDOFF_ALREADY_CONSUMED" ||
+            data.error === "CHARACTER_ALREADY_EXISTS")
+        ) {
+          await loadBootstrapStatus(householdId, childProfileId);
+        }
+        setError(
+          data.message ??
+            "Bu profil icin karakter akisi zaten tamamlanmis gorunuyor.",
+        );
         return;
       }
       setHandoffId(data.handoff.id);
@@ -245,6 +309,7 @@ export default function CharacterOnboardingClientPage() {
     selectedArchetype,
     archetypeBatchId,
     originMode,
+    loadBootstrapStatus,
   ]);
 
   const selectedPkg = useMemo(
@@ -253,7 +318,7 @@ export default function CharacterOnboardingClientPage() {
   );
 
   const generatePackages = useCallback(async () => {
-    if (!householdId || !childProfileId) return;
+    if (!householdId || !childProfileId || existingCharacter) return;
     setSubmitting(true);
     setError(null);
     setGenSource(null);
@@ -301,7 +366,7 @@ export default function CharacterOnboardingClientPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [householdId, childProfileId]);
+  }, [householdId, childProfileId, existingCharacter]);
 
   const confirmSelection = useCallback(() => {
     if (!selectedPkg) {
@@ -333,7 +398,12 @@ export default function CharacterOnboardingClientPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Karakter oluşturulamadı");
+        if (res.status === 409) {
+          await loadBootstrapStatus(householdId, childProfileId);
+        }
+        setError(
+          data.message ?? "Karakter olusturulamadi. Mevcut karakter acilabilir.",
+        );
         return;
       }
       setBootstrapDone(true);
@@ -341,6 +411,7 @@ export default function CharacterOnboardingClientPage() {
         id: data.character.id,
         name: data.character.name,
       });
+      window.location.href = `/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(data.character.id)}`;
     } catch {
       setError("Karakter oluşturma başarısız oldu");
     } finally {
@@ -353,9 +424,44 @@ export default function CharacterOnboardingClientPage() {
     selectedPackageId,
     nameOverride,
     subtypeOverride,
+    loadBootstrapStatus,
   ]);
 
-  if (loading) return <Shell>Yükleniyor...</Shell>;
+  if (loading) return <Shell>Yukleniyor...</Shell>;
+  if (existingCharacter && childProfileId) {
+    return (
+      <Shell>
+        <div className="rounded-2xl border border-outline-variant bg-white p-8">
+          <h1 className="text-2xl font-bold text-on-surface">
+            Bu profil icin karakter zaten olusturulmus
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+            Yeni karakter baslatmak yerine mevcut karaktere donuyoruz. Sorun dunya
+            tarafindaysa onu mevcut karakter uzerinden onaracagiz.
+          </p>
+          {error ? (
+            <div className="mt-4 rounded-xl border border-error-container bg-white px-4 py-3 text-sm text-error">
+              {error}
+            </div>
+          ) : null}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary hover:bg-[#4c29cf]"
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(existingCharacter.id)}`}
+            >
+              Karakter detayini ac
+            </a>
+            <a
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface hover:bg-surface-container-low"
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(existingCharacter.id)}`}
+            >
+              Dunyayi kontrol et
+            </a>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
   if (!childProfileId || !householdId || error) {
     return (
       <Shell>
@@ -366,7 +472,7 @@ export default function CharacterOnboardingClientPage() {
               className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary hover:bg-[#4c29cf]"
               href="/app/profiles"
             >
-              Profillere dön
+              Profillere don
             </a>
           </div>
         </div>
@@ -398,13 +504,13 @@ export default function CharacterOnboardingClientPage() {
               <span className="material-symbols-outlined text-[18px]">
                 arrow_back
               </span>
-              Profillere dön
+              Profillere don
             </a>
             <a
               className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-white px-5 text-sm font-semibold text-on-surface hover:bg-surface-container"
-              href="/app"
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
             >
-              Ana sayfaya git
+              Profile git
             </a>
           </div>
         </div>

@@ -1,3 +1,4 @@
 import { pgSchema } from "drizzle-orm/pg-core";
 
 export const profileSchema = pgSchema("profile");
+export const worldSchema = profileSchema;

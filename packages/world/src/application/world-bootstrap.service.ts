@@ -137,6 +137,18 @@ function starterLocationTypeForArchetype(archetype: string): string {
   return "custom";
 }
 
+function slugifyKey(value: string, fallback: string): string {
+  const normalized = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 110);
+
+  return normalized.length > 0 ? normalized : fallback;
+}
+
 function secondLocationKeyForArchetype(archetype: string): {
   key: string;
   name: string;
@@ -260,7 +272,7 @@ export async function createWorldFromOrigin(
 
     const region = Region.create({
       worldId: worldRecord.id,
-      regionKey: `starting-${input.originPackage.startingRegionArchetype.toLowerCase().replace(/\s+/g, "-")}`,
+      regionKey: `starting-${slugifyKey(input.originPackage.startingRegionArchetype, "starter-region")}`,
       displayName: input.originPackage.startingRegionArchetype,
       regionType: regionType as never,
       accessibilityStatus: "open",
@@ -287,10 +299,7 @@ export async function createWorldFromOrigin(
     const location = Location.create({
       worldId: worldRecord.id,
       regionId: regionRecord.id,
-      locationKey: input.originPackage.startingLocation
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9_-]/g, ""),
+      locationKey: slugifyKey(input.originPackage.startingLocation, "starter-location"),
       displayName: input.originPackage.startingLocation,
       accessibilityStatus: "open",
       locationType: locationType,
@@ -387,7 +396,7 @@ export async function createWorldFromOrigin(
       characterId: input.characterId,
       worldId: worldRecord.id,
       homeId: homeRecord.id,
-      isActive: true,
+      locationId: locationRecord.id,
       residenceType: "primary",
       version: 1,
       createdAt: new Date(),

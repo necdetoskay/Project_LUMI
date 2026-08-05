@@ -326,6 +326,35 @@ describe("World bootstrap integration (destructive)", () => {
     expect(payload.originConcept).toBe(originPackage.originConcept);
   });
 
+  it("slugifies non-ascii starter archetypes and locations during bootstrap", async () => {
+    const result = await createWorldFromOrigin({
+      householdId: crypto.randomUUID(),
+      childProfileId: crypto.randomUUID(),
+      characterId: crypto.randomUUID(),
+      universeSeed: "slug-seed-006",
+      originSeed: "slug-origin-006",
+      acceptedCandidateSeed: "slug-candidate-006",
+      generatorVersion: "v1.0.0",
+      vectorVersion: "v1.0.0",
+      originPackage: {
+        characterType: "explorer",
+        subtype: "mermaid",
+        originConcept: "A mermaid exploring coral gardens.",
+        startingRegionArchetype: "Mercan Resifleri",
+        startingLocation: "Mercan Sarayı",
+        homeArchetype: "İnciden Ev",
+        nearbyNpcSeed: "playful_dolphin",
+        firstMysterySeed: "sunken_map",
+      },
+      actorUserId: crypto.randomUUID(),
+    });
+
+    const regions = await repo.findRegionsByWorldId(db, result.worldId);
+    const locations = await repo.findLocationsByWorldId(db, result.worldId);
+
+    expect(regions[0]?.regionKey).toBe("starting-mercan-resifleri");
+    expect(locations[0]?.locationKey).toBe("mercan-saray");
+  });
   it("creates checkpoint during bootstrap", async () => {
     const result = await createWorldFromOrigin({
       householdId: crypto.randomUUID(),

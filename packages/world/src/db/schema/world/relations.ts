@@ -9,7 +9,7 @@ import { worldCharacterLocations } from "./character-locations";
 import { worldCharacterMovementEvents } from "./character-movement-events";
 import { worldEnvironmentSnapshots } from "./environment-snapshots";
 import { worldLocationConnections } from "./location-connections";
-import { worldCharacterResidences } from "./world-character-residences";
+import { worldCharacterResidences } from "./residences";
 
 export const worldsRelations = relations(worlds, ({ many }) => ({
   regions: many(worldRegions),

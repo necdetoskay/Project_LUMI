@@ -5,8 +5,7 @@ import pg from "pg";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function loadRootEnv() {
-  const envPath = resolve(__dirname, "..", "..", "..", ".env");
+function loadEnvFile(envPath) {
   if (!existsSync(envPath)) return;
   const lines = readFileSync(envPath, "utf-8").split(/\r?\n/);
   for (const line of lines) {
@@ -23,7 +22,19 @@ function loadRootEnv() {
   }
 }
 
-loadRootEnv();
+function loadEnv() {
+  const candidates = [
+    resolve(__dirname, "..", "..", "..", ".env"),
+    resolve(__dirname, "..", "..", "..", ".env.local"),
+    resolve(__dirname, "..", "..", "..", "apps", "web", ".env.local"),
+  ];
+
+  for (const candidate of candidates) {
+    loadEnvFile(candidate);
+  }
+}
+
+loadEnv();
 
 const DATABASE_URL =
   process.env.DATABASE_URL ||
@@ -32,6 +43,7 @@ const DATABASE_URL =
 const MIGRATION_DIR = resolve(__dirname, "..", "migrations");
 
 async function ensureLedger(pool) {
+  await pool.query("CREATE SCHEMA IF NOT EXISTS story;");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS story._story_migration_ledger (
       id SERIAL PRIMARY KEY,
