@@ -96,25 +96,26 @@ export const GET = observeHandler(
         const [sessions, catalog, characters] = await Promise.all([
           listSessionsForChildProfile(householdId, parsedParams.data.id),
           ensureStarterStoriesForHousehold(householdId),
-          listCharactersByChildProfile(parent.id, householdId, parsedParams.data.id),
+          listCharactersByChildProfile(
+            parent.id,
+            householdId,
+            parsedParams.data.id,
+          ),
         ]);
 
         const launchOptions = await Promise.all(
           characters.map(async (character) => {
             const inventoryPromise = Promise.resolve(
-              listInventory(
-                parent.id,
-                householdId,
-                "character",
-                character.id,
-              ),
+              listInventory(parent.id, householdId, "character", character.id),
             ).catch(() => []);
 
             try {
               const world = await getWorldForCharacter(character.id);
               if (!world) {
                 const inventory = await inventoryPromise;
-                const inventoryItems = Array.isArray(inventory) ? inventory : [];
+                const inventoryItems = Array.isArray(inventory)
+                  ? inventory
+                  : [];
                 return {
                   character,
                   world: null,
@@ -128,19 +129,22 @@ export const GET = observeHandler(
                 };
               }
 
-              const [detailResult, currentLocationResult, inventory] = await Promise.allSettled([
-                getWorldDetail(world.id),
-                getCharacterCurrentLocation(character.id),
-                inventoryPromise,
-              ]);
+              const [detailResult, currentLocationResult, inventory] =
+                await Promise.allSettled([
+                  getWorldDetail(world.id),
+                  getCharacterCurrentLocation(character.id),
+                  inventoryPromise,
+                ]);
 
-              const detail = detailResult.status === "fulfilled" ? detailResult.value : null;
+              const detail =
+                detailResult.status === "fulfilled" ? detailResult.value : null;
               const currentLocation =
                 currentLocationResult.status === "fulfilled"
                   ? currentLocationResult.value
                   : null;
               const inventoryItems =
-                inventory.status === "fulfilled" && Array.isArray(inventory.value)
+                inventory.status === "fulfilled" &&
+                Array.isArray(inventory.value)
                   ? inventory.value
                   : [];
 
@@ -160,7 +164,9 @@ export const GET = observeHandler(
                   id: `origin:${character.id}`,
                   kind: "origin",
                   title: character.startingLocation ?? "Ilk iz",
-                  summary: character.originConcept ?? "Karakterin cikis fikrinden ilerleyen bir baslangic.",
+                  summary:
+                    character.originConcept ??
+                    "Karakterin cikis fikrinden ilerleyen bir baslangic.",
                   detail: character.homeArchetype
                     ? `Yuva izi: ${character.homeArchetype}`
                     : `${character.characterType} / ${character.subtype}`,

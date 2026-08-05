@@ -19,11 +19,16 @@ describe("ProfileWorldMapSection", () => {
 
         if (url === "/api/onboarding") {
           return Promise.resolve(
-            jsonResponse({ ok: true, onboarding: { householdId: "household-1" } }),
+            jsonResponse({
+              ok: true,
+              onboarding: { householdId: "household-1" },
+            }),
           );
         }
 
-        if (url === "/api/child-profiles/child-1/world?householdId=household-1") {
+        if (
+          url === "/api/child-profiles/child-1/world?householdId=household-1"
+        ) {
           return Promise.resolve(
             jsonResponse({
               character: {
@@ -151,7 +156,9 @@ describe("ProfileWorldMapSection", () => {
     fireEvent.click(screen.getByRole("button", { name: /Acik Alan/i }));
 
     await waitFor(() => {
-      expect(screen.getAllByText("Biraz daha hazirlik gerekebilir.").length).toBeGreaterThan(1);
+      expect(
+        screen.getAllByText("Biraz daha hazirlik gerekebilir.").length,
+      ).toBeGreaterThan(1);
     });
     expect(screen.getAllByText("watchful").length).toBeGreaterThan(0);
     expect(screen.getByText("Gorunur nokta")).toBeTruthy();
@@ -165,7 +172,10 @@ describe("ProfileWorldMapSection", () => {
 
         if (url === "/api/onboarding") {
           return Promise.resolve(
-            jsonResponse({ ok: true, onboarding: { householdId: "household-1" } }),
+            jsonResponse({
+              ok: true,
+              onboarding: { householdId: "household-1" },
+            }),
           );
         }
 
@@ -207,7 +217,10 @@ describe("ProfileWorldMapSection", () => {
     );
 
     render(
-      <ProfileWorldMapSection childProfileId="child-1" characterId="character-2" />,
+      <ProfileWorldMapSection
+        childProfileId="child-1"
+        characterId="character-2"
+      />,
     );
 
     await waitFor(() => {
@@ -225,12 +238,19 @@ describe("ProfileWorldMapSection", () => {
 
         if (url === "/api/onboarding") {
           return Promise.resolve(
-            jsonResponse({ ok: true, onboarding: { householdId: "household-1" } }),
+            jsonResponse({
+              ok: true,
+              onboarding: { householdId: "household-1" },
+            }),
           );
         }
 
-        if (url === "/api/child-profiles/child-1/world?householdId=household-1") {
-          return Promise.resolve(jsonResponse({ character: null, world: null }));
+        if (
+          url === "/api/child-profiles/child-1/world?householdId=household-1"
+        ) {
+          return Promise.resolve(
+            jsonResponse({ character: null, world: null }),
+          );
         }
 
         return Promise.reject(new Error("Beklenmeyen fetch: " + url));

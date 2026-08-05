@@ -61,7 +61,10 @@ export const POST = observeHandler((request: Request) => {
           {
             error: "VALIDATION_ERROR",
             message: error.issues
-              .map((issue: z.ZodIssue) => `${issue.path.join(".")}: ${issue.message}`)
+              .map(
+                (issue: z.ZodIssue) =>
+                  `${issue.path.join(".")}: ${issue.message}`,
+              )
               .join("; "),
           },
           { status: 400 },

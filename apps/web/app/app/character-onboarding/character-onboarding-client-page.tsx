@@ -402,7 +402,8 @@ export default function CharacterOnboardingClientPage() {
           await loadBootstrapStatus(householdId, childProfileId);
         }
         setError(
-          data.message ?? "Karakter olusturulamadi. Mevcut karakter acilabilir.",
+          data.message ??
+            "Karakter olusturulamadi. Mevcut karakter acilabilir.",
         );
         return;
       }
@@ -436,8 +437,8 @@ export default function CharacterOnboardingClientPage() {
             Bu profil icin karakter zaten olusturulmus
           </h1>
           <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-            Yeni karakter baslatmak yerine mevcut karaktere donuyoruz. Sorun dunya
-            tarafindaysa onu mevcut karakter uzerinden onaracagiz.
+            Yeni karakter baslatmak yerine mevcut karaktere donuyoruz. Sorun
+            dunya tarafindaysa onu mevcut karakter uzerinden onaracagiz.
           </p>
           {error ? (
             <div className="mt-4 rounded-xl border border-error-container bg-white px-4 py-3 text-sm text-error">

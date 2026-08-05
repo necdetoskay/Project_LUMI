@@ -78,9 +78,12 @@ export function ProfileWorldMapSection({
   characterId?: string | null;
 }) {
   const [world, setWorld] = useState<WorldMapResponse["world"]>(null);
-  const [character, setCharacter] = useState<WorldMapResponse["character"]>(null);
+  const [character, setCharacter] =
+    useState<WorldMapResponse["character"]>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [repairingWorld, setRepairingWorld] = useState(false);
@@ -143,7 +146,8 @@ export function ProfileWorldMapSection({
         return;
       }
 
-      const inventoryBody = (await inventoryResponse.json()) as InventoryResponse;
+      const inventoryBody =
+        (await inventoryResponse.json()) as InventoryResponse;
       setInventory(inventoryBody.items ?? []);
     } catch {
       setWorld(null);
@@ -212,7 +216,8 @@ export function ProfileWorldMapSection({
     }
 
     const currentLocation =
-      visibleLocations.find((location) => location.isCurrent) ?? visibleLocations[0];
+      visibleLocations.find((location) => location.isCurrent) ??
+      visibleLocations[0];
     if (!currentLocation) {
       setSelectedLocationId(null);
       return;
@@ -222,7 +227,8 @@ export function ProfileWorldMapSection({
 
   const selectedLocation = useMemo(
     () =>
-      visibleLocations.find((location) => location.id === selectedLocationId) ?? null,
+      visibleLocations.find((location) => location.id === selectedLocationId) ??
+      null,
     [selectedLocationId, visibleLocations],
   );
 
@@ -235,7 +241,10 @@ export function ProfileWorldMapSection({
   );
 
   const inventoryPreview = inventory.slice(0, 4);
-  const inventoryCount = inventory.reduce((sum, item) => sum + item.quantity, 0);
+  const inventoryCount = inventory.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
 
   if (loading) {
     return (
@@ -260,9 +269,13 @@ export function ProfileWorldMapSection({
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
-            <span className="material-symbols-outlined text-[32px]">public</span>
+            <span className="material-symbols-outlined text-[32px]">
+              public
+            </span>
           </div>
-          <h2 className="text-xl font-bold text-on-surface">Harita henuz hazir degil</h2>
+          <h2 className="text-xl font-bold text-on-surface">
+            Harita henuz hazir degil
+          </h2>
           <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
             Bu profil icin once bir karakter ve bagli dunya hazir olmali.
           </p>
@@ -276,12 +289,17 @@ export function ProfileWorldMapSection({
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-10 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
-            <span className="material-symbols-outlined text-[32px]">travel_explore</span>
+            <span className="material-symbols-outlined text-[32px]">
+              travel_explore
+            </span>
           </div>
-          <h2 className="text-xl font-bold text-on-surface">Dunya henuz hazir degil</h2>
+          <h2 className="text-xl font-bold text-on-surface">
+            Dunya henuz hazir degil
+          </h2>
           <p className="mx-auto mt-2 max-w-[34rem] text-sm leading-6 text-on-surface-variant">
-            {character.name} icin karakter kaydi var ama dunya bootstrap'i tamamlanmamis.
-            Haritayi kullanabilmek icin dunya olusturmayi tekrar deneyebiliriz.
+            {character.name} icin karakter kaydi var ama dunya bootstrap'i
+            tamamlanmamis. Haritayi kullanabilmek icin dunya olusturmayi tekrar
+            deneyebiliriz.
           </p>
           {repairError ? (
             <div className="mx-auto mt-4 max-w-[30rem] rounded-xl border border-error-container bg-white px-4 py-3 text-sm text-error">
@@ -295,8 +313,12 @@ export function ProfileWorldMapSection({
               disabled={repairingWorld}
               className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-[18px]">refresh</span>
-              {repairingWorld ? "Dunya hazirlaniyor..." : "Dunyayi tekrar hazirla"}
+              <span className="material-symbols-outlined text-[18px]">
+                refresh
+              </span>
+              {repairingWorld
+                ? "Dunya hazirlaniyor..."
+                : "Dunyayi tekrar hazirla"}
             </button>
           </div>
         </div>
@@ -308,14 +330,19 @@ export function ProfileWorldMapSection({
     <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">Haritayi Incele</h1>
+          <h1 className="text-2xl font-bold text-on-surface">
+            Haritayi Incele
+          </h1>
           <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-            {character.name} icin gorunur bolgeler, acik yollar ve su anki konum.
+            {character.name} icin gorunur bolgeler, acik yollar ve su anki
+            konum.
           </p>
         </div>
         <div className="rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface">
           <p className="font-semibold">Dunya durumu</p>
-          <p className="mt-1 text-on-surface-variant">{world.lifecycleStatus}</p>
+          <p className="mt-1 text-on-surface-variant">
+            {world.lifecycleStatus}
+          </p>
         </div>
       </div>
 
@@ -329,14 +356,18 @@ export function ProfileWorldMapSection({
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-on-surface">{region.displayName}</h2>
+                    <h2 className="text-lg font-bold text-on-surface">
+                      {region.displayName}
+                    </h2>
                     {region.isCurrentRegion ? (
                       <span className="rounded-full bg-primary-fixed px-2 py-1 text-xs font-semibold text-primary">
                         Su an burada
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">{region.summary}</p>
+                  <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                    {region.summary}
+                  </p>
                 </div>
                 <div className="text-sm text-on-surface-variant">
                   <p>Kesif: {region.discoveryStatus}</p>
@@ -363,8 +394,12 @@ export function ProfileWorldMapSection({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="text-sm font-semibold text-on-surface">{location.displayName}</h3>
-                            <p className="mt-1 text-xs text-on-surface-variant">{location.locationType}</p>
+                            <h3 className="text-sm font-semibold text-on-surface">
+                              {location.displayName}
+                            </h3>
+                            <p className="mt-1 text-xs text-on-surface-variant">
+                              {location.locationType}
+                            </p>
                           </div>
                           {location.isCurrent ? (
                             <span className="rounded-full bg-secondary-fixed px-2 py-1 text-xs font-semibold text-secondary">
@@ -401,7 +436,10 @@ export function ProfileWorldMapSection({
             <h2 className="text-lg font-bold text-on-surface">Harita ozeti</h2>
             <div className="mt-4 grid grid-cols-1 gap-3">
               <SummaryTile label="Karakter" value={character.name} />
-              <SummaryTile label="Rol" value={`${character.characterType} / ${character.subtype}`} />
+              <SummaryTile
+                label="Rol"
+                value={`${character.characterType} / ${character.subtype}`}
+              />
               <SummaryTile
                 label="Su anki konum"
                 value={world.currentLocation?.displayName ?? "Bilinmiyor"}
@@ -422,20 +460,37 @@ export function ProfileWorldMapSection({
           </section>
 
           <section className="rounded-xl border border-outline-variant bg-white p-5">
-            <h2 className="text-lg font-bold text-on-surface">Konum ayrintisi</h2>
+            <h2 className="text-lg font-bold text-on-surface">
+              Konum ayrintisi
+            </h2>
             {selectedLocation && selectedRegion ? (
               <div className="mt-4 space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-on-surface">{selectedLocation.displayName}</p>
+                  <p className="text-sm font-semibold text-on-surface">
+                    {selectedLocation.displayName}
+                  </p>
                   <p className="mt-1 text-sm text-on-surface-variant">
-                    {selectedRegion.displayName} icinde bir {selectedLocation.locationType}.
+                    {selectedRegion.displayName} icinde bir{" "}
+                    {selectedLocation.locationType}.
                   </p>
                 </div>
-                <DetailRow label="Erisim" value={selectedLocation.accessibilityStatus} />
-                <DetailRow label="Guvenlik" value={selectedLocation.safetyLevel} />
+                <DetailRow
+                  label="Erisim"
+                  value={selectedLocation.accessibilityStatus}
+                />
+                <DetailRow
+                  label="Guvenlik"
+                  value={selectedLocation.safetyLevel}
+                />
                 <DetailRow
                   label="Durum"
-                  value={selectedLocation.isCurrent ? "Karakter burada" : selectedLocation.isHome ? "Yuva noktasi" : "Gorunur nokta"}
+                  value={
+                    selectedLocation.isCurrent
+                      ? "Karakter burada"
+                      : selectedLocation.isHome
+                        ? "Yuva noktasi"
+                        : "Gorunur nokta"
+                  }
                 />
                 <p className="rounded-lg bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">
                   {selectedLocation.accessibilityHint}
@@ -458,8 +513,12 @@ export function ProfileWorldMapSection({
                     className="rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-on-surface">{item.displayName}</p>
-                      <span className="text-xs text-on-surface-variant">x{item.quantity}</span>
+                      <p className="text-sm font-semibold text-on-surface">
+                        {item.displayName}
+                      </p>
+                      <span className="text-xs text-on-surface-variant">
+                        x{item.quantity}
+                      </span>
                     </div>
                     <p className="mt-1 text-xs text-on-surface-variant">
                       {item.category} / {item.rarity} / {item.conditionStatus}
@@ -468,7 +527,8 @@ export function ProfileWorldMapSection({
                 ))}
                 {inventory.length > inventoryPreview.length ? (
                   <p className="text-xs text-on-surface-variant">
-                    +{inventory.length - inventoryPreview.length} esya daha gorunuyor.
+                    +{inventory.length - inventoryPreview.length} esya daha
+                    gorunuyor.
                   </p>
                 ) : null}
               </div>
@@ -482,8 +542,9 @@ export function ProfileWorldMapSection({
           <section className="rounded-xl border border-outline-variant bg-white p-5">
             <h2 className="text-lg font-bold text-on-surface">Kesif notu</h2>
             <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-              Harita yalnizca gorunur ve guvenli sekilde acilmis bilgileri gosterir.
-              Kilitli ya da henuz kesfedilmemis alanlar spoiler vermeden ozetlenir.
+              Harita yalnizca gorunur ve guvenli sekilde acilmis bilgileri
+              gosterir. Kilitli ya da henuz kesfedilmemis alanlar spoiler
+              vermeden ozetlenir.
             </p>
           </section>
         </aside>
@@ -495,7 +556,9 @@ export function ProfileWorldMapSection({
 function SummaryTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+        {label}
+      </p>
       <p className="mt-2 text-sm font-semibold text-on-surface">{value}</p>
     </div>
   );
@@ -504,7 +567,9 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+        {label}
+      </span>
       <span className="text-sm font-semibold text-on-surface">{value}</span>
     </div>
   );

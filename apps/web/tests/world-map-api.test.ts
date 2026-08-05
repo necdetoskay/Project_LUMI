@@ -16,7 +16,8 @@ vi.mock("@lumi/profiles/application", () => ({
 }));
 
 vi.mock("@lumi/world/application", () => ({
-  getWorldForCharacter: (...args: unknown[]) => mockGetWorldForCharacter(...args),
+  getWorldForCharacter: (...args: unknown[]) =>
+    mockGetWorldForCharacter(...args),
   getWorldDetail: (...args: unknown[]) => mockGetWorldDetail(...args),
   getCharacterCurrentLocation: (...args: unknown[]) =>
     mockGetCharacterCurrentLocation(...args),

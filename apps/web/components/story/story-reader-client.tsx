@@ -97,7 +97,9 @@ type ChildProfileSummary = {
 export function StoryReaderClient({ sessionId }: { sessionId: string }) {
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [payload, setPayload] = useState<ReaderPayload | null>(null);
-  const [childProfile, setChildProfile] = useState<ChildProfileSummary | null>(null);
+  const [childProfile, setChildProfile] = useState<ChildProfileSummary | null>(
+    null,
+  );
   const [choiceHistory, setChoiceHistory] = useState<ChoiceHistoryEntry[]>([]);
   const [latestCheckpoint, setLatestCheckpoint] =
     useState<CheckpointSummary | null>(null);
@@ -122,8 +124,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
 
     try {
       const onboardingRes = await fetch("/api/onboarding");
-      const onboardingData =
-        (await onboardingRes.json()) as OnboardingPayload;
+      const onboardingData = (await onboardingRes.json()) as OnboardingPayload;
       const nextHouseholdId = onboardingData.onboarding?.householdId ?? null;
 
       if (!nextHouseholdId) {
@@ -137,12 +138,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
 
       setHouseholdId(nextHouseholdId);
 
-      const readerUrl =
-        `/api/stories/sessions/${encodeURIComponent(sessionId)}/reader?householdId=${encodeURIComponent(nextHouseholdId)}`;
-      const historyUrl =
-        `/api/stories/sessions/${encodeURIComponent(sessionId)}/choices/history?householdId=${encodeURIComponent(nextHouseholdId)}`;
-      const checkpointUrl =
-        `/api/stories/sessions/${encodeURIComponent(sessionId)}/checkpoints/latest?householdId=${encodeURIComponent(nextHouseholdId)}`;
+      const readerUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/reader?householdId=${encodeURIComponent(nextHouseholdId)}`;
+      const historyUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/choices/history?householdId=${encodeURIComponent(nextHouseholdId)}`;
+      const checkpointUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/checkpoints/latest?householdId=${encodeURIComponent(nextHouseholdId)}`;
 
       const [readerRes, historyResult, checkpointResult] = await Promise.all([
         fetch(readerUrl),
@@ -270,8 +268,10 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
   }, []);
 
   const reflectionQuestions = useMemo(() => {
-    const sceneTitle = currentScene?.title ?? currentScene?.sceneKey ?? "bu sahne";
-    const primaryChoiceLabel = payload?.choices[0]?.options[0]?.option.label ?? null;
+    const sceneTitle =
+      currentScene?.title ?? currentScene?.sceneKey ?? "bu sahne";
+    const primaryChoiceLabel =
+      payload?.choices[0]?.options[0]?.option.label ?? null;
 
     switch (childProfile?.ageBand) {
       case "3-5":
@@ -306,7 +306,12 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
             : "Bir sonraki adimda ne olmasini umuyorsun?",
         ];
     }
-  }, [childProfile?.ageBand, currentScene?.sceneKey, currentScene?.title, payload?.choices]);
+  }, [
+    childProfile?.ageBand,
+    currentScene?.sceneKey,
+    currentScene?.title,
+    payload?.choices,
+  ]);
 
   const reflectionIntro = useMemo(() => {
     switch (childProfile?.ageBand) {
@@ -385,7 +390,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
       await loadReader();
     } catch (nextError) {
       setError(
-        nextError instanceof Error ? nextError.message : "Durum guncellenemedi.",
+        nextError instanceof Error
+          ? nextError.message
+          : "Durum guncellenemedi.",
       );
     } finally {
       setSubmitting(false);
@@ -527,7 +534,8 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
               {currentScene?.title ?? currentScene?.sceneKey ?? "Story session"}
             </h1>
             <p className="mt-2 text-sm text-on-surface-variant">
-              Durum: {statusLabel} | Ziyaret: {payload?.playback.visits.length ?? 0}
+              Durum: {statusLabel} | Ziyaret:{" "}
+              {payload?.playback.visits.length ?? 0}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-sm">
               {childProfile ? (
@@ -535,7 +543,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                   className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
                   href={`/app/profiles/${encodeURIComponent(childProfile.id)}`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">badge</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    badge
+                  </span>
                   {childProfile.displayName}
                 </a>
               ) : null}
@@ -544,7 +554,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                   className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
                   href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    travel_explore
+                  </span>
                   Haritayi incele
                 </a>
               ) : null}
@@ -611,20 +623,30 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
       ) : null}
 
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-4">
-        <InfoTile label="Profil" value={childProfile?.displayName ?? "Baglanamadi"} />
+        <InfoTile
+          label="Profil"
+          value={childProfile?.displayName ?? "Baglanamadi"}
+        />
         <InfoTile label="Yas grubu" value={childProfile?.ageBand ?? "-"} />
         <InfoTile label="Durum" value={statusLabel} />
-        <InfoTile label="Ziyaret" value={String(payload?.playback.visits.length ?? 0)} />
+        <InfoTile
+          label="Ziyaret"
+          value={String(payload?.playback.visits.length ?? 0)}
+        />
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <article className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
           <div className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px]">auto_stories</span>
+            <span className="material-symbols-outlined text-[18px]">
+              auto_stories
+            </span>
             Mevcut sahne
           </div>
           <h2 className="mt-4 text-2xl font-bold text-on-surface">
-            {currentScene?.title ?? currentScene?.sceneKey ?? "Sahne bekleniyor"}
+            {currentScene?.title ??
+              currentScene?.sceneKey ??
+              "Sahne bekleniyor"}
           </h2>
           <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
             <section
@@ -708,7 +730,8 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
             </section>
           </div>
           <p className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface">
-            {currentScene?.narrativeText ?? "Bu oturum icin aktif sahne bulunamadi."}
+            {currentScene?.narrativeText ??
+              "Bu oturum icin aktif sahne bulunamadi."}
           </p>
         </article>
 
@@ -732,7 +755,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
           </section>
 
           <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">Checkpoint durumu</h2>
+            <h2 className="text-lg font-bold text-on-surface">
+              Checkpoint durumu
+            </h2>
             {latestCheckpoint ? (
               <div className="mt-4 grid grid-cols-1 gap-3">
                 <InfoTile label="Tip" value={latestCheckpoint.checkpointType} />
@@ -750,7 +775,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
           </section>
 
           <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">Dusunme molasi</h2>
+            <h2 className="text-lg font-bold text-on-surface">
+              Dusunme molasi
+            </h2>
             <p className="mt-3 text-sm leading-6 text-on-surface-variant">
               {reflectionIntro}
             </p>
@@ -767,7 +794,9 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
           </section>
 
           <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">Erisilebilirlik</h2>
+            <h2 className="text-lg font-bold text-on-surface">
+              Erisilebilirlik
+            </h2>
             <p className="mt-3 text-sm leading-6 text-on-surface-variant">
               Sahne metni tek kolon okunuyor, butonlar klavye odakli ve hata
               durumlari ekranda acik sekilde gosteriliyor.
@@ -825,7 +854,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                               ? option.nextSceneId
                                 ? "Sahneye gec"
                                 : "Kaydet"
-                              : option.reasonCode ?? "Kullanilamaz"}
+                              : (option.reasonCode ?? "Kullanilamaz")}
                           </span>
                         </button>
                         {hintTexts.length > 0 ? (
@@ -849,7 +878,8 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                                   ))}
                                 </ul>
                                 <p className="mt-3 text-xs leading-5">
-                                  Bu ipuclari yon gosterir; kesin sonucu onceden soylemez.
+                                  Bu ipuclari yon gosterir; kesin sonucu onceden
+                                  soylemez.
                                 </p>
                               </div>
                             ) : null}
@@ -905,7 +935,6 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
     </main>
   );
 }
-
 
 function getHintTexts(option: ReaderOption): string[] {
   const previews = Array.isArray(option.option.consequencePreviews)

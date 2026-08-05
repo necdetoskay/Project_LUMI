@@ -94,7 +94,9 @@ export const GET = observeHandler(
       try {
         await getStorySessionOrForbidden(sessionId, householdId);
         const playback = await getSessionPlaybackState(sessionId);
-        const graph = await getStoryVersionGraph(playback.session.storyVersionId);
+        const graph = await getStoryVersionGraph(
+          playback.session.storyVersionId,
+        );
         const currentSceneId = playback.currentScene?.id;
         const checkpointHash =
           playback.latestCheckpoint?.contentHash ??

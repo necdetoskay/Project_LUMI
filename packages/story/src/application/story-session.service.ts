@@ -119,10 +119,7 @@ async function checkIdempotency(
   return existing?.storySessionId ?? undefined;
 }
 
-async function readSessionPlaybackState(
-  db: Database,
-  sessionId: string,
-) {
+async function readSessionPlaybackState(db: Database, sessionId: string) {
   const repo = new DrizzleStoryRepository();
   const session = await repo.findSessionById(db, sessionId);
   if (!session) {
@@ -767,8 +764,3 @@ export async function listSessionsForChildProfile(
     }),
   );
 }
-
-
-
-
-

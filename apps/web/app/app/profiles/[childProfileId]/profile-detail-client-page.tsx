@@ -43,7 +43,9 @@ export default function ProfileDetailClientPage({
     const nextTab = new URLSearchParams(window.location.search).get("tab");
     if (
       nextTab &&
-      ["overview", "characters", "stories", "preferences", "security"].includes(nextTab)
+      ["overview", "characters", "stories", "preferences", "security"].includes(
+        nextTab,
+      )
     ) {
       setActiveTab(nextTab);
     }
@@ -179,7 +181,10 @@ export default function ProfileDetailClientPage({
           Dashboard
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a className="transition-colors hover:text-primary" href="/app/profiles">
+        <a
+          className="transition-colors hover:text-primary"
+          href="/app/profiles"
+        >
           Profiller
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -190,7 +195,9 @@ export default function ProfileDetailClientPage({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-5">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-              <span className="material-symbols-outlined text-[32px]">face</span>
+              <span className="material-symbols-outlined text-[32px]">
+                face
+              </span>
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
@@ -204,7 +211,9 @@ export default function ProfileDetailClientPage({
                 <MetaPill icon="language" label={profile.locale} />
                 <MetaPill
                   icon="calendar_month"
-                  label={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+                  label={new Date(profile.createdAt).toLocaleDateString(
+                    "tr-TR",
+                  )}
                 />
                 {firstCharacter ? (
                   <MetaPill icon="auto_awesome" label={firstCharacter.name} />
@@ -213,8 +222,8 @@ export default function ProfileDetailClientPage({
                 )}
               </div>
               <p className="mt-4 max-w-[42rem] text-sm leading-6 text-on-surface-variant">
-                Profil, karakter, dunya ve hikaye akislari buradan yonetilir. En sik yapilan
-                adimlar hemen asagida toplandi.
+                Profil, karakter, dunya ve hikaye akislari buradan yonetilir. En
+                sik yapilan adimlar hemen asagida toplandi.
               </p>
             </div>
           </div>
@@ -230,21 +239,27 @@ export default function ProfileDetailClientPage({
                 setEditModalOpen(true);
               }}
             >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
+              <span className="material-symbols-outlined text-[18px]">
+                edit
+              </span>
               Profili duzenle
             </button>
             <a
               className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
               href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
             >
-              <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+              <span className="material-symbols-outlined text-[18px]">
+                travel_explore
+              </span>
               Haritayi incele
             </a>
             <a
               className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
               href="/app/profiles"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
               Profillere don
             </a>
           </div>
@@ -341,7 +356,9 @@ export default function ProfileDetailClientPage({
       {editModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-on-surface">Profili duzenle</h2>
+            <h2 className="text-xl font-bold text-on-surface">
+              Profili duzenle
+            </h2>
             <p className="mt-1 text-sm text-on-surface-variant">
               {profile.displayName} icin temel bilgileri guncelleyin.
             </p>
@@ -468,18 +485,32 @@ function OverviewSection({
           className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
           href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
         >
-          <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+          <span className="material-symbols-outlined text-[18px]">
+            travel_explore
+          </span>
           Haritayi incele
         </a>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <InfoCard label="Gorunen ad" value={profile.displayName} icon="badge" />
+          <InfoCard
+            label="Gorunen ad"
+            value={profile.displayName}
+            icon="badge"
+          />
           <InfoCard label="Yas grubu" value={ageBandLabel} icon="cake" />
-          <InfoCard label="Dil / Locale" value={profile.locale} icon="language" />
+          <InfoCard
+            label="Dil / Locale"
+            value={profile.locale}
+            icon="language"
+          />
           <InfoCard label="Profil durumu" value="Aktif" icon="check_circle" />
-          <InfoCard label="Aile evreni" value={profile.householdId.slice(0, 8) + "..."} icon="public" />
+          <InfoCard
+            label="Aile evreni"
+            value={profile.householdId.slice(0, 8) + "..."}
+            icon="public"
+          />
           <InfoCard
             label="Olusturma"
             value={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
@@ -528,7 +559,9 @@ function CharactersSection({
   if (loading) {
     return (
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <p className="text-sm text-on-surface-variant">Karakterler yukleniyor...</p>
+        <p className="text-sm text-on-surface-variant">
+          Karakterler yukleniyor...
+        </p>
       </section>
     );
   }
@@ -538,18 +571,24 @@ function CharactersSection({
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[32px]">auto_awesome</span>
+            <span className="material-symbols-outlined text-[32px]">
+              auto_awesome
+            </span>
           </div>
-          <h3 className="text-xl font-bold text-on-surface">Henuz karakter yok</h3>
+          <h3 className="text-xl font-bold text-on-surface">
+            Henuz karakter yok
+          </h3>
           <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-            Bu profil icin henuz karakter olusturulmamis. Ilk karakteri baslatarak
-            macerayi hareketlendirin.
+            Bu profil icin henuz karakter olusturulmamis. Ilk karakteri
+            baslatarak macerayi hareketlendirin.
           </p>
           <a
             className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
             href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
           >
-            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            <span className="material-symbols-outlined text-[20px]">
+              rocket_launch
+            </span>
             Ilk karakteri baslat
           </a>
         </div>
@@ -558,7 +597,10 @@ function CharactersSection({
   }
 
   return (
-    <section id="characters" className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+    <section
+      id="characters"
+      className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-on-surface">Karakterler</h2>
@@ -566,12 +608,14 @@ function CharactersSection({
             Bu profilde aktif olan karakterler ve temel rolleri.
           </p>
         </div>
-                {firstCharacter ? (
+        {firstCharacter ? (
           <a
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
             href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(firstCharacter.id)}`}
           >
-            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[18px]">
+              open_in_new
+            </span>
             Karakteri ac
           </a>
         ) : (
@@ -592,15 +636,21 @@ function CharactersSection({
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-                <span className="material-symbols-outlined text-[24px]">magic_button</span>
+                <span className="material-symbols-outlined text-[24px]">
+                  magic_button
+                </span>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-on-surface">{character.name}</h3>
+                <h3 className="text-lg font-bold text-on-surface">
+                  {character.name}
+                </h3>
                 <p className="mt-1 text-sm text-on-surface-variant">
-                  {getCharacterTypeLabel(character.characterType)} | {character.subtype}
+                  {getCharacterTypeLabel(character.characterType)} |{" "}
+                  {character.subtype}
                 </p>
                 <p className="mt-1 text-xs text-on-surface-variant">
-                  Olusturma: {new Date(character.createdAt).toLocaleDateString("tr-TR")}
+                  Olusturma:{" "}
+                  {new Date(character.createdAt).toLocaleDateString("tr-TR")}
                 </p>
               </div>
             </div>
@@ -609,14 +659,18 @@ function CharactersSection({
                 className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
                 href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(character.id)}`}
               >
-                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  open_in_new
+                </span>
                 Karakter detayi
               </a>
               <a
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
                 href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
               >
-                <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  menu_book
+                </span>
                 Hikayelere git
               </a>
             </div>
@@ -635,10 +689,12 @@ function PreferencesSection() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">tune</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">Tercihler henuz tanimlanmadi</h3>
+        <h3 className="text-xl font-bold text-on-surface">
+          Tercihler henuz tanimlanmadi
+        </h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Hikaye temalari, karakter tercihleri ve benzer ayarlar sonraki adimlarda
-          bu ekrana baglanacak.
+          Hikaye temalari, karakter tercihleri ve benzer ayarlar sonraki
+          adimlarda bu ekrana baglanacak.
         </p>
       </div>
     </section>
@@ -653,10 +709,12 @@ function SecuritySection() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">shield</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">Ebeveyn politikasi aktif</h3>
+        <h3 className="text-xl font-bold text-on-surface">
+          Ebeveyn politikasi aktif
+        </h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Cocuk profili guvenlik ayarlari aile duzeyindeki ebeveyn politikasi ile
-          yonetilir. Ayrintilar ebeveyn panelinde acilacak.
+          Cocuk profili guvenlik ayarlari aile duzeyindeki ebeveyn politikasi
+          ile yonetilir. Ayrintilar ebeveyn panelinde acilacak.
         </p>
       </div>
     </section>
@@ -685,11 +743,15 @@ function QuickActionCard({
       </div>
       <div className="mt-4">
         <h2 className="text-base font-bold text-on-surface">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
+        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+          {description}
+        </p>
       </div>
       <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
         <span>{cta}</span>
-        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+        <span className="material-symbols-outlined text-[18px]">
+          arrow_forward
+        </span>
       </div>
     </>
   );
@@ -732,10 +794,14 @@ function ActionRow({
       className="flex items-start gap-3 rounded-lg border border-outline-variant bg-white p-4 transition-colors hover:border-primary/30"
       href={href}
     >
-      <span className="material-symbols-outlined text-[20px] text-primary">{icon}</span>
+      <span className="material-symbols-outlined text-[20px] text-primary">
+        {icon}
+      </span>
       <div>
         <p className="text-sm font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</p>
+        <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+          {description}
+        </p>
       </div>
     </a>
   );
@@ -753,7 +819,9 @@ function InfoCard({
   return (
     <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[18px] text-primary">{icon}</span>
+        <span className="material-symbols-outlined text-[18px] text-primary">
+          {icon}
+        </span>
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
           {label}
         </p>
@@ -774,7 +842,10 @@ function MetaPill({ icon, label }: { icon: string; label: string }) {
 
 function FieldLabel({ htmlFor, label }: { htmlFor: string; label: string }) {
   return (
-    <label className="mb-1 block text-sm font-semibold text-on-surface" htmlFor={htmlFor}>
+    <label
+      className="mb-1 block text-sm font-semibold text-on-surface"
+      htmlFor={htmlFor}
+    >
       {label}
     </label>
   );

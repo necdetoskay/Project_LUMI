@@ -134,7 +134,13 @@ export const POST = observeHandler(async (request: Request) => {
       }
       console.error("[api/world]", err);
       return NextResponse.json(
-        { error: "INTERNAL_ERROR", message: process.env.NODE_ENV === "production" ? "Failed to create world" : message },
+        {
+          error: "INTERNAL_ERROR",
+          message:
+            process.env.NODE_ENV === "production"
+              ? "Failed to create world"
+              : message,
+        },
         { status: 500 },
       );
     }
