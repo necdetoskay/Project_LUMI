@@ -276,6 +276,8 @@ test.describe("Profile API authorization and contracts", () => {
         maxDailyStories: 10,
         contentBoundary: "moderate",
         timeLimitMinutes: 60,
+        blockedTopics: ["fear", "loss"],
+        customNotes: ["keep it gentle"],
       },
     });
     expect(updateRes.status()).toBe(200);
@@ -283,6 +285,25 @@ test.describe("Profile API authorization and contracts", () => {
     expect(updated.maxDailyStories).toBe(10);
     expect(updated.contentBoundary).toBe("moderate");
     expect(updated.timeLimitMinutes).toBe(60);
+    expect(updated.blockedTopics).toEqual(["fear", "loss"]);
+    expect(updated.customNotes).toEqual(["keep it gentle"]);
+
+    const getAfterUpdate = await request.get(
+      `/api/parent-policy?householdId=${householdId}`,
+    );
+    const afterPolicy = (await getAfterUpdate.json()).policy;
+    expect(afterPolicy.blockedTopics).toEqual(["fear", "loss"]);
+    expect(afterPolicy.customNotes).toEqual(["keep it gentle"]);
+
+    const auditRes = await request.get(
+      `/api/parent-policy/audit?householdId=${householdId}`,
+    );
+    expect(auditRes.status()).toBe(200);
+    const { entries } = await auditRes.json();
+    expect(entries.length).toBeGreaterThanOrEqual(1);
+    const last = entries[entries.length - 1];
+    expect(last.action).toBe("policy.update");
+    expect(last.afterState.blockedTopics).toEqual(["fear", "loss"]);
   });
 
   test("child profile validation rejects invalid payloads", async ({

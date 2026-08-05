@@ -714,8 +714,15 @@ function SecuritySection() {
         </h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
           Cocuk profili guvenlik ayarlari aile duzeyindeki ebeveyn politikasi
-          ile yonetilir. Ayrintilar ebeveyn panelinde acilacak.
+          ile yonetilir. Icerik siniri, günlük kullanim ve tema tercihleri
+          ebeveyn panelinden yapilandirilir.
         </p>
+        <a
+          href="/app/settings/safety"
+          className="mt-6 inline-flex h-10 items-center rounded-lg bg-primary px-6 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+        >
+          Guvenlik Ayarlarini Ac
+        </a>
       </div>
     </section>
   );

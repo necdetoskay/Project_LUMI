@@ -41,6 +41,10 @@ Ebeveynin child profile, içerik politikaları, kullanım tercihleri ve güvenli
 | S18-T05 | Consent/export/archive flows | privacy/application | security + integration |
 | S18-T06 | Parent/safety runbooks | `docs/` | review |
 
+> Note (2026-08-05): T01-T04 initial slice implemented in `codex/sprint-18-parent-panel`
+> (`DrizzleParentPolicySource` production adapter, blockedTopics/customNotes surface,
+> audit trail GET, `/app/settings/safety` parent panel + nav). T05/T06 remain pending.
+
 ## Requirements
 
 - Parent policy safety baseline'ı gevşetemez.
