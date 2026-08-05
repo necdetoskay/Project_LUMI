@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { newIdempotencyKey } from "@/lib/new-id";
 import {
   StorySessionList,
   type StorySessionSummary,
@@ -252,11 +253,14 @@ export function ProfileStoriesSection({
             storyVersionId: selectedStory.version.id,
             characterId: selectedLaunch.character.id,
             playbackMode,
-            idempotencyKey: crypto.randomUUID(),
+            idempotencyKey: newIdempotencyKey(),
           }),
         },
       );
-      const body = (await response.json()) as {
+      const body = (await response.json().catch(async () => {
+        const text = await response.text();
+        return { message: text || `HTTP ${response.status}` };
+      })) as {
         message?: string;
         session?: { session?: { id?: string } };
       };
@@ -273,8 +277,13 @@ export function ProfileStoriesSection({
       }
 
       window.location.href = "/app/stories/" + encodeURIComponent(sessionId);
-    } catch {
-      setLaunchError("Hikaye baslatilirken bir hata olustu.");
+    } catch (error) {
+      console.error("Hikaye baslatma hatasi:", error);
+      setLaunchError(
+        error instanceof Error
+          ? `Hikaye baslatilirken bir hata olustu (${error.message})`
+          : "Hikaye baslatilirken bir hata olustu.",
+      );
     } finally {
       setSubmitting(false);
     }

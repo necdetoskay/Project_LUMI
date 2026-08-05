@@ -4,7 +4,7 @@ import { ValidationError, NotFoundError } from "../domain/errors";
 import { getStoryDb } from "./db";
 import { recordStoryEventWithTx } from "./story-event-store.service";
 import { hashObject } from "./hash";
-import type { Database } from "../db/client";
+import type { Database, QueryExecutor } from "../db/client";
 import type { ParticipationRole, PlaybackMode } from "../domain/story-types";
 import {
   assertKnownSessionStatus,
@@ -119,7 +119,7 @@ async function checkIdempotency(
   return existing?.storySessionId ?? undefined;
 }
 
-async function readSessionPlaybackState(db: Database, sessionId: string) {
+async function readSessionPlaybackState(db: QueryExecutor, sessionId: string) {
   const repo = new DrizzleStoryRepository();
   const session = await repo.findSessionById(db, sessionId);
   if (!session) {
@@ -287,7 +287,7 @@ export async function startSession(input: StartSessionInput) {
       );
     }
 
-    return getSessionPlaybackStateFromRecord(record.id);
+    return readSessionPlaybackState(tx, record.id);
   });
 }
 
@@ -438,7 +438,7 @@ async function changeSessionState(
       );
     }
 
-    return getSessionPlaybackStateFromRecord(sessionId);
+    return readSessionPlaybackState(tx, sessionId);
   });
 }
 

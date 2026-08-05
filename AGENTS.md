@@ -24,6 +24,10 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Strict TypeScript (`tooling/typescript/base.json`) and ESLint (`eslint.config.mjs`) apply to all packages.
 - Integration tests that truncate/drop data require explicit environment guards and are skipped by default.
 - No raw secrets, API keys, or real child data in fixtures, tests, or logs.
+- Docker: compose (`infra/compose/docker-compose.yml`) exposes ONLY the web service to the host. postgres and redis are internal-only (`5432/tcp`, `6379/tcp`, no host port). Web reaches them via the compose network (`postgres:5432`, `redis:6379`).
+- `NEXT_PUBLIC_APP_URL` is build-time inlined and must equal the public URL (server host + `WEB_PORT`); `redirectWithQuery` prefers the request `Host` header for redirects.
+- Next standalone builds do NOT trace `drizzle-orm`/`postgres` from workspace packages — `scripts/inject-standalone-deps.mjs` injects them into `.next/standalone` after build (required for the Docker web image).
+- Client components must not call `crypto.randomUUID()` directly on HTTP origins (non-secure context makes it undefined) — use `newIdempotencyKey()` from `apps/web/lib/new-id.ts`.
 
 ## Work Guidance
 
@@ -48,4 +52,4 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 14 — Simulation Engine [tamamlandı] (2026-08-04 hardening: BudgetPlanner testi doğru pakete taşındı, worker discovery portu eklendi, `undefined as never` composition-root bağlantıları kaldırıldı, worker smoke/freeze/concurrency testleri eklendi)
 - Sprint 15 — Image, Voice and Audio Pipelines [tamamlandı]
 - Sprint 16 — Story Reader [tamamlandı] (story session listesi, world map API+UI, story reader API+UI, character onboarding handoff; PR #18 merge edildi; PR #19 ile CI prettier `validate` check düzeltildi, web testleri 111/111 yeşil)
-- Sprint 18 — Parent Panel and Safety Controls [devam ediyor: `codex/sprint-18-parent-panel`] (spec: `docs/07-delivery/lumi/sprint-18/SPRINT_SPEC.md`; S18-T01 parent policy use cases, T02 audit persistence, T03 panel APIs, T04 dashboard/settings UI, T05 consent/export/archive, T06 runbooks; 2026-08-05 T01-T04 ilk dilim: `DrizzleParentPolicySource` üretim adapter'ı, `blockedTopics`/`customNotes` yüzeyi, audit trail GET, `/app/settings/safety` ebeveyn paneli + nav fix)
+- Sprint 18 — Parent Panel and Safety Controls [devam ediyor: `codex/sprint-18-parent-panel`] (spec: `docs/07-delivery/lumi/sprint-18/SPRINT_SPEC.md`; S18-T01 parent policy use cases, T02 audit persistence, T03 panel APIs, T04 dashboard/settings UI, T05 consent/export/archive, T06 runbooks; 2026-08-05 T01-T04 ilk dilim: `DrizzleParentPolicySource` üretim adapter'ı, `blockedTopics`/`customNotes` yüzeyi, audit trail GET, `/app/settings/safety` ebeveyn paneli + nav fix; 2026-08-05 web Docker'a taşındı: root `Dockerfile` (Next standalone, `inject-standalone-deps.mjs`), web servisi 3001'de, postgres/redis internal-only; hikaye oluşturma fix: `drizzle-orm`/`postgres` standalone enjeksiyonu, `startSession` transaction okuma, `redirectWithQuery` Host-header tabanlı, client `crypto.randomUUID` → `newIdempotencyKey`)
