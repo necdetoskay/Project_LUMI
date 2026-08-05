@@ -277,6 +277,7 @@ function AddProfilesForm({
         }
         const data = await res.json();
         onProfileAdded(data.profile);
+        window.location.href = `/app/profiles/${encodeURIComponent(data.profile.id)}`;
         setDisplayName("");
         setAgeBand("");
       } catch {

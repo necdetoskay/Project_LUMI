@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ProfileStoriesSection } from "@/components/story/profile-stories-section";
 
 type Profile = {
   id: string;
@@ -39,34 +40,44 @@ export default function ProfileDetailClientPage({
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
+    const nextTab = new URLSearchParams(window.location.search).get("tab");
+    if (
+      nextTab &&
+      ["overview", "characters", "stories", "preferences", "security"].includes(nextTab)
+    ) {
+      setActiveTab(nextTab);
+    }
+  }, []);
+
+  useEffect(() => {
     async function load() {
       try {
         const onboardRes = await fetch("/api/onboarding");
         const onboardData = await onboardRes.json();
-        const s = onboardData.onboarding as {
+        const onboarding = onboardData.onboarding as {
           hasHousehold: boolean;
           householdId: string | null;
         };
 
-        if (!s.hasHousehold || !s.householdId) {
-          setError("No household found. Complete onboarding first.");
+        if (!onboarding.hasHousehold || !onboarding.householdId) {
+          setError("Household bulunamadi. Once onboarding akisini tamamlayin.");
           setLoading(false);
           return;
         }
 
-        setHouseholdId(s.householdId);
+        setHouseholdId(onboarding.householdId);
 
         const profileRes = await fetch(
-          `/api/child-profiles/${encodeURIComponent(childProfileId)}?householdId=${s.householdId}`,
+          `/api/child-profiles/${encodeURIComponent(childProfileId)}?householdId=${onboarding.householdId}`,
         );
 
         if (!profileRes.ok) {
           if (profileRes.status === 404) {
-            setError("Profil bulunamadı.");
+            setError("Profil bulunamadi.");
           } else if (profileRes.status === 403) {
-            setError("Bu profile erişim izniniz yok.");
+            setError("Bu profile erisim izniniz yok.");
           } else {
-            setError("Profil yüklenemedi.");
+            setError("Profil yuklenemedi.");
           }
           setLoading(false);
           return;
@@ -80,11 +91,13 @@ export default function ProfileDetailClientPage({
         setCharactersLoading(true);
         try {
           const charsRes = await fetch(
-            `/api/characters?householdId=${s.householdId}&childProfileId=${encodeURIComponent(childProfileId)}`,
+            `/api/characters?householdId=${onboarding.householdId}&childProfileId=${encodeURIComponent(childProfileId)}`,
           );
           if (charsRes.ok) {
             const charsData = await charsRes.json();
             setCharacters(charsData.characters ?? []);
+          } else {
+            setCharacters([]);
           }
         } catch {
           setCharacters([]);
@@ -92,13 +105,13 @@ export default function ProfileDetailClientPage({
           setCharactersLoading(false);
         }
       } catch {
-        setError("Veri yüklenirken bir hata oluştu.");
+        setError("Veri yuklenirken bir hata olustu.");
       } finally {
         setLoading(false);
       }
     }
 
-    load();
+    void load();
   }, [childProfileId]);
 
   const handleEditSubmit = useCallback(async () => {
@@ -107,12 +120,12 @@ export default function ProfileDetailClientPage({
     setEditError(null);
 
     if (!editDisplayName.trim()) {
-      setEditError("Görünen ad zorunludur.");
+      setEditError("Gorunen ad zorunludur.");
       return;
     }
 
     if (!editAgeBand) {
-      setEditError("Yaş grubu seçilmelidir.");
+      setEditError("Yas grubu secilmelidir.");
       return;
     }
 
@@ -134,7 +147,7 @@ export default function ProfileDetailClientPage({
 
       if (!res.ok) {
         const data = await res.json();
-        setEditError(data.message ?? "Güncelleme başarısız.");
+        setEditError(data.message ?? "Guncelleme basarisiz.");
         return;
       }
 
@@ -142,104 +155,147 @@ export default function ProfileDetailClientPage({
       setProfile(data.profile);
       setEditModalOpen(false);
     } catch {
-      setEditError("Güncelleme sırasında bir hata oluştu.");
+      setEditError("Guncelleme sirasinda bir hata olustu.");
     } finally {
       setEditSubmitting(false);
     }
   }, [childProfileId, householdId, editDisplayName, editAgeBand]);
 
+  const firstCharacter = useMemo(
+    () => (characters.length > 0 ? characters[0] : null),
+    [characters],
+  );
+
   if (loading) return <LoadingDisplay />;
   if (error) return <ErrorDisplay message={error} />;
-  if (!profile) return <ErrorDisplay message="Profil bulunamadı." />;
+  if (!profile) return <ErrorDisplay message="Profil bulunamadi." />;
 
   const ageBandLabel = getAgeBandLabel(profile.ageBand);
-  const firstCharacter = characters.length > 0 ? characters[0] : null;
 
   return (
     <main className="mx-auto flex w-full max-w-[1180px] flex-col px-6 py-10">
-      <nav className="mb-6 flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
+      <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm font-semibold text-on-surface-variant">
         <a className="transition-colors hover:text-primary" href="/app">
           Dashboard
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a
-          className="transition-colors hover:text-primary"
-          href="/app/profiles"
-        >
+        <a className="transition-colors hover:text-primary" href="/app/profiles">
           Profiller
         </a>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <span className="text-primary">{profile.displayName}</span>
       </nav>
 
-      <header className="mb-8 flex flex-col gap-6 rounded-2xl border border-outline-variant bg-white p-6 md:flex-row md:items-start md:justify-between md:p-8">
-        <div className="flex items-start gap-5">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[32px]">face</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-on-surface md:text-3xl">
-              {profile.displayName}
-            </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-on-surface-variant">
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">
-                  cake
-                </span>
-                {ageBandLabel}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">
-                  language
-                </span>
-                {profile.locale}
-              </span>
-              {firstCharacter && (
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">
-                    auto_awesome
-                  </span>
-                  {firstCharacter.name}
-                </span>
-              )}
+      <header className="mb-8 rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-5">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+              <span className="material-symbols-outlined text-[32px]">face</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                Cocuk profili
+              </p>
+              <h1 className="mt-2 text-2xl font-extrabold text-on-surface md:text-3xl">
+                {profile.displayName}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-on-surface-variant">
+                <MetaPill icon="cake" label={ageBandLabel} />
+                <MetaPill icon="language" label={profile.locale} />
+                <MetaPill
+                  icon="calendar_month"
+                  label={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+                />
+                {firstCharacter ? (
+                  <MetaPill icon="auto_awesome" label={firstCharacter.name} />
+                ) : (
+                  <MetaPill icon="rocket_launch" label="Karakter bekleniyor" />
+                )}
+              </div>
+              <p className="mt-4 max-w-[42rem] text-sm leading-6 text-on-surface-variant">
+                Profil, karakter, dunya ve hikaye akislari buradan yonetilir. En sik yapilan
+                adimlar hemen asagida toplandi.
+              </p>
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+              type="button"
+              onClick={() => {
+                setEditDisplayName(profile.displayName);
+                setEditAgeBand(profile.ageBand);
+                setEditError(null);
+                setEditModalOpen(true);
+              }}
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              Profili duzenle
+            </button>
+            <a
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
+            >
+              <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+              Haritayi incele
+            </a>
+            <a
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+              href="/app/profiles"
+            >
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              Profillere don
+            </a>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
-            type="button"
-            onClick={() => {
-              setEditDisplayName(profile.displayName);
-              setEditAgeBand(profile.ageBand);
-              setEditError(null);
-              setEditModalOpen(true);
-            }}
-          >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
-            Profili düzenle
-          </button>
-          <a
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
-            href="/app/profiles"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              arrow_back
-            </span>
-            Profiller listesine dön
-          </a>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <QuickActionCard
+            title="Harita"
+            description="Gorunen bolgeleri, su anki konumu ve canta ozetini inceleyin."
+            href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
+            icon="map"
+            cta="Haritayi ac"
+          />
+          <QuickActionCard
+            title="Hikayeler"
+            description="Devam eden oturumlari gorun ve yeni hikaye akislarini acin."
+            href={`#stories`}
+            icon="auto_stories"
+            cta="Hikayelere git"
+            onClick={() => setActiveTab("stories")}
+          />
+          {firstCharacter ? (
+            <QuickActionCard
+              title="Karakter"
+              description={`${firstCharacter.name} hazir. Karakter detaylari asagida.`}
+              href="#characters"
+              icon="sparkles"
+              cta="Karakterleri gor"
+              onClick={() => setActiveTab("characters")}
+            />
+          ) : (
+            <QuickActionCard
+              title="Karakter"
+              description="Bu profil icin ilk karakteri baslatin."
+              href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
+              icon="sparkles"
+              cta="Karakter baslat"
+            />
+          )}
         </div>
       </header>
 
-      <div className="mb-6 flex border-b border-outline-variant">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-outline-variant pb-2">
         <TabButton
-          label="Genel Bakış"
+          label="Genel bakis"
           tab="overview"
           active={activeTab === "overview"}
           onClick={setActiveTab}
         />
         <TabButton
-          label="Karakterler"
+          label={`Karakterler${characters.length > 0 ? ` (${characters.length})` : ""}`}
           tab="characters"
           active={activeTab === "characters"}
           onClick={setActiveTab}
@@ -257,14 +313,16 @@ export default function ProfileDetailClientPage({
           onClick={setActiveTab}
         />
         <TabButton
-          label="Güvenlik"
+          label="Guvenlik"
           tab="security"
           active={activeTab === "security"}
           onClick={setActiveTab}
         />
       </div>
 
-      {activeTab === "overview" && <OverviewSection profile={profile} />}
+      {activeTab === "overview" && (
+        <OverviewSection profile={profile} childProfileId={childProfileId} />
+      )}
       {activeTab === "characters" && (
         <CharactersSection
           characters={characters}
@@ -272,71 +330,58 @@ export default function ProfileDetailClientPage({
           childProfileId={childProfileId}
         />
       )}
-      {activeTab === "stories" && <StoriesSection />}
+      {activeTab === "stories" && (
+        <section id="stories">
+          <ProfileStoriesSection childProfileId={childProfileId} />
+        </section>
+      )}
       {activeTab === "preferences" && <PreferencesSection />}
       {activeTab === "security" && <SecuritySection />}
 
-      {editModalOpen && (
+      {editModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-on-surface">
-              Profili düzenle
-            </h2>
+            <h2 className="text-xl font-bold text-on-surface">Profili duzenle</h2>
             <p className="mt-1 text-sm text-on-surface-variant">
-              {profile.displayName} için bilgileri güncelleyin.
+              {profile.displayName} icin temel bilgileri guncelleyin.
             </p>
 
-            {editError && (
+            {editError ? (
               <div className="mt-4 rounded-lg border border-error-container bg-destructive-soft px-4 py-3 text-sm text-error">
                 {editError}
               </div>
-            )}
+            ) : null}
 
             <div className="mt-6 space-y-4">
+              <FieldLabel htmlFor="edit-name" label="Gorunen ad" />
+              <input
+                className="w-full rounded-lg border border-outline-variant px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary"
+                id="edit-name"
+                type="text"
+                value={editDisplayName}
+                onChange={(event) => setEditDisplayName(event.target.value)}
+                placeholder="Cocugun adi"
+              />
+
               <div>
-                <label
-                  className="mb-1 block text-sm font-semibold text-on-surface"
-                  htmlFor="edit-name"
-                >
-                  Görünen ad
-                </label>
-                <input
-                  className="w-full rounded-lg border border-outline-variant px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary"
-                  id="edit-name"
-                  type="text"
-                  value={editDisplayName}
-                  onChange={(e) => setEditDisplayName(e.target.value)}
-                  placeholder="Çocuğun adı"
-                />
-              </div>
-              <div>
-                <label
-                  className="mb-1 block text-sm font-semibold text-on-surface"
-                  htmlFor="edit-age"
-                >
-                  Yaş grubu
-                </label>
+                <FieldLabel htmlFor="edit-age" label="Yas grubu" />
                 <select
                   className="w-full rounded-lg border border-outline-variant px-4 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary"
                   id="edit-age"
                   value={editAgeBand}
-                  onChange={(e) => setEditAgeBand(e.target.value)}
+                  onChange={(event) => setEditAgeBand(event.target.value)}
                 >
-                  <option value="">Seçiniz</option>
-                  <option value="0-2">0-2 yaş</option>
-                  <option value="3-5">3-5 yaş</option>
-                  <option value="6-8">6-8 yaş</option>
-                  <option value="9-12">9-12 yaş</option>
-                  <option value="13+">13+ yaş</option>
+                  <option value="">Seciniz</option>
+                  <option value="0-2">0-2 yas</option>
+                  <option value="3-5">3-5 yas</option>
+                  <option value="6-8">6-8 yas</option>
+                  <option value="9-12">9-12 yas</option>
+                  <option value="13+">13+ yas</option>
                 </select>
               </div>
+
               <div>
-                <label
-                  className="mb-1 block text-sm font-semibold text-on-surface"
-                  htmlFor="edit-locale"
-                >
-                  Dil
-                </label>
+                <FieldLabel htmlFor="edit-locale" label="Dil" />
                 <input
                   className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant"
                   id="edit-locale"
@@ -345,7 +390,7 @@ export default function ProfileDetailClientPage({
                   disabled
                 />
                 <p className="mt-1 text-xs text-on-surface-variant">
-                  Dil değişikliği şu anda desteklenmiyor.
+                  Dil degisikligi su anda desteklenmiyor.
                 </p>
               </div>
             </div>
@@ -356,7 +401,7 @@ export default function ProfileDetailClientPage({
                 type="button"
                 onClick={() => setEditModalOpen(false)}
               >
-                İptal
+                Iptal
               </button>
               <button
                 className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf] disabled:opacity-50"
@@ -369,7 +414,7 @@ export default function ProfileDetailClientPage({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }
@@ -387,11 +432,12 @@ function TabButton({
 }) {
   return (
     <button
-      className={`px-4 py-3 text-sm font-semibold transition-colors ${
+      className={[
+        "rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
         active
-          ? "border-b-2 border-primary text-primary"
-          : "border-b-2 border-transparent text-on-surface-variant hover:text-on-surface"
-      }`}
+          ? "bg-primary text-on-primary"
+          : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface",
+      ].join(" ")}
       type="button"
       onClick={() => onClick(tab)}
     >
@@ -400,26 +446,70 @@ function TabButton({
   );
 }
 
-function OverviewSection({ profile }: { profile: Profile }) {
+function OverviewSection({
+  profile,
+  childProfileId,
+}: {
+  profile: Profile;
+  childProfileId: string;
+}) {
   const ageBandLabel = getAgeBandLabel(profile.ageBand);
+
   return (
-    <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-      <h2 className="text-xl font-bold text-on-surface">Genel Bakış</h2>
-      <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <InfoCard label="Görünen ad" value={profile.displayName} icon="badge" />
-        <InfoCard label="Yaş grubu" value={ageBandLabel} icon="cake" />
-        <InfoCard label="Dil / Locale" value={profile.locale} icon="language" />
-        <InfoCard label="Profil durumu" value="Aktif" icon="check_circle" />
-        <InfoCard
-          label="Aile evreni"
-          value={profile.householdId.slice(0, 8) + "..."}
-          icon="public"
-        />
-        <InfoCard
-          label="Oluşturma"
-          value={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
-          icon="calendar_month"
-        />
+    <section className="space-y-6 rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-on-surface">Genel bakis</h2>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+            Profil durumu, temel bilgiler ve dunyaya gecis buradan baslar.
+          </p>
+        </div>
+        <a
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
+          href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
+        >
+          <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+          Haritayi incele
+        </a>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <InfoCard label="Gorunen ad" value={profile.displayName} icon="badge" />
+          <InfoCard label="Yas grubu" value={ageBandLabel} icon="cake" />
+          <InfoCard label="Dil / Locale" value={profile.locale} icon="language" />
+          <InfoCard label="Profil durumu" value="Aktif" icon="check_circle" />
+          <InfoCard label="Aile evreni" value={profile.householdId.slice(0, 8) + "..."} icon="public" />
+          <InfoCard
+            label="Olusturma"
+            value={new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+            icon="calendar_month"
+          />
+        </div>
+
+        <section className="rounded-xl border border-outline-variant bg-surface-container-low p-5">
+          <h3 className="text-lg font-bold text-on-surface">Hizli rota</h3>
+          <div className="mt-4 space-y-3">
+            <ActionRow
+              title="Dunyayi kontrol et"
+              description="Karakterin hangi bolgede oldugunu ve gorunen konumlari inceleyin."
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
+              icon="map"
+            />
+            <ActionRow
+              title="Hikaye oturumlarini ac"
+              description="Devam eden maceralari buradan surdurmek daha hizli olur."
+              href="#stories"
+              icon="menu_book"
+            />
+            <ActionRow
+              title="Karakter akisini tamamla"
+              description="Eksikse karakter olusturun, varsa karakter sekmesini acin."
+              href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
+              icon="sparkles"
+            />
+          </div>
+        </section>
       </div>
     </section>
   );
@@ -434,12 +524,11 @@ function CharactersSection({
   loading: boolean;
   childProfileId: string;
 }) {
+  const firstCharacter = characters[0] ?? null;
   if (loading) {
     return (
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <p className="text-sm text-on-surface-variant">
-          Karakterler yükleniyor...
-        </p>
+        <p className="text-sm text-on-surface-variant">Karakterler yukleniyor...</p>
       </section>
     );
   }
@@ -449,25 +538,19 @@ function CharactersSection({
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[32px]">
-              auto_awesome
-            </span>
+            <span className="material-symbols-outlined text-[32px]">auto_awesome</span>
           </div>
-          <h3 className="text-xl font-bold text-on-surface">
-            Henüz karakter yok
-          </h3>
+          <h3 className="text-xl font-bold text-on-surface">Henuz karakter yok</h3>
           <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-            Bu profil için henüz karakter oluşturulmamış. İlk karakteri
-            başlatarak maceraya adım atın.
+            Bu profil icin henuz karakter olusturulmamis. Ilk karakteri baslatarak
+            macerayi hareketlendirin.
           </p>
           <a
             className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
             href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
           >
-            <span className="material-symbols-outlined text-[20px]">
-              rocket_launch
-            </span>
-            İlk karakteri başlat
+            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            Ilk karakteri baslat
           </a>
         </div>
       </section>
@@ -475,71 +558,70 @@ function CharactersSection({
   }
 
   return (
-    <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-on-surface">Karakterler</h2>
-        <a
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
-          href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Yeni karakter başlat
-        </a>
+    <section id="characters" className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-on-surface">Karakterler</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            Bu profilde aktif olan karakterler ve temel rolleri.
+          </p>
+        </div>
+                {firstCharacter ? (
+          <a
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+            href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(firstCharacter.id)}`}
+          >
+            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+            Karakteri ac
+          </a>
+        ) : (
+          <a
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+            href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Yeni karakter baslat
+          </a>
+        )}
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {characters.map((c) => (
+        {characters.map((character) => (
           <article
-            key={c.id}
+            key={character.id}
             className="rounded-xl border border-outline-variant bg-surface-container-low p-5"
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-                <span className="material-symbols-outlined text-[24px]">
-                  magic
-                </span>
+                <span className="material-symbols-outlined text-[24px]">magic_button</span>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-on-surface">{c.name}</h3>
+                <h3 className="text-lg font-bold text-on-surface">{character.name}</h3>
                 <p className="mt-1 text-sm text-on-surface-variant">
-                  {getCharacterTypeLabel(c.characterType)} &middot; {c.subtype}
+                  {getCharacterTypeLabel(character.characterType)} | {character.subtype}
                 </p>
                 <p className="mt-1 text-xs text-on-surface-variant">
-                  Oluşturma: {new Date(c.createdAt).toLocaleDateString("tr-TR")}
+                  Olusturma: {new Date(character.createdAt).toLocaleDateString("tr-TR")}
                 </p>
               </div>
             </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(character.id)}`}
+              >
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                Karakter detayi
+              </a>
+              <a
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
+              >
+                <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                Hikayelere git
+              </a>
+            </div>
           </article>
         ))}
-      </div>
-    </section>
-  );
-}
-
-function StoriesSection() {
-  return (
-    <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-on-surface">Hikayeler</h2>
-        <button
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-4 text-sm font-semibold text-on-surface-variant opacity-50"
-          type="button"
-          disabled
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Yeni hikaye başlat
-        </button>
-      </div>
-      <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
-          <span className="material-symbols-outlined text-[32px]">
-            menu_book
-          </span>
-        </div>
-        <h3 className="text-xl font-bold text-on-surface">Henüz hikaye yok</h3>
-        <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Hikaye geçmişi sonraki sprintlerde bağlanacak. Şu anda hikaye
-          oluşturma ve görüntüleme özelliği kullanıma hazır değil.
-        </p>
       </div>
     </section>
   );
@@ -553,12 +635,10 @@ function PreferencesSection() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">tune</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">
-          Tercihler henüz tanımlanmadı
-        </h3>
+        <h3 className="text-xl font-bold text-on-surface">Tercihler henuz tanimlanmadi</h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Bu profil için hikaye temaları, karakter türü tercihleri ve diğer
-          ayarlar sonraki sürümlerde eklenecek.
+          Hikaye temalari, karakter tercihleri ve benzer ayarlar sonraki adimlarda
+          bu ekrana baglanacak.
         </p>
       </div>
     </section>
@@ -568,21 +648,96 @@ function PreferencesSection() {
 function SecuritySection() {
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-      <h2 className="text-xl font-bold text-on-surface">Güvenlik</h2>
+      <h2 className="text-xl font-bold text-on-surface">Guvenlik</h2>
       <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-8 py-14 text-center">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container text-on-surface-variant">
           <span className="material-symbols-outlined text-[32px]">shield</span>
         </div>
-        <h3 className="text-xl font-bold text-on-surface">
-          Ebeveyn politikası aktif
-        </h3>
+        <h3 className="text-xl font-bold text-on-surface">Ebeveyn politikasi aktif</h3>
         <p className="mx-auto mt-2 max-w-[30rem] text-sm leading-6 text-on-surface-variant">
-          Çocuk profili güvenlik ayarları, aile evreni düzeyindeki ebeveyn
-          politikası tarafından yönetilir. Politika detaylarını görüntülemek ve
-          düzenlemek için ebeveyn panelini kullanın.
+          Cocuk profili guvenlik ayarlari aile duzeyindeki ebeveyn politikasi ile
+          yonetilir. Ayrintilar ebeveyn panelinde acilacak.
         </p>
       </div>
     </section>
+  );
+}
+
+function QuickActionCard({
+  title,
+  description,
+  href,
+  icon,
+  cta,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+  cta: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-container text-primary">
+        <span className="material-symbols-outlined text-[22px]">{icon}</span>
+      </div>
+      <div className="mt-4">
+        <h2 className="text-base font-bold text-on-surface">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-on-surface-variant">{description}</p>
+      </div>
+      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+        <span>{cta}</span>
+        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        className="rounded-xl border border-outline-variant bg-surface-container-low p-5 text-left transition-colors hover:border-primary/30 hover:bg-white"
+        type="button"
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <a
+      className="rounded-xl border border-outline-variant bg-surface-container-low p-5 transition-colors hover:border-primary/30 hover:bg-white"
+      href={href}
+    >
+      {content}
+    </a>
+  );
+}
+
+function ActionRow({
+  title,
+  description,
+  href,
+  icon,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+}) {
+  return (
+    <a
+      className="flex items-start gap-3 rounded-lg border border-outline-variant bg-white p-4 transition-colors hover:border-primary/30"
+      href={href}
+    >
+      <span className="material-symbols-outlined text-[20px] text-primary">{icon}</span>
+      <div>
+        <p className="text-sm font-semibold text-on-surface">{title}</p>
+        <p className="mt-1 text-sm leading-6 text-on-surface-variant">{description}</p>
+      </div>
+    </a>
   );
 }
 
@@ -598,9 +753,7 @@ function InfoCard({
   return (
     <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
       <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[18px] text-primary">
-          {icon}
-        </span>
+        <span className="material-symbols-outlined text-[18px] text-primary">{icon}</span>
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
           {label}
         </p>
@@ -610,11 +763,28 @@ function InfoCard({
   );
 }
 
+function MetaPill({ icon, label }: { icon: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-low px-3 py-1 text-sm text-on-surface-variant">
+      <span className="material-symbols-outlined text-[16px]">{icon}</span>
+      {label}
+    </span>
+  );
+}
+
+function FieldLabel({ htmlFor, label }: { htmlFor: string; label: string }) {
+  return (
+    <label className="mb-1 block text-sm font-semibold text-on-surface" htmlFor={htmlFor}>
+      {label}
+    </label>
+  );
+}
+
 function LoadingDisplay() {
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 py-10">
       <div className="rounded-2xl border border-outline-variant bg-white px-6 py-8 text-on-surface-variant">
-        Yükleniyor...
+        Yukleniyor...
       </div>
     </section>
   );
@@ -632,22 +802,22 @@ function ErrorDisplay({ message }: { message: string }) {
 
 function getAgeBandLabel(band: string): string {
   const labels: Record<string, string> = {
-    "0-2": "0-2 yaş",
-    "3-5": "3-5 yaş",
-    "6-8": "6-8 yaş",
-    "9-12": "9-12 yaş",
-    "13+": "13+ yaş",
+    "0-2": "0-2 yas",
+    "3-5": "3-5 yas",
+    "6-8": "6-8 yas",
+    "9-12": "9-12 yas",
+    "13+": "13+ yas",
   };
   return labels[band] ?? band;
 }
 
 function getCharacterTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    explorer: "Kaşif",
+    explorer: "Kasif",
     inventor: "Mucit",
     storyteller: "Hikayeci",
-    helper: "Yardımcı",
-    dreamer: "Rüyacı",
+    helper: "Yardimci",
+    dreamer: "Ruyaci",
   };
   return labels[type] ?? type;
 }
