@@ -402,6 +402,23 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row;
   }
 
+  async findSessionsByChildProfile(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    childProfileId: string,
+  ) {
+    return tx
+      .select()
+      .from(storySessions)
+      .where(
+        and(
+          eq(storySessions.householdId, householdId),
+          eq(storySessions.childProfileId, childProfileId),
+        ),
+      )
+      .orderBy(desc(storySessions.updatedAt), desc(storySessions.createdAt));
+  }
+
   async updateSession(
     tx: { update: QueryExecutor["update"] },
     id: string,
@@ -551,3 +568,4 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row;
   }
 }
+

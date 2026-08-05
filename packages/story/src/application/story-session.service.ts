@@ -32,6 +32,7 @@ export interface StartSessionInput {
   playbackMode?: PlaybackMode | undefined;
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
+  contextSnapshot?: Record<string, unknown> | undefined;
 }
 
 export interface SessionStateChangeInput {
@@ -39,6 +40,7 @@ export interface SessionStateChangeInput {
   expectedVersion: number;
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
+  contextSnapshot?: Record<string, unknown> | undefined;
 }
 
 export interface AdvanceSessionInput {
@@ -47,6 +49,7 @@ export interface AdvanceSessionInput {
   nextSceneId: string;
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
+  contextSnapshot?: Record<string, unknown> | undefined;
 }
 
 export interface AbandonSessionInput {
@@ -55,6 +58,7 @@ export interface AbandonSessionInput {
   reason?: string | undefined;
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
+  contextSnapshot?: Record<string, unknown> | undefined;
 }
 
 async function findVersionEntryScene(
@@ -99,7 +103,6 @@ async function recordIdempotency(
     storySessionId,
   });
 }
-
 async function checkIdempotency(
   db: Database,
   repo: DrizzleStoryRepository,
@@ -116,8 +119,10 @@ async function checkIdempotency(
   return existing?.storySessionId ?? undefined;
 }
 
-async function getSessionPlaybackStateFromRecord(sessionId: string) {
-  const db = getDb();
+async function readSessionPlaybackState(
+  db: Database,
+  sessionId: string,
+) {
   const repo = new DrizzleStoryRepository();
   const session = await repo.findSessionById(db, sessionId);
   if (!session) {
@@ -142,6 +147,9 @@ async function getSessionPlaybackStateFromRecord(sessionId: string) {
   };
 }
 
+async function getSessionPlaybackStateFromRecord(sessionId: string) {
+  return readSessionPlaybackState(getDb(), sessionId);
+}
 export async function startSession(input: StartSessionInput) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
@@ -724,3 +732,43 @@ export async function getActiveSessionForChildAndWorld(
   const repo = new DrizzleStoryRepository();
   return repo.findActiveSessionByChildAndWorld(db, childProfileId, worldId);
 }
+
+export async function listSessionsForChildProfile(
+  householdId: string,
+  childProfileId: string,
+) {
+  const db = getDb();
+  const repo = new DrizzleStoryRepository();
+  const sessions = await repo.findSessionsByChildProfile(
+    db,
+    householdId,
+    childProfileId,
+  );
+
+  return Promise.all(
+    sessions.map(async (session) => {
+      const [currentScene, definition, version, latestCheckpoint] =
+        await Promise.all([
+          session.currentSceneId
+            ? repo.findSceneById(db, session.currentSceneId)
+            : Promise.resolve(undefined),
+          repo.findDefinitionById(db, session.storyDefinitionId),
+          repo.findVersionById(db, session.storyVersionId),
+          repo.findLatestCheckpoint(db, session.id),
+        ]);
+
+      return {
+        session,
+        currentScene: currentScene ?? null,
+        definition: definition ?? null,
+        version: version ?? null,
+        latestCheckpoint: latestCheckpoint ?? null,
+      };
+    }),
+  );
+}
+
+
+
+
+

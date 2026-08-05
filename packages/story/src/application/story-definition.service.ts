@@ -323,6 +323,127 @@ export async function publishStoryVersion(
   });
 }
 
+const STARTER_STORY_SEEDS = [
+  {
+    title: "Mercan Feneri",
+    slug: "starter-mercan-feneri",
+    storyType: "world_event",
+    sourceType: "authored",
+    ageGroup: "6-8",
+    defaultLanguage: "tr-TR",
+    versionTitle: "Mercan Feneri / Baslangic",
+    storyMode: "interactive" as StoryMode,
+    scenes: [
+      {
+        sceneKey: "arrival",
+        sequenceNumber: 0,
+        sceneType: "narrative",
+        title: "Fenerin Cagrisi",
+        narrativeText:
+          "Kiyiya vuran yumusak bir isik, dunyanin bir yerinde seni bekleyen yeni bir iz oldugunu fisildar.",
+        isEntryScene: true,
+      },
+      {
+        sceneKey: "promise",
+        sequenceNumber: 1,
+        sceneType: "ending",
+        title: "Ilk Soz",
+        narrativeText:
+          "Karakter, isigin izini surmeye karar verir ve bu karar yeni maceranin ilk dugumunu kurar.",
+        isTerminalScene: true,
+      },
+    ],
+    transitions: [
+      {
+        fromSceneKey: "arrival",
+        toSceneKey: "promise",
+        transitionType: "automatic",
+      },
+    ],
+  },
+  {
+    title: "Yuva Yolunda",
+    slug: "starter-yuva-yolunda",
+    storyType: "continuing",
+    sourceType: "authored",
+    ageGroup: "6-8",
+    defaultLanguage: "tr-TR",
+    versionTitle: "Yuva Yolunda / Baslangic",
+    storyMode: "static" as StoryMode,
+    scenes: [
+      {
+        sceneKey: "homecoming",
+        sequenceNumber: 0,
+        sceneType: "narrative",
+        title: "Yuvaya Donus",
+        narrativeText:
+          "Gun kapanirken karakter, evine donerken gordugu kucuk degisikliklerin aslinda buyuk bir hikayenin basi olabilecegini fark eder.",
+        isEntryScene: true,
+      },
+      {
+        sceneKey: "question",
+        sequenceNumber: 1,
+        sceneType: "ending",
+        title: "Acilan Soru",
+        narrativeText:
+          "Kapinin esiginde duran ipucu, bir sonraki bolume tasinacak yeni bir soruyu usulca birakir.",
+        isTerminalScene: true,
+      },
+    ],
+    transitions: [
+      {
+        fromSceneKey: "homecoming",
+        toSceneKey: "question",
+        transitionType: "automatic",
+      },
+    ],
+  },
+];
+
+export async function ensureStarterStoriesForHousehold(householdId: string) {
+  const existingCatalog = await getStoryCatalog(householdId);
+  if (existingCatalog.length > 0) {
+    return existingCatalog;
+  }
+
+  for (const seed of STARTER_STORY_SEEDS) {
+    try {
+      const definition = await createStoryDefinition({
+        householdId,
+        title: seed.title,
+        slug: seed.slug,
+        storyType: seed.storyType,
+        sourceType: seed.sourceType,
+        ageGroup: seed.ageGroup,
+        defaultLanguage: seed.defaultLanguage,
+      });
+
+      const version = await createStoryVersion({
+        storyDefinitionId: definition.id,
+        versionNumber: 1,
+        title: seed.versionTitle,
+        storyMode: seed.storyMode,
+      });
+
+      await saveSceneGraph({
+        storyDefinitionId: definition.id,
+        storyVersionId: version.id,
+        scenes: seed.scenes,
+        transitions: seed.transitions,
+      });
+
+      await publishStoryVersion(definition.id, version.id);
+    } catch (error) {
+      const err = error as Error & { code?: string };
+      if (err.code === "23505") {
+        return getStoryCatalog(householdId);
+      }
+      throw error;
+    }
+  }
+
+  return getStoryCatalog(householdId);
+}
 export async function getStoryCatalog(householdId: string) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
@@ -405,3 +526,5 @@ export async function getStoryVersionById(storyVersionId: string) {
   }
   return record;
 }
+
+
