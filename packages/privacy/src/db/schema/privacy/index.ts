@@ -11,4 +11,7 @@ export type {
 } from "./data-lifecycle-audit-log";
 
 export { dataExportRecords } from "./data-export-records";
-export type { DataExportRecord, NewDataExportRecord } from "./data-export-records";
+export type {
+  DataExportRecord,
+  NewDataExportRecord,
+} from "./data-export-records";

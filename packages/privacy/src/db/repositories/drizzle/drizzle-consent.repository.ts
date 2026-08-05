@@ -16,7 +16,8 @@ export class DrizzleConsentRepository implements ConsentRepository {
     consentType?: string,
   ): Promise<ConsentRecord[]> {
     const conditions = [eq(consentRecords.householdId, householdId)];
-    if (consentType) conditions.push(eq(consentRecords.consentType, consentType));
+    if (consentType)
+      conditions.push(eq(consentRecords.consentType, consentType));
     return this.db
       .select()
       .from(consentRecords)
@@ -29,7 +30,8 @@ export class DrizzleConsentRepository implements ConsentRepository {
     consentType?: string,
   ): Promise<ConsentRecord[]> {
     const conditions = [eq(consentRecords.childProfileId, childProfileId)];
-    if (consentType) conditions.push(eq(consentRecords.consentType, consentType));
+    if (consentType)
+      conditions.push(eq(consentRecords.consentType, consentType));
     return this.db
       .select()
       .from(consentRecords)
@@ -70,10 +72,7 @@ export class DrizzleConsentRepository implements ConsentRepository {
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(consentRecords.id, consentId),
-          isNull(consentRecords.revokedAt),
-        ),
+        and(eq(consentRecords.id, consentId), isNull(consentRecords.revokedAt)),
       )
       .returning();
     return record ?? null;

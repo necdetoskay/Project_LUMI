@@ -57,8 +57,12 @@ beforeEach(() => {
 describe("S18-T05 - Privacy Consent API", () => {
   describe("GET /api/privacy/consent", () => {
     it("returns 400 when householdId is missing", async () => {
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
-      const res = await route.GET!(makeRequest("http://localhost/api/privacy/consent"));
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
+      const res = await route.GET!(
+        makeRequest("http://localhost/api/privacy/consent"),
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toBe("VALIDATION_ERROR");
@@ -69,7 +73,9 @@ describe("S18-T05 - Privacy Consent API", () => {
         new AuthorizationError("User is not a member of this household"),
       );
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.GET!(
         makeRequest(
           `http://localhost/api/privacy/consent?householdId=${HOUSEHOLD_ID}`,
@@ -94,7 +100,9 @@ describe("S18-T05 - Privacy Consent API", () => {
         },
       ]);
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.GET!(
         makeRequest(
           `http://localhost/api/privacy/consent?householdId=${HOUSEHOLD_ID}`,
@@ -109,7 +117,9 @@ describe("S18-T05 - Privacy Consent API", () => {
     it("passes childProfileId to the child-scoped list", async () => {
       mockListConsentsForChild.mockResolvedValueOnce([]);
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.GET!(
         makeRequest(
           `http://localhost/api/privacy/consent?householdId=${HOUSEHOLD_ID}&childProfileId=${CHILD_ID}`,
@@ -126,7 +136,9 @@ describe("S18-T05 - Privacy Consent API", () => {
 
   describe("POST /api/privacy/consent", () => {
     it("returns 400 when consentType is missing", async () => {
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.POST!(
         makeRequest("http://localhost/api/privacy/consent", {
           method: "POST",
@@ -141,7 +153,9 @@ describe("S18-T05 - Privacy Consent API", () => {
         new AuthorizationError("User is not a member of this household"),
       );
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.POST!(
         makeRequest("http://localhost/api/privacy/consent", {
           method: "POST",
@@ -159,7 +173,9 @@ describe("S18-T05 - Privacy Consent API", () => {
         new Error("INVALID_CONSENT_TYPE Unknown consent type 'spying'"),
       );
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.POST!(
         makeRequest("http://localhost/api/privacy/consent", {
           method: "POST",
@@ -186,7 +202,9 @@ describe("S18-T05 - Privacy Consent API", () => {
         grantedBy: "parent-user-id",
       });
 
-      const route = (await import("@/app/api/privacy/consent/route")) as ConsentRoute;
+      const route = (await import(
+        "@/app/api/privacy/consent/route"
+      )) as ConsentRoute;
       const res = await route.POST!(
         makeRequest("http://localhost/api/privacy/consent", {
           method: "POST",
@@ -278,7 +296,9 @@ describe("S18-T05 - Privacy Export API", () => {
   };
 
   it("POST requires childProfileId", async () => {
-    const route = (await import("@/app/api/privacy/export/route")) as ExportRoute;
+    const route = (await import(
+      "@/app/api/privacy/export/route"
+    )) as ExportRoute;
     const res = await route.POST!(
       makeRequest("http://localhost/api/privacy/export", {
         method: "POST",
@@ -293,7 +313,9 @@ describe("S18-T05 - Privacy Export API", () => {
       new AuthorizationError("User is not a member of this household"),
     );
 
-    const route = (await import("@/app/api/privacy/export/route")) as ExportRoute;
+    const route = (await import(
+      "@/app/api/privacy/export/route"
+    )) as ExportRoute;
     const res = await route.POST!(
       makeRequest("http://localhost/api/privacy/export", {
         method: "POST",
@@ -322,7 +344,9 @@ describe("S18-T05 - Privacy Export API", () => {
       createdAt: new Date(),
     });
 
-    const route = (await import("@/app/api/privacy/export/route")) as ExportRoute;
+    const route = (await import(
+      "@/app/api/privacy/export/route"
+    )) as ExportRoute;
     const res = await route.POST!(
       makeRequest("http://localhost/api/privacy/export", {
         method: "POST",
@@ -343,9 +367,13 @@ describe("S18-T05 - Privacy Export API", () => {
   });
 
   it("GET returns 400 without childProfileId", async () => {
-    const route = (await import("@/app/api/privacy/export/route")) as ExportRoute;
+    const route = (await import(
+      "@/app/api/privacy/export/route"
+    )) as ExportRoute;
     const res = await route.GET!(
-      makeRequest(`http://localhost/api/privacy/export?householdId=${HOUSEHOLD_ID}`),
+      makeRequest(
+        `http://localhost/api/privacy/export?householdId=${HOUSEHOLD_ID}`,
+      ),
     );
     expect(res.status).toBe(400);
   });
@@ -360,7 +388,9 @@ describe("S18-T05 - Privacy Archive and Audit API", () => {
       new AuthorizationError("User is not a member of this household"),
     );
 
-    const route = (await import("@/app/api/privacy/archive/route")) as ArchiveRoute;
+    const route = (await import(
+      "@/app/api/privacy/archive/route"
+    )) as ArchiveRoute;
     const res = await route.POST!(
       makeRequest("http://localhost/api/privacy/archive", {
         method: "POST",
@@ -381,7 +411,9 @@ describe("S18-T05 - Privacy Archive and Audit API", () => {
       archivedWorlds: 1,
     });
 
-    const route = (await import("@/app/api/privacy/archive/route")) as ArchiveRoute;
+    const route = (await import(
+      "@/app/api/privacy/archive/route"
+    )) as ArchiveRoute;
     const res = await route.POST!(
       makeRequest("http://localhost/api/privacy/archive", {
         method: "POST",
@@ -403,7 +435,9 @@ describe("S18-T05 - Privacy Archive and Audit API", () => {
 
     const route = (await import("@/app/api/privacy/audit/route")) as AuditRoute;
     const res = await route.GET!(
-      makeRequest(`http://localhost/api/privacy/audit?householdId=${HOUSEHOLD_ID}`),
+      makeRequest(
+        `http://localhost/api/privacy/audit?householdId=${HOUSEHOLD_ID}`,
+      ),
     );
     expect(res.status).toBe(403);
   });
@@ -425,7 +459,9 @@ describe("S18-T05 - Privacy Archive and Audit API", () => {
 
     const route = (await import("@/app/api/privacy/audit/route")) as AuditRoute;
     const res = await route.GET!(
-      makeRequest(`http://localhost/api/privacy/audit?householdId=${HOUSEHOLD_ID}`),
+      makeRequest(
+        `http://localhost/api/privacy/audit?householdId=${HOUSEHOLD_ID}`,
+      ),
     );
     expect(res.status).toBe(200);
     const body = await res.json();

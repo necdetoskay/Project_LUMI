@@ -19,9 +19,7 @@ describe("Consent domain", () => {
   });
 
   it("asserts a valid consent type", () => {
-    expect(assertConsentType("content_generation")).toBe(
-      "content_generation",
-    );
+    expect(assertConsentType("content_generation")).toBe("content_generation");
   });
 
   it("rejects an unknown consent type", () => {

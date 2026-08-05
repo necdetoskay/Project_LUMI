@@ -13,9 +13,7 @@ export class DrizzleDataLifecycleAuditRepository
 {
   constructor(private readonly db: QueryExecutor) {}
 
-  async append(
-    input: NewDataLifecycleAuditLogRecord,
-  ): Promise<void> {
+  async append(input: NewDataLifecycleAuditLogRecord): Promise<void> {
     await this.db.insert(dataLifecycleAuditLog).values(input);
   }
 

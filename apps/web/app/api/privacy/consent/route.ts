@@ -28,11 +28,7 @@ export const GET = observeHandler(async (request: Request) => {
 
     try {
       const consents = childProfileId
-        ? await listConsentsForChild(
-            parent.id,
-            householdId,
-            childProfileId,
-          )
+        ? await listConsentsForChild(parent.id, householdId, childProfileId)
         : await listConsents(parent.id, householdId);
       return NextResponse.json({ consents });
     } catch (error) {

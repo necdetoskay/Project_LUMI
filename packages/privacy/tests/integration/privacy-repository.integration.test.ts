@@ -121,11 +121,7 @@ describe("ConsentRepository Integration", () => {
       grantedBy: TEST_USER_ID,
     });
 
-    const revoked = await repo().updateStatus(
-      record.id,
-      "revoked",
-      new Date(),
-    );
+    const revoked = await repo().updateStatus(record.id, "revoked", new Date());
     expect(revoked).not.toBeNull();
     expect(revoked!.status).toBe("revoked");
 

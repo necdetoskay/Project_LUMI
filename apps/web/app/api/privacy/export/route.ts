@@ -18,7 +18,8 @@ export const GET = observeHandler(async (request: Request) => {
       return NextResponse.json(
         {
           error: "VALIDATION_ERROR",
-          message: "householdId and childProfileId query parameters are required",
+          message:
+            "householdId and childProfileId query parameters are required",
         },
         { status: 400 },
       );

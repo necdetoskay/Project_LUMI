@@ -5,10 +5,7 @@ import {
   findChildProfileForUser,
   listCharactersByChildProfile,
 } from "@lumi/profiles/application";
-import {
-  archiveWorld,
-  getWorldForCharacter,
-} from "@lumi/world/application";
+import { archiveWorld, getWorldForCharacter } from "@lumi/world/application";
 
 export interface ArchiveChildDataResult {
   childProfileId: string;

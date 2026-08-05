@@ -65,9 +65,7 @@ async function assertChildInHousehold(
   const profiles = await listChildProfiles(userId, householdId);
   const found = profiles.some((p) => p.id === childProfileId);
   if (!found) {
-    throw new AuthorizationError(
-      "Child profile is not part of this household",
-    );
+    throw new AuthorizationError("Child profile is not part of this household");
   }
 }
 
