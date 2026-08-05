@@ -15,11 +15,13 @@ export {
   updateChildProfile,
   archiveChildProfile,
   findChildProfileForUser,
+  getChildProfilePreferences,
 } from "./child-profile.service";
 export type {
   CreateChildProfileInput,
   UpdateChildProfileInput,
   ChildProfileResult,
+  ChildPreferenceResult,
 } from "./child-profile.service";
 
 export {

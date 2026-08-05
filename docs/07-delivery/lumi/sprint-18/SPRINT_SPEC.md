@@ -43,7 +43,15 @@ Ebeveynin child profile, içerik politikaları, kullanım tercihleri ve güvenli
 
 > Note (2026-08-05): T01-T04 initial slice implemented in `codex/sprint-18-parent-panel`
 > (`DrizzleParentPolicySource` production adapter, blockedTopics/customNotes surface,
-> audit trail GET, `/app/settings/safety` parent panel + nav). T05/T06 remain pending.
+> audit trail GET, `/app/settings/safety` parent panel + nav). T05 initial slice
+> implemented (2026-08-05): new `@lumi/privacy` package — consent records
+> (grant/revoke, household + child scope), metadata-only child data export
+> (`lumi-child-v1`), archive orchestration (child profile + world archive), lifecycle
+> audit trail; API routes `/api/privacy/consent`, `/api/privacy/consent/[id]`,
+> `/api/privacy/export`, `/api/privacy/archive`, `/api/privacy/audit`; privacy schema
+> migration `0001_privacy_schema.sql` applied to production. T06 runbooks delivered
+> (2026-08-05): `PARENT_PANEL_RUNBOOK.md` and `SAFETY_OPERATIONS_RUNBOOK.md`. Purge
+> (async job) remains a planned follow-up slice outside this sprint.
 
 ## Requirements
 

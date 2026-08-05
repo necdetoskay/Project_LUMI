@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
+    "@lumi/privacy": "workspace:*",
     "@lumi/profiles": "workspace:*",
     "@lumi/simulation": "workspace:*",
     "@lumi/story": "workspace:*",
