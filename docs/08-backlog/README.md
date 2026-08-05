@@ -13,5 +13,6 @@ Backlog maddeleri:
 
 - [Design Backlog and Future Ideas](lumi/061-Design-Backlog-and-Future-Ideas.md)
 - [NPC Emergent Interaction Engine](lumi/npc-emergent-interaction-engine.md)
+- [Story Reader Follow-ups](lumi/story-reader-follow-ups.md)
 - [Story Outcome & World State Commit System](LUMI_Backlog_Story_Outcome_Commit_System.md)
 - [Story Outcome and World State Validation Test Plan](story-outcome-world-state-validation-test-plan.md)

@@ -43,7 +43,8 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 09 — Story Definition and Session [tamamlandı]
 - Sprint 10 — Choice and Session Consequence [tamamlandı]
 - Sprint 11 — Prompt Registry and Context Builder [tamamlandı]
-- Sprint 12 — Story Generation Pipeline [tamamlandı] (merge onay bekliyor: `agent/sprint-12-story-generation-pipeline`)
-- Sprint 13 — NPC Intelligence Foundation [tamamlandı] (merge onay bekliyor: `agent/sprint-13-npc-intelligence-foundation`)
+- Sprint 12 — Story Generation Pipeline [tamamlandı]
+- Sprint 13 — NPC Intelligence Foundation [tamamlandı]
 - Sprint 14 — Simulation Engine [tamamlandı] (2026-08-04 hardening: BudgetPlanner testi doğru pakete taşındı, worker discovery portu eklendi, `undefined as never` composition-root bağlantıları kaldırıldı, worker smoke/freeze/concurrency testleri eklendi)
-- Sprint 15 — Image, Voice and Audio Pipelines [tamamlandı] (merge onay bekliyor: `agent/sprint-15-image-voice-audio-pipelines`)
+- Sprint 15 — Image, Voice and Audio Pipelines [tamamlandı]
+- Sprint 16 — Story Reader [devam ediyor: `codex/sprint-16-story-reader`] (story session listesi, world map API+UI, story reader API+UI, character onboarding handoff; 2026-08-05: ensureStarterStoriesForHousehold mock eklendi, mojibake düzeltmeleri, web testleri 111/111 yeşil — commit bekliyor)
