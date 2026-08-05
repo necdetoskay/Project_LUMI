@@ -55,11 +55,11 @@ export type {
   NewWorldLocationConnectionRecord,
 } from "./location-connections";
 
-export { worldCharacterResidences } from "./world-character-residences";
+export { worldCharacterResidences } from "./residences";
 export type {
   WorldCharacterResidenceRecord,
   NewWorldCharacterResidenceRecord,
-} from "./world-character-residences";
+} from "./residences";
 
 export { worldIdempotencyLedger } from "./idempotency-ledger";
 export type {

@@ -30,3 +30,7 @@ export const worldResidences = profileSchema.table(
 
 export type WorldResidenceRecord = typeof worldResidences.$inferSelect;
 export type NewWorldResidenceRecord = typeof worldResidences.$inferInsert;
+
+export const worldCharacterResidences = worldResidences;
+export type WorldCharacterResidenceRecord = WorldResidenceRecord;
+export type NewWorldCharacterResidenceRecord = NewWorldResidenceRecord;

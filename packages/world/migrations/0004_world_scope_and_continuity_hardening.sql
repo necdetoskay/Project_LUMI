@@ -5,6 +5,33 @@
 
 BEGIN;
 
+-- Ensure late-added support tables exist before constraints/indexes reference them.
+CREATE TABLE IF NOT EXISTS profile.world_idempotency_ledger (
+  id UUID PRIMARY KEY,
+  household_id UUID NOT NULL,
+  world_id UUID,
+  operation_type VARCHAR(60) NOT NULL,
+  idempotency_key VARCHAR(255) NOT NULL,
+  result_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS profile.world_residences (
+  id UUID PRIMARY KEY,
+  world_id UUID NOT NULL,
+  character_id UUID NOT NULL,
+  location_id UUID NOT NULL,
+  home_id UUID,
+  residence_type VARCHAR(20) NOT NULL DEFAULT 'primary',
+  version INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS wr_character_idx ON profile.world_residences (character_id);
+CREATE INDEX IF NOT EXISTS wr_world_idx ON profile.world_residences (world_id);
+CREATE INDEX IF NOT EXISTS wr_location_idx ON profile.world_residences (location_id);
+
 -- ============================================================
 -- 1. Foreign Key constraints to real profile tables
 --    Use DO blocks for idempotent re-runs
@@ -39,13 +66,9 @@ BEGIN
   ) THEN
     ALTER TABLE profile.worlds
       ADD CONSTRAINT fk_worlds_character
-      FOREIGN KEY (character_id) REFERENCES profile.characters(id);
+      FOREIGN KEY (character_id) REFERENCES profile.lumi_characters(id);
   END IF;
 END $$;
-
--- ============================================================
--- 2. Partial unique index: one active world per character
--- ============================================================
 
 DO $$
 BEGIN
@@ -58,20 +81,6 @@ BEGIN
   END IF;
 END $$;
 
--- ============================================================
--- 3. Composite FK guards for region/location/home scope
---    These are already enforced by application code; DB-level
---    cross-world composite FKs are advisory via partial indexes.
--- ============================================================
-
--- Region -> world (already has FK fk_world_regions_world from 0003)
--- Location -> world + region (already has FKs from 0003)
--- Home -> world + location (already has FKs from 0003)
-
--- ============================================================
--- 4. Event store monotonic sequence invariant
--- ============================================================
-
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -82,12 +91,6 @@ BEGIN
   END IF;
 END $$;
 
--- ============================================================
--- 5. Idempotency key scope: household + operation + key
---    Existing uq_idempotency_scope already covers this.
---    Ensure the index exists on world_idempotency_ledger.
--- ============================================================
-
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -97,10 +100,6 @@ BEGIN
       ON profile.world_idempotency_ledger (household_id, world_id, operation_type, idempotency_key);
   END IF;
 END $$;
-
--- ============================================================
--- 6. FK for world_residences
--- ============================================================
 
 DO $$
 BEGIN
@@ -120,13 +119,9 @@ BEGIN
   ) THEN
     ALTER TABLE profile.world_residences
       ADD CONSTRAINT fk_world_residences_character
-      FOREIGN KEY (character_id) REFERENCES profile.characters(id);
+      FOREIGN KEY (character_id) REFERENCES profile.lumi_characters(id);
   END IF;
 END $$;
-
--- ============================================================
--- 7. Single active residence per character partial unique index
--- ============================================================
 
 DO $$
 BEGIN
@@ -135,14 +130,9 @@ BEGIN
   ) THEN
     CREATE UNIQUE INDEX uq_character_active_residence
       ON profile.world_residences (character_id)
-      WHERE is_active = true;
+      WHERE home_id IS NOT NULL;
   END IF;
 END $$;
-
--- ============================================================
--- 8. Character location: one active per character (already PK)
---    Ensure FK to character table
--- ============================================================
 
 DO $$
 BEGIN
@@ -151,13 +141,9 @@ BEGIN
   ) THEN
     ALTER TABLE profile.world_character_locations
       ADD CONSTRAINT fk_character_locations_character
-      FOREIGN KEY (character_id) REFERENCES profile.characters(id);
+      FOREIGN KEY (character_id) REFERENCES profile.lumi_characters(id);
   END IF;
 END $$;
-
--- ============================================================
--- 9. Environment snapshot FKs (if table exists)
--- ============================================================
 
 DO $$
 BEGIN
@@ -184,10 +170,6 @@ BEGIN
       FOREIGN KEY (region_id) REFERENCES profile.world_regions(id) ON DELETE CASCADE;
   END IF;
 END $$;
-
--- ============================================================
--- 10. Location connection FKs (if table exists)
--- ============================================================
 
 DO $$
 BEGIN
