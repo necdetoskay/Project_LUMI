@@ -85,6 +85,12 @@ export const PUT = observeHandler(async (request: Request) => {
       if (parsed.allowTts !== undefined) {
         input.allowTts = parsed.allowTts as boolean;
       }
+      if (parsed.blockedTopics !== undefined) {
+        input.blockedTopics = parsed.blockedTopics as string[];
+      }
+      if (parsed.customNotes !== undefined) {
+        input.customNotes = parsed.customNotes as string[];
+      }
 
       const policy = await updatePolicy(parsed.householdId, parent.id, input);
 

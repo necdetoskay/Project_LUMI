@@ -2,9 +2,8 @@ import Link from "next/link";
 
 const navItems = [
   { href: "/app", label: "Dashboard" },
-  { href: "#", label: "Hikayeler" },
-  { href: "#", label: "Gelisim" },
   { href: "/app/profiles", label: "Profiller" },
+  { href: "/app/settings/safety", label: "Guvenlik" },
 ];
 
 export function AppHeader() {
@@ -43,15 +42,15 @@ export function AppHeader() {
               notifications
             </span>
           </button>
-          <button
+          <Link
             className="flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface"
-            type="button"
+            href="/app/settings"
             aria-label="Ayarlar"
           >
             <span className="material-symbols-outlined text-[20px]">
               settings
             </span>
-          </button>
+          </Link>
         </div>
       </div>
     </header>

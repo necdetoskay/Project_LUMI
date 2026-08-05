@@ -26,8 +26,13 @@ export {
   getPolicy,
   updatePolicy,
   appendPolicyAudit,
+  getPolicyAuditTrail,
 } from "./parent-policy.service";
-export type { PolicyResult, UpdatePolicyInput } from "./parent-policy.service";
+export type {
+  PolicyResult,
+  UpdatePolicyInput,
+  PolicyAuditEntryResult,
+} from "./parent-policy.service";
 
 export { getOnboardingState } from "./onboarding.service";
 export type { OnboardingState } from "./onboarding.service";
