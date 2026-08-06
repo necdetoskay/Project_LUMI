@@ -81,7 +81,7 @@ export class WorldCommitService {
       manifest,
       allowedEntityIds,
     });
-    const changes: WorldChange[] = ruleEngine.apply(events);
+    const { direct: changes } = ruleEngine.apply(events);
 
     const db = getDb();
     // Idempotency key derived from manifest (retries must not double-apply).
@@ -252,7 +252,9 @@ export async function commitOutcomeWithTx(
     manifest,
     allowedEntityIds,
   });
-  const changes: WorldChange[] = ruleEngine.apply(events);
+  const ruleResult = ruleEngine.apply(events);
+  const changes: WorldChange[] = ruleResult.direct;
+  const indirectIntents = ruleResult.indirect;
 
   const repo = new DrizzleStoryRepository();
   const idempotencyKey = `story-commit:${manifest.id}`;
@@ -332,6 +334,23 @@ export async function commitOutcomeWithTx(
         detail: event.detail,
         evidenceRef: event.evidenceRef,
       },
+      createdAt: new Date(),
+    });
+  }
+  // S23-T04: enqueue indirect-effect intents atomically with the commit.
+  for (const intent of indirectIntents) {
+    await repo.enqueueOutbox(tx, {
+      householdId: manifest.householdId,
+      worldId: manifest.worldId,
+      commitId,
+      idempotencyKey: `story-indirect:${intent.intentKey}`,
+      intentType: intent.intentType,
+      payload: intent.payload,
+      evidenceRef: intent.evidenceRef,
+      status: "pending",
+      attemptCount: "0",
+      lastError: null,
+      appliedAt: null,
       createdAt: new Date(),
     });
   }

@@ -46,11 +46,48 @@ export interface WorldCommitRuleContext {
   priority: number;
 }
 
+export const INDIRECT_INTENT_TYPES = [
+  "npc_rumor_spread",
+  "npc_relationship_shift",
+  "location_reputation_change",
+  "environment_ripple",
+  "community_awareness",
+  "scheduled_effect_enqueue",
+] as const;
+export type IndirectIntentType = (typeof INDIRECT_INTENT_TYPES)[number];
+
+/**
+ * A derived (indirect) effect intent. Not applied immediately; enqueued to the
+ * outbox in the same transaction as the producing commit, then propagated once.
+ */
+export interface IndirectIntent {
+  /** Idempotency key for the outbox row. */
+  intentKey: string;
+  intentType: IndirectIntentType;
+  /** Entity/region the indirect effect concerns (may differ from the actor). */
+  targetEntityId: string;
+  /** Bounded derived payload (from concrete events, never free-form). */
+  payload: Record<string, unknown>;
+  /** Evidence ref to the source event/commit. */
+  evidenceRef: string;
+  /** Correlation to the producing narrative event. */
+  sourceEventKey: string;
+}
+
+export interface WorldCommitRuleResult {
+  /** Direct changes applied immediately by the commit. */
+  direct: WorldChange[];
+  /** Indirect intents enqueued to the outbox. */
+  indirect: IndirectIntent[];
+}
+
 export interface WorldCommitRule {
   /** Semantic event type this rule handles. */
   forEventType: NarrativeEventType;
-  /** Deterministic transform: narrative event → world change. */
+  /** Deterministic transform: narrative event → direct world change. */
   apply: (ctx: WorldCommitRuleContext) => WorldChange;
+  /** Optional deterministic transform: narrative event → indirect intents. */
+  applyIndirect?: (ctx: WorldCommitRuleContext) => IndirectIntent[];
 }
 
 export interface RuleEngineConfig {
@@ -75,13 +112,12 @@ export class WorldCommitRuleEngine {
   }
 
   /**
-   * Produces a conflict-resolved set of world changes from narrative events.
-   * Events map to changes via rules; if multiple events target the same
-   * (entityId, field), the highest-priority change wins and lower ones are
-   * marked superseded. Ordering is deterministic.
+   * Produces a conflict-resolved result from narrative events: direct changes
+   * (applied by the commit) + indirect intents (enqueued to the outbox).
    */
-  apply(events: NarrativeEvent[]): WorldChange[] {
-    const resolved: WorldChange[] = [];
+  apply(events: NarrativeEvent[]): WorldCommitRuleResult {
+    const direct: WorldChange[] = [];
+    const indirect: IndirectIntent[] = [];
 
     for (const event of events) {
       const rule = this.rules.find((r) => r.forEventType === event.eventType);
@@ -91,10 +127,17 @@ export class WorldCommitRuleEngine {
           `No rule registered for narrative event type: ${event.eventType}`,
         );
       }
-      resolved.push(rule.apply({ event, priority: event.sequence + 1 }));
+      const ctx = { event, priority: event.sequence + 1 };
+      direct.push(rule.apply(ctx));
+      if (rule.applyIndirect) {
+        indirect.push(...rule.applyIndirect(ctx));
+      }
     }
 
-    return this.resolveConflicts(resolved);
+    return {
+      direct: this.resolveConflicts(direct),
+      indirect,
+    };
   }
 
   /**
@@ -171,6 +214,20 @@ export function defaultOutcomeRules(): WorldCommitRule[] {
         evidenceRef: event.evidenceRef,
         status: "committed",
       }),
+      applyIndirect: ({ event }) => [
+        {
+          intentKey: `${event.eventKey}:rumor`,
+          intentType: "npc_rumor_spread",
+          targetEntityId: event.entityId,
+          payload: {
+            field: event.detail.field,
+            value: event.detail.value,
+            sourceSceneId: event.origin.sourceSceneId,
+          },
+          evidenceRef: event.evidenceRef,
+          sourceEventKey: event.eventKey,
+        },
+      ],
     },
     {
       forEventType: "npc_relationship_changed",

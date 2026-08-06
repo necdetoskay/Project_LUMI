@@ -43,7 +43,7 @@ describe("WorldCommitRuleEngine", () => {
     ]);
 
     const engine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
-    const changes = engine.apply(events);
+    const { direct: changes } = engine.apply(events);
 
     expect(changes).toHaveLength(1);
     expect(changes[0]!.changeKey).toBe("c1");
@@ -77,7 +77,7 @@ describe("WorldCommitRuleEngine", () => {
     ]);
 
     const engine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
-    const changes = engine.apply(events);
+    const { direct: changes } = engine.apply(events);
 
     const committed = changes.filter((c) => c.status === "committed");
     const superseded = changes.filter((c) => c.status === "superseded");
@@ -140,10 +140,53 @@ describe("WorldCommitRuleEngine", () => {
     ]);
 
     const engine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
-    const changes = engine.apply(events);
+    const { direct: changes } = engine.apply(events);
 
     expect(changes).toHaveLength(2);
     expect(changes.every((c) => c.status === "committed")).toBe(true);
+  });
+
+  it("produces indirect intents alongside direct changes", () => {
+    const events = extractFromChanges([
+      {
+        key: "c1",
+        outcomeType: "npc_state_update",
+        entityId: npcA,
+        operation: "set",
+        field: "need.hunger",
+        value: 80,
+        evidenceRef: "r1",
+      },
+    ]);
+
+    const engine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
+    const result = engine.apply(events);
+
+    expect(result.direct).toHaveLength(1);
+    expect(result.indirect).toHaveLength(1);
+    expect(result.indirect[0]!.intentKey).toBe("c1:rumor");
+    expect(result.indirect[0]!.intentType).toBe("npc_rumor_spread");
+    expect(result.indirect[0]!.targetEntityId).toBe(npcA);
+  });
+
+  it("produces no indirect intents when no rule defines applyIndirect", () => {
+    const events = extractFromChanges([
+      {
+        key: "c1",
+        outcomeType: "inventory_transaction",
+        entityId: npcA,
+        operation: "transfer",
+        field: "inventory.item",
+        value: { from: "a", to: "b" },
+        evidenceRef: "r1",
+      },
+    ]);
+
+    const engine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
+    const result = engine.apply(events);
+
+    expect(result.direct).toHaveLength(1);
+    expect(result.indirect).toHaveLength(0);
   });
 });
 
