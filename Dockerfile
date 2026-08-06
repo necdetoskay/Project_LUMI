@@ -30,6 +30,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
+# Build-time metadata for reproducible, traceable artifacts (S20-T02).
+ARG IMAGE_VERSION=unknown
+ARG IMAGE_COMMIT_SHA=unknown
+LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.revision="${IMAGE_COMMIT_SHA}"
+LABEL org.opencontainers.image.source="https://github.com/necdetoskay/Project_LUMI"
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

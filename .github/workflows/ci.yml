@@ -28,3 +28,61 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  build:
+    name: Build Artifact
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Produce a version+sha tagged web image with embedded build metadata.
+      # Tags only (no push): reproducibility gate; the release pipeline
+      # (S20-T05 runbooks) performs the authenticated push to the registry.
+      - name: Set version
+        id: version
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          echo "version=$v" >> $GITHUB_OUTPUT
+
+      - name: Extract metadata (tags, labels)
+        id: docker-metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: lumi-web
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=raw,value=${{ steps.version.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.docker-metadata.outputs.created }}
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: ${{ steps.docker-metadata.outputs.tags }}
+          labels: ${{ steps.docker-metadata.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_APP_URL=https://lumi.local
+            IMAGE_VERSION=${{ steps.version.outputs.version }}
+            IMAGE_COMMIT_SHA=${{ github.sha }}
