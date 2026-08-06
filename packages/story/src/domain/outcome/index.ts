@@ -33,3 +33,16 @@ export {
   EvidenceValidator,
   EvidenceValidationFailedError,
 } from "./evidence-validator";
+
+export {
+  WorldCommitRuleEngine,
+  defaultOutcomeRules,
+  type WorldChange,
+  type WorldChangeKind,
+  type WorldChangeStatus,
+  type WorldCommitRule,
+  type WorldCommitRuleContext,
+  type RuleEngineConfig,
+  WORLD_CHANGE_KINDS,
+  WORLD_CHANGE_STATUSES,
+} from "./world-commit-rule-engine";
