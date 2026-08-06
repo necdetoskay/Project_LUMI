@@ -94,4 +94,16 @@ export type {
   NewStoryParentNoteRecord,
 } from "./story-parent-notes";
 
+export { storyCommitRecords } from "./story-commit-records";
+export type {
+  StoryCommitRecord,
+  NewStoryCommitRecord,
+} from "./story-commit-records";
+
+export { storyWorldVersions } from "./story-world-versions";
+export type {
+  StoryWorldVersionRecord,
+  NewStoryWorldVersionRecord,
+} from "./story-world-versions";
+
 export * from "./relations";
