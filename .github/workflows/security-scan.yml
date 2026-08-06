@@ -17,11 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # Gitleaks needs read access to secrets and pull-requests for reporting.
+      # Gitleaks needs read access to secrets and pull-requests for reporting;
+      # the audit comment needs write to post on PRs.
       security-events: write
-      pull-requests: read
+      pull-requests: write
     steps:
+      # Full history so gitleaks' PR range scan (base..head) can resolve both
+      # revisions; shallow checkout (default) breaks the `^..` range.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -102,6 +108,7 @@ jobs:
           GITLEAKS_CONFIG: .gitleaks.toml
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
           GITLEAKS_ENABLE_COMMENTS: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Container image scanning (the web Dockerfile in infra/compose).
       # Builds then scans the published web image. Only runs on default

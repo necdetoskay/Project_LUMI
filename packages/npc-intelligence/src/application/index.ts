@@ -28,3 +28,35 @@ export {
   STRONG_NEED_EVIDENCE,
 } from "./decision-selector.service";
 export type { SelectionResult } from "./decision-selector.service";
+export {
+  InteractionOpportunityGenerator,
+  GENERATION_TIMEOUT,
+  assertFiredCooldownKeys,
+} from "./interaction-opportunity-generator.service";
+export type {
+  OpportunityGenerationInput,
+  OpportunityGenerationResult,
+} from "./interaction-opportunity-generator.service";
+export {
+  OpportunityLedgerService,
+  DEFAULT_COOLDOWN_MS,
+  DEFAULT_NOVELTY_DECAY,
+  DEFAULT_MAX_NOVELTY,
+} from "./opportunity-ledger.service";
+export type {
+  LedgerGateInput,
+  LedgerGateResult,
+} from "./opportunity-ledger.service";
+export {
+  OpportunitySafetyFilter,
+  OPPORTUNITY_RISK,
+  OPPORTUNITY_RISK_LEVELS,
+  assertOpportunityType,
+} from "./opportunity-safety-filter.service";
+export type {
+  OpportunitySafetySnapshot,
+  OpportunitySafetyDecision,
+  OpportunityRiskLevel,
+} from "./opportunity-safety-filter.service";
+export { OpportunityDeliveryService } from "./opportunity-delivery.service";
+export type { OpportunityDeliveryInput } from "./opportunity-delivery.service";
