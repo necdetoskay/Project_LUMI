@@ -7,6 +7,7 @@ export * from "./goals";
 export * from "./hash";
 export * from "./needs";
 export * from "./opportunity";
+export * from "./opportunity-scoring";
 export * from "./perception";
 export * from "./seeded-rng";
 export * from "./utility";
