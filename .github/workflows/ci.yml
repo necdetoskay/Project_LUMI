@@ -27,6 +27,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # Performance/load gate (S21-T02): non-blocking smoke. S21-T01 harness
+      # records latency/isolation to coverage/load/s21-t01-report.json.
+      - name: Run load smoke (non-blocking)
+        continue-on-error: true
+        run: pnpm --filter @lumi/web test:load
       - run: pnpm build
 
   build:
