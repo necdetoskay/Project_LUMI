@@ -27,6 +27,40 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # Performance/load gate (S21-T02): non-blocking smoke. S21-T01 harness
+      # records latency/isolation to coverage/load/s21-t01-report.json.
+      - name: Run load smoke (non-blocking)
+        continue-on-error: true
+        run: pnpm --filter @lumi/web test:load
+
+      # S21-T05: performance regression gate (soft-failure). Reads the harness
+      # report; if thresholds are breached, annotates the PR but does not
+      # fail the build (release gate is human-approved per S20-T06).
+      - name: Load gate check (soft-failure)
+        continue-on-error: true
+        shell: bash
+        run: |
+          REPORT="apps/web/coverage/load/s21-t01-report.json"
+          if [ ! -f "$REPORT" ]; then
+            echo "::warning::load report missing — gate skipped"
+            exit 0
+          fi
+          node -e '
+            const fs = require("fs");
+            const r = JSON.parse(fs.readFileSync("apps/web/coverage/load/s21-t01-report.json","utf8"));
+            const p95 = r.latency?.p95 ?? 0;
+            const fivexx = r.failed5xx ?? 0;
+            const ok = r.okRate ?? 1;
+            const issues = [];
+            if (p95 > 500) issues.push(`p95 ${p95}ms > 500ms`);
+            if (fivexx > 0) issues.push(`${fivexx} 5xx`);
+            if (ok < 0.95) issues.push(`okRate ${ok} < 0.95`);
+            if (issues.length) {
+              console.log(`::warning::S21 load gate: ${issues.join(", ")}`);
+            } else {
+              console.log(`::notice::S21 load gate OK (p95=${p95}ms, 5xx=${fivexx}, okRate=${ok})`);
+            }
+          '
       - run: pnpm build
 
   build:
