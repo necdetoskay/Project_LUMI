@@ -40,6 +40,7 @@ export type { RecordEventInput } from "./event-store.service";
 export {
   assertWorldAccess,
   getWorldOrForbidden,
+  assertCharacterWorldAccess,
   __setTestAuthDb,
 } from "./world-auth.service";
 

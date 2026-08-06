@@ -3,7 +3,7 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
 import { getOwnedHousehold } from "@lumi/profiles/application";
-import { completeSession } from "@lumi/story/application";
+import { completeSession, getStorySessionOrForbidden } from "@lumi/story/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { handleStoryError } from "@/lib/story-api/error";
 
@@ -64,6 +64,7 @@ export const POST = observeHandler(
       }
 
       try {
+        await getStorySessionOrForbidden(sessionId, householdId);
         const result = await completeSession({
           sessionId,
           expectedVersion,

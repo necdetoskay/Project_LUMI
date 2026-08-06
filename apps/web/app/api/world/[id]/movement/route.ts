@@ -9,6 +9,7 @@ import {
   getCharacterCurrentLocation,
   getCharacterMovementHistory,
   assertWorldAccess,
+  assertCharacterWorldAccess,
 } from "@lumi/world";
 
 const moveBodySchema = z.object({
@@ -116,6 +117,8 @@ export const GET = observeHandler(
             { status: 400 },
           );
         }
+
+        await assertCharacterWorldAccess(characterId, household.id);
 
         const location = await getCharacterCurrentLocation(characterId);
         const history = await getCharacterMovementHistory(characterId);
