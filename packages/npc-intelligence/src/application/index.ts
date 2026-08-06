@@ -37,3 +37,13 @@ export type {
   OpportunityGenerationInput,
   OpportunityGenerationResult,
 } from "./interaction-opportunity-generator.service";
+export {
+  OpportunityLedgerService,
+  DEFAULT_COOLDOWN_MS,
+  DEFAULT_NOVELTY_DECAY,
+  DEFAULT_MAX_NOVELTY,
+} from "./opportunity-ledger.service";
+export type {
+  LedgerGateInput,
+  LedgerGateResult,
+} from "./opportunity-ledger.service";
