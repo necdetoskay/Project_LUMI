@@ -33,6 +33,8 @@ import type {
   NewStoryCommitRecord,
   StoryWorldVersionRecord,
   NewStoryWorldVersionRecord,
+  StoryOutboxRecord,
+  NewStoryOutboxRecord,
 } from "../../schema/story";
 import type { QueryExecutor } from "../../client";
 
@@ -260,4 +262,29 @@ export interface StoryRepository {
     tx: QueryExecutor,
     data: NewStoryWorldVersionRecord,
   ): Promise<StoryWorldVersionRecord>;
+
+  enqueueOutbox(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryOutboxRecord,
+  ): Promise<StoryOutboxRecord>;
+  findOutboxByIdempotencyKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    idempotencyKey: string,
+  ): Promise<StoryOutboxRecord | undefined>;
+  claimPendingOutbox(
+    tx: QueryExecutor,
+    householdId: string,
+    limit: number,
+  ): Promise<StoryOutboxRecord[]>;
+  markOutbox(
+    tx: { update: QueryExecutor["update"] },
+    id: string,
+    data: {
+      status: StoryOutboxRecord["status"];
+      attemptCount?: number;
+      lastError?: string | null;
+      appliedAt?: Date | null;
+    },
+  ): Promise<StoryOutboxRecord | undefined>;
 }

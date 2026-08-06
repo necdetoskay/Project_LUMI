@@ -106,4 +106,12 @@ export type {
   NewStoryWorldVersionRecord,
 } from "./story-world-versions";
 
+export { storyOutbox } from "./story-outbox";
+export type {
+  StoryOutboxRecord,
+  NewStoryOutboxRecord,
+  OutboxStatus,
+  OutboxIntentType,
+} from "./story-outbox";
+
 export * from "./relations";

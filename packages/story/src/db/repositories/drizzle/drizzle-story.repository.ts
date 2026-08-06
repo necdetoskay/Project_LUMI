@@ -20,6 +20,7 @@ import {
   storyIdempotencyLedger,
   storyCommitRecords,
   storyWorldVersions,
+  storyOutbox,
 } from "../../schema/story";
 import type {
   NewStoryDefinitionRecord,
@@ -39,6 +40,8 @@ import type {
   NewStoryIdempotencyLedgerRecord,
   NewStoryCommitRecord,
   NewStoryWorldVersionRecord,
+  NewStoryOutboxRecord,
+  StoryOutboxRecord,
 } from "../../schema/story";
 
 export class DrizzleStoryRepository implements StoryRepository {
@@ -657,5 +660,67 @@ export class DrizzleStoryRepository implements StoryRepository {
     }
     const [row] = await tx.insert(storyWorldVersions).values(data).returning();
     return row!;
+  }
+
+  async enqueueOutbox(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryOutboxRecord,
+  ) {
+    const [row] = await tx.insert(storyOutbox).values(data).returning();
+    return row!;
+  }
+
+  async findOutboxByIdempotencyKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    idempotencyKey: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyOutbox)
+      .where(
+        and(
+          eq(storyOutbox.householdId, householdId),
+          eq(storyOutbox.idempotencyKey, idempotencyKey),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async claimPendingOutbox(
+    tx: QueryExecutor,
+    householdId: string,
+    limit: number,
+  ) {
+    return tx
+      .select()
+      .from(storyOutbox)
+      .where(
+        and(
+          eq(storyOutbox.householdId, householdId),
+          inArray(storyOutbox.status, ["pending", "failed"]),
+        ),
+      )
+      .orderBy(storyOutbox.createdAt)
+      .limit(limit);
+  }
+
+  async markOutbox(
+    tx: { update: QueryExecutor["update"] },
+    id: string,
+    data: {
+      status: StoryOutboxRecord["status"];
+      attemptCount?: number;
+      lastError?: string | null;
+      appliedAt?: Date | null;
+    },
+  ) {
+    const [row] = await tx
+      .update(storyOutbox)
+      .set(data as never)
+      .where(eq(storyOutbox.id, id))
+      .returning();
+    return row;
   }
 }
