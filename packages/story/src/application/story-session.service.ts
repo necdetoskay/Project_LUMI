@@ -3,6 +3,7 @@ import { StorySession } from "../domain";
 import { ValidationError, NotFoundError } from "../domain/errors";
 import { getStoryDb } from "./db";
 import { recordStoryEventWithTx } from "./story-event-store.service";
+import { commitOutcomeWithTx } from "./world-commit.service";
 import { hashObject } from "./hash";
 import type { Database, QueryExecutor } from "../db/client";
 import type { ParticipationRole, PlaybackMode } from "../domain/story-types";
@@ -10,6 +11,11 @@ import {
   assertKnownSessionStatus,
   assertKnownPlaybackMode,
 } from "../domain/story-types";
+import type { OutcomeManifest } from "../domain/outcome/outcome-manifest";
+import type { StoryContextSnapshot } from "../domain/outcome/story-context-snapshot";
+import type { NarrativeEventExtractor } from "../domain/outcome/narrative-event-extractor";
+import type { EvidenceValidator } from "../domain/outcome/evidence-validator";
+import type { WorldCommitRuleEngine } from "../domain/outcome/world-commit-rule-engine";
 
 let testDb: Database | undefined;
 
@@ -50,6 +56,18 @@ export interface AdvanceSessionInput {
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
   contextSnapshot?: Record<string, unknown> | undefined;
+  /**
+   * Optional world-outcome to commit atomically with this advance (S22-T06).
+   * When provided, the story-session advance and the world commit share one
+   * transaction, closing the S10 limitation (outcome records now apply).
+   */
+  outcome?: {
+    manifest: OutcomeManifest;
+    snapshot: StoryContextSnapshot;
+    extractor: NarrativeEventExtractor;
+    validator: EvidenceValidator;
+    ruleEngine: WorldCommitRuleEngine;
+  };
 }
 
 export interface AbandonSessionInput {
@@ -646,6 +664,19 @@ export async function advanceSession(input: AdvanceSessionInput) {
         input.idempotencyKey,
         input.sessionId,
       );
+    }
+
+    // S22-T06: if the story engine produced an outcome, commit the world
+    // change atomically with the session advance (single transaction).
+    if (input.outcome) {
+      await commitOutcomeWithTx({
+        manifest: input.outcome.manifest,
+        snapshot: input.outcome.snapshot,
+        extractor: input.outcome.extractor,
+        validator: input.outcome.validator,
+        ruleEngine: input.outcome.ruleEngine,
+        tx,
+      });
     }
 
     return getSessionPlaybackStateFromRecord(input.sessionId);
