@@ -20,3 +20,16 @@ export {
   type SnapshotEntityEntry,
   CONTEXT_SNAPSHOT_SCHEMA_VERSION,
 } from "./story-context-snapshot";
+
+export {
+  NarrativeEventExtractor,
+  type NarrativeEvent,
+  type NarrativeEventType,
+  type ExtractNarrativeEventsInput,
+  NARRATIVE_EVENT_TYPES,
+} from "./narrative-event-extractor";
+
+export {
+  EvidenceValidator,
+  EvidenceValidationFailedError,
+} from "./evidence-validator";

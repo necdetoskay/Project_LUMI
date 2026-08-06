@@ -172,6 +172,10 @@ export class OutcomeManifest {
     return this.state.worldId;
   }
 
+  get sourceSceneId(): string {
+    return this.state.sourceSceneId;
+  }
+
   get changes(): ReadonlyArray<OutcomeChange> {
     return this.state.changes;
   }
