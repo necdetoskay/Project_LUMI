@@ -47,3 +47,14 @@ export type {
   LedgerGateInput,
   LedgerGateResult,
 } from "./opportunity-ledger.service";
+export {
+  OpportunitySafetyFilter,
+  OPPORTUNITY_RISK,
+  OPPORTUNITY_RISK_LEVELS,
+  assertOpportunityType,
+} from "./opportunity-safety-filter.service";
+export type {
+  OpportunitySafetySnapshot,
+  OpportunitySafetyDecision,
+  OpportunityRiskLevel,
+} from "./opportunity-safety-filter.service";
