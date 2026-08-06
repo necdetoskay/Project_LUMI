@@ -93,4 +93,4 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: NPC-to-NPC rumor propagation + confidence decay, accepted opportunity → story hook conversion, quest aggregate.
 
-- Sprint 26 — NPC-to-NPC Rumor Propagation + Confidence Decay (spec: `docs/07-delivery/lumi/sprint-26/SPRINT_SPEC.md`; S26-T01 `Rumor` domain + confidence decay, T02 propagation engine, T03 rumor ledger (dedup), T04 hearsay belief adoption, T05 outbox integration (`npc_rumor_spread`), T06 safety (no canonical-state via rumor), T07 backlog evidence)
+- Sprint 26 — NPC-to-NPC Rumor Propagation + Confidence Decay [devam ediyor] (spec: `docs/07-delivery/lumi/sprint-26/SPRINT_SPEC.md`; S26-T01 `Rumor` domain + confidence decay ✅: `Rumor` modeli (factId, origin, sourceEvent, provenance chain, hops, expiresAt) + `decayRumorForHop` (deterministic hop decay 0.8 + time decay 0.1/day, propagation floor 0.2), 8 unit test; S26-T02 propagation engine, T03 rumor ledger (dedup), T04 hearsay belief adoption, T05 outbox integration (`npc_rumor_spread`), T06 safety (no canonical-state via rumor), T07 backlog evidence)
