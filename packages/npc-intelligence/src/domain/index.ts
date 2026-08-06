@@ -6,6 +6,7 @@ export * from "./errors";
 export * from "./goals";
 export * from "./hash";
 export * from "./needs";
+export * from "./opportunity";
 export * from "./perception";
 export * from "./seeded-rng";
 export * from "./utility";
