@@ -108,7 +108,10 @@ jobs:
       # branch / PR to main to avoid redundant builds.
       - name: Build web image
         run: |
-          docker build -f Dockerfile -t lumi-web:scan .
+          docker build -f Dockerfile -t lumi-web:scan \
+            --build-arg NEXT_PUBLIC_APP_URL=https://lumi.local \
+            --build-arg IMAGE_VERSION=scan \
+            --build-arg IMAGE_COMMIT_SHA=${{ github.sha }} .
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
