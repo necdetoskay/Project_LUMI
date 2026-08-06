@@ -1,6 +1,6 @@
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
 import { getStoryDb } from "./db";
-import type { Database } from "../db/client";
+import type { Database, QueryExecutor } from "../db/client";
 import type {
   WorldChange,
   WorldCommitRuleEngine,
@@ -48,6 +48,11 @@ export interface CompensateCommitInput {
   reason: string;
   /** Optional actor (parent/operator) initiating the compensation. */
   actorHouseholdId?: string;
+}
+
+export interface CommitOutcomeWithTxInput extends CommitManifestInput {
+  /** Caller-provided transaction (e.g. the story session advance tx). */
+  tx: QueryExecutor;
 }
 
 const COMMIT_EVENT_TYPE: StoryEventType = "STORY_WORLD_COMMIT_APPLIED";
@@ -98,82 +103,7 @@ export class WorldCommitService {
       };
     }
 
-    const worldVersion = await this.repo.getWorldVersion(
-      db,
-      manifest.householdId,
-      manifest.worldId,
-    );
-    const before = worldVersion ? Number(worldVersion.currentVersion) : 1;
-    const after = before + 1;
-    const worldStateHash = await hashObject({
-      version: after,
-      manifestId: manifest.id,
-      changes: changes.map((c) => ({
-        key: c.changeKey,
-        entityId: c.entityId,
-        kind: c.kind,
-        field: c.field,
-        value: c.value,
-      })),
-    });
-
-    // Single transaction: commit record + world version bump + events.
-    const commitId = crypto.randomUUID();
-    await db.transaction(async (tx) => {
-      await this.repo.recordCommit(tx, {
-        id: commitId,
-        manifestId: manifest.id,
-        storySessionId: manifest.storySessionId,
-        householdId: manifest.householdId,
-        worldId: manifest.worldId,
-        worldVersionBefore: before,
-        worldVersionAfter: after,
-        worldStateHash,
-        changes,
-        idempotencyKey,
-        status: "committed",
-        createdAt: new Date(),
-      });
-      await this.repo.upsertWorldVersion(tx, {
-        householdId: manifest.householdId,
-        worldId: manifest.worldId,
-        currentVersion: String(after),
-        worldStateHash,
-        lastManifestId: manifest.id,
-        updatedAt: new Date(),
-      });
-      // Event sourcing: record one aggregate event per committed change.
-      for (const event of events) {
-        await this.repo.recordEvent(tx, {
-          id: crypto.randomUUID(),
-          storySessionId: manifest.storySessionId,
-          eventType: COMMIT_EVENT_TYPE,
-          eventVersion: 1,
-          aggregateVersion: after,
-          actorHouseholdId: manifest.householdId,
-          childProfileId: null,
-          payload: {
-            commitId,
-            worldVersion: after,
-            eventKey: event.eventKey,
-            eventType: event.eventType,
-            entityId: event.entityId,
-            detail: event.detail,
-            evidenceRef: event.evidenceRef,
-          },
-          createdAt: new Date(),
-        });
-      }
-    });
-
-    return {
-      commitId,
-      worldVersionBefore: before,
-      worldVersionAfter: after,
-      worldStateHash,
-      changes,
-      compensated: false,
-    };
+    return db.transaction(async (tx) => commitOutcomeWithTx({ ...input, tx }));
   }
 
   /**
@@ -298,4 +228,120 @@ export class WorldCommitService {
       compensated: true,
     };
   }
+}
+
+/**
+ * Commits an outcome manifest within a caller-provided transaction (e.g. the
+ * story-session advance tx). Applies the full pipeline — evidence validation,
+ * narrative event extraction, rule engine, world version bump, append-only
+ * event sourcing — so a story advance and its world commit are atomic.
+ */
+export async function commitOutcomeWithTx(
+  input: CommitOutcomeWithTxInput,
+): Promise<CommitResult> {
+  const { manifest, snapshot, extractor, validator, ruleEngine, tx } = input;
+
+  // Evidence validation is a hard gate before any write.
+  const errors = validator.validate(manifest, snapshot);
+  if (errors.length > 0) {
+    throw new Error(`EVIDENCE_VALIDATION_FAILED: ${errors.join("; ")}`);
+  }
+
+  const allowedEntityIds = new Set(snapshot.entities.map((e) => e.entityId));
+  const events: NarrativeEvent[] = extractor.extract({
+    manifest,
+    allowedEntityIds,
+  });
+  const changes: WorldChange[] = ruleEngine.apply(events);
+
+  const repo = new DrizzleStoryRepository();
+  const idempotencyKey = `story-commit:${manifest.id}`;
+  const existing = await repo.findCommitByIdempotencyKey(
+    tx,
+    manifest.householdId,
+    idempotencyKey,
+  );
+  if (existing) {
+    return {
+      commitId: existing.id,
+      worldVersionBefore: existing.worldVersionBefore,
+      worldVersionAfter: existing.worldVersionAfter,
+      worldStateHash: existing.worldStateHash,
+      changes,
+      compensated: existing.status === "compensated",
+    };
+  }
+
+  const worldVersion = await repo.getWorldVersion(
+    tx,
+    manifest.householdId,
+    manifest.worldId,
+  );
+  const before = worldVersion ? Number(worldVersion.currentVersion) : 1;
+  const after = before + 1;
+  const worldStateHash = await hashObject({
+    version: after,
+    manifestId: manifest.id,
+    changes: changes.map((c) => ({
+      key: c.changeKey,
+      entityId: c.entityId,
+      kind: c.kind,
+      field: c.field,
+      value: c.value,
+    })),
+  });
+
+  const commitId = crypto.randomUUID();
+  await repo.recordCommit(tx, {
+    id: commitId,
+    manifestId: manifest.id,
+    storySessionId: manifest.storySessionId,
+    householdId: manifest.householdId,
+    worldId: manifest.worldId,
+    worldVersionBefore: before,
+    worldVersionAfter: after,
+    worldStateHash,
+    changes,
+    idempotencyKey,
+    status: "committed",
+    createdAt: new Date(),
+  });
+  await repo.upsertWorldVersion(tx, {
+    householdId: manifest.householdId,
+    worldId: manifest.worldId,
+    currentVersion: String(after),
+    worldStateHash,
+    lastManifestId: manifest.id,
+    updatedAt: new Date(),
+  });
+  for (const event of events) {
+    await repo.recordEvent(tx, {
+      id: crypto.randomUUID(),
+      storySessionId: manifest.storySessionId,
+      eventType: COMMIT_EVENT_TYPE,
+      eventVersion: 1,
+      aggregateVersion: after,
+      actorHouseholdId: manifest.householdId,
+      childProfileId: null,
+      payload: {
+        commitId,
+        worldVersion: after,
+        eventKey: event.eventKey,
+        eventType: event.eventType,
+        entityId: event.entityId,
+        detail: event.detail,
+        evidenceRef: event.evidenceRef,
+      },
+      createdAt: new Date(),
+    });
+  }
+
+  return {
+    commitId,
+    worldVersionBefore: before,
+    worldVersionAfter: after,
+    worldStateHash,
+    changes,
+    compensated: false,
+  };
 }
