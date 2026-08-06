@@ -37,6 +37,12 @@ LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
 LABEL org.opencontainers.image.revision="${IMAGE_COMMIT_SHA}"
 LABEL org.opencontainers.image.source="https://github.com/necdetoskay/Project_LUMI"
 
+# The standalone output runs `node apps/web/server.js` and does not need the
+# npm CLI or its bundled dependencies. Removing them clears the base-image
+# npm CVEs (tar, picomatch, ip-address, brace-expansion, sigstore).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+  && rm -rf /usr/local/lib/node_modules/corepack
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
