@@ -15,15 +15,15 @@ title = "gitleaks config"
 
   [[allowlist.entries]]
     description = "Example credentials in .env.example are placeholders, not real secrets."
-    path = "(?i)^.*\.env\.example$"
-    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
+    path = '(?i)^.*[.]env[.]example$'
+    regex = '(?i)(POSTGRES_PASSWORD|password|secret|token)\s*=\s*\S+'
 
   [[allowlist.entries]]
     description = "Test fixtures must never contain real secrets (allow placeholder patterns only)."
-    path = "(?i)^packages/.*/tests/.*\\.(ts|js|json)$"
-    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
+    path = '(?i)^packages/.*/tests/.*[.](ts|js|json)$'
+    regex = '(?i)(POSTGRES_PASSWORD|password|secret|token)\s*=\s*\S+'
 
   [[allowlist.entries]]
     description = "Docs placeholder snippets."
-    path = "(?i)^docs/.*$"
-    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
+    path = '(?i)^docs/.*$'
+    regex = '(?i)(POSTGRES_PASSWORD|password|secret|token)\s*=\s*\S+'

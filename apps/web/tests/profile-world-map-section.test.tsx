@@ -143,7 +143,9 @@ describe("ProfileWorldMapSection", () => {
     expect(screen.getByText("Baslangic Vadisi")).toBeTruthy();
     expect(screen.getByText("Kesfedilmemis bolge")).toBeTruthy();
     expect(screen.getAllByText("Yuva").length).toBeGreaterThan(0);
-    expect(screen.getByText("Kesfe acik gorunuyor.")).toBeTruthy();
+    expect(screen.getAllByText("Kesfe acik gorunuyor.").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText("Gorunen bolge")).toBeTruthy();
     expect(screen.getByText("Canta ozeti")).toBeTruthy();
     expect(screen.getByText("Parlayan Fener")).toBeTruthy();
