@@ -12,3 +12,5 @@ apps/LUMI-*
 packages/LUMI-*
 Dockerfile
 .dockerignore
+.gitleaks.toml
+trivy-results.sarif
