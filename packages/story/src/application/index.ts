@@ -83,4 +83,8 @@ export {
 export { hashObject } from "./hash";
 
 export { WorldCommitService, __setTestCommitDb } from "./world-commit.service";
-export type { CommitManifestInput, CommitResult } from "./world-commit.service";
+export type {
+  CommitManifestInput,
+  CommitResult,
+  CompensateCommitInput,
+} from "./world-commit.service";

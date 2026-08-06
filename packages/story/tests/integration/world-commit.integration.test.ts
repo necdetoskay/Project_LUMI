@@ -282,4 +282,121 @@ describe.skipIf(!ENABLE_DESTRUCTIVE)("WorldCommitService (integration)", () => {
       true,
     );
   });
+
+  it("event-sources committed changes into the story event store", async () => {
+    const manifest = OutcomeManifest.create({
+      storySessionId: "40000000-0000-4000-8000-000000000004",
+      householdId: householdB,
+      worldId: worldA,
+      source: "story_session",
+      sourceSceneId: "scene-4",
+      changes: [
+        {
+          key: "itg-c4",
+          outcomeType: "npc_state_update",
+          entityId: npcA,
+          operation: "set",
+          field: "need.hunger",
+          value: 35,
+          evidenceRef: "scene://itg#4",
+        },
+      ],
+    });
+    const snapshot = StoryContextSnapshot.create({
+      storySessionId: manifest.storySessionId,
+      householdId: householdB,
+      worldId: worldA,
+      worldStateHash: "itg-before-4",
+      entities: [
+        {
+          entityId: npcA,
+          entityKind: "npc",
+          state: { need: { hunger: 40 } },
+          stateHash: "itg-npc-hash",
+        },
+      ],
+    });
+
+    const service = new WorldCommitService();
+    const result = await service.commitManifest({
+      manifest,
+      snapshot,
+      extractor: new NarrativeEventExtractor(),
+      validator: new EvidenceValidator(),
+      ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+    });
+
+    const events = await db
+      .select()
+      .from(schema.storyEventStore)
+      .where(sql`story_session_id = ${manifest.storySessionId}`);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.eventType).toBe("STORY_WORLD_COMMIT_APPLIED");
+    expect((events[0]!.payload as { commitId: string }).commitId).toBe(
+      result.commitId,
+    );
+  });
+
+  it("compensates a committed manifest and marks it compensated", async () => {
+    const manifest = OutcomeManifest.create({
+      storySessionId: "40000000-0000-4000-8000-000000000005",
+      householdId: householdB,
+      worldId: worldA,
+      source: "story_session",
+      sourceSceneId: "scene-5",
+      changes: [
+        {
+          key: "itg-c5",
+          outcomeType: "npc_state_update",
+          entityId: npcA,
+          operation: "set",
+          field: "need.hunger",
+          value: 95,
+          evidenceRef: "scene://itg#5",
+        },
+      ],
+    });
+    const snapshot = StoryContextSnapshot.create({
+      storySessionId: manifest.storySessionId,
+      householdId: householdB,
+      worldId: worldA,
+      worldStateHash: "itg-before-5",
+      entities: [
+        {
+          entityId: npcA,
+          entityKind: "npc",
+          state: { need: { hunger: 40 } },
+          stateHash: "itg-npc-hash",
+        },
+      ],
+    });
+
+    const service = new WorldCommitService();
+    const first = await service.commitManifest({
+      manifest,
+      snapshot,
+      extractor: new NarrativeEventExtractor(),
+      validator: new EvidenceValidator(),
+      ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+    });
+
+    const comp = await service.compensateCommit({
+      manifest,
+      reason: "integration forward-fix",
+      actorHouseholdId: householdB,
+    });
+
+    expect(first.compensated).toBe(false);
+    expect(comp.compensated).toBe(true);
+    expect(comp.worldVersionAfter).toBe(first.worldVersionAfter + 1);
+
+    // Compensation event appended.
+    const compEvents = await db
+      .select()
+      .from(schema.storyEventStore)
+      .where(sql`story_session_id = ${manifest.storySessionId}`);
+    expect(
+      compEvents.some((e) => e.eventType === "STORY_WORLD_COMMIT_COMPENSATED"),
+    ).toBe(true);
+  });
 });

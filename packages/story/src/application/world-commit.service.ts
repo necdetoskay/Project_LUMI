@@ -13,6 +13,7 @@ import type {
 import type { EvidenceValidator } from "../domain/outcome/evidence-validator";
 import type { StoryContextSnapshot } from "../domain/outcome/story-context-snapshot";
 import { hashObject } from "./hash";
+import type { StoryEventType } from "../domain/story-types";
 
 let testDb: Database | undefined;
 
@@ -38,7 +39,19 @@ export interface CommitResult {
   worldVersionAfter: number;
   worldStateHash: string;
   changes: WorldChange[];
+  compensated: boolean;
 }
+
+export interface CompensateCommitInput {
+  manifest: OutcomeManifest;
+  /** Reason for the compensation (forward-fix traceability). */
+  reason: string;
+  /** Optional actor (parent/operator) initiating the compensation. */
+  actorHouseholdId?: string;
+}
+
+const COMMIT_EVENT_TYPE: StoryEventType = "STORY_WORLD_COMMIT_APPLIED";
+const COMPENSATE_EVENT_TYPE: StoryEventType = "STORY_WORLD_COMMIT_COMPENSATED";
 
 export class WorldCommitService {
   private readonly repo = new DrizzleStoryRepository();
@@ -46,7 +59,8 @@ export class WorldCommitService {
   /**
    * Transactionally applies a validated outcome manifest to the world:
    * idempotency guard → extract → validate → rule-engine → single-tx commit
-   * (commit record + world version bump). On evidence failure nothing is written.
+   * (commit record + world version bump + append-only event records).
+   * On evidence failure nothing is written.
    */
   async commitManifest(input: CommitManifestInput): Promise<CommitResult> {
     const { manifest, snapshot, extractor, validator, ruleEngine } = input;
@@ -80,6 +94,7 @@ export class WorldCommitService {
         worldVersionAfter: existing.worldVersionAfter,
         worldStateHash: existing.worldStateHash,
         changes,
+        compensated: existing.status === "compensated",
       };
     }
 
@@ -102,9 +117,11 @@ export class WorldCommitService {
       })),
     });
 
-    // Single transaction: commit record + world version bump.
+    // Single transaction: commit record + world version bump + events.
+    const commitId = crypto.randomUUID();
     await db.transaction(async (tx) => {
       await this.repo.recordCommit(tx, {
+        id: commitId,
         manifestId: manifest.id,
         storySessionId: manifest.storySessionId,
         householdId: manifest.householdId,
@@ -125,14 +142,160 @@ export class WorldCommitService {
         lastManifestId: manifest.id,
         updatedAt: new Date(),
       });
+      // Event sourcing: record one aggregate event per committed change.
+      for (const event of events) {
+        await this.repo.recordEvent(tx, {
+          id: crypto.randomUUID(),
+          storySessionId: manifest.storySessionId,
+          eventType: COMMIT_EVENT_TYPE,
+          eventVersion: 1,
+          aggregateVersion: after,
+          actorHouseholdId: manifest.householdId,
+          childProfileId: null,
+          payload: {
+            commitId,
+            worldVersion: after,
+            eventKey: event.eventKey,
+            eventType: event.eventType,
+            entityId: event.entityId,
+            detail: event.detail,
+            evidenceRef: event.evidenceRef,
+          },
+          createdAt: new Date(),
+        });
+      }
     });
 
     return {
-      commitId: crypto.randomUUID(),
+      commitId,
       worldVersionBefore: before,
       worldVersionAfter: after,
       worldStateHash,
       changes,
+      compensated: false,
+    };
+  }
+
+  /**
+   * Compensates a previously committed manifest (forward-fix / rollback):
+   * writes an inverse change set, bumps the world version again, marks the
+   * original commit records as compensated, and appends compensation events.
+   */
+  async compensateCommit(input: CompensateCommitInput): Promise<CommitResult> {
+    const { manifest, reason } = input;
+    const db = getDb();
+
+    const existing = await this.repo.findCommitByManifest(db, manifest.id);
+    if (!existing) {
+      throw new Error(
+        `NO_COMMIT_TO_COMPENSATE: manifest ${manifest.id} has no committed record`,
+      );
+    }
+
+    // Build inverse changes from the committed record (deterministic).
+    const committedChanges = existing.changes as WorldChange[];
+    const inverseChanges: WorldChange[] = committedChanges.map((c) => ({
+      changeKey: `${c.changeKey}:comp`,
+      entityId: c.entityId,
+      kind: c.kind,
+      field: c.field,
+      value: c.value,
+      priority: c.priority,
+      ruleId: `${c.ruleId}:comp`,
+      sequence: c.sequence,
+      evidenceRef: c.evidenceRef,
+      status: "committed",
+    }));
+
+    const worldVersion = await this.repo.getWorldVersion(
+      db,
+      manifest.householdId,
+      manifest.worldId,
+    );
+    const before = worldVersion
+      ? Number(worldVersion.currentVersion)
+      : existing.worldVersionAfter;
+    const after = before + 1;
+    const worldStateHash = await hashObject({
+      version: after,
+      compensatedManifestId: manifest.id,
+      reason,
+      changes: inverseChanges.map((c) => ({
+        key: c.changeKey,
+        entityId: c.entityId,
+        kind: c.kind,
+        field: c.field,
+        value: c.value,
+      })),
+    });
+
+    const compKey = `story-commit:${manifest.id}:comp`;
+    const compExisting = await this.repo.findCommitByIdempotencyKey(
+      db,
+      manifest.householdId,
+      compKey,
+    );
+    if (compExisting) {
+      return {
+        commitId: compExisting.id,
+        worldVersionBefore: compExisting.worldVersionBefore,
+        worldVersionAfter: compExisting.worldVersionAfter,
+        worldStateHash: compExisting.worldStateHash,
+        changes: inverseChanges,
+        compensated: true,
+      };
+    }
+
+    const commitId = crypto.randomUUID();
+    await db.transaction(async (tx) => {
+      await this.repo.recordCommit(tx, {
+        id: commitId,
+        manifestId: manifest.id,
+        storySessionId: manifest.storySessionId,
+        householdId: manifest.householdId,
+        worldId: manifest.worldId,
+        worldVersionBefore: before,
+        worldVersionAfter: after,
+        worldStateHash,
+        changes: inverseChanges,
+        idempotencyKey: compKey,
+        status: "compensated",
+        createdAt: new Date(),
+      });
+      await this.repo.upsertWorldVersion(tx, {
+        householdId: manifest.householdId,
+        worldId: manifest.worldId,
+        currentVersion: String(after),
+        worldStateHash,
+        lastManifestId: manifest.id,
+        updatedAt: new Date(),
+      });
+      await this.repo.recordEvent(tx, {
+        id: crypto.randomUUID(),
+        storySessionId: manifest.storySessionId,
+        eventType: COMPENSATE_EVENT_TYPE,
+        eventVersion: 1,
+        aggregateVersion: after,
+        actorHouseholdId: input.actorHouseholdId ?? manifest.householdId,
+        childProfileId: null,
+        payload: {
+          commitId,
+          compensatedCommitId: existing.id,
+          worldVersion: after,
+          reason,
+          changeKeys: inverseChanges.map((c) => c.changeKey),
+        },
+        createdAt: new Date(),
+      });
+    });
+
+    return {
+      commitId,
+      worldVersionBefore: before,
+      worldVersionAfter: after,
+      worldStateHash,
+      changes: inverseChanges,
+      compensated: true,
     };
   }
 }
