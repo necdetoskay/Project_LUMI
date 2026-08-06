@@ -98,4 +98,37 @@ describe("OpportunityScorer", () => {
     );
     expect(direct).toBe(viaScorer.total);
   });
+
+  it("is type-independent (scoring driven purely by components)", () => {
+    // A gift with identical components scores identically to a rumor.
+    const giftScore = scorer.score(
+      "o-gift",
+      COMPONENTS,
+      DEFAULT_OPPORTUNITY_SCORE_POLICY,
+    );
+    const rumorScore = scorer.score(
+      "o-rumor",
+      COMPONENTS,
+      DEFAULT_OPPORTUNITY_SCORE_POLICY,
+    );
+    expect(giftScore.total).toBe(rumorScore.total);
+  });
+
+  it("penalizes a gift with high safety risk magnitude", () => {
+    const risky: OpportunityScoreComponents = {
+      ...COMPONENTS,
+      safetyRisk: 1,
+    };
+    const riskyScore = scorer.score(
+      "o-gift-risky",
+      risky,
+      DEFAULT_OPPORTUNITY_SCORE_POLICY,
+    );
+    const safeScore = scorer.score(
+      "o-gift-safe",
+      COMPONENTS,
+      DEFAULT_OPPORTUNITY_SCORE_POLICY,
+    );
+    expect(riskyScore.total).toBeLessThan(safeScore.total);
+  });
 });

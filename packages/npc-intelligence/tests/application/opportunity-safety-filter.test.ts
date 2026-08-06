@@ -67,4 +67,35 @@ describe("OpportunitySafetyFilter", () => {
       NpcIntelligenceError,
     );
   });
+
+  it("flags every conditional type for parent approval (gift/warning/social_visit)", () => {
+    for (const type of ["gift", "warning", "social_visit"] as const) {
+      const decision = filter.filter(type, BASE_SAFETY);
+      expect(decision.verdict).toBe("conditional");
+      expect(decision.reason).toContain("requires parent approval");
+    }
+  });
+
+  it("allows safe types without approval (quest_seed/information_share)", () => {
+    for (const type of ["quest_seed", "information_share"] as const) {
+      const decision = filter.filter(type, BASE_SAFETY);
+      expect(decision.verdict).toBe("safe");
+    }
+  });
+
+  it("blocks any type forbidden by parent policy before scoring", () => {
+    for (const type of [
+      "gift",
+      "warning",
+      "quest_seed",
+      "social_visit",
+      "information_share",
+    ] as const) {
+      const decision = filter.filter(type, {
+        ...BASE_SAFETY,
+        forbiddenOpportunityTypes: [type],
+      });
+      expect(decision.verdict).toBe("blocked");
+    }
+  });
 });
