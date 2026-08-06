@@ -98,10 +98,10 @@ jobs:
       # documented placeholders in .env.example / fixtures.
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config-path: .gitleaks.toml
-          fail: true
-          verbose: true
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_COMMENTS: false
 
       # Container image scanning (the web Dockerfile in infra/compose).
       # Builds then scans the published web image. Only runs on default
@@ -119,7 +119,7 @@ jobs:
           exit-code: 1
           ignore-unfixed: false
       - name: Upload Trivy results to GitHub Security
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
