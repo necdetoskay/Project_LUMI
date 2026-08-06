@@ -11,6 +11,7 @@ import { storyEventStore } from "./story-event-store";
 import { storyIdempotencyLedger } from "./story-idempotency-ledger";
 import { storyParentNotes } from "./story-parent-notes";
 import { storyCommitRecords } from "./story-commit-records";
+import { storyOutbox } from "./story-outbox";
 
 export const storyDefinitionsRelations = relations(
   storyDefinitions,
@@ -39,6 +40,7 @@ export const storySessionsRelations = relations(storySessions, ({ many }) => ({
   notes: many(storyParentNotes),
   idempotency: many(storyIdempotencyLedger),
   commits: many(storyCommitRecords),
+  outbox: many(storyOutbox),
 }));
 
 export const storySessionCharactersRelations = relations(

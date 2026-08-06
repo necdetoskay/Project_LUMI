@@ -18,6 +18,7 @@ const mockRepo = {
   getWorldVersion: vi.fn(),
   recordCommit: vi.fn(),
   recordEvent: vi.fn(),
+  enqueueOutbox: vi.fn(),
   upsertWorldVersion: vi.fn(),
 };
 
@@ -28,6 +29,7 @@ vi.mock("../../src/db/repositories/drizzle/drizzle-story.repository", () => ({
     getWorldVersion = mockRepo.getWorldVersion;
     recordCommit = mockRepo.recordCommit;
     recordEvent = mockRepo.recordEvent;
+    enqueueOutbox = mockRepo.enqueueOutbox;
     upsertWorldVersion = mockRepo.upsertWorldVersion;
   },
 }));
@@ -84,6 +86,7 @@ describe("WorldCommitService", () => {
     mockRepo.getWorldVersion.mockResolvedValue(undefined);
     mockRepo.recordCommit.mockResolvedValue({ id: "commit-1" });
     mockRepo.recordEvent.mockResolvedValue({});
+    mockRepo.enqueueOutbox.mockResolvedValue({});
     mockRepo.upsertWorldVersion.mockResolvedValue({});
   });
 
@@ -206,6 +209,25 @@ describe("WorldCommitService", () => {
     expect(event.eventType).toBe("STORY_WORLD_COMMIT_APPLIED");
     expect(event.payload.commitId).toBe(result.commitId);
     expect(event.aggregateVersion).toBe(result.worldVersionAfter);
+  });
+
+  it("enqueues indirect-effect outbox intents atomically with the commit", async () => {
+    const service = new WorldCommitService();
+    const result = await service.commitManifest({
+      manifest: makeManifest(),
+      snapshot: makeSnapshot(),
+      extractor: new NarrativeEventExtractor(),
+      validator: new EvidenceValidator(),
+      ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+    });
+
+    // makeManifest uses npc_state_update → default rule emits one rumor intent.
+    expect(mockRepo.enqueueOutbox).toHaveBeenCalledTimes(1);
+    const outbox = mockRepo.enqueueOutbox.mock.calls[0]![1];
+    expect(outbox.commitId).toBe(result.commitId);
+    expect(outbox.intentType).toBe("npc_rumor_spread");
+    expect(outbox.idempotencyKey).toBe("story-indirect:c1:rumor");
+    expect(outbox.status).toBe("pending");
   });
 
   it("compensates a committed manifest with inverse changes + version bump", async () => {

@@ -30,6 +30,7 @@ const mockRepo = {
   findCommitByIdempotencyKey: vi.fn(),
   getWorldVersion: vi.fn(),
   recordCommit: vi.fn(),
+  enqueueOutbox: vi.fn(),
   upsertWorldVersion: vi.fn(),
   findSessionCharacters: vi.fn(),
   findSessionByChildProfile: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock("../../src/db/repositories/drizzle/drizzle-story.repository", () => ({
     findCommitByIdempotencyKey = mockRepo.findCommitByIdempotencyKey;
     getWorldVersion = mockRepo.getWorldVersion;
     recordCommit = mockRepo.recordCommit;
+    enqueueOutbox = mockRepo.enqueueOutbox;
     upsertWorldVersion = mockRepo.upsertWorldVersion;
     findSessionCharacters = mockRepo.findSessionCharacters;
   },

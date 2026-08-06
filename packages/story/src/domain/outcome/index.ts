@@ -42,7 +42,11 @@ export {
   type WorldChangeStatus,
   type WorldCommitRule,
   type WorldCommitRuleContext,
+  type WorldCommitRuleResult,
+  type IndirectIntent,
+  type IndirectIntentType,
   type RuleEngineConfig,
   WORLD_CHANGE_KINDS,
   WORLD_CHANGE_STATUSES,
+  INDIRECT_INTENT_TYPES,
 } from "./world-commit-rule-engine";
