@@ -3,6 +3,7 @@ export * from "./validation";
 export * from "./story-types";
 export * from "./events";
 export * from "./choice";
+export * from "./outcome";
 
 export { StoryDefinition } from "./story-definition";
 export type { CreateStoryDefinitionInput } from "./story-definition";
