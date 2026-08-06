@@ -43,7 +43,7 @@ function percentile(arr: number[], p: number) {
 
 describe("S21-T01 load harness scaffold", () => {
   const timings: number[] = [];
-  let results: { sid: string; status: number; ms: number }[] = [];
+  const results: { sid: string; status: number; ms: number }[] = [];
   let failed = 0;
 
   beforeAll(() => {

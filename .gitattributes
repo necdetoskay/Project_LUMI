@@ -1,0 +1,17 @@
+# Normalize all text files to LF in the repository.
+# Windows checkout still gets CRLF via core.autocrlf if configured locally;
+# committed blobs are always LF so Linux CI (prettier --check) stays green.
+* text=auto eol=lf
+
+# Binary/opaque files never renormalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary

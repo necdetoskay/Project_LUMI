@@ -110,7 +110,7 @@ jobs:
         run: |
           docker build -f Dockerfile -t lumi-web:scan .
       - name: Trivy container scan
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: lumi-web:scan
           format: sarif
