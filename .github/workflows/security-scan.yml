@@ -17,9 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # Gitleaks needs read access to secrets and pull-requests for reporting.
+      # Gitleaks needs read access to secrets and pull-requests for reporting;
+      # the audit comment needs write to post on PRs.
       security-events: write
-      pull-requests: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
