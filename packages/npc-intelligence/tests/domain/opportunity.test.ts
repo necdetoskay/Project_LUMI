@@ -86,9 +86,9 @@ describe("InteractionOpportunity", () => {
     expect(() =>
       InteractionOpportunity.create({
         ...BASE,
-        opportunityType: "gift" as never,
+        opportunityType: "bogus" as never,
       }),
-    ).toThrowError("Invalid opportunity type: gift");
+    ).toThrowError("Invalid opportunity type: bogus");
   });
 
   it("rejects missing scope", () => {
@@ -106,5 +106,23 @@ describe("InteractionOpportunity", () => {
     state.cooldownKeys.push("extra");
     expect(o.getState().evidence.beliefId).toBe("b-1");
     expect(o.getState().cooldownKeys).toHaveLength(1);
+  });
+
+  it("accepts all remaining opportunity types", () => {
+    const types = [
+      "gift",
+      "warning",
+      "quest_seed",
+      "social_visit",
+      "information_share",
+    ] as const;
+    for (const type of types) {
+      const o = InteractionOpportunity.create({
+        ...BASE,
+        opportunityType: type,
+      });
+      expect(o.opportunityType).toBe(type);
+      expect(o.status).toBe("proposed");
+    }
   });
 });

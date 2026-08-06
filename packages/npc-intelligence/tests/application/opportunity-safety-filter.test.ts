@@ -47,10 +47,23 @@ describe("OpportunitySafetyFilter", () => {
   it("classifies risk levels per type", () => {
     expect(OPPORTUNITY_RISK.rumor).toBe("safe");
     expect(OPPORTUNITY_RISK.invitation).toBe("conditional");
+    expect(OPPORTUNITY_RISK.gift).toBe("conditional");
+    expect(OPPORTUNITY_RISK.warning).toBe("conditional");
+    expect(OPPORTUNITY_RISK.quest_seed).toBe("safe");
+    expect(OPPORTUNITY_RISK.social_visit).toBe("conditional");
+    expect(OPPORTUNITY_RISK.information_share).toBe("safe");
+  });
+
+  it("assertOpportunityType accepts all known types", () => {
+    expect(() => assertOpportunityType("gift")).not.toThrow();
+    expect(() => assertOpportunityType("warning")).not.toThrow();
+    expect(() => assertOpportunityType("quest_seed")).not.toThrow();
+    expect(() => assertOpportunityType("social_visit")).not.toThrow();
+    expect(() => assertOpportunityType("information_share")).not.toThrow();
   });
 
   it("assertOpportunityType rejects unknown types", () => {
-    expect(() => assertOpportunityType("gift" as never)).toThrowError(
+    expect(() => assertOpportunityType("bogus")).toThrowError(
       NpcIntelligenceError,
     );
   });
