@@ -120,6 +120,6 @@ jobs:
           ignore-unfixed: false
       - name: Upload Trivy results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-security-sarif@v3
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
