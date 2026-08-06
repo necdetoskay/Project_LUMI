@@ -93,3 +93,13 @@ export type {
   CompensateCommitInput,
   CommitOutcomeWithTxInput,
 } from "./world-commit.service";
+
+export {
+  IndirectEffectPropagator,
+  __setTestPropagationDb,
+} from "./indirect-effect-propagator.service";
+export type {
+  PropagateInput,
+  PropagateResult,
+  IndirectEffectApplicator,
+} from "./indirect-effect-propagator.service";
