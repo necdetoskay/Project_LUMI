@@ -190,6 +190,10 @@ export class InteractionOpportunity {
     return this.state.reason;
   }
 
+  get evidence(): Record<string, unknown> {
+    return { ...this.state.evidence };
+  }
+
   /** Child accepts the opportunity. */
   accept(now = new Date()): void {
     this.assertRespondable(now);

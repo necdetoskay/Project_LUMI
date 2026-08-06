@@ -28,3 +28,12 @@ export {
   STRONG_NEED_EVIDENCE,
 } from "./decision-selector.service";
 export type { SelectionResult } from "./decision-selector.service";
+export {
+  InteractionOpportunityGenerator,
+  GENERATION_TIMEOUT,
+  assertFiredCooldownKeys,
+} from "./interaction-opportunity-generator.service";
+export type {
+  OpportunityGenerationInput,
+  OpportunityGenerationResult,
+} from "./interaction-opportunity-generator.service";
