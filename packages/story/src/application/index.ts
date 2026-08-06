@@ -81,3 +81,6 @@ export {
   evaluateOptionAvailability,
 } from "./choice/rule-evaluator";
 export { hashObject } from "./hash";
+
+export { WorldCommitService, __setTestCommitDb } from "./world-commit.service";
+export type { CommitManifestInput, CommitResult } from "./world-commit.service";

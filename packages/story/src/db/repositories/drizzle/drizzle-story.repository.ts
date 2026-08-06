@@ -18,6 +18,8 @@ import {
   storySessionCheckpoints,
   storyEventStore,
   storyIdempotencyLedger,
+  storyCommitRecords,
+  storyWorldVersions,
 } from "../../schema/story";
 import type {
   NewStoryDefinitionRecord,
@@ -35,6 +37,8 @@ import type {
   NewStorySessionCheckpointRecord,
   NewStoryEventStoreRecord,
   NewStoryIdempotencyLedgerRecord,
+  NewStoryCommitRecord,
+  NewStoryWorldVersionRecord,
 } from "../../schema/story";
 
 export class DrizzleStoryRepository implements StoryRepository {
@@ -566,5 +570,92 @@ export class DrizzleStoryRepository implements StoryRepository {
       )
       .limit(1);
     return row;
+  }
+
+  async recordCommit(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryCommitRecord,
+  ) {
+    const [row] = await tx.insert(storyCommitRecords).values(data).returning();
+    return row!;
+  }
+
+  async findCommitByManifest(
+    tx: { select: QueryExecutor["select"] },
+    manifestId: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyCommitRecords)
+      .where(eq(storyCommitRecords.manifestId, manifestId))
+      .limit(1);
+    return row;
+  }
+
+  async findCommitByIdempotencyKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    idempotencyKey: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyCommitRecords)
+      .where(
+        and(
+          eq(storyCommitRecords.householdId, householdId),
+          eq(storyCommitRecords.idempotencyKey, idempotencyKey),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async getWorldVersion(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    worldId: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyWorldVersions)
+      .where(
+        and(
+          eq(storyWorldVersions.householdId, householdId),
+          eq(storyWorldVersions.worldId, worldId),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  async upsertWorldVersion(
+    tx: QueryExecutor,
+    data: NewStoryWorldVersionRecord,
+  ) {
+    const existing = await this.getWorldVersion(
+      tx,
+      data.householdId,
+      data.worldId,
+    );
+    if (existing) {
+      const [row] = await tx
+        .update(storyWorldVersions)
+        .set({
+          currentVersion: data.currentVersion,
+          worldStateHash: data.worldStateHash,
+          lastManifestId: data.lastManifestId,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(storyWorldVersions.householdId, data.householdId),
+            eq(storyWorldVersions.worldId, data.worldId),
+          ),
+        )
+        .returning();
+      return row!;
+    }
+    const [row] = await tx.insert(storyWorldVersions).values(data).returning();
+    return row!;
   }
 }

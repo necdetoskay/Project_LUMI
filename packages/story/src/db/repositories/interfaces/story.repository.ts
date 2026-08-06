@@ -29,6 +29,10 @@ import type {
   NewStoryEventStoreRecord,
   StoryIdempotencyLedgerRecord,
   NewStoryIdempotencyLedgerRecord,
+  StoryCommitRecord,
+  NewStoryCommitRecord,
+  StoryWorldVersionRecord,
+  NewStoryWorldVersionRecord,
 } from "../../schema/story";
 import type { QueryExecutor } from "../../client";
 
@@ -232,4 +236,28 @@ export interface StoryRepository {
     operationType: string,
     idempotencyKey: string,
   ): Promise<StoryIdempotencyLedgerRecord | undefined>;
+
+  recordCommit(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryCommitRecord,
+  ): Promise<StoryCommitRecord>;
+  findCommitByManifest(
+    tx: { select: QueryExecutor["select"] },
+    manifestId: string,
+  ): Promise<StoryCommitRecord | undefined>;
+  findCommitByIdempotencyKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    idempotencyKey: string,
+  ): Promise<StoryCommitRecord | undefined>;
+
+  getWorldVersion(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    worldId: string,
+  ): Promise<StoryWorldVersionRecord | undefined>;
+  upsertWorldVersion(
+    tx: QueryExecutor,
+    data: NewStoryWorldVersionRecord,
+  ): Promise<StoryWorldVersionRecord>;
 }
