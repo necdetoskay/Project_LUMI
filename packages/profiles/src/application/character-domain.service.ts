@@ -725,6 +725,11 @@ export async function addRelationship(
   const repos = getRepos();
   await assertScope(householdId, userId, repos);
   const record = await assertCharacterScope(characterId, householdId, repos);
+  await assertCharacterScope(
+    relationship.targetCharacterId,
+    householdId,
+    repos,
+  );
   const base = recordToCharacterState(record);
   const domain = await loadCharacterDomain(characterId, repos);
   const full = combineState(base, domain);

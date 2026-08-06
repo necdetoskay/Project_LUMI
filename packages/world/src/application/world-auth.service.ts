@@ -45,3 +45,22 @@ export async function getWorldOrForbidden(
   }
   return world;
 }
+
+export async function assertCharacterWorldAccess(
+  characterId: string,
+  householdId: string,
+) {
+  const db = getDb();
+  const repo = new DrizzleWorldRepository();
+
+  const world = await repo.findWorldByCharacterId(db, characterId);
+  if (!world) {
+    throw new NotFoundError("World for character", characterId);
+  }
+  if (world.householdId !== householdId) {
+    throw new AuthorizationError(
+      "Character does not belong to this household",
+    );
+  }
+  return world;
+}

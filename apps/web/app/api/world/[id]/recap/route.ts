@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { getWorldOrForbidden } from "@lumi/world";
+import { getOwnedHousehold } from "@lumi/profiles/application";
 import {
   getSimulationDb,
   DrizzleSimulationRepository,
@@ -28,7 +29,16 @@ export const GET = observeHandler(async (request: Request) => {
     }
 
     const worldId = url.pathname.split("/").pop() ?? "";
-    await getWorldOrForbidden(worldId, parent.id);
+
+    const household = await getOwnedHousehold(parent.id);
+    if (!household) {
+      return NextResponse.json(
+        { error: "FORBIDDEN", message: "User does not own a household" },
+        { status: 403 },
+      );
+    }
+
+    await getWorldOrForbidden(worldId, household.id);
 
     const db = getSimulationDb();
     const repo = new DrizzleSimulationRepository(db);
@@ -36,7 +46,7 @@ export const GET = observeHandler(async (request: Request) => {
     const recapService = new RecapService(store);
 
     const since = parsed.data.since ? new Date(parsed.data.since) : undefined;
-    const recap = await recapService.buildRecap(worldId, parent.id, since);
+    const recap = await recapService.buildRecap(worldId, household.id, since);
 
     return NextResponse.json({ recap }, { status: 200 });
   });
