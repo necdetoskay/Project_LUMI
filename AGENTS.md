@@ -84,3 +84,5 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 24 tamamlandı: T01–T08 tüm görevler yeşil (91 unit test).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: gift/warning/quest_seed/social_visit/information_share interaction tipleri, NPC-to-NPC rumor propagation + confidence decay, accepted opportunity → story hook conversion.
+
+- Sprint 25 — NPC Emergent Interaction: Remaining Types (spec: `docs/07-delivery/lumi/sprint-25/SPRINT_SPEC.md`; S25-T01 extend `OpportunityType` + risk map (gift/warning/quest_seed/social_visit/information_share), T02 gift generation (owned+transferable), T03 warning (age-appropriate), T04 quest_seed (non-mandatory), T05 social_visit (trusted nearby), T06 information_share (single-step), T07 scoring/safety extensions, T08 regression + evidence)
