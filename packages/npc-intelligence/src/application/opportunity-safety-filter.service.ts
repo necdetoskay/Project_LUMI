@@ -1,4 +1,4 @@
-import type { OpportunityType } from "../domain/opportunity";
+import { OPPORTUNITY_TYPES, type OpportunityType } from "../domain/opportunity";
 import { NpcIntelligenceError } from "../domain/errors";
 
 export const OPPORTUNITY_RISK_LEVELS = ["safe", "conditional"] as const;
@@ -11,6 +11,11 @@ export type OpportunityRiskLevel = (typeof OPPORTUNITY_RISK_LEVELS)[number];
 export const OPPORTUNITY_RISK: Record<OpportunityType, OpportunityRiskLevel> = {
   rumor: "safe",
   invitation: "conditional",
+  gift: "conditional",
+  warning: "conditional",
+  quest_seed: "safe",
+  social_visit: "conditional",
+  information_share: "safe",
 };
 
 export interface OpportunitySafetySnapshot {
@@ -74,7 +79,7 @@ export class OpportunitySafetyFilter {
 export function assertOpportunityType(
   value: string,
 ): asserts value is OpportunityType {
-  if (value !== "rumor" && value !== "invitation") {
+  if (!(OPPORTUNITY_TYPES as readonly string[]).includes(value)) {
     throw new NpcIntelligenceError(
       "INVALID_OPPORTUNITY_TYPE",
       `Invalid opportunity type: ${value}`,

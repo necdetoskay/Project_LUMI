@@ -84,3 +84,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 24 tamamlandı: T01–T08 tüm görevler yeşil (91 unit test).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: gift/warning/quest_seed/social_visit/information_share interaction tipleri, NPC-to-NPC rumor propagation + confidence decay, accepted opportunity → story hook conversion.
+
+- Sprint 25 — NPC Emergent Interaction: Remaining Types [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-25/SPRINT_SPEC.md`; S25-T01 extend `OpportunityType` + risk map ✅: `OPPORTUNITY_TYPES` → 7 tip (rumor/invitation/gift/warning/quest_seed/social_visit/information_share), risk map (gift/warning/social_visit=conditional, quest_seed/information_share=safe), `assertOpportunityType` via list, 4 unit test; S25-T02..T06 generation ✅: `InteractionOpportunityGenerator` gift (owned+transferable, never unowned/non-transferable), warning (age-suitable, no fear), quest_seed (non-mandatory), social_visit (trusted nearby ≥0.5), information_share (belief-gated, single-step), 8 unit test; S25-T07 scoring/safety extensions ✅: conditional tipler (gift/warning/social_visit) parent-approval gated, safe tipler (quest_seed/information_share) approval'sız, herhangi tip forbidden olunca blocked, scoring component-driven (type-independent), 5 unit test; S25-T08 regression + evidence ✅: `docs/07-delivery/lumi/sprint-25/S25_T08_REGRESSION_EVIDENCE.md` — 7 interaction tipi mevcut coverage'a eşlendi, regression green (106 unit); deferred: NPC-to-NPC rumor propagation + confidence decay, accepted→story hook conversion)
+
+### Sprint 25 closeout
+
+- Sprint 25 tamamlandı: T01–T08 tüm görevler yeşil (106 unit test).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: NPC-to-NPC rumor propagation + confidence decay, accepted opportunity → story hook conversion, quest aggregate.

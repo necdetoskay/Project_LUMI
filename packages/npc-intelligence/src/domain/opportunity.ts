@@ -1,6 +1,14 @@
 import { NpcIntelligenceError } from "./errors";
 
-export const OPPORTUNITY_TYPES = ["rumor", "invitation"] as const;
+export const OPPORTUNITY_TYPES = [
+  "rumor",
+  "invitation",
+  "gift",
+  "warning",
+  "quest_seed",
+  "social_visit",
+  "information_share",
+] as const;
 export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
 
 export const OPPORTUNITY_STATUSES = [
