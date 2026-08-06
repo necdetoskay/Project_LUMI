@@ -58,9 +58,7 @@ export async function assertCharacterWorldAccess(
     throw new NotFoundError("World for character", characterId);
   }
   if (world.householdId !== householdId) {
-    throw new AuthorizationError(
-      "Character does not belong to this household",
-    );
+    throw new AuthorizationError("Character does not belong to this household");
   }
   return world;
 }

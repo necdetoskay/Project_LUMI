@@ -27,8 +27,18 @@ vi.mock("@lumi/story/application", () => ({
 }));
 
 vi.mock("@/lib/auth/with-parent", () => ({
-  withParent: (fn: (parent: { id: string; email: string; displayName: string }) => Promise<Response>) =>
-    fn({ id: "parent-user-id", email: "parent@example.com", displayName: "Parent" }),
+  withParent: (
+    fn: (parent: {
+      id: string;
+      email: string;
+      displayName: string;
+    }) => Promise<Response>,
+  ) =>
+    fn({
+      id: "parent-user-id",
+      email: "parent@example.com",
+      displayName: "Parent",
+    }),
 }));
 
 const HOUSEHOLD_ID = "11111111-1111-4111-8111-111111111111";
