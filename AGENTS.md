@@ -75,4 +75,4 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - CI green: 7 düzeltme (lint prefer-const, vitest `@` alias, flaky world-map test,
   trivy-action v0.36.0, codeql upload-sarif, gitleaks env/TOML, build-arg NEXT_PUBLIC_APP_URL).
 - Trivy scan non-blocking yapıldı (SARIF → GitHub Security); gitleaks blocking gate olarak kaldı.
-- Backlog eklendi: container vuln remediation (`docs/08-backlog/container-vulnerability-backlog.md`) — 18 CRITICAL/HIGH alert (base image npm: tar/picomatch/ip-address/brace-expansion/sigstore; app: sharp, drizzle-orm).
+- Backlog eklendi: container vuln remediation (`docs/08-backlog/container-vulnerability-backlog.md`) — 18 CRITICAL/HIGH alert (base image npm: tar/picomatch/ip-address/brace-expansion/sigstore; app: sharp, drizzle-orm). **2026-08-06 çözüldü**: npm runner image'dan kaldırıldı, `sharp` 0.35.3 + `drizzle-orm` 0.45.2 (pnpm-workspace `overrides`), 18/18 alert kapandı, local Trivy 0 CRITICAL/HIGH, CI + Security Scan green.
