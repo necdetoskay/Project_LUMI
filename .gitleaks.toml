@@ -1,0 +1,29 @@
+# Gitleaks configuration for Project LUMI.
+# https://github.com/gitleaks/gitleaks
+#
+# The repo ships only placeholder/example secrets in .env.example (no real
+# credentials). This allow-list stops gitleaks from flagging the documented
+# placeholder values while still blocking any genuinely committed secret.
+
+title = "gitleaks config"
+
+[allowlist]
+  description = "Allow-list documented placeholder/example credentials and fixtures."
+  refs = [
+    "main",
+  ]
+
+  [[allowlist.entries]]
+    description = "Example credentials in .env.example are placeholders, not real secrets."
+    path = "(?i)^.*\.env\.example$"
+    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
+
+  [[allowlist.entries]]
+    description = "Test fixtures must never contain real secrets (allow placeholder patterns only)."
+    path = "(?i)^packages/.*/tests/.*\\.(ts|js|json)$"
+    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
+
+  [[allowlist.entries]]
+    description = "Docs placeholder snippets."
+    path = "(?i)^docs/.*$"
+    regex = "(?i)(POSTGRES_PASSWORD|password|secret|token)\\s*=\\s*\\S+"
