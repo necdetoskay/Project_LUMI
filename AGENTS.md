@@ -76,3 +76,5 @@ This repository contains Project LUMI, an AI-native interactive story platform f
   trivy-action v0.36.0, codeql upload-sarif, gitleaks env/TOML, build-arg NEXT_PUBLIC_APP_URL).
 - Trivy scan non-blocking yapıldı (SARIF → GitHub Security); gitleaks blocking gate olarak kaldı.
 - Backlog eklendi: container vuln remediation (`docs/08-backlog/container-vulnerability-backlog.md`) — 18 CRITICAL/HIGH alert (base image npm: tar/picomatch/ip-address/brace-expansion/sigstore; app: sharp, drizzle-orm). **2026-08-06 çözüldü**: npm runner image'dan kaldırıldı, `sharp` 0.35.3 + `drizzle-orm` 0.45.2 (pnpm-workspace `overrides`), 18/18 alert kapandı, local Trivy 0 CRITICAL/HIGH, CI + Security Scan green.
+
+- Sprint 24 — NPC Emergent Interaction (Foundation + Rumor/Invitation) (spec: `docs/07-delivery/lumi/sprint-24/SPRINT_SPEC.md`; S24-T01 opportunity domain + statuses, T02 generation (rumor+invitation), T03 multi-dim scoring policy, T04 cooldown/novelty/expiry ledger, T05 safety+parent filter, T06 delivery inbox + idempotency, T07 opportunity trace, T08 backlog validation evidence; deferred: gift/warning/quest_seed/social_visit/information_share)
