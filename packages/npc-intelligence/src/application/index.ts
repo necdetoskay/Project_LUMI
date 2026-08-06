@@ -58,3 +58,5 @@ export type {
   OpportunitySafetyDecision,
   OpportunityRiskLevel,
 } from "./opportunity-safety-filter.service";
+export { OpportunityDeliveryService } from "./opportunity-delivery.service";
+export type { OpportunityDeliveryInput } from "./opportunity-delivery.service";

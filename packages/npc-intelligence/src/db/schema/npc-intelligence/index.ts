@@ -13,4 +13,10 @@ export type {
   NewDecisionEventRecord,
 } from "./decision-events";
 
+export { opportunityInbox } from "./opportunity-inbox";
+export type {
+  OpportunityInboxRecord,
+  NewOpportunityInboxRecord,
+} from "./opportunity-inbox";
+
 export * from "./relations";
