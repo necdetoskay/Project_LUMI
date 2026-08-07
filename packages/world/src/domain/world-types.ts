@@ -210,3 +210,44 @@ export interface WorldCheckpointState {
   description: string | null;
   createdAt: Date;
 }
+
+export const QUEST_STATUSES = [
+  "inactive",
+  "active",
+  "paused",
+  "completed",
+  "abandoned",
+] as const;
+export type QuestStatus = (typeof QUEST_STATUSES)[number];
+
+export const QUEST_OBJECTIVE_STATUSES = [
+  "locked",
+  "unlocked",
+  "in_progress",
+  "completed",
+  "skipped",
+] as const;
+export type QuestObjectiveStatus = (typeof QUEST_OBJECTIVE_STATUSES)[number];
+
+export interface QuestObjectiveState {
+  index: number;
+  title: string;
+  status: QuestObjectiveStatus;
+  evidenceRef: string | null;
+  completedAt: Date | null;
+}
+
+export interface QuestState {
+  id: string;
+  householdId: string;
+  worldId: string;
+  storySessionId: string | null;
+  title: string;
+  summary: string;
+  objectives: QuestObjectiveState[];
+  status: QuestStatus;
+  version: number;
+  evidenceRef: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}

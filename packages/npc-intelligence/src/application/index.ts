@@ -60,3 +60,30 @@ export type {
 } from "./opportunity-safety-filter.service";
 export { OpportunityDeliveryService } from "./opportunity-delivery.service";
 export type { OpportunityDeliveryInput } from "./opportunity-delivery.service";
+export {
+  RumorPropagationEngine,
+  DEFAULT_MAX_RECIPIENTS,
+  DEFAULT_MIN_TRUST,
+} from "./rumor-propagation.service";
+export type {
+  RumorPropagationInput,
+  RumorPropagationIntent,
+  RumorPropagationResult,
+} from "./rumor-propagation.service";
+export { RumorLedgerService } from "./rumor-ledger.service";
+export type {
+  RumorLedgerGateInput,
+  RumorLedgerGateResult,
+} from "./rumor-ledger.service";
+export { HearsayAdoptionService } from "./hearsay-adoption.service";
+export type {
+  HearsayAdoptionInput,
+  HearsayAdoptionResult,
+} from "./hearsay-adoption.service";
+export { RumorPropagationOrchestrator } from "./rumor-propagation-orchestrator.service";
+export type {
+  RumorPropagationOrchestratorInput,
+  RumorPropagationOrchestratorResult,
+} from "./rumor-propagation-orchestrator.service";
+export { RumorSafetyFilter, RUMOR_SAFETY_BOUNDARY } from "./rumor-safety-filter.service";
+export type { RumorSafetyCheckInput, RumorSafetyCheckResult } from "./rumor-safety-filter.service";

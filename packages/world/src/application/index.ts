@@ -45,3 +45,26 @@ export {
 } from "./world-auth.service";
 
 export { getWorldDetail, __setTestDetailDb } from "./world-detail.service";
+
+export {
+  createQuest,
+  activateQuest,
+  progressObjective,
+  pauseQuest,
+  resumeQuest,
+  abandonQuest,
+  getQuestById,
+  getQuestsByWorldId,
+  __setTestQuestDb,
+  __setTestQuestRepo,
+} from "./quest.service";
+
+export {
+  applyQuestChange,
+  __setTestQuestChangeDb,
+  __setTestQuestChangeRepo,
+} from "./quest-change-applicator.service";
+export type {
+  QuestWorldChangeInput,
+  ApplyQuestChangeResult,
+} from "./quest-change-applicator.service";

@@ -15,3 +15,8 @@ apps/web/.env.local
 packages/profiles/node_modules/
 packages/profiles/.turbo/
 apps/web/.next-e2e/
+
+# Graphify exploration artifacts
+.graphify_detect.json
+.graphify_python
+graphify-out/

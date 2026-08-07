@@ -89,6 +89,36 @@ export const CHECKPOINT_TYPES = [
 ] as const;
 export type CheckpointType = (typeof CHECKPOINT_TYPES)[number];
 
+export const HOOK_TYPES = [
+  "rumor",
+  "gift",
+  "warning",
+  "invitation",
+  "quest_seed",
+  "social_visit",
+  "information_share",
+] as const;
+export type HookType = (typeof HOOK_TYPES)[number];
+
+export interface StoryHookState {
+  id: string;
+  householdId: string;
+  childProfileId: string;
+  storySessionId: string;
+  worldId: string;
+  opportunityId: string;
+  hookType: HookType;
+  sourceNpcId: string;
+  targetNpcId: string | null;
+  payload: Record<string, unknown>;
+  constraints: Record<string, unknown>;
+  sceneType: SceneType;
+  status: "pending" | "delivered" | "consumed" | "expired";
+  version: number;
+  createdAt: Date;
+  consumedAt: Date | null;
+}
+
 export const STORY_EVENT_TYPES = [
   "STORY_DEFINITION_CREATED",
   "STORY_VERSION_CREATED",
@@ -107,6 +137,7 @@ export const STORY_EVENT_TYPES = [
   "STORY_WORLD_COMMIT_COMPENSATED",
   "INDIRECT_EFFECT_APPLIED",
   "INDIRECT_EFFECT_FAILED",
+  "STORY_HOOK_CREATED",
 ] as const;
 export type StoryEventType = (typeof STORY_EVENT_TYPES)[number];
 
@@ -283,6 +314,17 @@ export function assertKnownPlaybackMode(
     throw new ValidationError(
       "INVALID_PLAYBACK_MODE",
       `Invalid playback mode: ${value}`,
+    );
+  }
+}
+
+export function assertKnownHookType(
+  value: string,
+): asserts value is HookType {
+  if (!(HOOK_TYPES as readonly string[]).includes(value)) {
+    throw new ValidationError(
+      "INVALID_HOOK_TYPE",
+      `Invalid hook type: ${value}`,
     );
   }
 }

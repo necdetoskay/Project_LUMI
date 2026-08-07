@@ -10,6 +10,7 @@ import { worldCharacterMovementEvents } from "./character-movement-events";
 import { worldEnvironmentSnapshots } from "./environment-snapshots";
 import { worldLocationConnections } from "./location-connections";
 import { worldCharacterResidences } from "./residences";
+import { quests, questObjectives } from "./quests";
 
 export const worldsRelations = relations(worlds, ({ many }) => ({
   regions: many(worldRegions),
@@ -22,6 +23,7 @@ export const worldsRelations = relations(worlds, ({ many }) => ({
   environmentSnapshots: many(worldEnvironmentSnapshots),
   locationConnections: many(worldLocationConnections),
   residences: many(worldCharacterResidences),
+  quests: many(quests),
 }));
 
 export const worldRegionsRelations = relations(worldRegions, () => ({}));
@@ -53,5 +55,12 @@ export const worldLocationConnectionsRelations = relations(
 );
 export const worldCharacterResidencesRelations = relations(
   worldCharacterResidences,
+  () => ({}),
+);
+export const questsRelations = relations(quests, ({ many }) => ({
+  objectives: many(questObjectives),
+}));
+export const questObjectivesRelations = relations(
+  questObjectives,
   () => ({}),
 );

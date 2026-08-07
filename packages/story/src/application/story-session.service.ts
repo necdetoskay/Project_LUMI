@@ -3,10 +3,11 @@ import { StorySession } from "../domain";
 import { ValidationError, NotFoundError } from "../domain/errors";
 import { getStoryDb } from "./db";
 import { recordStoryEventWithTx } from "./story-event-store.service";
+import { selectNextSceneForHook } from "./hook-scene-mapping.service";
 import { commitOutcomeWithTx } from "./world-commit.service";
 import { hashObject } from "./hash";
 import type { Database, QueryExecutor } from "../db/client";
-import type { ParticipationRole, PlaybackMode } from "../domain/story-types";
+import type { ParticipationRole, PlaybackMode, SceneType } from "../domain/story-types";
 import {
   assertKnownSessionStatus,
   assertKnownPlaybackMode,
@@ -56,6 +57,12 @@ export interface AdvanceSessionInput {
   idempotencyKey?: string | undefined;
   actorUserId?: string | undefined;
   contextSnapshot?: Record<string, unknown> | undefined;
+  /**
+   * Optional pending story hook (S27-T06). When provided and the caller has
+   * not pinned `nextSceneId`, the hook's mapped scene type influences which
+   * unvisited scene is selected next (deterministic, lowest sequence wins).
+   */
+  pendingHook?: { sceneType: SceneType } | undefined;
   /**
    * Optional world-outcome to commit atomically with this advance (S22-T06).
    * When provided, the story-session advance and the world commit share one
@@ -575,9 +582,14 @@ export async function advanceSession(input: AdvanceSessionInput) {
     }
   }
 
-  const nextScene = await repo.findSceneById(db, input.nextSceneId);
+  const nextSceneId = await resolveAdvanceSceneId(db, repo, {
+    record,
+    requestedSceneId: input.nextSceneId,
+    pendingHook: input.pendingHook,
+  });
+  const nextScene = await repo.findSceneById(db, nextSceneId);
   if (!nextScene || nextScene.storyVersionId !== record.storyVersionId) {
-    throw new NotFoundError("Scene", input.nextSceneId);
+    throw new NotFoundError("Scene", nextSceneId);
   }
 
   const session = sessionFromRecord(record);
@@ -587,7 +599,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
       "Session version conflict; reload current state",
     );
   }
-  session.advance(input.nextSceneId);
+  session.advance(nextSceneId);
   const newState = session.getState();
 
   return db.transaction(async (tx) => {
@@ -619,7 +631,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
     await repo.createSceneVisit(tx, {
       id: crypto.randomUUID(),
       storySessionId: input.sessionId,
-      sceneId: input.nextSceneId,
+      sceneId: nextSceneId,
       visitSequence: nextSequence,
       visitReason: "advance",
       enteredAt: new Date(),
@@ -628,7 +640,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
     const latest = await repo.findLatestCheckpoint(tx, input.sessionId);
     const checkpointSequence = latest ? latest.sequenceNumber + 1 : 1;
     const contentHash = await buildSessionStateHash(input.sessionId, {
-      sceneId: input.nextSceneId,
+      sceneId: nextSceneId,
       status: newState.sessionStatus,
       version: newState.version,
       snapshot: newState.contextSnapshot,
@@ -636,7 +648,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
     await repo.createCheckpoint(tx, {
       id: crypto.randomUUID(),
       storySessionId: input.sessionId,
-      sceneId: input.nextSceneId,
+      sceneId: nextSceneId,
       checkpointType: "automatic",
       schemaVersion: 1,
       sessionState: newState.contextSnapshot,
@@ -651,7 +663,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
       aggregateVersion: newState.version,
       actorHouseholdId: record.householdId,
       payload: {
-        sceneId: input.nextSceneId,
+        sceneId: nextSceneId,
       },
     });
 
@@ -681,6 +693,39 @@ export async function advanceSession(input: AdvanceSessionInput) {
 
     return getSessionPlaybackStateFromRecord(input.sessionId);
   });
+}
+
+interface ResolveAdvanceSceneParams {
+  record: { storyVersionId: string; id: string };
+  requestedSceneId: string;
+  pendingHook?: { sceneType: SceneType } | undefined;
+}
+
+/**
+ * Resolves the next scene id for an advance (S27-T06). When a pending story
+ * hook is supplied, the hook's mapped scene type influences the selection:
+ * the first unvisited scene of that type (lowest sequence) wins. Without a
+ * hook (or when nothing matches), the caller's requested scene id is used.
+ */
+async function resolveAdvanceSceneId(
+  db: Database,
+  repo: DrizzleStoryRepository,
+  params: ResolveAdvanceSceneParams,
+): Promise<string> {
+  if (!params.pendingHook) {
+    return params.requestedSceneId;
+  }
+  const [scenes, visits] = await Promise.all([
+    repo.findScenesByVersion(db, params.record.storyVersionId),
+    repo.findSceneVisitsBySession(db, params.record.id),
+  ]);
+  const visited = new Set(visits.map((v) => v.sceneId));
+  const selected = selectNextSceneForHook(
+    params.pendingHook,
+    scenes,
+    visited,
+  );
+  return selected ? selected.id : params.requestedSceneId;
 }
 
 export async function getSessionPlaybackState(sessionId: string) {

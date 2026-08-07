@@ -34,6 +34,7 @@ const mockRepo = {
   upsertWorldVersion: vi.fn(),
   findSessionCharacters: vi.fn(),
   findSessionByChildProfile: vi.fn(),
+  findScenesByVersion: vi.fn(),
 };
 
 vi.mock("../../src/db/repositories/drizzle/drizzle-story.repository", () => ({
@@ -54,6 +55,7 @@ vi.mock("../../src/db/repositories/drizzle/drizzle-story.repository", () => ({
     enqueueOutbox = mockRepo.enqueueOutbox;
     upsertWorldVersion = mockRepo.upsertWorldVersion;
     findSessionCharacters = mockRepo.findSessionCharacters;
+    findScenesByVersion = mockRepo.findScenesByVersion;
   },
 }));
 
@@ -209,5 +211,49 @@ describe("advanceSession + outcome commit (S22-T06 E2E)", () => {
     expect(mockRepo.recordCommit).not.toHaveBeenCalled();
     expect(mockRepo.upsertWorldVersion).not.toHaveBeenCalled();
     expect(mockRepo.updateSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("selects a scene matching a pending hook's scene type during advance", async () => {
+    const choiceSceneId = "00000000-0000-4000-8000-000000000060";
+    const scenes = [
+      { id: NEXT_SCENE_ID, sceneType: "narrative", sequenceNumber: 1 },
+      { id: choiceSceneId, sceneType: "choice", sequenceNumber: 2 },
+    ];
+    mockRepo.findScenesByVersion.mockResolvedValue(scenes);
+    mockRepo.findSceneVisitsBySession.mockResolvedValue([]);
+
+    await advanceSession({
+      sessionId: SESSION_ID,
+      expectedVersion: 1,
+      nextSceneId: NEXT_SCENE_ID,
+      pendingHook: { sceneType: "choice" },
+    });
+
+    expect(mockRepo.findScenesByVersion).toHaveBeenCalledTimes(1);
+    expect(mockRepo.updateSession).toHaveBeenCalledWith(
+      expect.anything(),
+      SESSION_ID,
+      expect.objectContaining({ currentSceneId: choiceSceneId }),
+      expect.anything(),
+    );
+    const createdVisit = mockRepo.createSceneVisit.mock.calls[0]![1];
+    expect(createdVisit.sceneId).toBe(choiceSceneId);
+  });
+
+  it("keeps the requested scene when pending hook type has no unvisited match", async () => {
+    const scenes = [{ id: NEXT_SCENE_ID, sceneType: "narrative", sequenceNumber: 1 }];
+    mockRepo.findScenesByVersion.mockResolvedValue(scenes);
+    mockRepo.findSceneVisitsBySession.mockResolvedValue([]);
+
+    await advanceSession({
+      sessionId: SESSION_ID,
+      expectedVersion: 1,
+      nextSceneId: NEXT_SCENE_ID,
+      pendingHook: { sceneType: "ending" },
+    });
+
+    expect(mockRepo.createSceneVisit.mock.calls[0]![1].sceneId).toBe(
+      NEXT_SCENE_ID,
+    );
   });
 });

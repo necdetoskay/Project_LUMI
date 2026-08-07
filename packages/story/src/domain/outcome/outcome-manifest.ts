@@ -11,6 +11,7 @@ export const OUTCOME_TYPES = [
   "location_condition_update",
   "environment_change",
   "scheduled_event_trigger",
+  "quest_state_update",
 ] as const;
 export type OutcomeType = (typeof OUTCOME_TYPES)[number];
 

@@ -14,6 +14,7 @@ export const NARRATIVE_EVENT_TYPES = [
   "location_condition_changed",
   "environment_changed",
   "scheduled_event_created",
+  "quest_objective_progressed",
 ] as const;
 export type NarrativeEventType = (typeof NARRATIVE_EVENT_TYPES)[number];
 
@@ -58,6 +59,7 @@ const OUTCOME_TO_NARRATIVE: Record<OutcomeType, NarrativeEventType> = {
   location_condition_update: "location_condition_changed",
   environment_change: "environment_changed",
   scheduled_event_trigger: "scheduled_event_created",
+  quest_state_update: "quest_objective_progressed",
 };
 
 export class NarrativeEventExtractor {
