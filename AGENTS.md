@@ -8,7 +8,7 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 
 - `apps/web` — Next.js application, API routes, parent/child UI.
 - `packages/profiles` — parent auth, households, child profiles, parent policy.
-- `packages/world` — world definition, regions, locations, homes, inventory.
+- `packages/world` — world definition, regions, locations, homes, inventory, quests, quest templates.
 - `packages/story` — story definitions, versions, sessions, choice/consequence engine.
 - `packages/prompts` — versioned prompt registry and typed template renderer.
 - `packages/context` — deterministic context builder and safety/parent precedence policy.
@@ -115,4 +115,12 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 
 - Sprint 28 tamamlandı: T01–T07 tüm görevler yeşil (`@lumi/world` 101 unit, `@lumi/story` 112 unit).
 - `pnpm build` + `check-mojibake` green.
-- Kalan backlog: quest templates (authored quest definitions), quest log UI (Story Reader), `quest_seed` interaction → quest automation, accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile).</think>
+- Kalan backlog: quest templates (authored quest definitions), quest log UI (Story Reader), `quest_seed` interaction → quest automation, accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile).
+
+- Sprint 29 — Quest Templates [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-29/SPRINT_SPEC.md`; S29-T01 `QuestTemplate` domain aggregate (keyed `templateKey`, N>=1 ordered objective defs key+title, `validateTemplateKey`/`validateObjectiveKey`, additive-only) ✅, 7 unit test; S29-T02 `quest_templates` + `quest_template_objectives` Drizzle schema + relations + forward-only migration `0007_quest_templates.sql` (unique `template_key`) ✅; S29-T03 `QuestTemplateService` (`createQuestTemplate`/`getQuestTemplateByKey`/`listQuestTemplates`) + `QuestTemplateRepository` port + `DrizzleQuestTemplateRepository` ✅, 7 service test; S29-T04 `instantiateQuestFromTemplate` (template → S28 `Quest` wiring: objectives mapping, `inactive`, household/world/session bind, `QuestService` üzerinden persist) ✅, unit + guarded integration; S29-T05 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-29/S29_T05_VALIDATION_EVIDENCE.md`), `@lumi/world` 115 unit (101 önceki + 14 yeni); `pnpm format:check | lint | typecheck | test | build` + check-mojibake green. Kapsar: S28 closeout'tan kalan *quest templates* backlog adımı. PR #36.)
+
+### Sprint 29 closeout
+
+- Sprint 29 tamamlandı: T01–T05 tüm görevler yeşil (`@lumi/world` 115 unit test).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: quest log UI (Story Reader), `quest_seed` interaction → quest automation (template → quest), accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile), template authoring UI/versioning.
