@@ -156,3 +156,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 33 tamamlandı: T01–T05 tüm görevler yeşil (`@lumi/world` 144 unit, `@lumi/story` 136 unit).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: real `acquireItem` web adapter for `InventoryGrantPort`, generated scene → `advanceSession`/reader wiring + web settings port adapter, production accept route / opportunity inbox persistence / `respond`→`createHook` wiring (accept akışı), worker/web outbox propagator loop, template authoring UI/versioning.
+
+- Sprint 34 — Production Accept Flow (opportunity inbox + accept route + hook wiring) [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-34/SPRINT_SPEC.md`; S34-T01 migration `0002_opportunity_inbox.sql` + `DrizzleOpportunityInboxRepository` (`OpportunityInboxPort` impl — deliver idempotent by key, findByIdempotencyKey, findById household-scoped, listProposedForChild, transitionStatus, markExpired) ✅, guarded `opportunity-inbox.integration.test.ts`; S34-T02 port `findById` + `OpportunityDeliveryService.respond` domain-guard (accept/decline/defer) + `listProposedForChild` service wrapper ✅, 4 yeni unit test; S34-T03 web `GET /api/interactions/opportunities` + `POST /api/interactions/opportunities/[opportunityId]/respond` (declined/deferred transition; accepted → world/session resolve → `StoryHookService.createHook`), `@lumi/npc-intelligence` web dep ✅, 8 web route testi; S34-T04 `quest_seed` accept → `quest_seed_automation` enqueue (S31) wiring ✅; S34-T05 missing world/session → 404 + web deps ✅; S34-T06 evidence ✅: `docs/07-delivery/lumi/sprint-34/S34_T06_VALIDATION_EVIDENCE.md`). `@lumi/npc-intelligence` 171 unit + `@lumi/web` 152 unit green; `pnpm format:check | lint | typecheck | test | build` + check-mojibake green. Kapsar: S33 closeout'tan kalan _accept akışı_ backlog adımı.)
+
+### Sprint 34 closeout
+
+- Sprint 34 tamamlandı: T01–T06 tüm görevler yeşil (`@lumi/npc-intelligence` 171 unit, `@lumi/web` 152 unit).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: worker/web outbox propagator loop + applicator dispatch + deployment (worker Dockerfile/compose), real `acquireItem` web adapter for `InventoryGrantPort`, generated scene → `advanceSession`/reader wiring + web settings port adapter, template authoring UI/versioning.

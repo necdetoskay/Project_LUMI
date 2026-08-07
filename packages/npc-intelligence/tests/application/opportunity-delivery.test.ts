@@ -12,17 +12,26 @@ const NOW = new Date("2026-08-06T12:00:00Z");
 class InMemoryInbox implements OpportunityInboxPort {
   items = new Map<string, InteractionOpportunity>();
   statuses = new Map<string, string>();
+  keys = new Map<string, string>();
 
-  async deliver(o: InteractionOpportunity): Promise<void> {
+  async deliver(o: InteractionOpportunity, key: string): Promise<void> {
     this.items.set(o.id, o);
+    this.keys.set(o.id, key);
   }
   async findByIdempotencyKey(
     householdId: string,
     key: string,
   ): Promise<InteractionOpportunity | undefined> {
     return [...this.items.values()].find(
-      (o) => o.householdId === householdId && o.cooldownKeys.includes(key),
+      (o) => o.householdId === householdId && this.keys.get(o.id) === key,
     );
+  }
+  async findById(
+    householdId: string,
+    opportunityId: string,
+  ): Promise<InteractionOpportunity | undefined> {
+    const item = this.items.get(opportunityId);
+    return item && item.householdId === householdId ? item : undefined;
   }
   async listProposedForChild(
     householdId: string,
@@ -137,7 +146,7 @@ describe("OpportunityDeliveryService", () => {
     const inbox = new InMemoryInbox();
     const service = new OpportunityDeliveryService(inbox);
     const o = makeOpportunity();
-    await inbox.deliver(o);
+    await inbox.deliver(o, "k1");
     await service.respond(HOUSEHOLD, o.id, "declined", NOW);
     expect(inbox.statuses.get(o.id)).toBe("declined");
   });
@@ -149,12 +158,67 @@ describe("OpportunityDeliveryService", () => {
     const stale = makeOpportunity({
       expiresAt: new Date(Date.now() - 5000),
     });
-    await inbox.deliver(fresh);
-    await inbox.deliver(stale);
+    await inbox.deliver(fresh, "k1");
+    await inbox.deliver(stale, "k2");
     const count = await service.expireStale(HOUSEHOLD, CHILD, new Date());
     expect(count).toBe(1);
     expect(inbox.statuses.get(stale.id)).toBe("expired");
     expect(inbox.statuses.get(fresh.id)).toBeUndefined();
+  });
+
+  it("rejects responding to an expired opportunity", async () => {
+    const inbox = new InMemoryInbox();
+    const service = new OpportunityDeliveryService(inbox);
+    const o = makeOpportunity({
+      expiresAt: new Date(Date.now() - 5000),
+    });
+    await inbox.deliver(o, "k-expired");
+
+    await expect(
+      service.respond(HOUSEHOLD, o.id, "accepted", new Date()),
+    ).rejects.toThrow("Opportunity has expired");
+  });
+
+  it("rejects responding to a non-proposed opportunity", async () => {
+    const inbox = new InMemoryInbox();
+    const service = new OpportunityDeliveryService(inbox);
+    const o = makeOpportunity();
+    await inbox.deliver(o, "k1");
+    await service.respond(HOUSEHOLD, o.id, "declined", NOW);
+
+    await expect(
+      service.respond(HOUSEHOLD, o.id, "accepted", NOW),
+    ).rejects.toThrow("only proposed can be responded to");
+  });
+
+  it("rejects responding to an opportunity from another household", async () => {
+    const inbox = new InMemoryInbox();
+    const service = new OpportunityDeliveryService(inbox);
+    const o = makeOpportunity();
+    await inbox.deliver(o, "k1");
+
+    await expect(
+      service.respond("hh-other", o.id, "accepted", NOW),
+    ).rejects.toThrow("not found");
+  });
+
+  it("lists proposed opportunities for a child", async () => {
+    const inbox = new InMemoryInbox();
+    const service = new OpportunityDeliveryService(inbox);
+    const o = makeOpportunity();
+    const expired = makeOpportunity({
+      expiresAt: new Date(Date.now() - 5000),
+    });
+    await inbox.deliver(o, "k1");
+    await inbox.deliver(expired, "k2");
+
+    const list = await service.listProposedForChild(
+      HOUSEHOLD,
+      CHILD,
+      new Date(),
+    );
+    expect(list).toHaveLength(1);
+    expect(list[0]?.id).toBe(o.id);
   });
 
   it("enforces household isolation on delivery", async () => {
