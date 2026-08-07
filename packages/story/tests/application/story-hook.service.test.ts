@@ -166,4 +166,77 @@ describe("StoryHookService", () => {
     expect(result.hook.status).toBe("pending");
     expect(result.hook.version).toBe(1);
   });
+
+  it("enqueues a quest_seed_automation intent for a quest_seed hook", async () => {
+    const service = new StoryHookService();
+    const result = await service.createHook(
+      makeInput({
+        hookType: "quest_seed",
+        sceneType: "narrative",
+        payload: { factId: "lost-letter", claim: "a lost letter" },
+      }),
+    );
+
+    expect(result.created).toBe(true);
+    // story_hook_delivery + quest_seed_automation
+    expect(mockRepo.enqueueOutbox).toHaveBeenCalledTimes(2);
+
+    const intents = mockRepo.enqueueOutbox.mock.calls.map(
+      (call) =>
+        call[1] as {
+          intentType: string;
+          idempotencyKey: string;
+          payload: Record<string, unknown>;
+        },
+    );
+    const delivery = intents.find(
+      (i) => i.intentType === "story_hook_delivery",
+    );
+    const automation = intents.find(
+      (i) => i.intentType === "quest_seed_automation",
+    );
+
+    expect(delivery).toBeDefined();
+    expect(automation).toBeDefined();
+    expect(automation!.idempotencyKey).toBe(`quest-seed:${result.hook.id}`);
+    expect(automation!.payload).toMatchObject({
+      hookId: result.hook.id,
+      opportunityId: OPPORTUNITY,
+      storySessionId: SESSION,
+      worldId: WORLD,
+      householdId: HOUSEHOLD,
+      factId: "lost-letter",
+      sourceNpcId: NPC_SOURCE,
+    });
+  });
+
+  it("enqueues only the delivery intent for a non-quest_seed hook", async () => {
+    const service = new StoryHookService();
+    await service.createHook(makeInput({ hookType: "rumor" }));
+
+    expect(mockRepo.enqueueOutbox).toHaveBeenCalledTimes(1);
+    const outbox = mockRepo.enqueueOutbox.mock.calls[0]![1] as {
+      intentType: string;
+    };
+    expect(outbox.intentType).toBe("story_hook_delivery");
+  });
+
+  it("propagates a missing factId as empty in the quest_seed intent payload", async () => {
+    const service = new StoryHookService();
+    await service.createHook(
+      makeInput({
+        hookType: "quest_seed",
+        payload: { claim: "no fact id" },
+      }),
+    );
+
+    const intents = mockRepo.enqueueOutbox.mock.calls.map(
+      (call) =>
+        call[1] as { intentType: string; payload: Record<string, unknown> },
+    );
+    const automation = intents.find(
+      (i) => i.intentType === "quest_seed_automation",
+    );
+    expect(automation?.payload.factId).toBe("");
+  });
 });

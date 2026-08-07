@@ -4,6 +4,10 @@ import type {
   QuestObjectiveRecord,
   NewQuestObjectiveRecord,
 } from "../../schema/world";
+import type {
+  WorldIdempotencyLedgerRecord,
+  NewWorldIdempotencyLedgerRecord,
+} from "../../schema/world";
 import type { QueryExecutor } from "../../client";
 
 export interface QuestRepository {
@@ -48,4 +52,17 @@ export interface QuestRepository {
     tx: { select: QueryExecutor["select"] },
     questId: string,
   ): Promise<QuestObjectiveRecord[]>;
+
+  recordIdempotency(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewWorldIdempotencyLedgerRecord,
+  ): Promise<WorldIdempotencyLedgerRecord>;
+
+  findIdempotency(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    worldId: string,
+    operationType: string,
+    idempotencyKey: string,
+  ): Promise<WorldIdempotencyLedgerRecord | undefined>;
 }

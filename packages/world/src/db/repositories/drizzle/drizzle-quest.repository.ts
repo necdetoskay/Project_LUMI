@@ -1,12 +1,18 @@
 import { eq } from "drizzle-orm";
+import { and } from "drizzle-orm";
 
 import type { QueryExecutor } from "../../client";
 import type { QuestRepository } from "../interfaces/quest.repository";
 import type {
   NewQuestRecord,
   NewQuestObjectiveRecord,
+  NewWorldIdempotencyLedgerRecord,
 } from "../../schema/world";
-import { quests, questObjectives } from "../../schema/world";
+import {
+  quests,
+  questObjectives,
+  worldIdempotencyLedger,
+} from "../../schema/world";
 
 export class DrizzleQuestRepository implements QuestRepository {
   async createQuest(
@@ -91,5 +97,39 @@ export class DrizzleQuestRepository implements QuestRepository {
       .from(questObjectives)
       .where(eq(questObjectives.questId, questId))
       .orderBy(questObjectives.objectiveIndex);
+  }
+
+  async recordIdempotency(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewWorldIdempotencyLedgerRecord,
+  ) {
+    const [row] = await tx
+      .insert(worldIdempotencyLedger)
+      .values(data)
+      .onConflictDoNothing()
+      .returning();
+    return row!;
+  }
+
+  async findIdempotency(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    worldId: string,
+    operationType: string,
+    idempotencyKey: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(worldIdempotencyLedger)
+      .where(
+        and(
+          eq(worldIdempotencyLedger.householdId, householdId),
+          eq(worldIdempotencyLedger.worldId, worldId),
+          eq(worldIdempotencyLedger.operationType, operationType),
+          eq(worldIdempotencyLedger.idempotencyKey, idempotencyKey),
+        ),
+      )
+      .limit(1);
+    return row;
   }
 }

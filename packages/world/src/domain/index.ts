@@ -23,6 +23,12 @@ export type {
   CreateQuestTemplateObjectiveInput,
 } from "./quest-template";
 export {
+  QuestSeedTemplateResolver,
+  assertKnownQuestSeedTemplateKey,
+  QUEST_SEED_TEMPLATE_REGISTRY,
+  QUEST_SEED_DEFAULT_TEMPLATE_KEY,
+} from "./quest-seed-template-resolver";
+export {
   DomainError,
   ValidationError,
   NotFoundError,
