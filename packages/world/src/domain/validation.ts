@@ -227,6 +227,38 @@ export function validateId(value: string, field: string): string {
   return value;
 }
 
+export function validateTemplateKey(value: string): string {
+  const trimmed = value.trim();
+  if (
+    trimmed.length < 1 ||
+    trimmed.length > 120 ||
+    !/^[a-z0-9_-]+$/.test(trimmed)
+  ) {
+    throw new ValidationError(
+      "INVALID_TEMPLATE_KEY",
+      "Template key must be 1-120 lowercase alphanumeric chars (a-z, 0-9, _, -)",
+      "templateKey",
+    );
+  }
+  return trimmed;
+}
+
+export function validateObjectiveKey(value: string): string {
+  const trimmed = value.trim();
+  if (
+    trimmed.length < 1 ||
+    trimmed.length > 120 ||
+    !/^[a-z0-9_-]+$/.test(trimmed)
+  ) {
+    throw new ValidationError(
+      "INVALID_OBJECTIVE_KEY",
+      "Objective key must be 1-120 lowercase alphanumeric chars (a-z, 0-9, _, -)",
+      "objectiveKey",
+    );
+  }
+  return trimmed;
+}
+
 export function validateQuestStatus(value: string): QuestStatus {
   if (!(QUEST_STATUSES as readonly string[]).includes(value)) {
     throw new ValidationError(
