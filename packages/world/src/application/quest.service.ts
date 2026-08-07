@@ -271,3 +271,17 @@ export async function getQuestsByWorldId(
   }
   return results;
 }
+
+export async function getQuestsBySessionId(
+  storySessionId: string,
+): Promise<QuestState[]> {
+  const db = getDb();
+  const repo = getRepo();
+  const quests = await repo.findQuestsBySessionId(db, storySessionId);
+  const results: QuestState[] = [];
+  for (const quest of quests) {
+    const objectives = await repo.findObjectivesByQuestId(db, quest.id);
+    results.push(questStateFromRows(quest, objectives));
+  }
+  return results;
+}

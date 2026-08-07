@@ -40,6 +40,22 @@ type CheckpointSummary = {
   createdAt: string;
 };
 
+type QuestObjectiveEntry = {
+  index: number;
+  title: string;
+  status: string;
+  statusLabel: string;
+};
+
+type QuestEntry = {
+  id: string;
+  title: string;
+  summary: string;
+  status: string;
+  statusLabel: string;
+  objectives: QuestObjectiveEntry[];
+};
+
 type ReaderPayload = {
   playback: {
     session: {
@@ -105,6 +121,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
   const [choiceHistory, setChoiceHistory] = useState<ChoiceHistoryEntry[]>([]);
   const [latestCheckpoint, setLatestCheckpoint] =
     useState<CheckpointSummary | null>(null);
+  const [quests, setQuests] = useState<QuestEntry[]>([]);
   const [auxWarnings, setAuxWarnings] = useState<string[]>([]);
   const [mediaWarnings, setMediaWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +152,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
         setChildProfile(null);
         setChoiceHistory([]);
         setLatestCheckpoint(null);
+        setQuests([]);
         return;
       }
 
@@ -143,16 +161,21 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
       const readerUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/reader?householdId=${encodeURIComponent(nextHouseholdId)}`;
       const historyUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/choices/history?householdId=${encodeURIComponent(nextHouseholdId)}`;
       const checkpointUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/checkpoints/latest?householdId=${encodeURIComponent(nextHouseholdId)}`;
+      const questsUrl = `/api/stories/sessions/${encodeURIComponent(sessionId)}/quests?householdId=${encodeURIComponent(nextHouseholdId)}`;
 
-      const [readerRes, historyResult, checkpointResult] = await Promise.all([
-        fetch(readerUrl),
-        fetch(historyUrl)
-          .then((response) => ({ ok: true as const, response }))
-          .catch(() => ({ ok: false as const })),
-        fetch(checkpointUrl)
-          .then((response) => ({ ok: true as const, response }))
-          .catch(() => ({ ok: false as const })),
-      ]);
+      const [readerRes, historyResult, checkpointResult, questsResult] =
+        await Promise.all([
+          fetch(readerUrl),
+          fetch(historyUrl)
+            .then((response) => ({ ok: true as const, response }))
+            .catch(() => ({ ok: false as const })),
+          fetch(checkpointUrl)
+            .then((response) => ({ ok: true as const, response }))
+            .catch(() => ({ ok: false as const })),
+          fetch(questsUrl)
+            .then((response) => ({ ok: true as const, response }))
+            .catch(() => ({ ok: false as const })),
+        ]);
 
       if (!readerRes.ok) {
         const body = (await readerRes.json()) as { message?: string };
@@ -161,6 +184,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
         setChildProfile(null);
         setChoiceHistory([]);
         setLatestCheckpoint(null);
+        setQuests([]);
         return;
       }
 
@@ -220,6 +244,21 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
         nextWarnings.push("Checkpoint ozeti su anda yuklenemedi.");
       }
 
+      if (questsResult.ok && questsResult.response.ok) {
+        try {
+          const body = (await questsResult.response.json()) as {
+            quests?: QuestEntry[];
+          };
+          setQuests(body.quests ?? []);
+        } catch {
+          setQuests([]);
+          nextWarnings.push("Gorev listesi su anda yuklenemedi.");
+        }
+      } else {
+        setQuests([]);
+        nextWarnings.push("Gorev listesi su anda yuklenemedi.");
+      }
+
       setAuxWarnings(nextWarnings);
     } catch {
       setError("Story Reader yuklenirken bir hata olustu.");
@@ -227,6 +266,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
       setChildProfile(null);
       setChoiceHistory([]);
       setLatestCheckpoint(null);
+      setQuests([]);
       setAuxWarnings([]);
     } finally {
       setLoading(false);
@@ -897,6 +937,67 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
         ) : (
           <p className="mt-4 text-sm text-on-surface-variant">
             Bu sahne icin kullanilabilir secim bulunmuyor.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
+        <div className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
+          <span className="material-symbols-outlined text-[18px]">flag</span>
+          Gorev listesi
+        </div>
+        {quests.length > 0 ? (
+          <div className="mt-6 space-y-4">
+            {quests.map((quest) => (
+              <div
+                key={quest.id}
+                className="rounded-xl border border-outline-variant bg-surface-container-low p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-on-surface">
+                    {quest.title}
+                  </p>
+                  <span className="inline-flex items-center rounded-full border border-outline-variant bg-white px-3 py-1 text-xs font-semibold text-on-surface-variant">
+                    {quest.statusLabel}
+                  </span>
+                </div>
+                {quest.summary ? (
+                  <p className="mt-2 text-sm text-on-surface-variant">
+                    {quest.summary}
+                  </p>
+                ) : null}
+                <div className="mt-3 space-y-2">
+                  {quest.objectives.map((objective) => (
+                    <div
+                      key={objective.index}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <span
+                        className={
+                          objective.status === "completed"
+                            ? "material-symbols-outlined text-[16px] text-primary"
+                            : "material-symbols-outlined text-[16px] text-on-surface-variant"
+                        }
+                      >
+                        {objective.status === "completed"
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
+                      </span>
+                      <span className="flex-1 text-on-surface">
+                        {objective.title}
+                      </span>
+                      <span className="text-xs text-on-surface-variant">
+                        {objective.statusLabel}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-on-surface-variant">
+            Bu oturumda aktif gorev bulunmuyor.
           </p>
         )}
       </section>

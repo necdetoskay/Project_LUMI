@@ -8,6 +8,7 @@ import {
   abandonQuest,
   getQuestById,
   getQuestsByWorldId,
+  getQuestsBySessionId,
   __setTestQuestRepo,
   __setTestQuestDb,
 } from "../../src/application/quest.service";
@@ -242,6 +243,15 @@ describe("QuestService", () => {
     __setTestQuestRepo(repo);
 
     const quests = await getQuestsByWorldId(WORLD);
+    expect(quests).toHaveLength(1);
+  });
+
+  it("lists quests by session", async () => {
+    const repo = createMockRepo();
+    repo.setState(makeState({ status: "active", storySessionId: "session-1" }));
+    __setTestQuestRepo(repo);
+
+    const quests = await getQuestsBySessionId("session-1");
     expect(quests).toHaveLength(1);
   });
 });
