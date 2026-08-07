@@ -140,3 +140,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 31 tamamlandı: T01–T05 tüm görevler yeşil (`@lumi/world` 130 unit, `@lumi/story` 115 unit).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: production accept route / opportunity inbox persistence / `respond`→`createHook` wiring (accept akışı), worker/web outbox propagator loop, accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile), template authoring UI/versioning.
+
+- Sprint 32 — Accepted Hook → Story Generation (LLM rendering) [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-32/SPRINT_SPEC.md`; S32-T01 `HookSceneBrief` + `buildHookSceneBrief` ✅ (`@lumi/story` domain — her `HookType` için deterministik typed payload normalizasyonu, unknown alanlar bounded summary, saf/throws etmez), 7 unit test; S32-T02 `buildStoryScenePrompt` + `parseAndValidateSceneOutput` + `SCENE_NARRATIVE_MAX` ✅ (deterministik Türkçe prompt — boundary + age band + locale + JSON schema; schema validation + 4000 cap), 8 unit test; S32-T03 `StorySceneLlmSettingsPort` + `LlmConfigError`/`LlmGenerationError` + `StorySceneGenerationService.generateSceneFromHook` ✅ (port-driven, story `@lumi/profiles` import etmez; JSON-mode call, parse+validate, bounded retry fresh nonce), 5 unit test; S32-T04 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-32/S32_T04_VALIDATION_EVIDENCE.md`). `@lumi/story` 135 unit green; `pnpm format:check | lint | typecheck | test | build` + check-mojibake green. Kapsar: S31 closeout'tan kalan _accepted hook → story generation pipeline (LLM rendering)_ backlog adımı.)
+
+### Sprint 32 closeout
+
+- Sprint 32 tamamlandı: T01–T04 tüm görevler yeşil (`@lumi/story` 135 unit test).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: generated scene → `advanceSession`/reader wiring + web settings port adapter, production accept route / opportunity inbox persistence / `respond`→`createHook` wiring (accept akışı), worker/web outbox propagator loop, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile), template authoring UI/versioning.
