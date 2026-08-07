@@ -282,3 +282,31 @@ export function validateQuestObjectiveStatus(
   }
   return value as QuestObjectiveStatus;
 }
+
+export interface QuestRewardInput {
+  itemDefinitionKey: string;
+  quantity: number;
+}
+
+export function validateReward(value: QuestRewardInput): {
+  itemDefinitionKey: string;
+  quantity: number;
+} {
+  const itemDefinitionKey = value.itemDefinitionKey.trim();
+  if (itemDefinitionKey.length < 1 || itemDefinitionKey.length > 120) {
+    throw new ValidationError(
+      "INVALID_REWARD_ITEM_KEY",
+      "Reward item definition key must be 1-120 characters",
+      "reward.itemDefinitionKey",
+    );
+  }
+  const quantity = Math.floor(value.quantity);
+  if (!Number.isFinite(quantity) || quantity < 1) {
+    throw new ValidationError(
+      "INVALID_REWARD_QUANTITY",
+      "Reward quantity must be a positive integer",
+      "reward.quantity",
+    );
+  }
+  return { itemDefinitionKey, quantity };
+}

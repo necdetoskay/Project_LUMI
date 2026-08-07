@@ -10,6 +10,7 @@ import type {
   QuestStatus,
   QuestObjectiveState,
   QuestObjectiveStatus,
+  QuestRewardState,
 } from "./world-types";
 
 export interface CreateQuestObjectiveInput {
@@ -24,6 +25,7 @@ export interface CreateQuestInput {
   title: string;
   summary: string;
   objectives: CreateQuestObjectiveInput[];
+  reward?: QuestRewardState | null;
 }
 
 export interface ProgressObjectiveInput {
@@ -63,6 +65,7 @@ export class Quest {
       title: validateDisplayName(input.title),
       summary: input.summary,
       objectives,
+      reward: input.reward ? { ...input.reward } : null,
       status: "inactive",
       version: 1,
       evidenceRef: null,

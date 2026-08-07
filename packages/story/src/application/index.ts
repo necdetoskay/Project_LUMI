@@ -109,6 +109,12 @@ export { StoryHookDeliveryApplicator } from "./story-hook-delivery-applicator.se
 export { StoryHookService } from "./story-hook.service";
 export type { StoryHookResult } from "./story-hook.service";
 
+export {
+  enqueueQuestRewardIntent,
+  __setTestQuestRewardOutboxDb,
+} from "./quest-reward-outbox.service";
+export type { EnqueueQuestRewardInput } from "./quest-reward-outbox.service";
+
 export { buildHookSceneBrief } from "../domain/hook-scene-brief";
 export type { HookSceneBrief } from "../domain/hook-scene-brief";
 

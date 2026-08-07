@@ -1,5 +1,9 @@
 import { Quest } from "../domain/quest";
-import type { QuestObjectiveState, QuestState } from "../domain/world-types";
+import type {
+  QuestObjectiveState,
+  QuestRewardState,
+  QuestState,
+} from "../domain/world-types";
 import { NotFoundError } from "../domain/errors";
 import { DrizzleQuestRepository } from "../db/repositories/drizzle/drizzle-quest.repository";
 import type { QuestRepository } from "../db/repositories/interfaces/quest.repository";
@@ -42,7 +46,13 @@ export interface QuestWorldChangeInput {
   evidenceRef: string;
 }
 
-export type ApplyQuestChangeResult = "applied" | "skipped";
+export interface ApplyQuestChangeResult {
+  status: "applied" | "skipped";
+  /** True only on the transition that completed the quest (S33 reward hook). */
+  questCompleted: boolean;
+  /** The quest's authored reward, when completed and a reward is defined. */
+  reward: QuestRewardState | null;
+}
 
 function objectiveStateFromRow(row: {
   id: string;
@@ -72,6 +82,7 @@ function questStateFromRows(
     status: string;
     version: number;
     evidenceRef: string | null;
+    reward: unknown;
     createdAt: Date;
     updatedAt: Date;
   },
@@ -94,6 +105,7 @@ function questStateFromRows(
     status: quest.status as QuestState["status"],
     version: quest.version,
     evidenceRef: quest.evidenceRef,
+    reward: (quest.reward as QuestState["reward"]) ?? null,
     createdAt: quest.createdAt,
     updatedAt: quest.updatedAt,
     objectives: objectives.map(objectiveStateFromRow),
@@ -136,15 +148,17 @@ export function applyQuestChange(
       objective.status === input.status &&
       objective.evidenceRef === input.evidenceRef
     ) {
-      return "skipped";
+      return { status: "skipped", questCompleted: false, reward: null };
     }
 
+    const wasCompleted = state.status === "completed";
     const quest = Quest.fromState(state);
     quest.progressObjective({
       objectiveIndex: input.objectiveIndex,
       evidenceRef: input.evidenceRef,
     });
     const after = quest.getState();
+    const questCompleted = !wasCompleted && after.status === "completed";
 
     await repo.updateQuest(tx, input.questId, {
       status: after.status,
@@ -171,6 +185,10 @@ export function applyQuestChange(
       completedAt: updated.completedAt,
     });
 
-    return "applied";
+    return {
+      status: "applied",
+      questCompleted,
+      reward: questCompleted ? (after.reward ?? null) : null,
+    };
   });
 }

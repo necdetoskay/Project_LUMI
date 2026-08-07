@@ -245,6 +245,7 @@ export interface QuestState {
   title: string;
   summary: string;
   objectives: QuestObjectiveState[];
+  reward: QuestRewardState | null;
   status: QuestStatus;
   version: number;
   evidenceRef: string | null;
@@ -258,12 +259,18 @@ export interface QuestTemplateObjectiveState {
   title: string;
 }
 
+export interface QuestRewardState {
+  itemDefinitionKey: string;
+  quantity: number;
+}
+
 export interface QuestTemplateState {
   id: string;
   templateKey: string;
   displayName: string;
   description: string;
   objectives: QuestTemplateObjectiveState[];
+  reward: QuestRewardState | null;
   version: number;
   createdAt: Date;
   updatedAt: Date;

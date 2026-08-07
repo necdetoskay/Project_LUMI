@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   text,
   timestamp,
   uniqueIndex,
@@ -19,6 +20,7 @@ export const quests = profileSchema.table(
     storySessionId: uuid("story_session_id"),
     title: text("title").notNull(),
     summary: text("summary").notNull(),
+    reward: jsonb("reward"),
     status: varchar("status", { length: 20 }).notNull().default("inactive"),
     version: integer("version").notNull().default(1),
     evidenceRef: text("evidence_ref"),

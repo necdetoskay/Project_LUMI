@@ -24,6 +24,7 @@ function makeTemplateState(): QuestTemplateState {
     templateKey: "lost-letter-quest",
     displayName: "The Lost Letter",
     description: "Find the owner of the lost letter.",
+    reward: null,
     version: 1,
     createdAt: new Date(),
     updatedAt: new Date(),

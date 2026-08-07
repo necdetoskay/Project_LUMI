@@ -78,4 +78,42 @@ describe("QuestTemplate", () => {
     objectives[0].title = "mutated";
     expect(template.objectives[0]?.title).toBe("Ask the shopkeeper");
   });
+
+  it("carries an optional reward definition", () => {
+    const template = QuestTemplate.create({
+      ...validInput,
+      reward: { itemDefinitionKey: "golden-compass", quantity: 1 },
+    });
+    expect(template.reward).toEqual({
+      itemDefinitionKey: "golden-compass",
+      quantity: 1,
+    });
+    expect(template.getState().reward).toEqual({
+      itemDefinitionKey: "golden-compass",
+      quantity: 1,
+    });
+  });
+
+  it("rejects a zero-quantity reward", () => {
+    expect(() =>
+      QuestTemplate.create({
+        ...validInput,
+        reward: { itemDefinitionKey: "compass", quantity: 0 },
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  it("rejects an empty reward item key", () => {
+    expect(() =>
+      QuestTemplate.create({
+        ...validInput,
+        reward: { itemDefinitionKey: "  ", quantity: 1 },
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  it("defaults reward to null when omitted", () => {
+    const template = QuestTemplate.create(validInput);
+    expect(template.reward).toBeNull();
+  });
 });

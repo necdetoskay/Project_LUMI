@@ -17,10 +17,13 @@ export {
   isValidQuestObjectiveIndex,
   setQuestObjectiveStatus,
 } from "./quest";
+export { planQuestReward } from "./quest-reward-planner";
+export type { QuestRewardIntent } from "./quest-reward-planner";
 export { QuestTemplate } from "./quest-template";
 export type {
   CreateQuestTemplateInput,
   CreateQuestTemplateObjectiveInput,
+  CreateQuestTemplateRewardInput,
 } from "./quest-template";
 export {
   QuestSeedTemplateResolver,
@@ -77,6 +80,7 @@ export type {
   QuestObjectiveStatus,
   QuestState,
   QuestObjectiveState,
+  QuestRewardState,
   QuestTemplateState,
   QuestTemplateObjectiveState,
 } from "./world-types";
@@ -102,4 +106,5 @@ export {
   validateQuestObjectiveStatus,
   validateTemplateKey,
   validateObjectiveKey,
+  validateReward,
 } from "./validation";
