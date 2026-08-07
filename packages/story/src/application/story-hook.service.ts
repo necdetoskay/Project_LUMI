@@ -1,6 +1,10 @@
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
 import { StoryHook } from "../domain/story-hook";
-import type { StoryHookState, HookType, SceneType } from "../domain/story-types";
+import type {
+  StoryHookState,
+  HookType,
+  SceneType,
+} from "../domain/story-types";
 import { assertKnownHookType } from "../domain/story-types";
 import { ValidationError } from "../domain/errors";
 import { getStoryDb } from "./db";
@@ -44,9 +48,7 @@ export class StoryHookService {
     this.repo = new DrizzleStoryRepository();
   }
 
-  async createHook(
-    input: CreateStoryHookInput,
-  ): Promise<StoryHookResult> {
+  async createHook(input: CreateStoryHookInput): Promise<StoryHookResult> {
     if (input.opportunityStatus !== "accepted") {
       throw new ValidationError(
         "HOOK_OPPORTUNITY_NOT_ACCEPTED",

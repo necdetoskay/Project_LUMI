@@ -318,9 +318,7 @@ export function assertKnownPlaybackMode(
   }
 }
 
-export function assertKnownHookType(
-  value: string,
-): asserts value is HookType {
+export function assertKnownHookType(value: string): asserts value is HookType {
   if (!(HOOK_TYPES as readonly string[]).includes(value)) {
     throw new ValidationError(
       "INVALID_HOOK_TYPE",

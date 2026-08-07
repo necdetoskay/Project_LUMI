@@ -1,7 +1,4 @@
-import {
-  type Rumor,
-  decayRumorForHop,
-} from "../domain/rumor";
+import { type Rumor, decayRumorForHop } from "../domain/rumor";
 import type { NpcCharacterSnapshot } from "../ports/character-source.port";
 import { NpcIntelligenceError } from "../domain/errors";
 import { createSeededRng } from "../domain/seeded-rng";
@@ -63,10 +60,7 @@ export class RumorPropagationEngine {
     const maxRecipients = input.maxRecipients ?? DEFAULT_MAX_RECIPIENTS;
     const minTrust = input.minTrust ?? DEFAULT_MIN_TRUST;
 
-    const eligible = this.filterEligibleRecipients(
-      input,
-      minTrust,
-    );
+    const eligible = this.filterEligibleRecipients(input, minTrust);
 
     if (eligible.length === 0) {
       reasons.push("no eligible recipients for rumor propagation");
@@ -100,9 +94,7 @@ export class RumorPropagationEngine {
     }
 
     if (intents.length === 0) {
-      reasons.push(
-        "all eligible targets below propagation floor after decay",
-      );
+      reasons.push("all eligible targets below propagation floor after decay");
     }
 
     return { intents, reasons };

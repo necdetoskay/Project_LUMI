@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { mapHookToScene, getSupportedHookTypes, getSupportedSceneTypes, selectNextSceneForHook } from "../../src/application/hook-scene-mapping.service";
+import {
+  mapHookToScene,
+  getSupportedHookTypes,
+  getSupportedSceneTypes,
+  selectNextSceneForHook,
+} from "../../src/application/hook-scene-mapping.service";
 
 describe("mapHookToScene", () => {
   it("maps rumor to narrative", () => {

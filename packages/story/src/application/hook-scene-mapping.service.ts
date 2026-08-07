@@ -1,5 +1,9 @@
 import type { HookType, SceneType } from "../domain/story-types";
-import { HOOK_TYPES, SCENE_TYPES, assertKnownHookType } from "../domain/story-types";
+import {
+  HOOK_TYPES,
+  SCENE_TYPES,
+  assertKnownHookType,
+} from "../domain/story-types";
 
 const HOOK_TO_SCENE_MAP: Record<HookType, SceneType> = {
   rumor: "narrative",

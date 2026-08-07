@@ -85,5 +85,11 @@ export type {
   RumorPropagationOrchestratorInput,
   RumorPropagationOrchestratorResult,
 } from "./rumor-propagation-orchestrator.service";
-export { RumorSafetyFilter, RUMOR_SAFETY_BOUNDARY } from "./rumor-safety-filter.service";
-export type { RumorSafetyCheckInput, RumorSafetyCheckResult } from "./rumor-safety-filter.service";
+export {
+  RumorSafetyFilter,
+  RUMOR_SAFETY_BOUNDARY,
+} from "./rumor-safety-filter.service";
+export type {
+  RumorSafetyCheckInput,
+  RumorSafetyCheckResult,
+} from "./rumor-safety-filter.service";

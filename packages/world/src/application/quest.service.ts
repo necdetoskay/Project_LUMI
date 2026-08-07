@@ -1,12 +1,6 @@
 import { Quest } from "../domain/quest";
-import type {
-  CreateQuestInput,
-  ProgressObjectiveInput,
-} from "../domain/quest";
-import type {
-  QuestState,
-  QuestObjectiveState,
-} from "../domain/world-types";
+import type { CreateQuestInput, ProgressObjectiveInput } from "../domain/quest";
+import type { QuestState, QuestObjectiveState } from "../domain/world-types";
 import { NotFoundError } from "../domain/errors";
 import { DrizzleQuestRepository } from "../db/repositories/drizzle/drizzle-quest.repository";
 import type { QuestRepository } from "../db/repositories/interfaces/quest.repository";
@@ -32,16 +26,14 @@ function getRepo(): QuestRepository {
   return testRepo ?? new DrizzleQuestRepository();
 }
 
-function objectiveStateFromRow(
-  row: {
-    id: string;
-    objectiveIndex: number;
-    title: string;
-    status: string;
-    evidenceRef: string | null;
-    completedAt: Date | null;
-  },
-): QuestObjectiveState {
+function objectiveStateFromRow(row: {
+  id: string;
+  objectiveIndex: number;
+  title: string;
+  status: string;
+  evidenceRef: string | null;
+  completedAt: Date | null;
+}): QuestObjectiveState {
   return {
     index: row.objectiveIndex,
     title: row.title,
@@ -90,7 +82,9 @@ function questStateFromRows(
   };
 }
 
-export async function createQuest(input: CreateQuestInput): Promise<QuestState> {
+export async function createQuest(
+  input: CreateQuestInput,
+): Promise<QuestState> {
   const db = getDb();
   const repo = getRepo();
 
@@ -147,9 +141,7 @@ export async function activateQuest(questId: string): Promise<QuestState> {
   const repo = getRepo();
 
   return db.transaction(async (tx) => {
-    const quest = Quest.fromState(
-      await loadQuestState(repo, tx, questId),
-    );
+    const quest = Quest.fromState(await loadQuestState(repo, tx, questId));
     const evidenceRef = `quest:${questId}:activate`;
     quest.activate(evidenceRef);
     const state = quest.getState();
@@ -171,9 +163,7 @@ export async function progressObjective(
   const repo = getRepo();
 
   return db.transaction(async (tx) => {
-    const quest = Quest.fromState(
-      await loadQuestState(repo, tx, questId),
-    );
+    const quest = Quest.fromState(await loadQuestState(repo, tx, questId));
     quest.progressObjective(input);
     const state = quest.getState();
     await repo.updateQuest(tx, questId, {
@@ -182,9 +172,9 @@ export async function progressObjective(
       evidenceRef: state.evidenceRef,
       updatedAt: state.updatedAt,
     });
-    const objectiveRow = (
-      await repo.findObjectivesByQuestId(tx, questId)
-    )[input.objectiveIndex];
+    const objectiveRow = (await repo.findObjectivesByQuestId(tx, questId))[
+      input.objectiveIndex
+    ];
     if (objectiveRow) {
       const updated = state.objectives[input.objectiveIndex];
       if (!updated) {
@@ -205,9 +195,7 @@ export async function pauseQuest(questId: string): Promise<QuestState> {
   const repo = getRepo();
 
   return db.transaction(async (tx) => {
-    const quest = Quest.fromState(
-      await loadQuestState(repo, tx, questId),
-    );
+    const quest = Quest.fromState(await loadQuestState(repo, tx, questId));
     const evidenceRef = `quest:${questId}:pause`;
     quest.pause(evidenceRef);
     const state = quest.getState();
@@ -226,9 +214,7 @@ export async function resumeQuest(questId: string): Promise<QuestState> {
   const repo = getRepo();
 
   return db.transaction(async (tx) => {
-    const quest = Quest.fromState(
-      await loadQuestState(repo, tx, questId),
-    );
+    const quest = Quest.fromState(await loadQuestState(repo, tx, questId));
     const evidenceRef = `quest:${questId}:resume`;
     quest.resume(evidenceRef);
     const state = quest.getState();
@@ -247,9 +233,7 @@ export async function abandonQuest(questId: string): Promise<QuestState> {
   const repo = getRepo();
 
   return db.transaction(async (tx) => {
-    const quest = Quest.fromState(
-      await loadQuestState(repo, tx, questId),
-    );
+    const quest = Quest.fromState(await loadQuestState(repo, tx, questId));
     const evidenceRef = `quest:${questId}:abandon`;
     quest.abandon(evidenceRef);
     const state = quest.getState();
@@ -263,7 +247,9 @@ export async function abandonQuest(questId: string): Promise<QuestState> {
   });
 }
 
-export async function getQuestById(questId: string): Promise<QuestState | null> {
+export async function getQuestById(
+  questId: string,
+): Promise<QuestState | null> {
   const db = getDb();
   const repo = getRepo();
   const quest = await repo.findQuestById(db, questId);

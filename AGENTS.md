@@ -116,4 +116,3 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 28 tamamlandı: T01–T07 tüm görevler yeşil (`@lumi/world` 101 unit, `@lumi/story` 112 unit).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: quest templates (authored quest definitions), quest log UI (Story Reader), `quest_seed` interaction → quest automation, accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile).</think>
-

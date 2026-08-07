@@ -44,16 +44,14 @@ export interface QuestWorldChangeInput {
 
 export type ApplyQuestChangeResult = "applied" | "skipped";
 
-function objectiveStateFromRow(
-  row: {
-    id: string;
-    objectiveIndex: number;
-    title: string;
-    status: string;
-    evidenceRef: string | null;
-    completedAt: Date | null;
-  },
-): QuestObjectiveState {
+function objectiveStateFromRow(row: {
+  id: string;
+  objectiveIndex: number;
+  title: string;
+  status: string;
+  evidenceRef: string | null;
+  completedAt: Date | null;
+}): QuestObjectiveState {
   return {
     index: row.objectiveIndex,
     title: row.title,
@@ -158,10 +156,7 @@ export function applyQuestChange(
     const rows = await repo.findObjectivesByQuestId(tx, input.questId);
     const updated = after.objectives[input.objectiveIndex];
     if (!updated) {
-      throw new NotFoundError(
-        "QuestObjective",
-        String(input.objectiveIndex),
-      );
+      throw new NotFoundError("QuestObjective", String(input.objectiveIndex));
     }
     const targetRow = rows[input.objectiveIndex];
     if (!targetRow) {

@@ -105,8 +105,7 @@ describe("QuestService", () => {
   beforeEach(() => {
     __setTestQuestRepo(undefined);
     const stubDb = {
-      transaction: <T>(fn: (tx: never) => Promise<T>) =>
-        fn({} as never),
+      transaction: <T>(fn: (tx: never) => Promise<T>) => fn({} as never),
     } as unknown as Database;
     __setTestQuestDb(stubDb);
   });

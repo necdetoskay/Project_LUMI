@@ -53,7 +53,9 @@ function makeExistingHook() {
   };
 }
 
-function makeInput(overrides: Partial<CreateStoryHookInput> = {}): CreateStoryHookInput {
+function makeInput(
+  overrides: Partial<CreateStoryHookInput> = {},
+): CreateStoryHookInput {
   return {
     householdId: HOUSEHOLD,
     childProfileId: CHILD,
@@ -94,7 +96,9 @@ describe("StoryHookService", () => {
     const service = new StoryHookService();
     await expect(
       service.createHook(
-        makeInput({ opportunityHouseholdId: "00000000-0000-4000-8000-000000000099" }),
+        makeInput({
+          opportunityHouseholdId: "00000000-0000-4000-8000-000000000099",
+        }),
       ),
     ).rejects.toMatchObject({ code: "HOOK_HOUSEMISMATCH" });
     expect(mockRepo.findHookByOpportunityId).not.toHaveBeenCalled();

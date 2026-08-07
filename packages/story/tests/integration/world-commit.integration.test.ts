@@ -398,9 +398,9 @@ describe.skipIf(!ENABLE_DESTRUCTIVE)("WorldCommitService (integration)", () => {
       .from(schema.storyEventStore)
       .where(sql`story_session_id = ${manifest.storySessionId}`);
     expect(events.length).toBeGreaterThanOrEqual(1);
-    expect(
-      (events[0]!.payload as { eventType: string }).eventType,
-    ).toBe("quest_objective_progressed");
+    expect((events[0]!.payload as { eventType: string }).eventType).toBe(
+      "quest_objective_progressed",
+    );
   });
 
   it("compensates a committed manifest and marks it compensated", async () => {

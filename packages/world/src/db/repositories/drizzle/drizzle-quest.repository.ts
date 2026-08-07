@@ -17,10 +17,7 @@ export class DrizzleQuestRepository implements QuestRepository {
     return row!;
   }
 
-  async findQuestById(
-    tx: { select: QueryExecutor["select"] },
-    id: string,
-  ) {
+  async findQuestById(tx: { select: QueryExecutor["select"] }, id: string) {
     const [row] = await tx
       .select()
       .from(quests)

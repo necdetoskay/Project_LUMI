@@ -16,13 +16,15 @@ function makeRumor(confidence = 1, hops = 0) {
   });
 }
 
-function makeIntent(overrides: {
-  targetNpcId?: string;
-  confidence?: number;
-  provenance?: string[];
-  hops?: number;
-  belowFloor?: boolean;
-} = {}) {
+function makeIntent(
+  overrides: {
+    targetNpcId?: string;
+    confidence?: number;
+    provenance?: string[];
+    hops?: number;
+    belowFloor?: boolean;
+  } = {},
+) {
   const provenance = overrides.provenance ?? [
     "npc-alpha",
     ...(overrides.hops ? [`npc-relay-${overrides.hops}`] : []),

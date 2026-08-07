@@ -60,7 +60,4 @@ export const worldCharacterResidencesRelations = relations(
 export const questsRelations = relations(quests, ({ many }) => ({
   objectives: many(questObjectives),
 }));
-export const questObjectivesRelations = relations(
-  questObjectives,
-  () => ({}),
-);
+export const questObjectivesRelations = relations(questObjectives, () => ({}));

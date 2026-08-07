@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { RumorLedgerService } from "../../src/application/rumor-ledger.service";
-import type { RumorLedgerEntry, RumorLedgerPort } from "../../src/ports/rumor-ledger.port";
+import type {
+  RumorLedgerEntry,
+  RumorLedgerPort,
+} from "../../src/ports/rumor-ledger.port";
 
 const HOUSEHOLD = "hh-1";
 
@@ -24,9 +27,7 @@ class InMemoryRumorLedger implements RumorLedgerPort {
     return entry !== undefined && entry.householdId === householdId;
   }
 
-  async listPropagations(
-    householdId: string,
-  ): Promise<RumorLedgerEntry[]> {
+  async listPropagations(householdId: string): Promise<RumorLedgerEntry[]> {
     return [...this.entries.values()].filter(
       (e) => e.householdId === householdId,
     );

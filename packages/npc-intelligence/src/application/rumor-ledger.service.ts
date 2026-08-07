@@ -37,9 +37,7 @@ export class RumorLedgerService {
     };
   }
 
-  async recordPropagation(
-    input: RumorLedgerGateInput,
-  ): Promise<void> {
+  async recordPropagation(input: RumorLedgerGateInput): Promise<void> {
     const key = this.buildKey(
       input.sourceNpcId,
       input.targetNpcId,

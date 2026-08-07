@@ -7,7 +7,11 @@ import { selectNextSceneForHook } from "./hook-scene-mapping.service";
 import { commitOutcomeWithTx } from "./world-commit.service";
 import { hashObject } from "./hash";
 import type { Database, QueryExecutor } from "../db/client";
-import type { ParticipationRole, PlaybackMode, SceneType } from "../domain/story-types";
+import type {
+  ParticipationRole,
+  PlaybackMode,
+  SceneType,
+} from "../domain/story-types";
 import {
   assertKnownSessionStatus,
   assertKnownPlaybackMode,
@@ -720,11 +724,7 @@ async function resolveAdvanceSceneId(
     repo.findSceneVisitsBySession(db, params.record.id),
   ]);
   const visited = new Set(visits.map((v) => v.sceneId));
-  const selected = selectNextSceneForHook(
-    params.pendingHook,
-    scenes,
-    visited,
-  );
+  const selected = selectNextSceneForHook(params.pendingHook, scenes, visited);
   return selected ? selected.id : params.requestedSceneId;
 }
 

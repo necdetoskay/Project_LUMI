@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { RumorSafetyFilter, RUMOR_SAFETY_BOUNDARY } from "../../src/application/rumor-safety-filter.service";
+import {
+  RumorSafetyFilter,
+  RUMOR_SAFETY_BOUNDARY,
+} from "../../src/application/rumor-safety-filter.service";
 import type { Rumor } from "../../src/domain/rumor";
 import type { NpcIntelligenceError } from "../../src/domain/errors";
 import type { RumorPropagationIntent } from "../../src/application/rumor-propagation.service";
@@ -21,7 +24,9 @@ function makeRumor(overrides: Partial<Rumor> = {}): Rumor {
   };
 }
 
-function makeIntent(overrides: Partial<RumorPropagationIntent> = {}): RumorPropagationIntent {
+function makeIntent(
+  overrides: Partial<RumorPropagationIntent> = {},
+): RumorPropagationIntent {
   return {
     targetNpcId: "npc-b",
     confidence: 0.8,
@@ -38,23 +43,34 @@ describe("RumorSafetyFilter", () => {
   it("returns safe for a valid hearsay propagation intent", () => {
     const result = filter.check({ rumor: makeRumor(), intent: makeIntent() });
     expect(result.safe).toBe(true);
-    expect(result.reason).toBe("propagation intent is safe: hearsay belief only");
+    expect(result.reason).toBe(
+      "propagation intent is safe: hearsay belief only",
+    );
   });
 
   it("returns unsafe when confidence is below 0", () => {
-    const result = filter.check({ rumor: makeRumor(), intent: makeIntent({ confidence: -0.1 }) });
+    const result = filter.check({
+      rumor: makeRumor(),
+      intent: makeIntent({ confidence: -0.1 }),
+    });
     expect(result.safe).toBe(false);
     expect(result.reason).toContain("out of range");
   });
 
   it("returns unsafe when confidence exceeds 1", () => {
-    const result = filter.check({ rumor: makeRumor(), intent: makeIntent({ confidence: 1.5 }) });
+    const result = filter.check({
+      rumor: makeRumor(),
+      intent: makeIntent({ confidence: 1.5 }),
+    });
     expect(result.safe).toBe(false);
     expect(result.reason).toContain("out of range");
   });
 
   it("returns unsafe when below floor is true", () => {
-    const result = filter.check({ rumor: makeRumor(), intent: makeIntent({ belowFloor: true }) });
+    const result = filter.check({
+      rumor: makeRumor(),
+      intent: makeIntent({ belowFloor: true }),
+    });
     expect(result.safe).toBe(false);
     expect(result.reason).toContain("propagation floor");
   });
@@ -66,12 +82,18 @@ describe("RumorSafetyFilter", () => {
   });
 
   it("returns safe for zero confidence (valid boundary)", () => {
-    const result = filter.check({ rumor: makeRumor(), intent: makeIntent({ confidence: 0 }) });
+    const result = filter.check({
+      rumor: makeRumor(),
+      intent: makeIntent({ confidence: 0 }),
+    });
     expect(result.safe).toBe(true);
   });
 
   it("returns safe for max confidence (valid boundary)", () => {
-    const result = filter.check({ rumor: makeRumor(), intent: makeIntent({ confidence: 1 }) });
+    const result = filter.check({
+      rumor: makeRumor(),
+      intent: makeIntent({ confidence: 1 }),
+    });
     expect(result.safe).toBe(true);
   });
 });
@@ -88,7 +110,9 @@ describe("RumorSafetyFilter.validateAdoption", () => {
       filter.validateAdoption("canonical");
       expect.fail("should have thrown");
     } catch (err) {
-      expect((err as NpcIntelligenceError).code).toBe("SAFETY_BOUNDARY_VIOLATION");
+      expect((err as NpcIntelligenceError).code).toBe(
+        "SAFETY_BOUNDARY_VIOLATION",
+      );
     }
   });
 
@@ -97,7 +121,9 @@ describe("RumorSafetyFilter.validateAdoption", () => {
       filter.validateAdoption("world-state");
       expect.fail("should have thrown");
     } catch (err) {
-      expect((err as NpcIntelligenceError).code).toBe("SAFETY_BOUNDARY_VIOLATION");
+      expect((err as NpcIntelligenceError).code).toBe(
+        "SAFETY_BOUNDARY_VIOLATION",
+      );
     }
   });
 });

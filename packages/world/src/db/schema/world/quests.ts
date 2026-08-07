@@ -49,10 +49,7 @@ export const questObjectives = profileSchema.table(
     }),
   },
   (table) => [
-    uniqueIndex("uq_quest_objective").on(
-      table.questId,
-      table.objectiveIndex,
-    ),
+    uniqueIndex("uq_quest_objective").on(table.questId, table.objectiveIndex),
     index("quest_objective_quest_idx").on(table.questId),
   ],
 );

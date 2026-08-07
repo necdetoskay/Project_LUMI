@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { RumorPropagationEngine } from "../../src/application/rumor-propagation.service";
-import { createRumor, HOP_DECAY_FACTOR, RUMOR_PROPAGATION_FLOOR } from "../../src/domain/rumor";
+import {
+  createRumor,
+  HOP_DECAY_FACTOR,
+  RUMOR_PROPAGATION_FLOOR,
+} from "../../src/domain/rumor";
 import { NpcIntelligenceError } from "../../src/domain/errors";
 
 const HOUSEHOLD = "hh-1";
@@ -47,21 +51,22 @@ function makeSnapshot(
   };
 }
 
-function makeInput(overrides: {
-  sourceNpcId?: string;
-  nearbyCharacterIds?: string[];
-  characterSnapshots?: Map<string, ReturnType<typeof makeSnapshot>>;
-  relationshipTrust?: Record<string, number>;
-  rumor?: ReturnType<typeof makeRumor>;
-  elapsedMs?: number;
-  maxRecipients?: number;
-  minTrust?: number;
-  seed?: string;
-} = {}) {
+function makeInput(
+  overrides: {
+    sourceNpcId?: string;
+    nearbyCharacterIds?: string[];
+    characterSnapshots?: Map<string, ReturnType<typeof makeSnapshot>>;
+    relationshipTrust?: Record<string, number>;
+    rumor?: ReturnType<typeof makeRumor>;
+    elapsedMs?: number;
+    maxRecipients?: number;
+    minTrust?: number;
+    seed?: string;
+  } = {},
+) {
   const rumor = overrides.rumor ?? makeRumor();
   const nearbyCharacterIds = overrides.nearbyCharacterIds ?? [];
-  const characterSnapshots =
-    overrides.characterSnapshots ?? new Map();
+  const characterSnapshots = overrides.characterSnapshots ?? new Map();
   const relationshipTrust = overrides.relationshipTrust ?? {};
 
   return {
@@ -73,7 +78,9 @@ function makeInput(overrides: {
     relationshipTrust,
     elapsedMs: overrides.elapsedMs ?? ELAPSED_MS,
     seed: overrides.seed ?? SEED,
-    ...(overrides.maxRecipients !== undefined && { maxRecipients: overrides.maxRecipients }),
+    ...(overrides.maxRecipients !== undefined && {
+      maxRecipients: overrides.maxRecipients,
+    }),
     ...(overrides.minTrust !== undefined && { minTrust: overrides.minTrust }),
   };
 }
@@ -121,9 +128,7 @@ describe("RumorPropagationEngine", () => {
         ]),
         relationshipTrust: { "npc-beta": 0.5 },
       });
-      expect(() => engine.propagate(input)).toThrowError(
-        NpcIntelligenceError,
-      );
+      expect(() => engine.propagate(input)).toThrowError(NpcIntelligenceError);
     });
   });
 

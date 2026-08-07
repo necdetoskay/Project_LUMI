@@ -76,11 +76,7 @@ describe("Quest", () => {
   it("assigns sequential objective indices", () => {
     const quest = Quest.create(
       makeInput({
-        objectives: [
-          { title: "A" },
-          { title: "B" },
-          { title: "C" },
-        ],
+        objectives: [{ title: "A" }, { title: "B" }, { title: "C" }],
       }),
     );
     const indices = quest.objectives.map((o) => o.index);
@@ -214,7 +210,10 @@ describe("Quest objective progression", () => {
     quest.progressObjective({ objectiveIndex: 0, evidenceRef: "e://o0" });
     expectValidationError(
       () =>
-        quest.progressObjective({ objectiveIndex: 0, evidenceRef: "e://again" }),
+        quest.progressObjective({
+          objectiveIndex: 0,
+          evidenceRef: "e://again",
+        }),
       "QUEST_OBJECTIVE_ALREADY_COMPLETED",
     );
   });

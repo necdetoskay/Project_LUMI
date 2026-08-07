@@ -55,7 +55,9 @@ export class RumorPropagationOrchestrator {
       relationshipTrust: input.relationshipTrust,
       elapsedMs: input.elapsedMs,
       seed: input.seed,
-      ...(input.maxRecipients !== undefined && { maxRecipients: input.maxRecipients }),
+      ...(input.maxRecipients !== undefined && {
+        maxRecipients: input.maxRecipients,
+      }),
       ...(input.minTrust !== undefined && { minTrust: input.minTrust }),
     };
 
@@ -108,8 +110,7 @@ export class RumorPropagationOrchestrator {
         enqueued += 1;
       } catch (error) {
         failed += 1;
-        const message =
-          error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
         reasons.push(
           `failed to enqueue propagation to ${intent.targetNpcId}: ${message}`,
         );

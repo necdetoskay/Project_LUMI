@@ -124,9 +124,7 @@ describe("RumorPropagationOrchestrator", () => {
       worldId: "world-1",
       commitId: "commit-1",
       rumor,
-      characterSnapshots: new Map([
-        ["npc-beta", makeSnapshot("npc-beta")],
-      ]),
+      characterSnapshots: new Map([["npc-beta", makeSnapshot("npc-beta")]]),
       nearbyCharacterIds: ["npc-beta"],
       relationshipTrust: { "npc-beta": 0.5 },
       elapsedMs: 0,
@@ -159,9 +157,7 @@ describe("RumorPropagationOrchestrator", () => {
       worldId: "world-1",
       commitId: "commit-1",
       rumor,
-      characterSnapshots: new Map([
-        ["npc-beta", makeSnapshot("npc-beta")],
-      ]),
+      characterSnapshots: new Map([["npc-beta", makeSnapshot("npc-beta")]]),
       nearbyCharacterIds: ["npc-beta"],
       relationshipTrust: { "npc-beta": 0.5 },
       elapsedMs: 0,
@@ -190,9 +186,7 @@ describe("RumorPropagationOrchestrator", () => {
       worldId: "world-1",
       commitId: "commit-1",
       rumor,
-      characterSnapshots: new Map([
-        ["npc-beta", makeSnapshot("npc-beta")],
-      ]),
+      characterSnapshots: new Map([["npc-beta", makeSnapshot("npc-beta")]]),
       nearbyCharacterIds: ["npc-beta"],
       relationshipTrust: { "npc-beta": 0.5 },
       elapsedMs: 0,
@@ -219,9 +213,7 @@ describe("RumorPropagationOrchestrator", () => {
       worldId: "world-1",
       commitId: "commit-1",
       rumor,
-      characterSnapshots: new Map([
-        ["npc-beta", makeSnapshot("npc-beta")],
-      ]),
+      characterSnapshots: new Map([["npc-beta", makeSnapshot("npc-beta")]]),
       nearbyCharacterIds: ["npc-beta"],
       relationshipTrust: { "npc-beta": 0.5 },
       elapsedMs: 0,

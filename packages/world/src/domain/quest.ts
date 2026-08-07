@@ -160,7 +160,10 @@ export class Quest {
   }
 
   abandon(evidenceRef: string): void {
-    if (this.state.status === "completed" || this.state.status === "abandoned") {
+    if (
+      this.state.status === "completed" ||
+      this.state.status === "abandoned"
+    ) {
       throw new ValidationError(
         "QUEST_INVALID_TRANSITION",
         `Cannot abandon a quest in ${this.state.status} status`,
@@ -217,9 +220,7 @@ export class Quest {
   }
 }
 
-export const isTerminalQuestStatus = (
-  value: string,
-): value is QuestStatus =>
+export const isTerminalQuestStatus = (value: string): value is QuestStatus =>
   (["completed", "abandoned"] as readonly string[]).includes(value);
 
 export const isValidQuestObjectiveIndex = (

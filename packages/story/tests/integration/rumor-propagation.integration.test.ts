@@ -15,8 +15,7 @@ import {
 import { RumorSpreadApplicator } from "../../src/application/rumor-propagation-applicator.service";
 import { __setTestCommitDb } from "../../src/application/world-commit.service";
 
-const ENABLE_DESTRUCTIVE =
-  process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
+const ENABLE_DESTRUCTIVE = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
 const DATABASE_URL = process.env.STORY_TEST_DATABASE_URL;
 const LUMI_DB_NAMES = ["lumi", "postgres", "template1", "template0"];
 

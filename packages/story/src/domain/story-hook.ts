@@ -126,5 +126,9 @@ export class StoryHook {
   }
 }
 
-export const isValidHookStatus = (value: string): value is StoryHookState["status"] =>
-  (["pending", "delivered", "consumed", "expired"] as readonly string[]).includes(value);
+export const isValidHookStatus = (
+  value: string,
+): value is StoryHookState["status"] =>
+  (
+    ["pending", "delivered", "consumed", "expired"] as readonly string[]
+  ).includes(value);

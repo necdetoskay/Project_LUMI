@@ -20,7 +20,5 @@ export interface RumorLedgerPort {
     factId: string,
   ): Promise<boolean>;
   /** Lists all propagation records for a household. */
-  listPropagations(
-    householdId: string,
-  ): Promise<RumorLedgerEntry[]>;
+  listPropagations(householdId: string): Promise<RumorLedgerEntry[]>;
 }

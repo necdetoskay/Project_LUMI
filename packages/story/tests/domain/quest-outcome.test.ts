@@ -10,8 +10,7 @@ import {
 } from "../../src/domain/outcome";
 import { ValidationError } from "../../src/domain/errors";
 
-const SESSION_QUEST =
-  "00000000-0000-4000-8000-000000000040";
+const SESSION_QUEST = "00000000-0000-4000-8000-000000000040";
 const OTHER = "00000000-0000-4000-8000-000000000041";
 
 describe("quest_state_update outcome type", () => {
@@ -139,12 +138,14 @@ describe("Quest evidence validation (snapshot scope)", () => {
     });
   }
 
-  function makeSnapshot(entities: {
-    entityId: string;
-    entityKind: string;
-    state: Record<string, unknown>;
-    stateHash: string;
-  }[]) {
+  function makeSnapshot(
+    entities: {
+      entityId: string;
+      entityKind: string;
+      state: Record<string, unknown>;
+      stateHash: string;
+    }[],
+  ) {
     return StoryContextSnapshot.create({
       storySessionId: "00000000-0000-4000-8000-000000000010",
       householdId: "00000000-0000-4000-8000-000000000020",

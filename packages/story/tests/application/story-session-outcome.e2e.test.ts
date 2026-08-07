@@ -241,7 +241,9 @@ describe("advanceSession + outcome commit (S22-T06 E2E)", () => {
   });
 
   it("keeps the requested scene when pending hook type has no unvisited match", async () => {
-    const scenes = [{ id: NEXT_SCENE_ID, sceneType: "narrative", sequenceNumber: 1 }];
+    const scenes = [
+      { id: NEXT_SCENE_ID, sceneType: "narrative", sequenceNumber: 1 },
+    ];
     mockRepo.findScenesByVersion.mockResolvedValue(scenes);
     mockRepo.findSceneVisitsBySession.mockResolvedValue([]);
 

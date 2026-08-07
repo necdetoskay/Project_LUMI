@@ -1,4 +1,11 @@
-import { index, timestamp, uuid, varchar, jsonb, integer } from "drizzle-orm/pg-core";
+import {
+  index,
+  timestamp,
+  uuid,
+  varchar,
+  jsonb,
+  integer,
+} from "drizzle-orm/pg-core";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
 
