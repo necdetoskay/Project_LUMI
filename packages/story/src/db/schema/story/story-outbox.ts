@@ -26,6 +26,7 @@ export const OUTBOX_INTENT_TYPES = [
   "community_awareness",
   "scheduled_effect_enqueue",
   "story_hook_delivery",
+  "quest_seed_automation",
 ] as const;
 export type OutboxIntentType = (typeof OUTBOX_INTENT_TYPES)[number];
 

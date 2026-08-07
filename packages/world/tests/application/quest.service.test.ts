@@ -99,6 +99,12 @@ function createMockRepo(): QuestRepository & {
         completedAt: o.completedAt,
       })) as never;
     },
+    async recordIdempotency() {
+      return undefined as never;
+    },
+    async findIdempotency() {
+      return undefined;
+    },
   };
 }
 

@@ -137,6 +137,37 @@ export class StoryHookService {
       createdAt: new Date(),
     });
 
+    // S31-T03: for a quest_seed hook, additionally signal quest automation so
+    // the world-side applicator can instantiate + activate a quest from an
+    // authored template. The payload is plain JSON; story never imports world.
+    if (state.hookType === "quest_seed") {
+      const factId =
+        typeof input.payload.factId === "string" ? input.payload.factId : "";
+      await this.repo.enqueueOutbox(getDb(), {
+        id: crypto.randomUUID(),
+        householdId: input.householdId,
+        worldId: input.worldId,
+        commitId: state.id,
+        idempotencyKey: `quest-seed:${state.id}`,
+        intentType: "quest_seed_automation",
+        payload: {
+          hookId: state.id,
+          opportunityId: state.opportunityId,
+          storySessionId: state.storySessionId,
+          worldId: state.worldId,
+          householdId: state.householdId,
+          factId,
+          sourceNpcId: state.sourceNpcId,
+        },
+        evidenceRef: `hook://${state.id}`,
+        status: "pending",
+        attemptCount: "0",
+        lastError: null,
+        appliedAt: null,
+        createdAt: new Date(),
+      });
+    }
+
     return {
       hook: state,
       created: true,
