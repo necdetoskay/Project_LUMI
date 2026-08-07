@@ -1,4 +1,4 @@
-# Project LUMI — Agent Work Contract
+﻿# Project LUMI — Agent Work Contract
 
 ## Purpose
 
@@ -92,3 +92,27 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 25 tamamlandı: T01–T08 tüm görevler yeşil (106 unit test).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: NPC-to-NPC rumor propagation + confidence decay, accepted opportunity → story hook conversion, quest aggregate.
+
+- Sprint 26 — NPC-to-NPC Rumor Propagation + Confidence Decay [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-26/SPRINT_SPEC.md`; S26-T01 `Rumor` domain + confidence decay ✅; S26-T02 propagation engine ✅: `RumorPropagationEngine` (info-access gate, household scope, trust filter, floor check, maxRecipients cap, seeded RNG), 19 unit test; S26-T03 rumor ledger (dedup/idempotency) ✅: `RumorLedgerService` + `RumorLedgerPort` (source/target/fact dedup via `pair:source:target:fact` key), 7 unit test; S26-T04 hearsay belief adoption ✅: `HearsayAdoptionService` (decayed confidence + extended provenance, `source: "hearsay"`), 12 unit test; S26-T05 outbox integration ✅: `RumorPropagationOrchestrator` + `StoryOutboxPort` + `RumorSpreadApplicator` + `npc_rumor_spread` intent, guarded integration test; S26-T06 safety ✅: `RumorSafetyFilter` (confidence bounds, floor check, `validateAdoption` hearsay-only gate), 10 unit test; S26-T07 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-26/S26_T07_VALIDATION_EVIDENCE.md` — 18/18 SOWS scenarios covered, exit criteria P0/P1 green)
+
+### Sprint 26 closeout
+
+- Sprint 26 tamamlandı: T01–T07 tüm görevler yeşil (167 unit test).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: accepted opportunity → story hook conversion, quest aggregate.
+
+- Sprint 27 — Accepted Opportunity → Story Hook Conversion [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-27/SPRINT_SPEC.md`; S27-T01 StoryHook domain model + StoryHookService ✅: `StoryHook` domain class (create/fromState/consume/markDelivered/expire), `StoryHookService.createHook` (accepted-only, household-scope check, idempotency via `findHookByOpportunityId`, persists hook, emits `STORY_HOOK_CREATED` event), `story_hooks` Drizzle schema (integer version), repo `createHook`/`findHookByOpportunityId`; S27-T02 hook-to-scene mapping + persistence schema ✅: `mapHookToScene` (rumor/gift/warning/invitation/quest_seed/social_visit/information_share → narrative/choice/transition, deterministic, type-independent), 9 unit test; S27-T03 idempotency guard ✅: `tests/application/story-hook.service.test.ts` — 5 unit test (accepted-only, household-scope, first-accept create+event, idempotent no-op on re-accept, existing hook unchanged); S27-T04 STORY_HOOK_CREATED event + outbox integration ✅: `story_hook_delivery` outbox intent type added, `0005_story_hooks.sql` migration (story_hooks table), `StoryHookService` enqueues `story-hook:<opportunityId>` delivery intent after hook creation, event + outbox assertions (6 unit test); S27-T05 hook delivery via existing propagator ✅: `StoryHookDeliveryApplicator` (validates `story_hook_delivery` intent, zero-write skip on missing payload) + `story-hook-delivery.integration.test.ts` guarded integration (applied marker + zero-write skip), 3 unit test; S27-T06 hook influence on scene selection during advance ✅: `selectNextSceneForHook` (deterministic, type-independent: prefers unvisited scene of hook's mapped scene type, lowest sequence wins, falls back to requested scene) integrated into `advanceSession` via `resolveAdvanceSceneId` (optional `pendingHook`), 5 unit + 2 e2e test; S27-T07 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-27/S27_T07_VALIDATION_EVIDENCE.md` — accepted-opportunity→hook conversion backlog step mapped to coveraged coverage, exit criteria P0/P1 green).
+
+### Sprint 27 closeout
+
+- Sprint 27 tamamlandı: T01–T07 tüm görevler yeşil (104 unit test).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: quest aggregate, accepted hook → story generation pipeline (LLM rendering) integration.
+
+- Sprint 28 — Quest Aggregate [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-28/SPRINT_SPEC.md`; S28-T01 `Quest` domain aggregate + lifecycle (`inactive→active→paused/completed/abandoned`) + ordered objectives + household scope + evidence ✅; S28-T02 `quests` + `quest_objectives` schema + migration `0006_quests.sql` ✅; S28-T03 `QuestService` + `QuestRepository` port + `DrizzleQuestRepository` (create/activate/progress/pause/resume/abandon/reads) ✅, 9 service test; S28-T04 `quest_state_update` outcome tipi + `quest_objective_progressed` narrative event + `default-quest-objective-progress` kuralı (`@lumi/story`) ✅, 5 test; S28-T05 quest evidence validation (snapshot scope + evidenceRef gate) ✅, `quest-outcome.test.ts`; S28-T06 transactional quest commit via mevcut `WorldCommitService` + idempotent world-side `applyQuestChange` applicator (per `questId::objectiveIndex`) ✅, guarded `world-commit.integration.test.ts` + `quest-change-applicator.integration.test.ts`; S28-T07 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-28/S28_T07_VALIDATION_EVIDENCE.md` — SOWS quest requirement'ları kapsandı). `@lumi/world` 101 unit + `@lumi/story` 112 unit green; `pnpm build` + check-mojibake green. Backlog kapatır: S22/23'ten beri ertelenen quest world-state entity boşluğu.)
+
+### Sprint 28 closeout
+
+- Sprint 28 tamamlandı: T01–T07 tüm görevler yeşil (`@lumi/world` 101 unit, `@lumi/story` 112 unit).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: quest templates (authored quest definitions), quest log UI (Story Reader), `quest_seed` interaction → quest automation, accepted hook → story generation (LLM rendering) integration, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile).</think>

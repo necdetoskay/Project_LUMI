@@ -6,6 +6,17 @@ export { Location } from "./location";
 export type { CreateLocationInput } from "./location";
 export { Home } from "./home";
 export type { CreateHomeInput } from "./home";
+export { Quest } from "./quest";
+export type {
+  CreateQuestInput,
+  CreateQuestObjectiveInput,
+  ProgressObjectiveInput,
+} from "./quest";
+export {
+  isTerminalQuestStatus,
+  isValidQuestObjectiveIndex,
+  setQuestObjectiveStatus,
+} from "./quest";
 export {
   DomainError,
   ValidationError,
@@ -26,6 +37,8 @@ export {
   LOCATION_TYPES,
   MOVE_TYPES,
   WORLD_EVENT_TYPES,
+  QUEST_STATUSES,
+  QUEST_OBJECTIVE_STATUSES,
 } from "./world-types";
 
 export type {
@@ -49,6 +62,10 @@ export type {
   CharacterMovementEventState,
   WorldBootstrapManifestState,
   WorldCheckpointState,
+  QuestStatus,
+  QuestObjectiveStatus,
+  QuestState,
+  QuestObjectiveState,
 } from "./world-types";
 
 export {
@@ -67,4 +84,7 @@ export {
   validateSeed,
   validateLocationKey,
   validateRegionKey,
+  validateId,
+  validateQuestStatus,
+  validateQuestObjectiveStatus,
 } from "./validation";

@@ -6,6 +6,7 @@ import { InteractionOpportunity } from "../../src/domain/opportunity";
 const HOUSEHOLD = "hh-1";
 const NPC = "npc-1";
 const CHILD = "child-1";
+// Fixed instant used for response/expiry bookkeeping in the in-memory inbox.
 const NOW = new Date("2026-08-06T12:00:00Z");
 
 class InMemoryInbox implements OpportunityInboxPort {
@@ -78,7 +79,7 @@ function makeOpportunity(overrides: Record<string, unknown> = {}) {
     evidence: { beliefId: "b-1" },
     score: 0.8,
     cooldownKeys: ["npc-1:child-1:rumor"],
-    expiresAt: new Date(NOW.getTime() + 60_000),
+    expiresAt: new Date(Date.now() + 60_000),
     reason: "rumor about world event",
     ...(overrides as object),
   });
@@ -150,7 +151,7 @@ describe("OpportunityDeliveryService", () => {
     });
     await inbox.deliver(fresh);
     await inbox.deliver(stale);
-    const count = await service.expireStale(HOUSEHOLD, CHILD, NOW);
+    const count = await service.expireStale(HOUSEHOLD, CHILD, new Date());
     expect(count).toBe(1);
     expect(inbox.statuses.get(stale.id)).toBe("expired");
     expect(inbox.statuses.get(fresh.id)).toBeUndefined();

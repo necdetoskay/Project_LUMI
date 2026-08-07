@@ -67,4 +67,12 @@ export type {
   NewWorldIdempotencyLedgerRecord,
 } from "./idempotency-ledger";
 
+export { quests, questObjectives } from "./quests";
+export type {
+  QuestRecord,
+  NewQuestRecord,
+  QuestObjectiveRecord,
+  NewQuestObjectiveRecord,
+} from "./quests";
+
 export * from "./relations";

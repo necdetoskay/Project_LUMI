@@ -35,6 +35,8 @@ import type {
   NewStoryWorldVersionRecord,
   StoryOutboxRecord,
   NewStoryOutboxRecord,
+  StoryHookRecord,
+  NewStoryHookRecord,
 } from "../../schema/story";
 import type { QueryExecutor } from "../../client";
 
@@ -287,4 +289,13 @@ export interface StoryRepository {
       appliedAt?: Date | null;
     },
   ): Promise<StoryOutboxRecord | undefined>;
+
+  createHook(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryHookRecord,
+  ): Promise<StoryHookRecord | undefined>;
+  findHookByOpportunityId(
+    tx: { select: QueryExecutor["select"] },
+    opportunityId: string,
+  ): Promise<StoryHookRecord | undefined>;
 }

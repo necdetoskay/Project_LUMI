@@ -10,6 +10,7 @@ export * from "./opportunity";
 export * from "./opportunity-scoring";
 export * from "./opportunity-trace";
 export * from "./perception";
+export * from "./rumor";
 export * from "./seeded-rng";
 export * from "./utility";
 export * from "./validation";

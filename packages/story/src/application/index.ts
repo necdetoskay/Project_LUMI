@@ -103,3 +103,8 @@ export type {
   PropagateResult,
   IndirectEffectApplicator,
 } from "./indirect-effect-propagator.service";
+export { RumorSpreadApplicator } from "./rumor-propagation-applicator.service";
+export { StoryHookDeliveryApplicator } from "./story-hook-delivery-applicator.service";
+
+export { StoryHookService } from "./story-hook.service";
+export type { StoryHookResult } from "./story-hook.service";

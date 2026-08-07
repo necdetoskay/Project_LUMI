@@ -21,6 +21,7 @@ import {
   storyCommitRecords,
   storyWorldVersions,
   storyOutbox,
+  storyHooks,
 } from "../../schema/story";
 import type {
   NewStoryDefinitionRecord,
@@ -41,6 +42,7 @@ import type {
   NewStoryCommitRecord,
   NewStoryWorldVersionRecord,
   NewStoryOutboxRecord,
+  NewStoryHookRecord,
   StoryOutboxRecord,
 } from "../../schema/story";
 
@@ -721,6 +723,26 @@ export class DrizzleStoryRepository implements StoryRepository {
       .set(data as never)
       .where(eq(storyOutbox.id, id))
       .returning();
+    return row;
+  }
+
+  async createHook(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryHookRecord,
+  ) {
+    const [row] = await tx.insert(storyHooks).values(data).returning();
+    return row;
+  }
+
+  async findHookByOpportunityId(
+    tx: { select: QueryExecutor["select"] },
+    opportunityId: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyHooks)
+      .where(eq(storyHooks.opportunityId, opportunityId))
+      .limit(1);
     return row;
   }
 }

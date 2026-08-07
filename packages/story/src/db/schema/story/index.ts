@@ -114,4 +114,7 @@ export type {
   OutboxIntentType,
 } from "./story-outbox";
 
+export { storyHooks } from "./story-hooks";
+export type { StoryHookRecord, NewStoryHookRecord } from "./story-hooks";
+
 export * from "./relations";

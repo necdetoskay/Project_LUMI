@@ -66,6 +66,7 @@ const npcA = "10000000-0000-4000-8000-000000000001";
 const householdA = "20000000-0000-4000-8000-000000000001";
 const householdB = "20000000-0000-4000-8000-000000000002";
 const worldA = "30000000-0000-4000-8000-000000000001";
+const questA = "40000000-0000-4000-8000-000000000001";
 
 let queryClient: ReturnType<typeof postgres>;
 let db: Database;
@@ -334,6 +335,71 @@ describe.skipIf(!ENABLE_DESTRUCTIVE)("WorldCommitService (integration)", () => {
     expect(events[0]!.eventType).toBe("STORY_WORLD_COMMIT_APPLIED");
     expect((events[0]!.payload as { commitId: string }).commitId).toBe(
       result.commitId,
+    );
+  });
+
+  it("commits a quest_state_update manifest producing a quest world change", async () => {
+    const manifest = OutcomeManifest.create({
+      storySessionId: "40000000-0000-4000-8000-000000000006",
+      householdId: householdA,
+      worldId: worldA,
+      source: "story_session",
+      sourceSceneId: "scene-6",
+      changes: [
+        {
+          key: "itg-q1",
+          outcomeType: "quest_state_update",
+          entityId: questA,
+          operation: "set",
+          field: "objectives.0.status",
+          value: "completed",
+          evidenceRef: "scene://itg#q1",
+        },
+      ],
+    });
+    const snapshot = StoryContextSnapshot.create({
+      storySessionId: manifest.storySessionId,
+      householdId: householdA,
+      worldId: worldA,
+      worldStateHash: "itg-before-q1",
+      entities: [
+        {
+          entityId: questA,
+          entityKind: "quest",
+          state: {
+            status: "active",
+            objectives: [{ index: 0, status: "locked" }],
+          },
+          stateHash: "itg-quest-hash",
+        },
+      ],
+    });
+
+    const service = new WorldCommitService();
+    const result = await service.commitManifest({
+      manifest,
+      snapshot,
+      extractor: new NarrativeEventExtractor(),
+      validator: new EvidenceValidator(),
+      ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+    });
+
+    const change = result.changes.find(
+      (c) => c.entityId === questA && c.field === "objectives.0.status",
+    );
+    expect(change).toBeTruthy();
+    expect(change!.value).toBe("completed");
+    expect(change!.evidenceRef).toBe("scene://itg#q1");
+    expect(change!.ruleId).toBe("default-quest-objective-progress");
+
+    // quest_objective_progressed event sourced alongside the commit.
+    const events = await db
+      .select()
+      .from(schema.storyEventStore)
+      .where(sql`story_session_id = ${manifest.storySessionId}`);
+    expect(events.length).toBeGreaterThanOrEqual(1);
+    expect((events[0]!.payload as { eventType: string }).eventType).toBe(
+      "quest_objective_progressed",
     );
   });
 

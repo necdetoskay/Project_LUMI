@@ -10,6 +10,8 @@ import type {
   RegionType,
   LocationType,
   MoveType,
+  QuestStatus,
+  QuestObjectiveStatus,
 } from "./world-types";
 import {
   WORLD_LIFECYCLE_STATUSES,
@@ -23,6 +25,8 @@ import {
   REGION_TYPES,
   LOCATION_TYPES,
   MOVE_TYPES,
+  QUEST_STATUSES,
+  QUEST_OBJECTIVE_STATUSES,
 } from "./world-types";
 import { ValidationError } from "./errors";
 
@@ -210,4 +214,39 @@ export function validateRegionKey(value: string): string {
     );
   }
   return trimmed;
+}
+
+export function validateId(value: string, field: string): string {
+  if (value == null || value.trim() === "") {
+    throw new ValidationError(
+      "INVALID_ID",
+      `${field} must be a non-empty id`,
+      field,
+    );
+  }
+  return value;
+}
+
+export function validateQuestStatus(value: string): QuestStatus {
+  if (!(QUEST_STATUSES as readonly string[]).includes(value)) {
+    throw new ValidationError(
+      "INVALID_QUEST_STATUS",
+      `Invalid quest status: ${value}`,
+      "status",
+    );
+  }
+  return value as QuestStatus;
+}
+
+export function validateQuestObjectiveStatus(
+  value: string,
+): QuestObjectiveStatus {
+  if (!(QUEST_OBJECTIVE_STATUSES as readonly string[]).includes(value)) {
+    throw new ValidationError(
+      "INVALID_QUEST_OBJECTIVE_STATUS",
+      `Invalid quest objective status: ${value}`,
+      "objectiveStatus",
+    );
+  }
+  return value as QuestObjectiveStatus;
 }

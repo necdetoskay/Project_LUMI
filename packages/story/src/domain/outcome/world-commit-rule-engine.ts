@@ -334,5 +334,20 @@ export function defaultOutcomeRules(): WorldCommitRule[] {
         status: "committed",
       }),
     },
+    {
+      forEventType: "quest_objective_progressed",
+      apply: ({ event, priority }) => ({
+        changeKey: event.eventKey,
+        entityId: event.entityId,
+        kind: "set",
+        field: event.detail.field,
+        value: event.detail.value,
+        priority,
+        ruleId: "default-quest-objective-progress",
+        sequence: event.sequence,
+        evidenceRef: event.evidenceRef,
+        status: "committed",
+      }),
+    },
   ];
 }
