@@ -55,6 +55,7 @@ export {
   abandonQuest,
   getQuestById,
   getQuestsByWorldId,
+  getQuestsBySessionId,
   __setTestQuestDb,
   __setTestQuestRepo,
 } from "./quest.service";
