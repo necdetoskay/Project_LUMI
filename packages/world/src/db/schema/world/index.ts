@@ -75,4 +75,12 @@ export type {
   NewQuestObjectiveRecord,
 } from "./quests";
 
+export { questTemplates, questTemplateObjectives } from "./quest-templates";
+export type {
+  QuestTemplateRecord,
+  NewQuestTemplateRecord,
+  QuestTemplateObjectiveRecord,
+  NewQuestTemplateObjectiveRecord,
+} from "./quest-templates";
+
 export * from "./relations";

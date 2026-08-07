@@ -68,3 +68,13 @@ export type {
   QuestWorldChangeInput,
   ApplyQuestChangeResult,
 } from "./quest-change-applicator.service";
+
+export {
+  createQuestTemplate,
+  getQuestTemplateByKey,
+  listQuestTemplates,
+  instantiateQuestFromTemplate,
+  __setTestQuestTemplateDb,
+  __setTestQuestTemplateRepo,
+} from "./quest-template.service";
+export type { InstantiateQuestInput } from "./quest-template.service";

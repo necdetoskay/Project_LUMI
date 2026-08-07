@@ -17,6 +17,11 @@ export {
   isValidQuestObjectiveIndex,
   setQuestObjectiveStatus,
 } from "./quest";
+export { QuestTemplate } from "./quest-template";
+export type {
+  CreateQuestTemplateInput,
+  CreateQuestTemplateObjectiveInput,
+} from "./quest-template";
 export {
   DomainError,
   ValidationError,
@@ -66,6 +71,8 @@ export type {
   QuestObjectiveStatus,
   QuestState,
   QuestObjectiveState,
+  QuestTemplateState,
+  QuestTemplateObjectiveState,
 } from "./world-types";
 
 export {
@@ -87,4 +94,6 @@ export {
   validateId,
   validateQuestStatus,
   validateQuestObjectiveStatus,
+  validateTemplateKey,
+  validateObjectiveKey,
 } from "./validation";

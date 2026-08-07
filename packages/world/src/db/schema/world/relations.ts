@@ -11,6 +11,7 @@ import { worldEnvironmentSnapshots } from "./environment-snapshots";
 import { worldLocationConnections } from "./location-connections";
 import { worldCharacterResidences } from "./residences";
 import { quests, questObjectives } from "./quests";
+import { questTemplates, questTemplateObjectives } from "./quest-templates";
 
 export const worldsRelations = relations(worlds, ({ many }) => ({
   regions: many(worldRegions),
@@ -61,3 +62,13 @@ export const questsRelations = relations(quests, ({ many }) => ({
   objectives: many(questObjectives),
 }));
 export const questObjectivesRelations = relations(questObjectives, () => ({}));
+export const questTemplatesRelations = relations(
+  questTemplates,
+  ({ many }) => ({
+    objectives: many(questTemplateObjectives),
+  }),
+);
+export const questTemplateObjectivesRelations = relations(
+  questTemplateObjectives,
+  () => ({}),
+);

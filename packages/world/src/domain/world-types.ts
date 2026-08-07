@@ -251,3 +251,20 @@ export interface QuestState {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface QuestTemplateObjectiveState {
+  index: number;
+  objectiveKey: string;
+  title: string;
+}
+
+export interface QuestTemplateState {
+  id: string;
+  templateKey: string;
+  displayName: string;
+  description: string;
+  objectives: QuestTemplateObjectiveState[];
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
