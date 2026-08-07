@@ -39,16 +39,41 @@ export class OpportunityDeliveryService {
         "Opportunity already expired at delivery time",
       );
     }
-    await this.inbox.deliver(input.opportunity);
+    await this.inbox.deliver(input.opportunity, input.idempotencyKey);
     return "delivered";
   }
 
+  /**
+   * Responds to an opportunity. Loads it (household-scoped) and applies the
+   * domain accept/decline/defer guard so only proposed, non-expired
+   * opportunities can be responded to; the transition is then persisted.
+   */
   async respond(
     householdId: string,
     opportunityId: string,
     response: "accepted" | "declined" | "deferred",
     now = new Date(),
   ): Promise<void> {
+    const opportunity = await this.inbox.findById(householdId, opportunityId);
+    if (!opportunity) {
+      throw new NpcIntelligenceError(
+        "OPPORTUNITY_NOT_FOUND",
+        `Opportunity ${opportunityId} not found`,
+      );
+    }
+
+    switch (response) {
+      case "accepted":
+        opportunity.accept(now);
+        break;
+      case "declined":
+        opportunity.decline(now);
+        break;
+      case "deferred":
+        opportunity.defer(now);
+        break;
+    }
+
     await this.inbox.transitionStatus(opportunityId, response, now);
   }
 
@@ -58,5 +83,14 @@ export class OpportunityDeliveryService {
     now = new Date(),
   ): Promise<number> {
     return this.inbox.markExpired(householdId, childProfileId, now);
+  }
+
+  /** Lists non-expired proposed opportunities for a child (household-scoped). */
+  async listProposedForChild(
+    householdId: string,
+    childProfileId: string,
+    now = new Date(),
+  ): Promise<InteractionOpportunity[]> {
+    return this.inbox.listProposedForChild(householdId, childProfileId, now);
   }
 }

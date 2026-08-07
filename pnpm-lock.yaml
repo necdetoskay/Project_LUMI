@@ -48,6 +48,9 @@ importers:
       '@lumi/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@lumi/npc-intelligence':
+        specifier: workspace:*
+        version: link:../../packages/npc-intelligence
       '@lumi/privacy':
         specifier: workspace:*
         version: link:../../packages/privacy
