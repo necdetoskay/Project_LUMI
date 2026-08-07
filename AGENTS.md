@@ -148,3 +148,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 32 tamamlandı: T01–T04 tüm görevler yeşil (`@lumi/story` 135 unit test).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: generated scene → `advanceSession`/reader wiring + web settings port adapter, production accept route / opportunity inbox persistence / `respond`→`createHook` wiring (accept akışı), worker/web outbox propagator loop, quest rewards (geliştirme: mevcut `inventory_transaction` outcome ile), template authoring UI/versioning.
+
+- Sprint 33 — Quest Rewards (inventory grant via inventory*transaction outcome reuse) [tamamlandı] (spec: `docs/07-delivery/lumi/sprint-33/SPRINT_SPEC.md`; S33-T01 `QuestRewardState` + reward fields on `QuestTemplate`/`Quest` + `validateReward` + migration `0009_quest_rewards.sql` (nullable JSONB `reward` on `quest_templates`/`quests`), template/service propagation ✅, 4 yeni domain test; S33-T02 `QuestRewardPlanner.planQuestReward` ✅ (saf — yalnızca `completed` + reward tanımlı quest'lerde intent, defensive copy), 5 unit test; S33-T03 story `quest_reward_grant` intent ✅ (`OUTBOX_INTENT_TYPES` + `enqueueQuestRewardIntent` plain-JSON payload, idempotency `quest-reward:<questId>`; `applyQuestChange` artık `{ status, questCompleted, reward }` döner — completion'da tetikleme flag'i), 1 yeni story outbox test; S33-T04 `InventoryGrantPort` + `QuestRewardApplicator` ✅ (intent+reward validation, port üzerinden grant, idempotent), 5 unit test; S33-T05 backlog validation evidence ✅: `docs/07-delivery/lumi/sprint-33/S33_T05_VALIDATION_EVIDENCE.md`). `@lumi/world` 144 unit + `@lumi/story` 136 unit green; `pnpm format:check | lint | typecheck | test | build` + check-mojibake green; guarded `quest-reward.integration.test.ts` (reward propagation + once-only). Kapsar: S32 closeout'tan kalan \_quest rewards* backlog adımı.)
+
+### Sprint 33 closeout
+
+- Sprint 33 tamamlandı: T01–T05 tüm görevler yeşil (`@lumi/world` 144 unit, `@lumi/story` 136 unit).
+- `pnpm build` + `check-mojibake` green.
+- Kalan backlog: real `acquireItem` web adapter for `InventoryGrantPort`, generated scene → `advanceSession`/reader wiring + web settings port adapter, production accept route / opportunity inbox persistence / `respond`→`createHook` wiring (accept akışı), worker/web outbox propagator loop, template authoring UI/versioning.

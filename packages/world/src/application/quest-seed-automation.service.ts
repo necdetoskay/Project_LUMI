@@ -77,6 +77,7 @@ function questStateFromRows(
     status: string;
     version: number;
     evidenceRef: string | null;
+    reward: unknown;
     createdAt: Date;
     updatedAt: Date;
   },
@@ -98,6 +99,7 @@ function questStateFromRows(
     status: quest.status as QuestState["status"],
     version: quest.version,
     evidenceRef: quest.evidenceRef,
+    reward: (quest.reward as QuestState["reward"]) ?? null,
     createdAt: quest.createdAt,
     updatedAt: quest.updatedAt,
     objectives: objectives.map(objectiveStateFromRow),
@@ -153,6 +155,7 @@ export async function instantiateQuestFromSeed(
       title: template.displayName,
       summary: template.description,
       objectives: template.objectives.map((o) => ({ title: o.title })),
+      reward: template.reward,
     });
 
     const activated = await activateQuest(created.id);

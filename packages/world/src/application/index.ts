@@ -94,3 +94,11 @@ export type {
 
 export { QuestSeedAutomationApplicator } from "./quest-seed-automation-applicator.service";
 export type { QuestSeedAutomationApplicatorResult } from "./quest-seed-automation-applicator.service";
+
+export { QuestRewardApplicator } from "./quest-reward-applicator.service";
+export type { QuestRewardApplicatorResult } from "./quest-reward-applicator.service";
+export type {
+  InventoryGrantPort,
+  InventoryGrantInput,
+  InventoryGrantResult,
+} from "./inventory-grant.port";

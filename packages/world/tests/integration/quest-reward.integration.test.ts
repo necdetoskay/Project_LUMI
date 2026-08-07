@@ -12,11 +12,14 @@ import {
   activateQuest,
   __setTestQuestDb,
   __setTestQuestRepo,
+  getQuestById,
 } from "../../src/application/quest.service";
 import {
   applyQuestChange,
   __setTestQuestChangeDb,
+  __setTestQuestChangeRepo,
 } from "../../src/application/quest-change-applicator.service";
+import { planQuestReward } from "../../src/domain/quest-reward-planner";
 import { DrizzleQuestRepository } from "../../src/db/repositories/drizzle/drizzle-quest.repository";
 
 const ENABLE_DESTRUCTIVE = process.env.WORLD_TEST_ENABLE_DESTRUCTIVE === "true";
@@ -53,8 +56,8 @@ function isDestructiveEnabled(): boolean {
   return true;
 }
 
-const householdId = "20000000-0000-4000-8000-000000000010";
-const worldId = "30000000-0000-4000-8000-000000000010";
+const householdId = "20000000-0000-4000-8000-000000000014";
+const worldId = "30000000-0000-4000-8000-000000000014";
 
 let pool: pg.Pool;
 let queryClient: ReturnType<typeof postgres>;
@@ -79,8 +82,9 @@ beforeAll(async () => {
   repo = new DrizzleQuestRepository();
 
   __setTestQuestDb(db);
-  __setTestQuestChangeDb(db);
   __setTestQuestRepo(repo);
+  __setTestQuestChangeDb(db);
+  __setTestQuestChangeRepo(repo);
 });
 
 afterAll(async () => {
@@ -110,82 +114,73 @@ afterAll(async () => {
       }
     } finally {
       __setTestQuestDb(undefined);
-      __setTestQuestChangeDb(undefined);
       __setTestQuestRepo(undefined);
+      __setTestQuestChangeDb(undefined);
+      __setTestQuestChangeRepo(undefined);
     }
   }
 });
 
-describe.skipIf(!isDestructiveEnabled())(
-  "Quest world-change applicator integration",
-  () => {
-    it("applies a committed objective progression and is idempotent", async () => {
-      const created = await createQuest({
-        householdId,
-        worldId,
-        storySessionId: "60000000-0000-4000-8000-000000000010",
-        title: "Find the lost letter",
-        summary: "Help Stella find the owner of the lost letter.",
-        objectives: [
-          { title: "Question the innkeeper" },
-          { title: "Return the letter" },
-        ],
-      });
-      const questId = created.id;
+describe.skipIf(!isDestructiveEnabled())("Quest reward integration", () => {
+  it("plans a reward when the final objective auto-completes a quest", async () => {
+    const created = await createQuest({
+      householdId,
+      worldId,
+      title: "Reward quest",
+      summary: "Earn a reward.",
+      objectives: [{ title: "A" }, { title: "B" }],
+      reward: { itemDefinitionKey: "golden-compass", quantity: 1 },
+    });
+    const questId = created.id;
 
-      await activateQuest(questId);
+    await activateQuest(questId);
 
-      const first = await applyQuestChange({
-        questId,
-        objectiveIndex: 0,
-        status: "completed",
-        evidenceRef: "win://lost-letter/innkeeper",
-      });
-      expect(first.status).toBe("applied");
+    const first = await applyQuestChange({
+      questId,
+      objectiveIndex: 0,
+      status: "completed",
+      evidenceRef: "evidence://a",
+    });
+    expect(first.status).toBe("applied");
+    expect(first.questCompleted).toBe(false);
+    expect(first.reward).toBeNull();
 
-      const after = await repo.findQuestById(db, questId);
-      expect(after!.version).toBeGreaterThanOrEqual(2);
-      expect(after!.evidenceRef).toBe("win://lost-letter/innkeeper");
-
-      const objectives = await repo.findObjectivesByQuestId(db, questId);
-      expect(objectives[0]?.status).toBe("completed");
-      expect(objectives[0]?.evidenceRef).toBe("win://lost-letter/innkeeper");
-
-      const second = await applyQuestChange({
-        questId,
-        objectiveIndex: 0,
-        status: "completed",
-        evidenceRef: "win://lost-letter/innkeeper",
-      });
-      expect(second.status).toBe("skipped");
+    const second = await applyQuestChange({
+      questId,
+      objectiveIndex: 1,
+      status: "completed",
+      evidenceRef: "evidence://b",
+    });
+    expect(second.status).toBe("applied");
+    expect(second.questCompleted).toBe(true);
+    expect(second.reward).toEqual({
+      itemDefinitionKey: "golden-compass",
+      quantity: 1,
     });
 
-    it("auto-completes the quest when the final objective is progressed", async () => {
-      const created = await createQuest({
-        householdId,
-        worldId,
-        title: "Two-step errand",
-        summary: "Two quick errands.",
-        objectives: [{ title: "A" }, { title: "B" }],
-      });
-      const questId = created.id;
-      await activateQuest(questId);
-
-      await applyQuestChange({
-        questId,
-        objectiveIndex: 0,
-        status: "completed",
-        evidenceRef: "evidence://a",
-      });
-      await applyQuestChange({
-        questId,
-        objectiveIndex: 1,
-        status: "completed",
-        evidenceRef: "evidence://b",
-      });
-
-      const after = await repo.findQuestById(db, questId);
-      expect(after!.status).toBe("completed");
+    const persisted = await getQuestById(questId);
+    expect(persisted?.status).toBe("completed");
+    expect(persisted?.reward).toEqual({
+      itemDefinitionKey: "golden-compass",
+      quantity: 1,
     });
-  },
-);
+
+    const intent = planQuestReward(persisted!);
+    expect(intent).not.toBeNull();
+    expect(intent!.reward).toEqual({
+      itemDefinitionKey: "golden-compass",
+      quantity: 1,
+    });
+
+    // Re-applying the same objective is a no-op (no double reward).
+    const replay = await applyQuestChange({
+      questId,
+      objectiveIndex: 1,
+      status: "completed",
+      evidenceRef: "evidence://b",
+    });
+    expect(replay.status).toBe("skipped");
+    expect(replay.questCompleted).toBe(false);
+    expect(replay.reward).toBeNull();
+  });
+});

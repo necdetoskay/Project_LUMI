@@ -39,6 +39,7 @@ function templateStateFromRows(
     templateKey: string;
     displayName: string;
     description: string;
+    reward: unknown;
     version: number;
     createdAt: Date;
     updatedAt: Date;
@@ -54,6 +55,7 @@ function templateStateFromRows(
     templateKey: template.templateKey,
     displayName: template.displayName,
     description: template.description,
+    reward: (template.reward as QuestTemplateState["reward"]) ?? null,
     version: template.version,
     createdAt: template.createdAt,
     updatedAt: template.updatedAt,
@@ -92,6 +94,7 @@ export async function createQuestTemplate(
       templateKey: state.templateKey,
       displayName: state.displayName,
       description: state.description,
+      reward: state.reward,
       version: state.version,
       createdAt: state.createdAt,
       updatedAt: state.updatedAt,
@@ -159,5 +162,6 @@ export async function instantiateQuestFromTemplate(
     objectives: template.objectives.map((o) => ({
       title: o.title,
     })),
+    reward: template.reward,
   });
 }

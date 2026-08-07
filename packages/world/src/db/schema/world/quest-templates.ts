@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   text,
   uniqueIndex,
   uuid,
@@ -16,6 +17,7 @@ export const questTemplates = profileSchema.table(
     templateKey: varchar("template_key", { length: 120 }).notNull(),
     displayName: text("display_name").notNull(),
     description: text("description").notNull(),
+    reward: jsonb("reward"),
     version: integer("version").notNull().default(1),
     ...timestampColumns,
   },

@@ -2,11 +2,13 @@ import {
   validateDisplayName,
   validateTemplateKey,
   validateObjectiveKey,
+  validateReward,
 } from "./validation";
 import { ValidationError } from "./errors";
 import type {
   QuestTemplateState,
   QuestTemplateObjectiveState,
+  QuestRewardState,
 } from "./world-types";
 
 export interface CreateQuestTemplateObjectiveInput {
@@ -14,11 +16,17 @@ export interface CreateQuestTemplateObjectiveInput {
   title: string;
 }
 
+export interface CreateQuestTemplateRewardInput {
+  itemDefinitionKey: string;
+  quantity: number;
+}
+
 export interface CreateQuestTemplateInput {
   templateKey: string;
   displayName: string;
   description: string;
   objectives: CreateQuestTemplateObjectiveInput[];
+  reward?: CreateQuestTemplateRewardInput | null;
 }
 
 /**
@@ -55,6 +63,7 @@ export class QuestTemplate {
       displayName: validateDisplayName(input.displayName),
       description: input.description.trim(),
       objectives,
+      reward: input.reward ? validateReward(input.reward) : null,
       version: 1,
       createdAt: now,
       updatedAt: now,
@@ -74,6 +83,9 @@ export class QuestTemplate {
     for (const o of this.state.objectives) {
       validateObjectiveKey(o.objectiveKey);
       validateDisplayName(o.title, "objectiveTitle");
+    }
+    if (this.state.reward) {
+      validateReward(this.state.reward);
     }
   }
 
@@ -102,6 +114,10 @@ export class QuestTemplate {
 
   get objectives(): QuestTemplateObjectiveState[] {
     return this.state.objectives.map((o) => ({ ...o }));
+  }
+
+  get reward(): QuestRewardState | null {
+    return this.state.reward ? { ...this.state.reward } : null;
   }
 
   get version(): number {
