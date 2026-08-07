@@ -108,3 +108,34 @@ export { StoryHookDeliveryApplicator } from "./story-hook-delivery-applicator.se
 
 export { StoryHookService } from "./story-hook.service";
 export type { StoryHookResult } from "./story-hook.service";
+
+export { buildHookSceneBrief } from "../domain/hook-scene-brief";
+export type { HookSceneBrief } from "../domain/hook-scene-brief";
+
+export { buildStoryScenePrompt } from "./story-scene-prompt";
+export type { StoryScenePromptInput } from "./story-scene-prompt";
+
+export {
+  parseAndValidateSceneOutput,
+  SCENE_NARRATIVE_MAX,
+} from "./story-scene-output";
+export type {
+  GeneratedScene,
+  SceneOutputParseResult,
+} from "./story-scene-output";
+
+export { LlmConfigError, LlmGenerationError } from "./story-scene-llm-settings";
+export type {
+  StorySceneLlmSettings,
+  StorySceneLlmSettingsPort,
+} from "./story-scene-llm-settings";
+
+export { StorySceneGenerationService } from "./story-scene-generation.service";
+export type {
+  StorySceneGenerationInput,
+  StorySceneGenerationResult,
+  OpenRouterCaller,
+  OpenRouterCallInput,
+  OpenRouterCallResult,
+  OpenRouterMessage,
+} from "./story-scene-generation.service";

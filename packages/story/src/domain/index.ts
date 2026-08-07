@@ -22,3 +22,6 @@ export type { CreateStorySessionInput } from "./story-session";
 
 export { StoryHook } from "./story-hook";
 export type { CreateStoryHookInput } from "./story-hook";
+
+export { buildHookSceneBrief } from "./hook-scene-brief";
+export type { HookSceneBrief } from "./hook-scene-brief";
