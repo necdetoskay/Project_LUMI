@@ -96,6 +96,18 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: "PX-LUMI-09-002" },
   },
+  "L6-GOLDEN-001": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/web",
+      "exec",
+      "vitest",
+      "run",
+      "tests/ultef-golden-headless.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L6-GOLDEN-001" },
+  },
   L0: { command: "pnpm", args: ["test"] },
   L1: { command: "pnpm", args: ["test"] },
   L2: { command: "pnpm", args: ["--filter", "@lumi/profiles", "test:int"] },
