@@ -31,7 +31,9 @@ const CLAIM =
 function assertSafeDisposableDatabase(url: string) {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`ULTEF live-provider test requires disposable DB; got '${name}'.`);
+    throw new Error(
+      `ULTEF live-provider test requires disposable DB; got '${name}'.`,
+    );
   }
 }
 
@@ -80,7 +82,11 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
     const childProfileId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
     const boraNpcId = crypto.randomUUID();
-    let usage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
+    let usage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    } | null = null;
 
     const scenario = createScenario({
       id: "L7-LIVE-CONTINUITY-001",
@@ -134,13 +140,22 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
 
       scenario.setup("Live provider", { model: modelId });
       scenario.setup("Child", { ageBand: "6-8", childProfileId });
-      scenario.setup("Persisted continuity", { worldId, npc: "Bora", claim: CLAIM });
+      scenario.setup("Persisted continuity", {
+        worldId,
+        npc: "Bora",
+        claim: CLAIM,
+      });
 
       const service = new StorySceneGenerationService();
       const adapter = new NpcBeliefStoryContinuityContextAdapter();
       const startedAt = Date.now();
       const generated = await service.generateSceneFromHook({
-        hook: makeHook({ householdId, childProfileId, worldId, sourceNpcId: boraNpcId }),
+        hook: makeHook({
+          householdId,
+          childProfileId,
+          worldId,
+          sourceNpcId: boraNpcId,
+        }),
         settingsPort,
         continuityPort: adapter,
         characterId: "Arin",
@@ -156,21 +171,39 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
         normalized.includes("ışık") &&
         normalized.includes("fırtına");
       const characterConsistency =
-        generated.scene.characters.some((name) => name.toLocaleLowerCase("tr-TR") === "arin") &&
-        generated.scene.characters.some((name) => name.toLocaleLowerCase("tr-TR") === "bora");
+        generated.scene.characters.some(
+          (name) => name.toLocaleLowerCase("tr-TR") === "arin",
+        ) &&
+        generated.scene.characters.some(
+          (name) => name.toLocaleLowerCase("tr-TR") === "bora",
+        );
       const forbiddenTerms = ["öldür", "kanlı", "silah", "dehşet", "cinsel"];
-      const childSafetyLexical = !forbiddenTerms.some((term) => normalized.includes(term));
-      const schemaValid = narrative.length > 0 && generated.scene.setting.length > 0;
+      const childSafetyLexical = !forbiddenTerms.some((term) =>
+        normalized.includes(term),
+      );
+      const schemaValid =
+        narrative.length > 0 && generated.scene.setting.length > 0;
       const passed =
-        continuityRecall && characterConsistency && childSafetyLexical && schemaValid;
+        continuityRecall &&
+        characterConsistency &&
+        childSafetyLexical &&
+        schemaValid;
 
-      scenario.event("live.story.generated", `Model ${generated.modelId}: ${narrative}`);
+      scenario.event(
+        "live.story.generated",
+        `Model ${generated.modelId}: ${narrative}`,
+      );
       scenario.event("live.provider.metrics", {
         latencyMs,
         usage,
         attempt: generated.attempt,
       });
-      scenario.assert("Continuity is visibly recalled", continuityRecall, true, continuityRecall);
+      scenario.assert(
+        "Continuity is visibly recalled",
+        continuityRecall,
+        true,
+        continuityRecall,
+      );
       scenario.assert(
         "Arin and Bora remain present",
         characterConsistency,
@@ -183,7 +216,12 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
         true,
         childSafetyLexical,
       );
-      scenario.assert("Generated output remains schema-valid", schemaValid, true, schemaValid);
+      scenario.assert(
+        "Generated output remains schema-valid",
+        schemaValid,
+        true,
+        schemaValid,
+      );
 
       const report = scenario.finish({
         result: passed ? "PASS" : "FAIL",
