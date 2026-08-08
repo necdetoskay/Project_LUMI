@@ -1,6 +1,6 @@
 # L8 Completion Evidence and Exit Criteria
 
-Status: completion candidate
+Status: CLOSED
 Scope: Project LUMI ULTEF L8 — semantic quality, live model evaluation, calibrated judging, and model-selection evidence
 
 ## Purpose
@@ -191,13 +191,13 @@ Required closure state:
 - ULTEF Integration: PASS,
 - CI: PASS.
 
-At creation of this document on 2026-08-08:
+Closure head `9657073d9397acf74cf557b575a13a2f41128979` on 2026-08-08:
 
-- Security Scan #455: PASS,
-- ULTEF Integration #278: PASS,
-- CI #511: still running.
+- Security Scan #456: PASS,
+- ULTEF Integration #279: PASS,
+- CI #512: PASS.
 
-Therefore the current L8 status remains **completion candidate**, not formally CLOSED, until the final CI run for the closure head is green.
+Status: PASS.
 
 ## Invalidated historical evidence
 
@@ -210,15 +210,9 @@ Those defects were corrected and protected by regression tests before the canoni
 
 ## L8 closure decision
 
-L8 may be marked **CLOSED** when all of the following are true on the closure head:
+**L8 is CLOSED.**
 
-1. this completion evidence is present,
-2. Security Scan is green,
-3. ULTEF Integration is green,
-4. CI is green,
-5. no paid live-provider probe remains in ordinary PR CI.
-
-All functional/evidence criteria are satisfied. Only final repository-green confirmation remains at the time of this document's creation.
+All functional, evidence, calibration, stability, model-selection, cost-isolation, security, integration, and CI closure gates are satisfied. No paid live-provider probe remains in ordinary PR CI.
 
 ## Deferred beyond L8
 
