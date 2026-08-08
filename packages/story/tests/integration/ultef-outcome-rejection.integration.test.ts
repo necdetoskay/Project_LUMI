@@ -165,7 +165,9 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
           snapshot,
           extractor: new NarrativeEventExtractor(),
           validator: new EvidenceValidator(),
-          ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+          ruleEngine: new WorldCommitRuleEngine({
+            rules: defaultOutcomeRules(),
+          }),
         });
       } catch (error) {
         rejected = true;
@@ -204,26 +206,61 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
         noOutbox: after.outboxCount === before.outboxCount,
       };
 
-      scenario.assert("Invalid outcome is rejected", assertions.rejected, true, rejected);
+      scenario.assert(
+        "Invalid outcome is rejected",
+        assertions.rejected,
+        true,
+        rejected,
+      );
       scenario.assert(
         "Rejection is an evidence-validation failure",
         assertions.evidenceFailure,
         true,
         rejection,
       );
-      scenario.assert("No commit record leaked", assertions.noCommit, before.commitCount, after.commitCount);
+      scenario.assert(
+        "No commit record leaked",
+        assertions.noCommit,
+        before.commitCount,
+        after.commitCount,
+      );
       scenario.assert(
         "World version did not advance",
         assertions.noWorldVersion,
         before.worldVersionCount,
         after.worldVersionCount,
       );
-      scenario.assert("No world commit event leaked", assertions.noEvent, before.eventCount, after.eventCount);
-      scenario.assert("No indirect outbox intent leaked", assertions.noOutbox, before.outboxCount, after.outboxCount);
+      scenario.assert(
+        "No world commit event leaked",
+        assertions.noEvent,
+        before.eventCount,
+        after.eventCount,
+      );
+      scenario.assert(
+        "No indirect outbox intent leaked",
+        assertions.noOutbox,
+        before.outboxCount,
+        after.outboxCount,
+      );
 
-      scenario.delta("story.commit.count", before.commitCount, after.commitCount, "invalid outcome rejection");
-      scenario.delta("story.worldVersion.count", before.worldVersionCount, after.worldVersionCount, "invalid outcome rejection");
-      scenario.delta("story.outbox.count", before.outboxCount, after.outboxCount, "invalid outcome rejection");
+      scenario.delta(
+        "story.commit.count",
+        before.commitCount,
+        after.commitCount,
+        "invalid outcome rejection",
+      );
+      scenario.delta(
+        "story.worldVersion.count",
+        before.worldVersionCount,
+        after.worldVersionCount,
+        "invalid outcome rejection",
+      );
+      scenario.delta(
+        "story.outbox.count",
+        before.outboxCount,
+        after.outboxCount,
+        "invalid outcome rejection",
+      );
 
       const passed = Object.values(assertions).every(Boolean);
       const report = scenario.finish({
@@ -235,9 +272,18 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
       await writeScenarioArtifacts(report, { environment: "integration" });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_outbox WHERE household_id = $1`, [fixture.householdId]);
-      await pool.query(`DELETE FROM story.story_commit_records WHERE household_id = $1`, [fixture.householdId]);
-      await pool.query(`DELETE FROM story.story_world_versions WHERE household_id = $1`, [fixture.householdId]);
+      await pool.query(
+        `DELETE FROM story.story_outbox WHERE household_id = $1`,
+        [fixture.householdId],
+      );
+      await pool.query(
+        `DELETE FROM story.story_commit_records WHERE household_id = $1`,
+        [fixture.householdId],
+      );
+      await pool.query(
+        `DELETE FROM story.story_world_versions WHERE household_id = $1`,
+        [fixture.householdId],
+      );
       await cleanupStoryFixture(pool, fixture);
     }
   });
