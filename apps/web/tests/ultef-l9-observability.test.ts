@@ -6,7 +6,9 @@ import {
   type MetricsAdapter,
 } from "@lumi/logger";
 
-import alertsConfig from "../../../infra/observability/alerts.json" with { type: "json" };
+import alertsConfig from "../../../infra/observability/alerts.json" with {
+  type: "json",
+};
 import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
 import {
@@ -125,9 +127,7 @@ ultefDescribe(
           hasMetric("http.request.duration");
         const readinessSignalsPresent =
           hasMetric("readiness.status") && hasMetric("readiness.postgres");
-        const invalidCorrelationSignalPresent = hasMetric(
-          "correlation.invalid",
-        );
+        const invalidCorrelationSignalPresent = hasMetric("correlation.invalid");
         const errorLabelsBounded = counterCalls.some(
           ([name, , labels]) =>
             name === "http.requests.errors" &&
