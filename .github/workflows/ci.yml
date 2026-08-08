@@ -31,6 +31,8 @@ jobs:
         run: pnpm ultef:l8-semantic-calibration-selftest
       - name: Validate ULTEF L8 semantic calibration stability
         run: pnpm ultef:l8-semantic-stability-selftest
+      - name: Validate ULTEF L8 scorecard performance scoring
+        run: pnpm ultef:l8-scorecard-scoring-selftest
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
