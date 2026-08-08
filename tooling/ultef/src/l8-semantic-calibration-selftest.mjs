@@ -35,7 +35,9 @@ const perfect = evaluateSemanticCalibration(
 );
 assert.equal(perfect.eligible, true);
 assert.equal(perfect.mae, 0);
+assert.equal(perfect.meanBias, 0);
 assert.equal(perfect.withinOneRate, 1);
+assert.deepEqual(perfect.directionCounts, { under: 0, exact: 18, over: 0 });
 
 const noisyPredictions = Object.fromEntries(
   seedDataset.examples.map((example, index) => [
@@ -49,6 +51,8 @@ const noisy = evaluateSemanticCalibration(
 );
 assert.equal(noisy.eligible, true);
 assert.ok(noisy.mae <= 0.75);
+assert.ok(noisy.meanBias >= 0);
+assert.ok(noisy.directionCounts.over > 0);
 assert.ok(noisy.withinOneRate >= 0.85);
 
 const badPredictions = Object.fromEntries(
@@ -67,7 +71,36 @@ const boundaryResult = evaluateSemanticCalibration(
 );
 assert.equal(boundaryResult.eligible, true);
 assert.equal(boundaryResult.mae, 0);
+assert.equal(boundaryResult.meanBias, 0);
 assert.equal(boundaryResult.withinOneRate, 1);
+
+const upwardBoundaryPredictions = Object.fromEntries(
+  boundaryDataset.examples.map((example) => [
+    example.id,
+    Math.min(5, example.humanScore + 1),
+  ]),
+);
+const upwardBoundary = evaluateSemanticCalibration(
+  boundaryDataset.examples,
+  upwardBoundaryPredictions,
+);
+assert.equal(upwardBoundary.meanBias, 1);
+assert.deepEqual(upwardBoundary.directionCounts, {
+  under: 0,
+  exact: 0,
+  over: 18,
+});
+assert.equal(upwardBoundary.transitions["2->3"], 6);
+assert.equal(upwardBoundary.transitions["3->4"], 6);
+assert.equal(upwardBoundary.transitions["4->5"], 6);
+for (const rubricResult of Object.values(upwardBoundary.rubrics)) {
+  assert.equal(rubricResult.meanBias, 1);
+  assert.deepEqual(rubricResult.directionCounts, {
+    under: 0,
+    exact: 0,
+    over: 6,
+  });
+}
 
 assert.throws(
   () =>
