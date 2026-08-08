@@ -234,7 +234,7 @@ ultefDescribe(
             session_count: string;
           }>(
             `SELECT
-               COALESCE((SELECT MAX(version) FROM story.story_world_versions WHERE household_id = $1 AND world_id = $2), 0)::int AS world_version,
+               COALESCE((SELECT MAX(current_version) FROM story.story_world_versions WHERE household_id = $1 AND world_id = $2), 0)::int AS world_version,
                (SELECT COUNT(*) FROM story.story_commit_records WHERE household_id = $1 AND world_id = $2)::text AS commit_count,
                (SELECT COUNT(*) FROM story.story_sessions WHERE household_id = $1 AND world_id = $2)::text AS session_count`,
             [fixture.householdId, fixture.worldId],
@@ -288,7 +288,7 @@ ultefDescribe(
           completed_sessions: string;
         }>(
           `SELECT
-             COALESCE((SELECT MAX(version) FROM story.story_world_versions WHERE household_id = $1 AND world_id = $2), 0)::int AS world_version,
+             COALESCE((SELECT MAX(current_version) FROM story.story_world_versions WHERE household_id = $1 AND world_id = $2), 0)::int AS world_version,
              (SELECT COUNT(*) FROM story.story_commit_records WHERE household_id = $1 AND world_id = $2)::text AS commit_count,
              (SELECT COUNT(*) FROM story.story_sessions WHERE household_id = $1 AND world_id = $2 AND status = 'completed')::text AS completed_sessions`,
           [fixture.householdId, fixture.worldId],
