@@ -35,7 +35,7 @@ let storyDb: ReturnType<typeof createStoryDatabase>;
 let beliefRepository: DrizzleBeliefSourceRepository;
 
 class AlwaysFailApplicator implements IndirectEffectApplicator {
-  async apply() {
+  async apply(): Promise<{ writes: number }> {
     throw new Error("ULTEF_PERMANENT_PROPAGATION_FAILURE");
   }
 }
