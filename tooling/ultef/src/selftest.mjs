@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
+import { access, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { createScenario, renderNarrative } from './evidence.mjs';
+import { writeScenarioArtifacts } from './artifacts.mjs';
 
 const scenario = createScenario({
   id: 'L6-GOLDEN-001-DEMO',
@@ -38,5 +41,15 @@ try {
 }
 assert.equal(rejectedFalsePass, true, 'Recorder must reject PASS when an assertion failed');
 
+const artifacts = await writeScenarioArtifacts(report, { environment: 'selftest' });
+await access(path.join(artifacts.latestDir, 'summary.json'));
+await access(path.join(artifacts.latestDir, 'summary.md'));
+await access(path.join(artifacts.latestDir, 'failures.json'));
+const saved = JSON.parse(await readFile(path.join(artifacts.latestDir, 'summary.json'), 'utf8'));
+assert.equal(saved.id, report.id);
+assert.equal(saved.result, 'PASS');
+assert.equal(saved.run.environment, 'selftest');
+
 console.log(narrative);
+console.log(`ULTEF artifacts written to ${artifacts.latestDir}`);
 console.log('ULTEF evidence recorder self-test: PASS');
