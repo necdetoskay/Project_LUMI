@@ -130,10 +130,7 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
         judgeModel: response.model,
       });
       await writeFile(
-        path.join(
-          artifacts.runDir,
-          "L8-SEMANTIC-BOUNDARY-HUMAN-REVIEW.md",
-        ),
+        path.join(artifacts.runDir, "L8-SEMANTIC-BOUNDARY-HUMAN-REVIEW.md"),
         humanReview,
         "utf8",
       );
