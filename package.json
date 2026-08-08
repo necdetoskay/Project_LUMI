@@ -14,6 +14,7 @@
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
     "ultef:isolation": "node tooling/ultef/src/cli.mjs L2-ISOLATION-MATRIX",
     "ultef:session-negative": "node tooling/ultef/src/cli.mjs L3-SESSION-NEGATIVE",
+    "ultef:session-idempotency": "node tooling/ultef/src/cli.mjs L3-SESSION-IDEMPOTENCY",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
