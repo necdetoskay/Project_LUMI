@@ -67,6 +67,14 @@ async function readProtectedState(
   };
 }
 
+function commitDependencies() {
+  return {
+    extractor: new NarrativeEventExtractor(),
+    validator: new EvidenceValidator(),
+    ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+  };
+}
+
 describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
   beforeAll(async () => {
     const url = process.env.STORY_TEST_DATABASE_URL;
@@ -169,11 +177,7 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
         await new WorldCommitService().commitManifest({
           manifest,
           snapshot,
-          extractor: new NarrativeEventExtractor(),
-          validator: new EvidenceValidator(),
-          ruleEngine: new WorldCommitRuleEngine({
-            rules: defaultOutcomeRules(),
-          }),
+          ...commitDependencies(),
         });
       } catch (error) {
         rejected = true;
@@ -274,6 +278,199 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
         reason: passed
           ? "The invalid outcome was rejected before world commit and PostgreSQL reload proved no commit, world-version, event or outbox side effect was persisted."
           : "Outcome rejection or no-leak assertions failed.",
+      });
+      await writeScenarioArtifacts(report, { environment: "integration" });
+      expect(report.result).toBe("PASS");
+    } finally {
+      await pool.query(
+        `DELETE FROM story.story_outbox WHERE household_id = $1`,
+        [fixture.householdId],
+      );
+      await pool.query(
+        `DELETE FROM story.story_commit_records WHERE household_id = $1`,
+        [fixture.householdId],
+      );
+      await pool.query(
+        `DELETE FROM story.story_world_versions WHERE household_id = $1`,
+        [fixture.householdId],
+      );
+      await cleanupStoryFixture(pool, fixture);
+    }
+  });
+
+  it("L4-OUTCOME-REJECT-002 rejects missing evidenceRef and persists no world side effect", async () => {
+    if (!db || !pool) throw new Error("STORY_TEST_DATABASE_URL_REQUIRED");
+
+    const fixture = {
+      householdId: crypto.randomUUID(),
+      childProfileId: crypto.randomUUID(),
+      characterId: crypto.randomUUID(),
+      worldId: crypto.randomUUID(),
+      storyDefinitionId: crypto.randomUUID(),
+      storyVersionId: crypto.randomUUID(),
+      entrySceneId: crypto.randomUUID(),
+      storySessionId: crypto.randomUUID(),
+    };
+    const npcId = crypto.randomUUID();
+    await seedStoryFixture(pool, fixture);
+
+    try {
+      const manifest = OutcomeManifest.create({
+        storySessionId: fixture.storySessionId,
+        householdId: fixture.householdId,
+        worldId: fixture.worldId,
+        source: "story_session",
+        sourceSceneId: "ultef-missing-evidence-scene",
+        changes: [
+          {
+            key: "missing-evidence-change",
+            outcomeType: "npc_state_update",
+            entityId: npcId,
+            operation: "set",
+            field: "need.hunger",
+            value: 70,
+            evidenceRef: "",
+          },
+        ],
+      });
+      const snapshot = StoryContextSnapshot.create({
+        storySessionId: fixture.storySessionId,
+        householdId: fixture.householdId,
+        worldId: fixture.worldId,
+        worldStateHash: "ultef-missing-evidence-before",
+        entities: [
+          {
+            entityId: npcId,
+            entityKind: "npc",
+            state: { need: { hunger: 40 } },
+            stateHash: "ultef-missing-evidence-npc-before",
+          },
+        ],
+      });
+
+      const scenario = createScenario({
+        id: "L4-OUTCOME-REJECT-002",
+        title: "Outcome without evidence is rejected without world-state leakage",
+        level: "L4",
+        projectGate: "PX-LUMI-09",
+        seed: "runtime-uuid",
+      });
+      scenario.setup("Child", { id: fixture.childProfileId, name: "Deniz" });
+      scenario.setup("World", {
+        id: fixture.worldId,
+        name: "Gunes Vadisi",
+      });
+      scenario.setup("NPC", { id: npcId, name: "Mira" });
+      scenario.setup("Invalid outcome", {
+        field: "need.hunger",
+        from: 40,
+        to: 70,
+        evidenceRef: "",
+      });
+
+      const before = await readProtectedState(
+        db,
+        fixture.householdId,
+        fixture.worldId,
+        fixture.storySessionId,
+        manifest.id,
+      );
+
+      let rejected = false;
+      let rejection = "";
+      try {
+        await new WorldCommitService().commitManifest({
+          manifest,
+          snapshot,
+          ...commitDependencies(),
+        });
+      } catch (error) {
+        rejected = true;
+        rejection = error instanceof Error ? error.message : String(error);
+      }
+
+      const after = await readProtectedState(
+        db,
+        fixture.householdId,
+        fixture.worldId,
+        fixture.storySessionId,
+        manifest.id,
+      );
+
+      scenario.event(
+        "story.outcome.no-evidence.proposed",
+        "Hikaye Mira'nin hunger state'ini degistirmeyi onerdi fakat change evidenceRef tasimiyordu.",
+      );
+      scenario.event(
+        "story.outcome.no-evidence.rejected",
+        rejected
+          ? `World commit reddedildi: ${rejection}`
+          : "Evidence'siz outcome beklenmedik sekilde kabul edildi.",
+      );
+      scenario.event(
+        "world.state.reload",
+        "Reddetme sonrasinda commit, world-version, event ve outbox kayitlari PostgreSQL'den yeniden okundu.",
+      );
+
+      const assertions = {
+        rejected,
+        evidenceFailure: rejection.includes("EVIDENCE_VALIDATION_FAILED"),
+        missingEvidenceReason: rejection.includes("missing evidenceRef"),
+        noCommit: after.commitCount === before.commitCount,
+        noWorldVersion: after.worldVersionCount === before.worldVersionCount,
+        noEvent: after.eventCount === before.eventCount,
+        noOutbox: after.outboxCount === before.outboxCount,
+      };
+
+      scenario.assert(
+        "Evidence-less outcome is rejected",
+        assertions.rejected,
+        true,
+        rejected,
+      );
+      scenario.assert(
+        "Rejection is an evidence-validation failure",
+        assertions.evidenceFailure,
+        true,
+        rejection,
+      );
+      scenario.assert(
+        "Rejection reports missing evidenceRef",
+        assertions.missingEvidenceReason,
+        true,
+        rejection,
+      );
+      scenario.assert(
+        "No commit record leaked",
+        assertions.noCommit,
+        before.commitCount,
+        after.commitCount,
+      );
+      scenario.assert(
+        "World version did not advance",
+        assertions.noWorldVersion,
+        before.worldVersionCount,
+        after.worldVersionCount,
+      );
+      scenario.assert(
+        "No world commit event leaked",
+        assertions.noEvent,
+        before.eventCount,
+        after.eventCount,
+      );
+      scenario.assert(
+        "No indirect outbox intent leaked",
+        assertions.noOutbox,
+        before.outboxCount,
+        after.outboxCount,
+      );
+
+      const passed = Object.values(assertions).every(Boolean);
+      const report = scenario.finish({
+        result: passed ? "PASS" : "FAIL",
+        reason: passed
+          ? "The evidence-less outcome was rejected before world commit and DB reload proved zero world-state leakage."
+          : "Missing-evidence rejection or no-leak assertions failed.",
       });
       await writeScenarioArtifacts(report, { environment: "integration" });
       expect(report.result).toBe("PASS");
