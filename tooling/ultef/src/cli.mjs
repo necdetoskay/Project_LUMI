@@ -9,66 +9,32 @@ const commands = {
   },
   'L1-PROFILE-001': {
     command: 'pnpm',
-    args: [
-      '--filter',
-      '@lumi/profiles',
-      'exec',
-      'vitest',
-      'run',
-      '--config',
-      'vitest.integration.config.ts',
-      'tests/integration/ultef-profile.integration.test.ts'
-    ]
+    args: ['--filter', '@lumi/profiles', 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/ultef-profile.integration.test.ts']
   },
   'L3-NPC-001': {
     command: 'pnpm',
-    args: [
-      '--filter',
-      '@lumi/npc-intelligence',
-      'exec',
-      'vitest',
-      'run',
-      'tests/ultef/ultef-rumor.test.ts'
-    ],
+    args: ['--filter', '@lumi/npc-intelligence', 'exec', 'vitest', 'run', 'tests/ultef/ultef-rumor.test.ts'],
     env: { ULTEF_SCENARIO: 'L3-NPC-001' }
   },
   'L4-OPPORTUNITY-HOOK-001': {
     command: 'pnpm',
-    args: [
-      '--filter',
-      '@lumi/web',
-      'exec',
-      'vitest',
-      'run',
-      'tests/ultef-opportunity-to-hook.test.ts'
-    ],
+    args: ['--filter', '@lumi/web', 'exec', 'vitest', 'run', 'tests/ultef-opportunity-to-hook.test.ts'],
     env: { ULTEF_SCENARIO: 'L4-OPPORTUNITY-HOOK-001' }
   },
   'L4-HOOK-SCENE-001': {
     command: 'pnpm',
-    args: [
-      '--filter',
-      '@lumi/story',
-      'exec',
-      'vitest',
-      'run',
-      'tests/ultef/ultef-hook-scene.test.ts'
-    ],
+    args: ['--filter', '@lumi/story', 'exec', 'vitest', 'run', 'tests/ultef/ultef-hook-scene.test.ts'],
     env: { ULTEF_SCENARIO: 'L4-HOOK-SCENE-001' }
   },
   'L4-SCENE-SESSION-001': {
     command: 'pnpm',
-    args: [
-      '--filter',
-      '@lumi/story',
-      'exec',
-      'vitest',
-      'run',
-      '--config',
-      'vitest.integration.config.ts',
-      'tests/integration/ultef-generated-scene-session.integration.test.ts'
-    ],
+    args: ['--filter', '@lumi/story', 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/ultef-generated-scene-session.integration.test.ts'],
     env: { ULTEF_SCENARIO: 'L4-SCENE-SESSION-001' }
+  },
+  'PX-LUMI-09-001': {
+    command: 'pnpm',
+    args: ['--filter', '@lumi/story', 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/ultef-world-commit.integration.test.ts'],
+    env: { ULTEF_SCENARIO: 'PX-LUMI-09-001' }
   },
   L0: { command: 'pnpm', args: ['test'] },
   L1: { command: 'pnpm', args: ['test'] },
