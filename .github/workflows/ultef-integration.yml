@@ -63,6 +63,9 @@ jobs:
       - name: Run L6 Golden Headless Journey
         run: pnpm ultef:golden
 
+      - name: Run Sprint 01 household isolation matrix
+        run: pnpm ultef:isolation
+
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -79,6 +82,16 @@ jobs:
           else
             echo "L6 Golden Journey evidence was not produced."
           fi
+          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003; do
+            FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1)
+            if [ -n "$FILE" ]; then
+              echo
+              echo "===== $SCENARIO ====="
+              cat "$FILE"
+            else
+              echo "$SCENARIO evidence was not produced."
+            fi
+          done
 
       - name: Upload ULTEF evidence
         if: always()
