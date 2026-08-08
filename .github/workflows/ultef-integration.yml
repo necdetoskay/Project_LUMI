@@ -8,7 +8,7 @@ on:
 jobs:
   db-backed-ultef:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17
@@ -67,6 +67,10 @@ jobs:
         run: pnpm ultef:l9-load
       - name: Run L9 observability production contract
         run: pnpm ultef:l9-observability
+      - name: Run L9 PostgreSQL backup restore recovery
+        env:
+          ULTEF_SCENARIO: L9-BACKUP-RESTORE-001
+        run: pnpm --filter @lumi/story exec vitest run --config vitest.integration.config.ts tests/integration/ultef-l9-backup-restore.integration.test.ts
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -154,6 +158,14 @@ jobs:
             cat "$OBS_FILE"
           else
             echo "L9 observability evidence was not produced."
+          fi
+          BACKUP_FILE=$(find artifacts/ultef/runs -name 'L9-BACKUP-RESTORE-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$BACKUP_FILE" ]; then
+            echo
+            echo "===== L9 BACKUP RESTORE ====="
+            cat "$BACKUP_FILE"
+          else
+            echo "L9 backup-restore evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
