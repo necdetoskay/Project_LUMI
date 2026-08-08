@@ -8,7 +8,9 @@ export type StoryMigrationInput = {
   afterSqlApplied?: () => void | Promise<void>;
 };
 
-export function ensureStoryMigrationLedger(client: pg.PoolClient): Promise<void>;
+export function ensureStoryMigrationLedger(
+  client: pg.PoolClient,
+): Promise<void>;
 
 export function getAppliedStoryMigrationFiles(
   client: pg.PoolClient,
