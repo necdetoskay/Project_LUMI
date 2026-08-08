@@ -8,7 +8,8 @@ import { applyStoryMigration } from "../../scripts/story-migration-runner.mjs";
 const enabled = process.env.ULTEF_SCENARIO === "L9-MIGRATION-RECOVERY-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const describeDb = enabled && destructive && databaseUrl ? describe : describe.skip;
+const describeDb =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 let pool: pg.Pool | null = null;
 
@@ -133,7 +134,10 @@ describeDb("ULTEF L9 — migration crash recovery", () => {
       "Replay after successful migration is skipped without duplicate data",
       replaySafe,
       { status: "skipped", rowCount: 1 },
-      { status: replay.status, rowCount: afterReplayRows.rows[0]?.count ?? null },
+      {
+        status: replay.status,
+        rowCount: afterReplayRows.rows[0]?.count ?? null,
+      },
     );
 
     const passed = rollbackAtomic && retryRecovered && replaySafe;
