@@ -7,7 +7,9 @@ const scenarioId = "L7-LIVE-CONTINUITY-001";
 const models = parseModels(process.env.ULTEF_L8_MODELS);
 
 if (models.length === 0) {
-  throw new Error("ULTEF_L8_MODELS must contain at least one OpenRouter model id.");
+  throw new Error(
+    "ULTEF_L8_MODELS must contain at least one OpenRouter model id.",
+  );
 }
 if (models.length > MAX_MODELS) {
   throw new Error(`ULTEF L8 allows at most ${MAX_MODELS} models per paid run.`);
@@ -69,19 +71,28 @@ const payload = {
   id: "L8-MODEL-SCORECARD-001",
   generatedAt: new Date().toISOString(),
   scoring: {
-    qualityGate: "All four L7 assertions must pass before a model is eligible to win.",
+    qualityGate:
+      "All four L7 assertions must pass before a model is eligible to win.",
     qualityPoints: 70,
     latencyPoints: 15,
     tokenEfficiencyPoints: 15,
-    latencyScale: "15 points at <=3000ms, 0 points at >=15000ms, linear between.",
-    tokenScale: "15 points at <=700 total tokens, 0 points at >=2000, linear between.",
+    latencyScale:
+      "15 points at <=3000ms, 0 points at >=15000ms, linear between.",
+    tokenScale:
+      "15 points at <=700 total tokens, 0 points at >=2000, linear between.",
   },
   models: results,
   winner: winner?.model ?? null,
 };
 
-const jsonPath = path.join(scorecardDir, `${timestamp}-L8-MODEL-SCORECARD-001.json`);
-const mdPath = path.join(scorecardDir, `${timestamp}-L8-MODEL-SCORECARD-001.md`);
+const jsonPath = path.join(
+  scorecardDir,
+  `${timestamp}-L8-MODEL-SCORECARD-001.json`,
+);
+const mdPath = path.join(
+  scorecardDir,
+  `${timestamp}-L8-MODEL-SCORECARD-001.md`,
+);
 await writeFile(jsonPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 await writeFile(mdPath, renderMarkdown(payload), "utf8");
 
@@ -89,7 +100,14 @@ console.log(renderMarkdown(payload));
 if (!winner) process.exitCode = 1;
 
 function parseModels(raw) {
-  return [...new Set((raw ?? "").split(",").map((value) => value.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      (raw ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 async function listScenarioFiles(base) {
@@ -115,23 +133,35 @@ async function listScenarioFiles(base) {
 }
 
 function scoreReport(requestedModel, report, processStatus) {
-  const metrics = report.timeline?.find((event) => event.type === "live.provider.metrics")?.data ?? {};
-  const liveStory = report.timeline?.find((event) => event.type === "live.story.generated")?.data ?? {};
+  const metrics =
+    report.timeline?.find((event) => event.type === "live.provider.metrics")
+      ?.data ?? {};
+  const liveStory =
+    report.timeline?.find((event) => event.type === "live.story.generated")
+      ?.data ?? {};
   const assertions = report.assertions ?? [];
   const assertionsPassed = assertions.filter((item) => item.passed).length;
   const assertionsTotal = assertions.length;
-  const qualityGate = report.result === "PASS" && assertionsTotal >= 4 && assertionsPassed === assertionsTotal;
+  const qualityGate =
+    report.result === "PASS" &&
+    assertionsTotal >= 4 &&
+    assertionsPassed === assertionsTotal;
   const latencyMs = numberOrNull(metrics.latencyMs);
   const usage = metrics.usage ?? null;
   const totalTokens = numberOrNull(usage?.totalTokens);
-  const latencyPoints = qualityGate ? linearScore(latencyMs, 3000, 15000, 15) : 0;
+  const latencyPoints = qualityGate
+    ? linearScore(latencyMs, 3000, 15000, 15)
+    : 0;
   const tokenPoints = qualityGate ? linearScore(totalTokens, 700, 2000, 15) : 0;
   const qualityPoints = qualityGate ? 70 : 0;
 
   return {
     model: liveStory.modelId ?? metrics.modelId ?? requestedModel,
     requestedModel,
-    result: processStatus === 0 ? report.result : `${report.result}/PROCESS_${processStatus}`,
+    result:
+      processStatus === 0
+        ? report.result
+        : `${report.result}/PROCESS_${processStatus}`,
     qualityGate,
     score: round(qualityPoints + latencyPoints + tokenPoints),
     qualityPoints,
@@ -179,6 +209,15 @@ function renderMarkdown(payload) {
       `| ${index + 1} | ${item.model} | ${item.qualityGate ? "PASS" : "FAIL"} | ${item.score} | ${item.latencyMs ?? "n/a"} | ${item.totalTokens ?? "n/a"} | ${item.assertionsPassed}/${item.assertionsTotal} |`,
     );
   });
-  lines.push("", "## Scoring", "", "- Quality gate: 70 points, only when all required L7 assertions pass.", "- Latency: up to 15 points; full points at <=3s, zero at >=15s.", "- Token efficiency: up to 15 points; full points at <=700 total tokens, zero at >=2000.", "- This v1 scorecard intentionally does not estimate monetary cost because provider/model prices are mutable; token counts remain durable evidence.", "");
+  lines.push(
+    "",
+    "## Scoring",
+    "",
+    "- Quality gate: 70 points, only when all required L7 assertions pass.",
+    "- Latency: up to 15 points; full points at <=3s, zero at >=15s.",
+    "- Token efficiency: up to 15 points; full points at <=700 total tokens, zero at >=2000.",
+    "- This v1 scorecard intentionally does not estimate monetary cost because provider/model prices are mutable; token counts remain durable evidence.",
+    "",
+  );
   return `${lines.join("\n")}\n`;
 }
