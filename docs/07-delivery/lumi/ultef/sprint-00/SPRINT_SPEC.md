@@ -22,6 +22,7 @@ Sprint 00 is complete when:
 8. CI cadence and prerequisite/blocking behavior are documented.
 9. The first L6 Golden Headless journey is specified at scenario level.
 10. No existing test suite is needlessly duplicated merely to obtain an ULTEF label.
+11. Human-readable **Execution Narrative** evidence is defined so each meaningful scenario explains what was created, what happened, what changed, what was expected, what actually occurred, and why the result is PASS/WARN/FAIL/BLOCKED.
 
 ## Tasks
 
@@ -66,7 +67,18 @@ Deliverable: `ULTEF_CONVENTIONS.md`.
 
 ### S00-T05 — Evidence contract
 
-Define `summary.json`, human-readable summary, failures and evidence metadata. Include seed, commit SHA, environment, model/provider identity where relevant, timing and redaction requirements.
+Define `summary.json`, human-readable summary, failures and per-scenario evidence metadata. Include seed, commit SHA, environment, model/provider identity where relevant, timing and redaction requirements.
+
+For meaningful domain/integration/E2E scenarios, evidence must also include an **Execution Narrative**:
+
+- Given: actual synthetic profile/world/character/NPC initial state;
+- When: semantic execution timeline (story created, encounter, rumor, choice, engine reaction, commit, reload, etc.);
+- Then: expected vs actual assertions;
+- explicit before/after state deltas;
+- safe decision reason codes/scores where useful;
+- final plain-language explanation of why the result passed or failed.
+
+A raw `PASS`/`FAIL` line is not sufficient evidence for L6 or continuity/state-changing PX-LUMI scenarios.
 
 Deliverable: `EVIDENCE_CONTRACT.md`.
 
@@ -84,7 +96,7 @@ pnpm ultef:L0-L4
 pnpm ultef:full
 ```
 
-The runner must distinguish failed assertions from blocked prerequisites and must not turn skipped/never-executed mandatory verification into PASS.
+The runner must distinguish failed assertions from blocked prerequisites and must not turn skipped/never-executed mandatory verification into PASS. It must be able to emit both machine-readable scenario data and human-readable Execution Narrative files.
 
 Deliverable: runner design and, if repository discovery confirms the approach, minimum non-disruptive skeleton.
 
@@ -96,7 +108,7 @@ Deliverable: `CI_GATE_PLAN.md`.
 
 ### S00-T08 — Golden Headless E2E specification
 
-Specify `L6-GOLDEN-001` from household/profile bootstrap through story outcome commit, persistence reload and later-session continuity. Identify current implementation gaps that block execution.
+Specify `L6-GOLDEN-001` from household/profile bootstrap through story outcome commit, persistence reload and later-session continuity. Identify current implementation gaps that block execution. The specification must define the human-readable execution timeline and state deltas expected in the resulting evidence.
 
 Deliverable: `L6_GOLDEN_001.md`.
 
@@ -121,6 +133,7 @@ These observations mean the first job is accurate discovery and classification, 
 - Guarded integration tests can create false confidence if skipped; ULTEF evidence must expose execution/skip/block status.
 - AI quality gates can become flaky or expensive; real-provider verification belongs primarily in L8 and should not contaminate deterministic lower levels.
 - Browser E2E must not become the only proof of engine correctness.
+- Human-readable evidence must summarize actual runtime facts and must never invent narrative details that did not occur during execution.
 
 ## Exit decision
 
