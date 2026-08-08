@@ -14,6 +14,7 @@
     "ultef:l8-scenario-selftest": "node tooling/ultef/src/l8-scenario-pack-selftest.mjs",
     "ultef:l8-semantic-selftest": "node tooling/ultef/src/l8-semantic-rubric-selftest.mjs",
     "ultef:l8-semantic-calibration-selftest": "node tooling/ultef/src/l8-semantic-calibration-selftest.mjs",
+    "ultef:l8-semantic-stability-selftest": "node tooling/ultef/src/l8-semantic-calibration-stability-selftest.mjs",
     "ultef:live-semantic-calibration": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-semantic-calibration.integration.test.ts",
     "ultef:l8-annotate-calibration": "node tooling/ultef/src/l8-scorecard-calibration-annotator.mjs",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
