@@ -244,7 +244,8 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
 
     const scenario = createScenario({
       id: "L3-SESSION-002",
-      title: "Completed session cannot advance and produces no persistence leak",
+      title:
+        "Completed session cannot advance and produces no persistence leak",
       level: "L3",
       projectGate: "PX-LUMI-01",
       seed: "runtime-uuid",
