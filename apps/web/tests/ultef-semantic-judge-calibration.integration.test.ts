@@ -15,7 +15,8 @@ import {
 const enabled = process.env.ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED === "true";
 const apiKey = process.env.OPENROUTER_API_KEY;
 const judgeModel = process.env.ULTEF_L8_JUDGE_MODEL;
-const ultefDescribe = enabled && apiKey && judgeModel ? describe : describe.skip;
+const ultefDescribe =
+  enabled && apiKey && judgeModel ? describe : describe.skip;
 
 ultefDescribe("ULTEF L8-SEMANTIC-JUDGE-CALIBRATION-001", () => {
   it("compares one live semantic judge against the human-reference seed set", async () => {
@@ -40,7 +41,8 @@ ultefDescribe("ULTEF L8-SEMANTIC-JUDGE-CALIBRATION-001", () => {
 
     const scenario = createScenario({
       id: "L8-SEMANTIC-JUDGE-CALIBRATION-001",
-      title: "Calibrate the advisory semantic judge against human-reference examples",
+      title:
+        "Calibrate the advisory semantic judge against human-reference examples",
       level: "L8",
       projectGate: "PX-LUMI-09",
       seed: dataset.id,
@@ -71,7 +73,10 @@ ultefDescribe("ULTEF L8-SEMANTIC-JUDGE-CALIBRATION-001", () => {
       response.content,
       dataset.examples,
     );
-    const evaluation = evaluateSemanticCalibration(dataset.examples, predictions);
+    const evaluation = evaluateSemanticCalibration(
+      dataset.examples,
+      predictions,
+    );
 
     scenario.event(
       "semantic.calibration.metrics",

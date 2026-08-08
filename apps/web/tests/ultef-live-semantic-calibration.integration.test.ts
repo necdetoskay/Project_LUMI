@@ -15,7 +15,8 @@ import {
 const enabled = process.env.ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED === "true";
 const apiKey = process.env.OPENROUTER_API_KEY;
 const judgeModel = process.env.ULTEF_L8_JUDGE_MODEL;
-const ultefDescribe = enabled && apiKey && judgeModel ? describe : describe.skip;
+const ultefDescribe =
+  enabled && apiKey && judgeModel ? describe : describe.skip;
 
 ultefDescribe("ULTEF L8-SEMANTIC-CALIBRATION-001", () => {
   it("compares one live batch judge call against the seed human-reference set", async () => {
