@@ -76,7 +76,7 @@ describeDb("ULTEF Sprint 01 — choice branch divergence", () => {
          id, choice_point_id, option_key, option_text, sequence_number,
          availability_rule, consequence_previews
        ) VALUES
-         ($1, $3, 'ask-mira', 'Mira\'ya isiklari sor', 0, NULL, '[]'::jsonb),
+         ($1, $3, 'ask-mira', $$Mira'ya isiklari sor$$, 0, NULL, '[]'::jsonb),
          ($2, $3, 'follow-lights', 'Isiklari sessizce takip et', 1, NULL, '[]'::jsonb)`,
       [optionAId, optionBId, choicePointId],
     );
