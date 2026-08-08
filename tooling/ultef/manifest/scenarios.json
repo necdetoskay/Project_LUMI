@@ -9,7 +9,7 @@
       "status": "BLOCKED",
       "runner": null,
       "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001"],
-      "blockedBy": ["L4-SCENE-SESSION-001", "production-outcome-commit/persistence continuity not yet fully instrumented"],
+      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "production-outcome-commit/persistence continuity not yet fully instrumented"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -59,11 +59,11 @@
       "title": "Generated scene to persisted session and reader state",
       "level": "L4",
       "projectGates": ["PX-LUMI-01", "PX-LUMI-05"],
-      "status": "BLOCKED",
-      "runner": null,
-      "requires": ["generated-scene-session-wiring", "session-persistence", "reader-reload"],
-      "blockedBy": ["PRODUCT_GAP: generated-scene-session-wiring"],
-      "evidenceMode": "runtime-narrative"
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:scene-session",
+      "requires": ["DATABASE_URL", "story-migrations", "generated-scene-session-wiring", "session-persistence", "reader-reload"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": ["requires integration database", "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"]
     }
   ]
 }
