@@ -177,7 +177,8 @@ describeDb("ULTEF L9 — PostgreSQL backup/restore recovery", () => {
 
     const scenario = createScenario({
       id: "L9-BACKUP-RESTORE-001",
-      title: "PostgreSQL backup survives source corruption and restores idempotent story state",
+      title:
+        "PostgreSQL backup survives source corruption and restores idempotent story state",
       level: "L9",
       projectGate: "L9-G8",
       seed: "runtime-uuid",
@@ -186,7 +187,9 @@ describeDb("ULTEF L9 — PostgreSQL backup/restore recovery", () => {
     try {
       const extractor = new NarrativeEventExtractor();
       const validator = new EvidenceValidator();
-      const ruleEngine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
+      const ruleEngine = new WorldCommitRuleEngine({
+        rules: defaultOutcomeRules(),
+      });
       const snapshot = StoryContextSnapshot.create({
         storySessionId: fixture.storySessionId,
         householdId: fixture.householdId,
