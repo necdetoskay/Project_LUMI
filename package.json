@@ -12,6 +12,7 @@
     "ultef": "node tooling/ultef/src/cli.mjs",
     "ultef:selftest": "node tooling/ultef/src/cli.mjs selftest",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
+    "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:L0": "node tooling/ultef/src/cli.mjs L0",
     "ultef:L1": "node tooling/ultef/src/cli.mjs L1",
     "ultef:L2": "node tooling/ultef/src/cli.mjs L2",
