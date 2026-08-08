@@ -11,8 +11,16 @@ on:
         description: Repeats per model, 1-5. Each repeat runs 6 live story scenarios.
         required: true
         default: "3"
+      enable_semantic_judge:
+        description: Set true to add one advisory semantic-judge call per model repeat.
+        required: true
+        default: "false"
+      judge_model:
+        description: OpenRouter model id used only for advisory semantic judging.
+        required: true
+        default: openai/gpt-4.1-mini
       confirm_cost:
-        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (default 3 repeats = 18 calls/model, max 90 calls at 3 models x 5 repeats)
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (max 90 story calls; 105 total calls when semantic judge is enabled)
         required: true
         default: ""
 
@@ -43,6 +51,8 @@ jobs:
       ULTEF_REAL_PROVIDER_ENABLED: "true"
       ULTEF_L8_MODELS: ${{ inputs.models }}
       ULTEF_L8_REPEATS: ${{ inputs.repeats }}
+      ULTEF_L8_SEMANTIC_JUDGE_ENABLED: ${{ inputs.enable_semantic_judge }}
+      ULTEF_L8_JUDGE_MODEL: ${{ inputs.judge_model }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
 
@@ -66,13 +76,24 @@ jobs:
             1|2|3|4|5) ;;
             *) echo "repeats must be an integer from 1 to 5"; exit 1 ;;
           esac
+          case "${{ inputs.enable_semantic_judge }}" in
+            true|false) ;;
+            *) echo "enable_semantic_judge must be true or false"; exit 1 ;;
+          esac
           MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
           if [ "$MODEL_COUNT" -gt 3 ]; then
             echo "At most 3 models are allowed."
             exit 1
           fi
-          LIVE_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }} * 6))
-          echo "Planned paid live story calls: $LIVE_CALLS"
+          STORY_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }} * 6))
+          JUDGE_CALLS=0
+          if [ "${{ inputs.enable_semantic_judge }}" = "true" ]; then
+            JUDGE_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }}))
+          fi
+          TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS))
+          echo "Planned paid story calls: $STORY_CALLS"
+          echo "Planned paid semantic-judge calls: $JUDGE_CALLS"
+          echo "Planned total paid provider calls: $TOTAL_CALLS"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Prepare profile schema
@@ -84,7 +105,9 @@ jobs:
       - name: Prepare story schema
         run: pnpm --filter @lumi/story story:migrate
       - name: Verify L8 evaluators without provider cost
-        run: pnpm ultef:l8-scenario-selftest
+        run: |
+          pnpm ultef:l8-scenario-selftest
+          pnpm ultef:l8-semantic-selftest
       - name: Run repeated L8 live six-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
       - name: Print L8 scorecard
