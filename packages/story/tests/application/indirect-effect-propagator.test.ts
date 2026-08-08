@@ -25,12 +25,14 @@ vi.mock("../../src/application/db", () => ({
 }));
 
 const HOUSEHOLD = "00000000-0000-4000-8000-000000000020";
+const STORY_SESSION = "00000000-0000-4000-8000-000000000025";
 
 function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: "00000000-0000-4000-8000-000000000070",
     householdId: HOUSEHOLD,
     worldId: "00000000-0000-4000-8000-000000000030",
+    storySessionId: STORY_SESSION,
     commitId: "00000000-0000-4000-8000-000000000060",
     idempotencyKey: "story-indirect:c1:rumor",
     intentType: "npc_rumor_spread",
@@ -76,11 +78,14 @@ describe("IndirectEffectPropagator", () => {
       expect.any(String),
       expect.objectContaining({ status: "applied", attemptCount: 1 }),
     );
-    // Applied event recorded.
     const events = mockRepo.recordEvent.mock.calls.map(
       (call) => call[1].eventType,
     );
     expect(events).toContain("INDIRECT_EFFECT_APPLIED");
+    expect(mockRepo.recordEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ storySessionId: STORY_SESSION }),
+    );
   });
 
   it("never re-applies an already-applied intent (idempotency)", async () => {
