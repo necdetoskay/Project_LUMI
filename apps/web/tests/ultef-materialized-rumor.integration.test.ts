@@ -175,7 +175,11 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
     scenario.event(
       "outbox.propagated",
       `IndirectEffectPropagator processed ${first.processed} intent and applied ${first.applied}.`,
-      first,
+      {
+        processed: first.processed,
+        applied: first.applied,
+        failed: first.failed,
+      },
     );
 
     const reloaded = await beliefRepository.getBeliefs(
@@ -266,7 +270,11 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
     scenario.event(
       "propagation.retried",
       `A second propagation pass processed ${second.processed} pending intents; Bora still has ${afterRetry.length} belief record.`,
-      second,
+      {
+        processed: second.processed,
+        applied: second.applied,
+        failed: second.failed,
+      },
     );
     scenario.assert(
       "Retry does not create a duplicate belief",
