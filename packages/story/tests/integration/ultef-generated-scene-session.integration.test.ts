@@ -92,23 +92,25 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
     const checkpoint = await repo.findLatestCheckpoint(db, ids.storySessionId);
     scenario.event("story.reader.reloaded", "Session, generated scene, visit ve checkpoint PostgreSQL'den yeniden okundu.");
 
-    scenario.assert("Generated scene persisted once", result.reusedPersistedScene === false, false, result.reusedPersistedScene);
-    scenario.assert("Session version advanced", result.playbackState.session.version === 2, 2, result.playbackState.session.version);
-    scenario.assert("Reader points to generated scene", reloaded?.currentSceneId === result.generatedSceneId, result.generatedSceneId, reloaded?.currentSceneId ?? null);
-    scenario.assert("Narrative survives DB reload", persistedScene?.narrativeText === generated.narrative, generated.narrative, persistedScene?.narrativeText ?? null);
-    scenario.assert("Scene visit persisted", visits.at(-1)?.sceneId === result.generatedSceneId, result.generatedSceneId, visits.at(-1)?.sceneId ?? null);
-    scenario.assert("Checkpoint persisted", checkpoint?.sceneId === result.generatedSceneId, result.generatedSceneId, checkpoint?.sceneId ?? null);
+    const assertions = {
+      persistedOnce: result.reusedPersistedScene === false,
+      playbackVersionAdvanced: result.playbackState.session.version === 2,
+      readerPointsToGenerated: reloaded?.currentSceneId === result.generatedSceneId,
+      narrativeReloaded: persistedScene?.narrativeText === generated.narrative,
+      visitPersisted: visits.at(-1)?.sceneId === result.generatedSceneId,
+      checkpointPersisted: checkpoint?.sceneId === result.generatedSceneId,
+    };
+
+    scenario.assert("Generated scene persisted once", assertions.persistedOnce, false, result.reusedPersistedScene);
+    scenario.assert("Session version advanced", assertions.playbackVersionAdvanced, 2, result.playbackState.session.version);
+    scenario.assert("Reader points to generated scene", assertions.readerPointsToGenerated, result.generatedSceneId, reloaded?.currentSceneId ?? null);
+    scenario.assert("Narrative survives DB reload", assertions.narrativeReloaded, generated.narrative, persistedScene?.narrativeText ?? null);
+    scenario.assert("Scene visit persisted", assertions.visitPersisted, result.generatedSceneId, visits.at(-1)?.sceneId ?? null);
+    scenario.assert("Checkpoint persisted", assertions.checkpointPersisted, result.generatedSceneId, checkpoint?.sceneId ?? null);
     scenario.delta("story.session.version", 1, reloaded?.version ?? null, "generated scene advancement");
     scenario.delta("story.session.currentSceneId", ids.entrySceneId, reloaded?.currentSceneId ?? null, "reader-visible generated scene");
 
-    const passed =
-      result.reusedPersistedScene === false &&
-      reloaded?.version === 2 &&
-      reloaded.currentSceneId === result.generatedSceneId &&
-      persistedScene?.narrativeText === generated.narrative &&
-      visits.at(-1)?.sceneId === result.generatedSceneId &&
-      checkpoint?.sceneId === result.generatedSceneId;
-
+    const passed = Object.values(assertions).every(Boolean);
     const report = scenario.finish({
       result: passed ? "PASS" : "FAIL",
       reason: passed
