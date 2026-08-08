@@ -77,6 +77,17 @@ jobs:
         run: pnpm ultef:continuity-divergence
       - name: Run Sprint 01 continuity context to generated story
         run: pnpm ultef:context-to-story
+      - name: Run one-shot semantic judge calibration probe
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: "true"
+          ULTEF_L8_JUDGE_MODEL: openai/gpt-4.1-mini
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "OPENROUTER_API_KEY is required for one-shot calibration probe."
+            exit 1
+          fi
+          pnpm ultef:live-semantic-calibration
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -93,7 +104,7 @@ jobs:
           else
             echo "L6 Golden Journey evidence was not produced."
           fi
-          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004 L4-OUTCOME-REJECT-001 L4-OUTCOME-REJECT-002 L4-OUTCOME-ROLLBACK-001 L4-INDIRECT-RETRY-001 L4-INDIRECT-FAILURE-001 L4-CHOICE-DIVERGENCE-001 L4-CHOICE-WORLD-DIVERGENCE-001 L5-CONTEXT-DIVERGENCE-001 L6-CONTEXT-TO-STORY-001; do
+          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004 L4-OUTCOME-REJECT-001 L4-OUTCOME-REJECT-002 L4-OUTCOME-ROLLBACK-001 L4-INDIRECT-RETRY-001 L4-INDIRECT-FAILURE-001 L4-CHOICE-DIVERGENCE-001 L4-CHOICE-WORLD-DIVERGENCE-001 L5-CONTEXT-DIVERGENCE-001 L6-CONTEXT-TO-STORY-001 L8-SEMANTIC-JUDGE-CALIBRATION-001; do
             FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1)
             if [ -n "$FILE" ]; then
               echo
