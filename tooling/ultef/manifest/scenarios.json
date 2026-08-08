@@ -41,6 +41,17 @@
       "requires": ["web-route", "profiles-contract", "world-contract", "story-contract", "npc-intelligence-contract"],
       "evidenceMode": "runtime-narrative",
       "limitations": ["package adapters are test doubles", "does not prove DB persistence", "does not prove outbox worker/application"]
+    },
+    {
+      "id": "L4-HOOK-SCENE-001",
+      "title": "Rumor StoryHook to generated story scene",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-05", "PX-LUMI-10"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:hook-scene",
+      "requires": ["story-generation-pipeline"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": ["provider caller is deterministic test double", "does not prove persistence or advanceSession/reader wiring", "real provider coverage belongs to L8"]
     }
   ]
 }
