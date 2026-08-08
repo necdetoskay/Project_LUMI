@@ -42,6 +42,37 @@ The stability evaluator records:
 - mean rubric MAE and rubric MAE standard deviation;
 - individual repeat summaries.
 
+## First live stability evidence — 2026-08-08
+
+Judge model: `openai/gpt-4.1-mini`
+
+Reference dataset: `L8-SEMANTIC-CALIBRATION-HUMAN-REVIEWED-BOUNDARY-V1`
+
+Three independent provider calls were executed at temperature `0`. All three produced the same calibration result:
+
+- repeat 1: MAE `0.639`, mean bias `+0.639`, within-one `100%`;
+- repeat 2: MAE `0.639`, mean bias `+0.639`, within-one `100%`;
+- repeat 3: MAE `0.639`, mean bias `+0.639`, within-one `100%`.
+
+Aggregate stability result:
+
+- stability result: **PASS**;
+- calibration passes: **3/3**;
+- pass rate: **100%**;
+- mean MAE: **0.639**;
+- MAE standard deviation: **0.000**;
+- mean signed bias: **+0.639**;
+- signed-bias standard deviation: **0.000**;
+- `choice_influence` mean MAE: **0.833**, standard deviation **0.000**;
+- `personality_emotion` mean MAE: **0.500**, standard deviation **0.000**;
+- `age_appropriateness` mean MAE: **0.583**, standard deviation **0.000**.
+
+The score-transition pattern was also identical in every repeat. Each run contained zero under-scores, six exact matches and twelve over-scores. The judge is therefore extremely stable on this frozen set, but retains a consistent upward scoring bias rather than random variation.
+
+Provider usage per repeat was `1155` prompt tokens plus `173` completion tokens, or `1328` total tokens. Across the three stability calls the run used `3465` prompt tokens, `519` completion tokens and **3984 total tokens**.
+
+The zero variance is strong evidence for this model/set/temperature configuration, but three calls are still a small sample. This evidence grants stability confidence only for controlled advisory use; it does not justify bypassing deterministic gates.
+
 ## Cost isolation
 
 Repeated semantic calibration is never part of normal pull-request CI. Normal CI executes only the deterministic stability self-test and incurs no provider cost.
