@@ -17,7 +17,15 @@ export interface L8ScenarioPackEvaluation {
 }
 
 export const L8_SCENARIO_PACK: readonly L8ScenarioDefinition[];
-export function evaluateContinuityScenario(narrative: string): L8ScenarioEvaluation;
-export function evaluateChoiceInfluenceScenario(narrative: string): L8ScenarioEvaluation;
-export function evaluateWorldConsistencyScenario(narrative: string): L8ScenarioEvaluation;
-export function evaluateScenarioPack(outputs: Record<string, string>): L8ScenarioPackEvaluation;
+export function evaluateContinuityScenario(
+  narrative: string,
+): L8ScenarioEvaluation;
+export function evaluateChoiceInfluenceScenario(
+  narrative: string,
+): L8ScenarioEvaluation;
+export function evaluateWorldConsistencyScenario(
+  narrative: string,
+): L8ScenarioEvaluation;
+export function evaluateScenarioPack(
+  outputs: Record<string, string>,
+): L8ScenarioPackEvaluation;
