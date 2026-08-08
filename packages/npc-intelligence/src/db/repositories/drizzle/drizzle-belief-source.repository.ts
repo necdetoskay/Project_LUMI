@@ -7,21 +7,27 @@ import { npcBeliefs } from "../../schema/npc-intelligence/beliefs";
 export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
   constructor(private readonly db: Database = getNpcDb()) {}
 
-  async getBeliefs(npcId: string, householdId: string): Promise<Belief[]> {
+  async getBeliefs(
+    npcId: string,
+    householdId: string,
+    worldId?: string,
+  ): Promise<Belief[]> {
+    const scope = [
+      eq(npcBeliefs.npcId, npcId),
+      eq(npcBeliefs.householdId, householdId),
+    ];
+    if (worldId) scope.push(eq(npcBeliefs.worldId, worldId));
+
     const rows = await this.db
       .select()
       .from(npcBeliefs)
-      .where(
-        and(
-          eq(npcBeliefs.npcId, npcId),
-          eq(npcBeliefs.householdId, householdId),
-        ),
-      );
+      .where(and(...scope));
 
     return rows.map((row) => ({
       id: row.id,
       npcId: row.npcId,
       householdId: row.householdId,
+      worldId: row.worldId,
       factId: row.factId,
       claim: row.claim,
       confidence: Number(row.confidence),
@@ -38,6 +44,7 @@ export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
     npcId: string,
     householdId: string,
     beliefs: Belief[],
+    worldId?: string,
   ): Promise<void> {
     await this.db.transaction(async (tx) => {
       for (const belief of beliefs) {
@@ -47,6 +54,7 @@ export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
             id: belief.id,
             npcId,
             householdId,
+            worldId: belief.worldId ?? worldId ?? null,
             factId: belief.factId,
             claim: belief.claim,
             confidence: String(belief.confidence),
