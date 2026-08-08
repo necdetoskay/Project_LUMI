@@ -20,7 +20,7 @@ on:
         required: true
         default: "false"
       calibration_set:
-        description: Calibration dataset: seed baseline or hard-boundary 2/3/4 challenge.
+        description: "Calibration dataset selection: seed baseline or hard-boundary 2/3/4 challenge."
         required: true
         default: seed
         type: choice
