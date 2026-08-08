@@ -63,6 +63,8 @@ jobs:
         run: pnpm ultef:l9-concurrency
       - name: Run L9 crash restart recovery journey
         run: pnpm ultef:l9-crash-recovery
+      - name: Run L9 DB-backed load baseline
+        run: pnpm ultef:l9-load
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -134,6 +136,14 @@ jobs:
             cat "$CRASH_FILE"
           else
             echo "L9 crash-recovery evidence was not produced."
+          fi
+          LOAD_FILE=$(find artifacts/ultef/runs -name 'L9-LOAD-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$LOAD_FILE" ]; then
+            echo
+            echo "===== L9 DB-BACKED LOAD BASELINE ====="
+            cat "$LOAD_FILE"
+          else
+            echo "L9 load evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
