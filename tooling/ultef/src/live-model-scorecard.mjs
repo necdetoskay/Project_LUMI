@@ -126,7 +126,9 @@ function parseRepeatCount(raw) {
   if (!raw) return DEFAULT_REPEATS;
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 1 || value > MAX_REPEATS) {
-    throw new Error(`ULTEF_L8_REPEATS must be an integer between 1 and ${MAX_REPEATS}.`);
+    throw new Error(
+      `ULTEF_L8_REPEATS must be an integer between 1 and ${MAX_REPEATS}.`,
+    );
   }
   return value;
 }
@@ -206,8 +208,11 @@ function scoreReport(requestedModel, report, processStatus) {
 
 function aggregateModel(requestedModel, repetitions) {
   const passed = repetitions.filter((item) => item.qualityGate);
-  const passRate = repetitions.length === 0 ? 0 : passed.length / repetitions.length;
-  const scenarioScores = repetitions.map((item) => item.scenarioQualityScore ?? 0);
+  const passRate =
+    repetitions.length === 0 ? 0 : passed.length / repetitions.length;
+  const scenarioScores = repetitions.map(
+    (item) => item.scenarioQualityScore ?? 0,
+  );
   const latencyValues = repetitions
     .map((item) => item.averageLatencyMs)
     .filter((value) => value !== null);
@@ -215,7 +220,9 @@ function aggregateModel(requestedModel, repetitions) {
     .map((item) => item.averageTokens)
     .filter((value) => value !== null);
   const meanScenarioQuality = mean(scenarioScores) ?? 0;
-  const worstScenarioQuality = scenarioScores.length ? Math.min(...scenarioScores) : 0;
+  const worstScenarioQuality = scenarioScores.length
+    ? Math.min(...scenarioScores)
+    : 0;
   const meanLatencyMs = mean(latencyValues);
   const meanTokens = mean(tokenValues);
   const latencyStdDevMs = stddev(latencyValues);
@@ -225,7 +232,9 @@ function aggregateModel(requestedModel, repetitions) {
   const latencyPoints = stabilityGate
     ? linearScore(meanLatencyMs, 3000, 15000, 15)
     : 0;
-  const tokenPoints = stabilityGate ? linearScore(meanTokens, 700, 2000, 15) : 0;
+  const tokenPoints = stabilityGate
+    ? linearScore(meanTokens, 700, 2000, 15)
+    : 0;
 
   return {
     model: repetitions.find((item) => item.model)?.model ?? requestedModel,
