@@ -1,12 +1,13 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { callOpenRouter } from "@lumi/profiles/application";
 
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { renderBoundaryHumanReview } from "../../../tooling/ultef/src/l8-boundary-human-review.mjs";
 import {
   buildSemanticCalibrationJudgePrompt,
   evaluateSemanticCalibration,
@@ -118,9 +119,25 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
           : "The semantic judge met the selected numerical thresholds, but the reference labels are not human-approved and cannot grant ranking authority."
         : "The semantic judge did not meet the selected reference thresholds and must remain advisory-only.",
     });
-    await writeScenarioArtifacts(report, {
+    const artifacts = await writeScenarioArtifacts(report, {
       environment: config.environment,
     });
+
+    if (calibrationSet === "hard-boundary") {
+      const humanReview = renderBoundaryHumanReview({
+        dataset,
+        calibration,
+        judgeModel: response.model,
+      });
+      await writeFile(
+        path.join(
+          artifacts.runDir,
+          "L8-SEMANTIC-BOUNDARY-HUMAN-REVIEW.md",
+        ),
+        humanReview,
+        "utf8",
+      );
+    }
 
     expect(report.result).toBe("PASS");
   }, 60_000);
