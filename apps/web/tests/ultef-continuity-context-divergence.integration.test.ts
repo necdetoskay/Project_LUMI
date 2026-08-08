@@ -72,7 +72,8 @@ const settingsPort: StorySceneLlmSettingsPort = {
 
 function capturingCaller(prompts: string[]): OpenRouterCaller {
   return async (_apiKey, input) => {
-    const prompt = input.messages.find((message) => message.role === "user")?.content ?? "";
+    const prompt =
+      input.messages.find((message) => message.role === "user")?.content ?? "";
     prompts.push(prompt);
     return {
       model: "deterministic-ultef-provider",
@@ -80,7 +81,8 @@ function capturingCaller(prompts: string[]): OpenRouterCaller {
         sceneId: "continuity-test-scene",
         setting: "Gunes Vadisi kutuphanesi",
         characters: ["Arin", "Bora"],
-        narrative: "Arin ve Bora onceki bilgileri hatirlayarak yeni bir ipucunu konustu.",
+        narrative:
+          "Arin ve Bora onceki bilgileri hatirlayarak yeni bir ipucunu konustu.",
         moment: "Hatirlanan bir bilgi yeni bir merak uyandirdi.",
         nextPrompt: "Arin ipucunu arastirmaya karar verdi.",
       }),
@@ -105,8 +107,10 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
     const npcId = crypto.randomUUID();
     const worldA = crypto.randomUUID();
     const worldB = crypto.randomUUID();
-    const claimA = "Bora, World A'da kopru isiklarinin firtinadan once yandigini biliyor.";
-    const claimB = "Bora, World B'de eski degirmenin altinda gizli bir harita oldugunu biliyor.";
+    const claimA =
+      "Bora, World A'da kopru isiklarinin firtinadan once yandigini biliyor.";
+    const claimB =
+      "Bora, World B'de eski degirmenin altinda gizli bir harita oldugunu biliyor.";
 
     const scenario = createScenario({
       id: "L5-CONTEXT-DIVERGENCE-001",
@@ -188,10 +192,30 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
         "world-b.context.loaded",
         `World B sonraki hikaye promptu Bora'nin B bilgisini gordu: ${claimB}`,
       );
-      scenario.assert("World A prompt contains A continuity", promptA.includes(claimA), true, promptA.includes(claimA));
-      scenario.assert("World A prompt excludes B continuity", !promptA.includes(claimB), true, !promptA.includes(claimB));
-      scenario.assert("World B prompt contains B continuity", promptB.includes(claimB), true, promptB.includes(claimB));
-      scenario.assert("World B prompt excludes A continuity", !promptB.includes(claimA), true, !promptB.includes(claimA));
+      scenario.assert(
+        "World A prompt contains A continuity",
+        promptA.includes(claimA),
+        true,
+        promptA.includes(claimA),
+      );
+      scenario.assert(
+        "World A prompt excludes B continuity",
+        !promptA.includes(claimB),
+        true,
+        !promptA.includes(claimB),
+      );
+      scenario.assert(
+        "World B prompt contains B continuity",
+        promptB.includes(claimB),
+        true,
+        promptB.includes(claimB),
+      );
+      scenario.assert(
+        "World B prompt excludes A continuity",
+        !promptB.includes(claimA),
+        true,
+        !promptB.includes(claimA),
+      );
 
       const passed =
         promptA.includes(claimA) &&
