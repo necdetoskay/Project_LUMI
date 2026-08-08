@@ -60,6 +60,20 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: "L3-SESSION-IDEMPOTENCY" },
   },
+  "L3-SESSION-003": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/story",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "vitest.integration.config.ts",
+      "tests/integration/ultef-session-single-active.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L3-SESSION-003" },
+  },
   "L3-NPC-001": {
     command: "pnpm",
     args: [
