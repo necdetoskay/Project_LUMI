@@ -132,6 +132,7 @@ ultefDescribe(
       const commitIds = new Set<string>();
       const fingerprints: string[] = [];
       let currentSessionId = fixture.storySessionId;
+      let currentSessionVersion = 1;
       let previousWorldVersion: number | null = null;
 
       try {
@@ -147,13 +148,14 @@ ultefDescribe(
               idempotencyKey: `l9-long-start-${step}`,
             });
             currentSessionId = later.session.id;
+            currentSessionVersion = later.session.version;
           }
           sessionIds.push(currentSessionId);
 
           const marker = `journey-marker-${String(step).padStart(2, "0")}`;
           const generated = await persistGeneratedSceneAndAdvance({
             sessionId: currentSessionId,
-            expectedVersion: 1,
+            expectedVersion: currentSessionVersion,
             scene: {
               sceneId: `l9-long-scene-${step}`,
               setting: "Gunes Vadisi uzun yolculuk patikasi",
@@ -277,7 +279,7 @@ ultefDescribe(
 
           await completeSession({
             sessionId: currentSessionId,
-            expectedVersion: 2,
+            expectedVersion: generated.playbackState.session.version,
             idempotencyKey: `l9-long-complete-${step}`,
           });
         }
