@@ -141,10 +141,17 @@ describeDb("ULTEF Sprint 01 — session idempotency", () => {
       "Ikinci cagridan sonra session, visit, checkpoint, event ve idempotency ledger PostgreSQL'den yeniden okundu.",
     );
 
-    const firstSession = first.session as { version?: number; currentSceneId?: string | null };
-    const secondSession = second.session as { version?: number; currentSceneId?: string | null };
+    const firstSession = first.session as {
+      version?: number;
+      currentSceneId?: string | null;
+    };
+    const secondSession = second.session as {
+      version?: number;
+      currentSceneId?: string | null;
+    };
     const assertions = {
-      advancedOnce: afterFirst.version === 2 && afterFirst.currentSceneId === nextSceneId,
+      advancedOnce:
+        afterFirst.version === 2 && afterFirst.currentSceneId === nextSceneId,
       secondReturnedSameState:
         secondSession.version === firstSession.version &&
         secondSession.currentSceneId === firstSession.currentSceneId,
@@ -160,13 +167,22 @@ describeDb("ULTEF Sprint 01 — session idempotency", () => {
       "First advance persisted exactly one session transition",
       assertions.advancedOnce,
       { version: 2, currentSceneId: nextSceneId },
-      { version: afterFirst.version, currentSceneId: afterFirst.currentSceneId },
+      {
+        version: afterFirst.version,
+        currentSceneId: afterFirst.currentSceneId,
+      },
     );
     scenario.assert(
       "Retry returned the same persisted playback state",
       assertions.secondReturnedSameState,
-      { version: firstSession.version, currentSceneId: firstSession.currentSceneId },
-      { version: secondSession.version, currentSceneId: secondSession.currentSceneId },
+      {
+        version: firstSession.version,
+        currentSceneId: firstSession.currentSceneId,
+      },
+      {
+        version: secondSession.version,
+        currentSceneId: secondSession.currentSceneId,
+      },
     );
     scenario.assert(
       "Retry did not increment session version",
