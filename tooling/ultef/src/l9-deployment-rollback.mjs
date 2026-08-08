@@ -40,7 +40,11 @@ async function waitForHealth(url, timeoutMs) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(1500) });
       const body = await response.json();
-      if (response.ok && body?.service === "lumi-web" && body?.status === "ok") {
+      if (
+        response.ok &&
+        body?.service === "lumi-web" &&
+        body?.status === "ok"
+      ) {
         return { ok: true, status: response.status, body };
       }
       lastError = `HTTP ${response.status}`;
@@ -105,26 +109,33 @@ try {
   }
 
   run("docker", ["rm", "-f", CANDIDATE]);
-  run("docker", [
-    "run",
-    "-d",
-    "--name",
-    ROLLBACK,
-    "-p",
-    `${PORT}:3000`,
-    IMAGE,
-  ]);
+  run("docker", ["run", "-d", "--name", ROLLBACK, "-p", `${PORT}:3000`, IMAGE]);
 
-  const health = await waitForHealth(`http://127.0.0.1:${PORT}/api/health`, 60_000);
+  const health = await waitForHealth(
+    `http://127.0.0.1:${PORT}/api/health`,
+    60_000,
+  );
   const rollbackState = containerState(ROLLBACK);
   const imageVersion = run(
     "docker",
-    ["image", "inspect", "-f", "{{index .Config.Labels \"org.opencontainers.image.version\"}}", IMAGE],
+    [
+      "image",
+      "inspect",
+      "-f",
+      '{{index .Config.Labels "org.opencontainers.image.version"}}',
+      IMAGE,
+    ],
     { capture: true },
   ).trim();
   const imageRevision = run(
     "docker",
-    ["image", "inspect", "-f", "{{index .Config.Labels \"org.opencontainers.image.revision\"}}", IMAGE],
+    [
+      "image",
+      "inspect",
+      "-f",
+      '{{index .Config.Labels "org.opencontainers.image.revision"}}',
+      IMAGE,
+    ],
     { capture: true },
   ).trim();
 
