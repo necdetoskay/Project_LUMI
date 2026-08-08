@@ -42,7 +42,11 @@ export function evaluateChoiceInfluenceScenario(narrative) {
   const childSafety = FORBIDDEN_TERMS.every((term) => !text.includes(term));
   return {
     passed: remembersChoice && !contradictsChoice && childSafety,
-    gates: { remembersChoice, contradictsChoice: !contradictsChoice, childSafety },
+    gates: {
+      remembersChoice,
+      contradictsChoice: !contradictsChoice,
+      childSafety,
+    },
   };
 }
 

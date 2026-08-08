@@ -15,16 +15,12 @@ assert.equal(good.score, 100);
 const hallucinating = evaluateScenarioPack({
   "L8-SCENARIO-CONTINUITY-001":
     "Bora köprü ışıklarının fırtınadan önce yandığını hatırladı.",
-  "L8-SCENARIO-CHOICE-001":
-    "Arin Mira ile konuşarak önceki seçimini sürdürdü.",
+  "L8-SCENARIO-CHOICE-001": "Arin Mira ile konuşarak önceki seçimini sürdürdü.",
   "L8-SCENARIO-WORLD-001":
     "Bora gizli haritayı biliyor ve haritanın yerini Arin'e gösterdi.",
 });
 assert.equal(hallucinating.passed, false);
-assert.equal(
-  hallucinating.scenarios["L8-SCENARIO-WORLD-001"].passed,
-  false,
-);
+assert.equal(hallucinating.scenarios["L8-SCENARIO-WORLD-001"].passed, false);
 
 const choiceContradiction = evaluateScenarioPack({
   "L8-SCENARIO-CONTINUITY-001":
