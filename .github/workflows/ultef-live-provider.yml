@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: Comma-separated OpenRouter model ids (max 3 models; 3 live story calls per model)
+        description: Comma-separated OpenRouter model ids (max 3 models; 6 live story calls per model)
         required: true
         default: openai/gpt-4.1-mini
       confirm_cost:
@@ -16,7 +16,7 @@ jobs:
   live-provider-scorecard:
     if: ${{ inputs.confirm_cost == 'RUN_LIVE_PROVIDER' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:17
@@ -69,7 +69,7 @@ jobs:
         run: pnpm --filter @lumi/story story:migrate
       - name: Verify L8 evaluators without provider cost
         run: pnpm ultef:l8-scenario-selftest
-      - name: Run L8 live three-scenario model scorecard
+      - name: Run L8 live six-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
       - name: Print L8 scorecard
         if: always()
