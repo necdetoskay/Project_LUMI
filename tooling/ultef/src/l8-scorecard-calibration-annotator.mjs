@@ -1,6 +1,11 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  L8_SCORECARD_PERFORMANCE_PROFILE,
+  scorePerformance,
+} from "./l8-scorecard-scoring.mjs";
+
 const root = process.cwd();
 const runsDir = path.join(root, "artifacts", "ultef", "runs");
 const scorecardsDir = path.join(root, "artifacts", "ultef", "scorecards");
@@ -85,6 +90,8 @@ const section = [
   `- Semantic max: ${BOUNDED_SCORING.semanticPoints}`,
   `- Latency max: ${BOUNDED_SCORING.latencyPoints}`,
   `- Token-efficiency max: ${BOUNDED_SCORING.tokenEfficiencyPoints}`,
+  `- Latency full-score / zero-score: <=${L8_SCORECARD_PERFORMANCE_PROFILE.latency.best}ms / >=${L8_SCORECARD_PERFORMANCE_PROFILE.latency.worst}ms`,
+  `- Token full-score / zero-score: <=${L8_SCORECARD_PERFORMANCE_PROFILE.tokens.best} / >=${L8_SCORECARD_PERFORMANCE_PROFILE.tokens.worst} mean tokens per scenario`,
   "- A deterministic stability-gate failure always remains ineligible regardless of semantic score.",
   "",
 ].join("\n");
@@ -112,6 +119,7 @@ function applyBoundedSemanticRanking(scorecard, trust) {
         ? "Stable human-reviewed judge trust exists, but this scorecard has no usable semantic-judge samples."
         : "Stable human-reviewed semantic trust is not available.",
       weights: BOUNDED_SCORING,
+      performanceProfile: L8_SCORECARD_PERFORMANCE_PROFILE,
     };
     return;
   }
@@ -130,16 +138,20 @@ function applyBoundedSemanticRanking(scorecard, trust) {
         ? (BOUNDED_SCORING.semanticPoints * clamp(semanticPercent, 0, 100)) /
           100
         : 0;
+    const performance = scorePerformance({
+      meanLatencyMs: numberOrNull(model.meanLatencyMs),
+      meanTokens: numberOrNull(model.meanTokens),
+    });
     const latencyPoints = eligible
       ? clamp(
-          numberOrNull(model.latencyPoints) ?? 0,
+          performance.latencyPoints,
           0,
           BOUNDED_SCORING.latencyPoints,
         )
       : 0;
     const tokenPoints = eligible
       ? clamp(
-          numberOrNull(model.tokenEfficiencyPoints) ?? 0,
+          performance.tokenEfficiencyPoints,
           0,
           BOUNDED_SCORING.tokenEfficiencyPoints,
         )
@@ -148,6 +160,8 @@ function applyBoundedSemanticRanking(scorecard, trust) {
     model.preSemanticScore = model.score;
     model.deterministicQualityPoints = round(deterministicQualityPoints);
     model.semanticPoints = round(semanticPoints);
+    model.latencyPoints = round(latencyPoints);
+    model.tokenEfficiencyPoints = round(tokenPoints);
     model.score = eligible
       ? round(
           deterministicQualityPoints +
@@ -169,14 +183,16 @@ function applyBoundedSemanticRanking(scorecard, trust) {
     semanticPoints: BOUNDED_SCORING.semanticPoints,
     latencyPoints: BOUNDED_SCORING.latencyPoints,
     tokenEfficiencyPoints: BOUNDED_SCORING.tokenEfficiencyPoints,
+    performanceProfile: L8_SCORECARD_PERFORMANCE_PROFILE,
     semanticJudge:
       "Bounded ranking weight is active only because human-reviewed calibration and repeated stability both passed. Semantic scoring cannot override deterministic hard gates.",
   };
   scorecard.semanticRanking = {
     applied: true,
     reason:
-      "Human-reviewed calibration and repeated stability passed, and usable per-model semantic samples are present.",
+      "Human-reviewed calibration and repeated stability passed, usable per-model semantic samples are present, and calibrated performance scales were applied.",
     weights: BOUNDED_SCORING,
+    performanceProfile: L8_SCORECARD_PERFORMANCE_PROFILE,
   };
 }
 
