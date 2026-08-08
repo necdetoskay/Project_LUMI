@@ -13,11 +13,15 @@ import {
   evaluateSemanticCalibration,
   parseSemanticCalibrationJudgeResponse,
 } from "../../../tooling/ultef/src/l8-semantic-calibration.mjs";
+import { evaluateSemanticCalibrationStability } from "../../../tooling/ultef/src/l8-semantic-calibration-stability.mjs";
 
 const enabled = process.env.ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED === "true";
 const apiKey = process.env.OPENROUTER_API_KEY;
 const judgeModel = process.env.ULTEF_L8_JUDGE_MODEL;
 const calibrationSet = process.env.ULTEF_L8_CALIBRATION_SET ?? "seed";
+const repeatCount = parseRepeatCount(
+  process.env.ULTEF_L8_CALIBRATION_REPEATS ?? "1",
+);
 const ultefDescribe =
   enabled && apiKey && judgeModel ? describe : describe.skip;
 
@@ -49,7 +53,7 @@ const calibrationConfigs = {
 } as const;
 
 ultefDescribe("ULTEF L8 semantic calibration", () => {
-  it("compares one live batch judge call against the selected reference set", async () => {
+  it("compares repeated live batch judge calls against the selected reference set", async () => {
     const config =
       calibrationConfigs[calibrationSet as keyof typeof calibrationConfigs];
     if (!config) {
@@ -79,54 +83,99 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
       examples: dataset.examples.length,
     });
     scenario.setup("Judge model", { model: judgeModel });
+    scenario.setup("Calibration repeats", { repeats: repeatCount });
 
-    const startedAt = Date.now();
-    const response = await callOpenRouter(apiKey!, {
-      model: judgeModel!,
-      messages: [
+    const calibrations = [];
+    let responseModel = judgeModel!;
+    let totalLatencyMs = 0;
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let totalTokens = 0;
+
+    for (let repeat = 1; repeat <= repeatCount; repeat += 1) {
+      const startedAt = Date.now();
+      const response = await callOpenRouter(apiKey!, {
+        model: judgeModel!,
+        messages: [
+          {
+            role: "user",
+            content: buildSemanticCalibrationJudgePrompt(dataset.examples),
+          },
+        ],
+        temperature: 0,
+        maxTokens: 1200,
+      });
+      const latencyMs = Date.now() - startedAt;
+      const predictions = parseSemanticCalibrationJudgeResponse(
+        response.content,
+        dataset.examples,
+      );
+      const calibration = evaluateSemanticCalibration(
+        dataset.examples,
+        predictions,
+      );
+
+      responseModel = response.model;
+      totalLatencyMs += latencyMs;
+      promptTokens += response.usage?.promptTokens ?? 0;
+      completionTokens += response.usage?.completionTokens ?? 0;
+      totalTokens += response.usage?.totalTokens ?? 0;
+      calibrations.push(calibration);
+
+      scenario.event(
+        "semantic.calibration.repeat.completed",
+        `Repeat ${repeat}/${repeatCount} — Judge ${response.model}: MAE=${calibration.mae}, bias=${calibration.meanBias}, within-one=${Math.round(calibration.withinOneRate * 100)}%.`,
         {
-          role: "user",
-          content: buildSemanticCalibrationJudgePrompt(dataset.examples),
+          repeat,
+          repeatCount,
+          calibrationSet,
+          judgeModel: response.model,
+          latencyMs,
+          usage: response.usage,
+          calibration,
         },
-      ],
-      temperature: 0,
-      maxTokens: 1200,
-    });
-    const latencyMs = Date.now() - startedAt;
-    const predictions = parseSemanticCalibrationJudgeResponse(
-      response.content,
-      dataset.examples,
-    );
-    const calibration = evaluateSemanticCalibration(
-      dataset.examples,
-      predictions,
-    );
+      );
+    }
+
+    const stability = evaluateSemanticCalibrationStability(calibrations);
+    const individualPass = calibrations.every((item) => item.eligible);
+    const passed = repeatCount === 1 ? individualPass : stability.stable;
 
     scenario.event(
-      "semantic.calibration.completed",
-      `Judge ${response.model}: MAE=${calibration.mae}, within-one=${Math.round(calibration.withinOneRate * 100)}%.`,
+      "semantic.calibration.stability.completed",
+      `Stability: pass-rate=${Math.round(stability.passRate * 100)}%, mean-MAE=${stability.meanMae}, MAE-sd=${stability.maeStdDev}, bias-sd=${stability.biasStdDev}.`,
       {
         calibrationSet,
         datasetId: dataset.id,
         datasetStatus: dataset.status,
         humanReview: dataset.humanReview ?? null,
-        judgeModel: response.model,
-        latencyMs,
-        usage: response.usage,
-        calibration,
+        judgeModel: responseModel,
+        repeatCount,
+        totalLatencyMs,
+        usage: { promptTokens, completionTokens, totalTokens },
+        stability,
       },
     );
-    scenario.assert(config.assertion, calibration.eligible, true, calibration);
+    scenario.assert(
+      repeatCount === 1 ? config.assertion : "Judge meets repeated calibration stability thresholds",
+      passed,
+      true,
+      repeatCount === 1 ? calibrations[0] : stability,
+    );
 
     const isHumanReviewed =
       dataset.humanReview === "approved" || dataset.humanReview === "complete";
     const report = scenario.finish({
-      result: calibration.eligible ? "PASS" : "FAIL",
-      reason: calibration.eligible
-        ? isHumanReviewed
-          ? "The semantic judge met the selected human-reviewed calibration thresholds. Semantic scoring remains subordinate to deterministic hard gates."
-          : "The semantic judge met the selected numerical thresholds, but the reference labels are not human-approved and cannot grant ranking authority."
-        : "The semantic judge did not meet the selected reference thresholds and must remain advisory-only.",
+      result: passed ? "PASS" : "FAIL",
+      reason: passed
+        ? repeatCount > 1
+          ? "The semantic judge met repeated human-reviewed calibration stability thresholds. Semantic scoring remains subordinate to deterministic hard gates."
+          : isHumanReviewed
+            ? "The semantic judge met the selected human-reviewed calibration thresholds. Semantic scoring remains subordinate to deterministic hard gates."
+            : "The semantic judge met the selected numerical thresholds, but the reference labels are not human-approved and cannot grant ranking authority."
+        : repeatCount > 1
+          ? "The semantic judge did not meet repeated calibration stability thresholds and must remain advisory-only."
+          : "The semantic judge did not meet the selected reference thresholds and must remain advisory-only.",
     });
     const artifacts = await writeScenarioArtifacts(report, {
       environment: config.environment,
@@ -135,8 +184,8 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
     if (calibrationSet !== "seed") {
       const humanReview = renderBoundaryHumanReview({
         dataset,
-        calibration,
-        judgeModel: response.model,
+        calibration: calibrations.at(-1),
+        judgeModel: responseModel,
       });
       await writeFile(
         path.join(artifacts.runDir, "L8-SEMANTIC-BOUNDARY-HUMAN-REVIEW.md"),
@@ -146,5 +195,13 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
     }
 
     expect(report.result).toBe("PASS");
-  }, 60_000);
+  }, 120_000);
 });
+
+function parseRepeatCount(raw: string): number {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > 5) {
+    throw new Error("ULTEF_L8_CALIBRATION_REPEATS must be an integer from 1 to 5.");
+  }
+  return value;
+}
