@@ -20,6 +20,18 @@ const commands = {
       "tests/integration/ultef-profile.integration.test.ts",
     ],
   },
+  "L2-ISOLATION-MATRIX": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/web",
+      "exec",
+      "vitest",
+      "run",
+      "tests/ultef-isolation-matrix.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L2-ISOLATION-MATRIX" },
+  },
   "L3-NPC-001": {
     command: "pnpm",
     args: [
