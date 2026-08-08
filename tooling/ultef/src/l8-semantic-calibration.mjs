@@ -4,6 +4,52 @@ export const SEMANTIC_CALIBRATION_THRESHOLDS = Object.freeze({
   maxRubricMae: 1.0,
 });
 
+export function buildSemanticCalibrationJudgePrompt(referenceExamples) {
+  const lines = [
+    "You are calibrating a semantic evaluator for Project LUMI children's stories.",
+    "Score each example independently from 0 to 5 according to its named rubric.",
+    "Return strict JSON only. Do not include markdown or explanations outside JSON.",
+    'Required shape: {"predictions":{"example-id":0}}',
+    "Use integers only. Include every example id exactly once.",
+    "",
+  ];
+
+  for (const example of referenceExamples) {
+    lines.push(
+      `ID: ${example.id}`,
+      `RUBRIC: ${example.rubric}`,
+      `TEXT: ${example.text}`,
+      "",
+    );
+  }
+  return lines.join("\n");
+}
+
+export function parseSemanticCalibrationJudgeResponse(raw, referenceExamples) {
+  let parsed;
+  try {
+    parsed = JSON.parse(String(raw ?? "").trim());
+  } catch {
+    throw new Error("L8 semantic calibration judge must return strict JSON.");
+  }
+
+  const predictions = parsed?.predictions;
+  if (!predictions || typeof predictions !== "object" || Array.isArray(predictions)) {
+    throw new Error("L8 semantic calibration response is missing predictions.");
+  }
+
+  const normalized = {};
+  for (const example of referenceExamples) {
+    const value = Number(predictions[example.id]);
+    if (!Number.isInteger(value) || value < 0 || value > 5) {
+      throw new Error(`Invalid calibration prediction for ${example.id}.`);
+    }
+    normalized[example.id] = value;
+  }
+
+  return normalized;
+}
+
 export function evaluateSemanticCalibration(referenceExamples, predictions) {
   const rows = referenceExamples.map((example) => {
     const predicted = Number(predictions?.[example.id]);
