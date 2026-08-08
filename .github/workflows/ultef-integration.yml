@@ -60,6 +60,9 @@ jobs:
       - name: Run ULTEF DB integration profile
         run: pnpm ultef:integration
 
+      - name: Run L6 Golden Headless Journey
+        run: pnpm ultef:golden
+
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -67,6 +70,14 @@ jobs:
             cat artifacts/ultef/latest/integration-summary.md
           else
             echo "ULTEF integration summary was not produced."
+          fi
+          GOLDEN_FILE=$(find artifacts/ultef/runs -name 'L6-GOLDEN-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$GOLDEN_FILE" ]; then
+            echo
+            echo "===== L6 GOLDEN HEADLESS JOURNEY ====="
+            cat "$GOLDEN_FILE"
+          else
+            echo "L6 Golden Journey evidence was not produced."
           fi
 
       - name: Upload ULTEF evidence
