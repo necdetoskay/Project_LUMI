@@ -24,8 +24,8 @@ const ultefDescribe = enabled && destructive && databaseUrl ? describe : describ
 const HOUSEHOLD_ID = "20000000-0000-4000-8000-000000000091";
 const WORLD_ID = "30000000-0000-4000-8000-000000000091";
 const COMMIT_ID = "50000000-0000-4000-8000-000000000091";
-const SOURCE_NPC = "npc-mira";
-const TARGET_NPC = "npc-bora";
+const SOURCE_NPC = "60000000-0000-4000-8000-000000000091";
+const TARGET_NPC = "70000000-0000-4000-8000-000000000091";
 const FACT_ID = "bridge-lights-before-storm";
 const CLAIM = "Eski koprunun isiklari firtinadan once yaniyor.";
 
@@ -69,7 +69,6 @@ beforeAll(async () => {
   );
   await pool.query(beliefMigration);
 
-  // Minimal event-store shape required by the production propagator's audit event.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS story.story_event_store (
       id UUID PRIMARY KEY,
