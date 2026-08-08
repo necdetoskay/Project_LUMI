@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: Comma-separated OpenRouter model ids (max 3 models; 6 live story calls per model)
+        description: Comma-separated OpenRouter model ids (max 3 models)
         required: true
         default: openai/gpt-4.1-mini
+      repeats:
+        description: Repeats per model, 1-5. Each repeat runs 6 live story scenarios.
+        required: true
+        default: "3"
       confirm_cost:
-        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (default 3 repeats = 18 calls/model, max 90 calls at 3 models x 5 repeats)
         required: true
         default: ""
 
@@ -16,7 +20,7 @@ jobs:
   live-provider-scorecard:
     if: ${{ inputs.confirm_cost == 'RUN_LIVE_PROVIDER' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     services:
       postgres:
         image: postgres:17
@@ -38,6 +42,7 @@ jobs:
       STORY_TEST_ENABLE_DESTRUCTIVE: "true"
       ULTEF_REAL_PROVIDER_ENABLED: "true"
       ULTEF_L8_MODELS: ${{ inputs.models }}
+      ULTEF_L8_REPEATS: ${{ inputs.repeats }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
 
@@ -50,13 +55,24 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Verify live-provider secret
+      - name: Verify live-provider secret and budget inputs
         shell: bash
         run: |
           if [ -z "$OPENROUTER_API_KEY" ]; then
             echo "OPENROUTER_API_KEY repository secret is required."
             exit 1
           fi
+          case "${{ inputs.repeats }}" in
+            1|2|3|4|5) ;;
+            *) echo "repeats must be an integer from 1 to 5"; exit 1 ;;
+          esac
+          MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
+          if [ "$MODEL_COUNT" -gt 3 ]; then
+            echo "At most 3 models are allowed."
+            exit 1
+          fi
+          LIVE_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }} * 6))
+          echo "Planned paid live story calls: $LIVE_CALLS"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Prepare profile schema
@@ -69,7 +85,7 @@ jobs:
         run: pnpm --filter @lumi/story story:migrate
       - name: Verify L8 evaluators without provider cost
         run: pnpm ultef:l8-scenario-selftest
-      - name: Run L8 live six-scenario model scorecard
+      - name: Run repeated L8 live six-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
       - name: Print L8 scorecard
         if: always()
