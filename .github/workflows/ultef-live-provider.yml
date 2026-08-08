@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: Comma-separated OpenRouter model ids (maximum 3 paid model calls)
+        description: Comma-separated OpenRouter model ids (max 3 models; 3 live story calls per model)
         required: true
         default: openai/gpt-4.1-mini
       confirm_cost:
@@ -16,7 +16,7 @@ jobs:
   live-provider-scorecard:
     if: ${{ inputs.confirm_cost == 'RUN_LIVE_PROVIDER' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17
@@ -67,7 +67,9 @@ jobs:
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Prepare story schema
         run: pnpm --filter @lumi/story story:migrate
-      - name: Run L8 live model scorecard
+      - name: Verify L8 evaluators without provider cost
+        run: pnpm ultef:l8-scenario-selftest
+      - name: Run L8 live three-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
       - name: Print L8 scorecard
         if: always()
@@ -79,6 +81,15 @@ jobs:
           else
             echo "L8 model scorecard was not produced."
           fi
+      - name: Print L8 live scenario evidence
+        if: always()
+        shell: bash
+        run: |
+          find artifacts/ultef/runs -name 'L8-LIVE-SCENARIO-PACK-001.md' -type f 2>/dev/null | sort | while read -r FILE; do
+            echo
+            echo "===== L8 LIVE SCENARIO PACK ====="
+            cat "$FILE"
+          done
       - name: Upload live-provider evidence
         if: always()
         uses: actions/upload-artifact@v4
