@@ -44,6 +44,18 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: 'L4-OPPORTUNITY-HOOK-001' }
   },
+  'L4-HOOK-SCENE-001': {
+    command: 'pnpm',
+    args: [
+      '--filter',
+      '@lumi/story',
+      'exec',
+      'vitest',
+      'run',
+      'tests/ultef/ultef-hook-scene.test.ts'
+    ],
+    env: { ULTEF_SCENARIO: 'L4-HOOK-SCENE-001' }
+  },
   L0: { command: 'pnpm', args: ['test'] },
   L1: { command: 'pnpm', args: ['test'] },
   L2: { command: 'pnpm', args: ['--filter', '@lumi/profiles', 'test:int'] },
