@@ -23,11 +23,11 @@
     },
     {
       "id": "L3-NPC-001",
-      "title": "NPC rumor processing behavior",
+      "title": "NPC rumor propagation behavior",
       "level": "L3",
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08"],
-      "status": "TO_INSTRUMENT",
-      "runner": "@lumi/npc-intelligence",
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:npc-rumor",
       "requires": ["npc-intelligence"],
       "evidenceMode": "runtime-narrative"
     }
