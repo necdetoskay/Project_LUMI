@@ -112,9 +112,9 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
       const result = evaluation.scenarios[definition.id];
       scenario.assert(
         `${definition.title} passes`,
-        result.passed,
+        result?.passed === true,
         true,
-        result,
+        result ?? { error: "missing scenario evaluation" },
       );
     }
     scenario.assert(
