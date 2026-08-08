@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "L6-GOLDEN-001",
+      "title": "Golden headless continuity journey",
+      "level": "L6",
+      "projectGates": [
+        "PX-LUMI-01",
+        "PX-LUMI-02",
+        "PX-LUMI-03",
+        "PX-LUMI-05",
+        "PX-LUMI-06",
+        "PX-LUMI-09"
+      ],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:golden",
+      "requires": [
+        "profiles",
+        "world",
+        "story",
+        "npc-intelligence",
+        "production-outcome-commit",
+        "persistence-reload",
+        "L4-SCENE-SESSION-001",
+        "PX-LUMI-09-001",
+        "PX-LUMI-09-002",
+        "disposable-postgresql"
+      ],
+      "blockedBy": [],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #25",
+      "note": "The canonical Deniz/Arin headless journey passed on disposable PostgreSQL with deterministic story rendering and real story/world/NPC persistence. Real provider rendering remains an L8 concern."
+    },
+    {
+      "id": "L1-PROFILE-001",
+      "title": "Profile household isolation",
+      "level": "L1",
+      "projectGates": ["PX-LUMI-06"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:profile",
+      "requires": ["profiles", "DATABASE_URL", "profiles-migrations"],
+      "evidenceMode": "runtime-narrative"
+    },
+    {
+      "id": "L2-ISOLATION-001",
+      "title": "Foreign household cannot load child profile",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-06"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:isolation",
+      "requires": ["profiles", "profiles-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #43",
+      "note": "Foreign household lookup returned no protected child record, then the owning household reloaded the same profile with unchanged ownership."
+    },
+    {
+      "id": "L2-ISOLATION-002",
+      "title": "Foreign household cannot read or mutate story session",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-01", "PX-LUMI-06"],
+      "status": "SPECIFIED",
+      "requires": ["production story-session HTTP/auth scoping boundary"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Story application transition functions do not accept actor household identity, so the scenario must execute at the production auth/route boundary rather than pretending a raw service call proves tenant isolation."
+    },
+    {
+      "id": "L2-ISOLATION-003",
+      "title": "NPC belief state never crosses household boundary",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-06"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:isolation",
+      "requires": [
+        "profiles-migrations",
+        "npc-intelligence beliefs migration",
+        "disposable-postgresql"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #43",
+      "note": "A real hearsay belief persisted in Household A remained invisible when the same NPC/fact identity was queried in Household B after DB reload."
+    },
+    {
+      "id": "L3-SESSION-001",
+      "title": "Stale expectedVersion is rejected without persistence leak",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-01"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:session-negative",
+      "requires": ["story", "story-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #47",
+      "note": "A stale advance attempt was rejected and DB reload proved version, current scene, visits, checkpoints and story events were unchanged."
+    },
+    {
+      "id": "L3-SESSION-002",
+      "title": "Completed session cannot advance without persistence leak",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-01"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:session-negative",
+      "requires": ["story", "story-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #51",
+      "note": "A real completed session rejected a later advance and DB reload proved status, version, current scene, visits, checkpoints and story events did not change."
+    },
+    {
+      "id": "L3-SESSION-003",
+      "title": "Second active session for the same child and world is rejected without persistence leak",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-01"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:session-single-active",
+      "requires": ["story", "story-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Starts from one real active child/world session, attempts a second start, and verifies no second session, visit, checkpoint, event or idempotency ledger record is persisted."
+    },
+    {
+      "id": "L3-SESSION-004",
+      "title": "Duplicate session advance idempotency key produces one mutation",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-01"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:session-idempotency",
+      "requires": ["story", "story-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Runs the same session advance twice with the same idempotency key and verifies exactly one version change, visit, checkpoint, event and session_advance ledger entry."
+    },
+    {
+      "id": "L3-NPC-001",
+      "title": "NPC rumor propagation behavior",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-08"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:npc-rumor",
+      "requires": ["npc-intelligence"],
+      "evidenceMode": "runtime-narrative"
+    },
+    {
+      "id": "L4-OPPORTUNITY-HOOK-001",
+      "title": "Accepted NPC opportunity to StoryHook composition",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-05", "PX-LUMI-08"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:opportunity-hook",
+      "requires": [
+        "web-route",
+        "profiles-contract",
+        "world-contract",
+        "story-contract",
+        "npc-intelligence-contract"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "limitations": [
+        "package adapters are test doubles",
+        "does not prove DB persistence",
+        "does not prove outbox worker/application"
+      ]
+    },
+    {
+      "id": "L4-HOOK-SCENE-001",
+      "title": "Rumor StoryHook to generated story scene",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-05", "PX-LUMI-10"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:hook-scene",
+      "requires": ["story-generation-pipeline"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": [
+        "provider caller is deterministic test double",
+        "does not prove persistence or advanceSession/reader wiring",
+        "real provider coverage belongs to L8"
+      ]
+    },
+    {
+      "id": "L4-SCENE-SESSION-001",
+      "title": "Generated scene to persisted session and reader state",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-01", "PX-LUMI-05"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:scene-session",
+      "requires": [
+        "DATABASE_URL",
+        "story-migrations",
+        "generated-scene-session-wiring",
+        "session-persistence",
+        "reader-reload"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #25",
+      "limitations": [
+        "requires integration database",
+        "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"
+      ]
+    },
+    {
+      "id": "PX-LUMI-09-001",
+      "title": "Story outcome commit durability and idempotency",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-09"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:world-commit",
+      "requires": [
+        "STORY_TEST_ENABLE_DESTRUCTIVE=true",
+        "STORY_TEST_DATABASE_URL",
+        "story world-commit migrations"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #25",
+      "limitations": [
+        "proves durable commit record/world version/event/outbox and retry idempotency",
+        "does not by itself prove downstream NPC materialized state mutation; PX-LUMI-09-002 covers that"
+      ]
+    },
+    {
+      "id": "PX-LUMI-09-002",
+      "title": "Materialized indirect outcome propagation",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
+      "status": "EXECUTED_PASS",
+      "runner": "pnpm ultef:materialized-rumor",
+      "requires": [
+        "STORY_TEST_ENABLE_DESTRUCTIVE=true",
+        "STORY_TEST_DATABASE_URL",
+        "story outbox schema",
+        "npc_intelligence beliefs migration",
+        "production rumor composition"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #25",
+      "limitations": [
+        "requires a disposable PostgreSQL database whose name contains test or review"
+      ]
+    }
+  ]
+}

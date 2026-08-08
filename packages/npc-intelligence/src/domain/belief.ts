@@ -19,6 +19,7 @@ export interface Belief {
   id: string;
   npcId: string;
   householdId: string;
+  worldId?: string | null;
   factId: string;
   claim: string;
   confidence: number;
@@ -40,6 +41,9 @@ export function validateBelief(belief: Belief): void {
   assertNonEmptyString(belief.id, "belief.id");
   assertNonEmptyString(belief.npcId, "belief.npcId");
   assertNonEmptyString(belief.householdId, "belief.householdId");
+  if (belief.worldId != null) {
+    assertNonEmptyString(belief.worldId, "belief.worldId");
+  }
   assertNonEmptyString(belief.factId, "belief.factId");
   assertNonEmptyString(belief.claim, "belief.claim");
   if (belief.claim.length > MAX_BELIEF_CLAIM_LENGTH) {

@@ -61,16 +61,8 @@ const COMPENSATE_EVENT_TYPE: StoryEventType = "STORY_WORLD_COMMIT_COMPENSATED";
 export class WorldCommitService {
   private readonly repo = new DrizzleStoryRepository();
 
-  /**
-   * Transactionally applies a validated outcome manifest to the world:
-   * idempotency guard → extract → validate → rule-engine → single-tx commit
-   * (commit record + world version bump + append-only event records).
-   * On evidence failure nothing is written.
-   */
   async commitManifest(input: CommitManifestInput): Promise<CommitResult> {
     const { manifest, snapshot, extractor, validator, ruleEngine } = input;
-
-    // Evidence validation is a hard gate before any DB write.
     const errors = validator.validate(manifest, snapshot);
     if (errors.length > 0) {
       throw new Error(`EVIDENCE_VALIDATION_FAILED: ${errors.join("; ")}`);
@@ -82,11 +74,8 @@ export class WorldCommitService {
       allowedEntityIds,
     });
     const { direct: changes } = ruleEngine.apply(events);
-
     const db = getDb();
-    // Idempotency key derived from manifest (retries must not double-apply).
     const idempotencyKey = `story-commit:${manifest.id}`;
-
     const existing = await this.repo.findCommitByIdempotencyKey(
       db,
       manifest.householdId,
@@ -102,19 +91,12 @@ export class WorldCommitService {
         compensated: existing.status === "compensated",
       };
     }
-
     return db.transaction(async (tx) => commitOutcomeWithTx({ ...input, tx }));
   }
 
-  /**
-   * Compensates a previously committed manifest (forward-fix / rollback):
-   * writes an inverse change set, bumps the world version again, marks the
-   * original commit records as compensated, and appends compensation events.
-   */
   async compensateCommit(input: CompensateCommitInput): Promise<CommitResult> {
     const { manifest, reason } = input;
     const db = getDb();
-
     const existing = await this.repo.findCommitByManifest(db, manifest.id);
     if (!existing) {
       throw new Error(
@@ -122,7 +104,6 @@ export class WorldCommitService {
       );
     }
 
-    // Build inverse changes from the committed record (deterministic).
     const committedChanges = existing.changes as WorldChange[];
     const inverseChanges: WorldChange[] = committedChanges.map((c) => ({
       changeKey: `${c.changeKey}:comp`,
@@ -230,18 +211,10 @@ export class WorldCommitService {
   }
 }
 
-/**
- * Commits an outcome manifest within a caller-provided transaction (e.g. the
- * story-session advance tx). Applies the full pipeline — evidence validation,
- * narrative event extraction, rule engine, world version bump, append-only
- * event sourcing — so a story advance and its world commit are atomic.
- */
 export async function commitOutcomeWithTx(
   input: CommitOutcomeWithTxInput,
 ): Promise<CommitResult> {
   const { manifest, snapshot, extractor, validator, ruleEngine, tx } = input;
-
-  // Evidence validation is a hard gate before any write.
   const errors = validator.validate(manifest, snapshot);
   if (errors.length > 0) {
     throw new Error(`EVIDENCE_VALIDATION_FAILED: ${errors.join("; ")}`);
@@ -337,11 +310,11 @@ export async function commitOutcomeWithTx(
       createdAt: new Date(),
     });
   }
-  // S23-T04: enqueue indirect-effect intents atomically with the commit.
   for (const intent of indirectIntents) {
     await repo.enqueueOutbox(tx, {
       householdId: manifest.householdId,
       worldId: manifest.worldId,
+      storySessionId: manifest.storySessionId,
       commitId,
       idempotencyKey: `story-indirect:${intent.intentKey}`,
       intentType: intent.intentType,

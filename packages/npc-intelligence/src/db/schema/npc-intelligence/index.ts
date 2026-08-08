@@ -19,4 +19,7 @@ export type {
   NewOpportunityInboxRecord,
 } from "./opportunity-inbox";
 
+export { npcBeliefs } from "./beliefs";
+export type { NpcBeliefRecord, NewNpcBeliefRecord } from "./beliefs";
+
 export * from "./relations";

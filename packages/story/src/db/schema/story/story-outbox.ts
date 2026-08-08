@@ -42,6 +42,8 @@ export const storyOutbox = storySchema.table(
     id: primaryId(),
     householdId: uuid("household_id").notNull(),
     worldId: uuid("world_id").notNull(),
+    /** Story session that produced the commit/intent. */
+    storySessionId: uuid("story_session_id"),
     /** Correlation to the commit that produced this indirect intent. */
     commitId: uuid("commit_id").notNull(),
     /** Idempotency key: propagation never applies the same intent twice. */
@@ -68,6 +70,7 @@ export const storyOutbox = storySchema.table(
       table.createdAt,
     ),
     index("story_outbox_commit_idx").on(table.commitId),
+    index("story_outbox_session_idx").on(table.storySessionId),
     index("story_outbox_idempotency_idx").on(
       table.householdId,
       table.idempotencyKey,

@@ -1,0 +1,103 @@
+name: ULTEF Integration
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  db-backed-ultef:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare profile schema
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Run ULTEF DB integration profile
+        run: pnpm ultef:integration
+      - name: Run L6 Golden Headless Journey
+        run: pnpm ultef:golden
+      - name: Run Sprint 01 household isolation matrix
+        run: pnpm ultef:isolation
+      - name: Run Sprint 01 session negative scenarios
+        run: pnpm ultef:session-negative
+      - name: Run Sprint 01 session idempotency scenario
+        run: pnpm ultef:session-idempotency
+      - name: Run Sprint 01 single active session guard
+        run: pnpm ultef:session-single-active
+      - name: Run Sprint 01 invalid outcome rejection
+        run: pnpm ultef:outcome-rejection
+      - name: Run Sprint 01 atomic outcome rollback
+        run: pnpm ultef:outcome-atomic-rollback
+      - name: Run Sprint 01 indirect propagation retry
+        run: pnpm ultef:indirect-retry
+      - name: Run Sprint 01 terminal indirect propagation failure
+        run: pnpm ultef:indirect-terminal-failure
+      - name: Run Sprint 01 choice branch divergence
+        run: pnpm ultef:choice-divergence
+      - name: Run Sprint 01 choice-derived world divergence
+        run: pnpm ultef:choice-world-divergence
+      - name: Run Sprint 01 continuity context divergence
+        run: pnpm ultef:continuity-divergence
+      - name: Run Sprint 01 continuity context to generated story
+        run: pnpm ultef:context-to-story
+      - name: Print human-readable ULTEF summary
+        if: always()
+        run: |
+          if [ -f artifacts/ultef/latest/integration-summary.md ]; then
+            cat artifacts/ultef/latest/integration-summary.md
+          else
+            echo "ULTEF integration summary was not produced."
+          fi
+          GOLDEN_FILE=$(find artifacts/ultef/runs -name 'L6-GOLDEN-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$GOLDEN_FILE" ]; then
+            echo
+            echo "===== L6 GOLDEN HEADLESS JOURNEY ====="
+            cat "$GOLDEN_FILE"
+          else
+            echo "L6 Golden Journey evidence was not produced."
+          fi
+      - name: Upload ULTEF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-db-integration-evidence
+          path: artifacts/ultef/
+          if-no-files-found: warn
+          retention-days: 14
