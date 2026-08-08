@@ -127,6 +127,7 @@ describe("StorySceneGenerationService", () => {
       worldId: "w",
       childProfileId: "c",
       characterId: "arin",
+      npcIds: ["npc-1"],
     });
     const call = caller.mock.calls[0] as unknown as [
       string,
