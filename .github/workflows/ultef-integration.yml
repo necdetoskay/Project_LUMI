@@ -77,6 +77,8 @@ jobs:
         run: pnpm ultef:l9-deployment-rollback
       - name: Run L9 dependency outage recovery
         run: pnpm ultef:l9-dependency-outage
+      - name: Run L9 migration crash recovery
+        run: pnpm ultef:l9-migration-recovery
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -188,6 +190,14 @@ jobs:
             cat "$OUTAGE_FILE"
           else
             echo "L9 dependency-outage evidence was not produced."
+          fi
+          MIGRATION_FILE=$(find artifacts/ultef/runs -name 'L9-MIGRATION-RECOVERY-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$MIGRATION_FILE" ]; then
+            echo
+            echo "===== L9 MIGRATION RECOVERY ====="
+            cat "$MIGRATION_FILE"
+          else
+            echo "L9 migration-recovery evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
