@@ -23,6 +23,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Validate ULTEF L8 scenario evaluators
+        run: pnpm ultef:l8-scenario-selftest
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
