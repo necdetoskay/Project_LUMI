@@ -9,7 +9,7 @@
       "status": "BLOCKED",
       "runner": null,
       "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001", "PX-LUMI-09-002"],
-      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 is blocked by missing concrete NPC rumor materialization"],
+      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 still needs composition-root wiring and DB execution evidence"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -83,8 +83,8 @@
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
       "status": "BLOCKED",
       "runner": null,
-      "requires": ["IndirectEffectPropagator", "concrete npc rumor belief/hearsay applicator", "NPC persistence reload"],
-      "blockedBy": ["PRODUCT_GAP: RumorSpreadApplicator is a placeholder and does not persist NPC belief/hearsay state"],
+      "requires": ["IndirectEffectPropagator", "RumorSpreadApplicator writer port", "RumorBeliefWriterService", "npc_intelligence.beliefs persistence", "composition-root wiring", "NPC persistence reload test"],
+      "blockedBy": ["IMPLEMENTATION_GAP: real belief persistence and writer now exist, but the story propagator still needs a production composition-root binding plus DB-backed ULTEF execution evidence"],
       "evidenceMode": "runtime-narrative"
     }
   ]
