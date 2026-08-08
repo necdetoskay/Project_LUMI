@@ -4,7 +4,11 @@ export const L8_SCORECARD_PERFORMANCE_PROFILE = Object.freeze({
 });
 
 export function linearPerformanceScore(value, { best, worst, maxPoints }) {
-  if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+  if (
+    value === null ||
+    value === undefined ||
+    !Number.isFinite(Number(value))
+  ) {
     return 0;
   }
   const numeric = Number(value);
