@@ -7,8 +7,27 @@
 - Rubrics: `choice_influence`, `personality_emotion`, `age_appropriateness`
 - Review status: **architect/AI review completed; owner-human approval pending**
 - Ranking authority: **none**
+- First live calibration status: **eligible-seed-unreviewed**
 
 This review does not claim human approval. The seed labels remain advisory until a human owner explicitly reviews and accepts them.
+
+## First live calibration evidence — 2026-08-08
+
+Judge model: `openai/gpt-4.1-mini`
+
+The first real OpenRouter calibration run evaluated all 18 seed examples in one batch and met every numerical threshold:
+
+- overall MAE: **0.000**;
+- within-one accuracy: **100%**;
+- `choice_influence` MAE: **0.000** (6/6 within one);
+- `personality_emotion` MAE: **0.000** (6/6 within one);
+- `age_appropriateness` MAE: **0.000** (6/6 within one);
+- prompt tokens: **962**;
+- completion tokens: **137**;
+- total tokens: **1099**;
+- provider-call latency: approximately **3.15 seconds**.
+
+All 18 predicted integer scores exactly matched the seed reference scores. This result proves the judge is numerically compatible with the current seed set, but **does not** prove independent human agreement because the seed labels have not yet received explicit owner-human approval. The judge therefore remains advisory-only and must not affect deterministic hard gates or winner selection.
 
 ## Review findings
 
