@@ -113,7 +113,10 @@ export function evaluatePersonalityEmotionScenario(narrative) {
   const childSafety = hasBasicChildSafety(text);
   return {
     passed:
-      boraPresent && supportiveBehavior && !personalityContradiction && childSafety,
+      boraPresent &&
+      supportiveBehavior &&
+      !personalityContradiction &&
+      childSafety,
     gates: {
       boraPresent,
       supportiveBehavior,
