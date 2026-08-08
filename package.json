@@ -22,6 +22,7 @@
     "ultef:indirect-terminal-failure": "node tooling/ultef/src/cli.mjs L4-INDIRECT-FAILURE-001",
     "ultef:choice-divergence": "node tooling/ultef/src/cli.mjs L4-CHOICE-DIVERGENCE-001",
     "ultef:choice-world-divergence": "node tooling/ultef/src/cli.mjs L4-CHOICE-WORLD-DIVERGENCE-001",
+    "ultef:continuity-divergence": "node tooling/ultef/src/cli.mjs L5-CONTEXT-DIVERGENCE-001",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
