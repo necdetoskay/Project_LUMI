@@ -46,6 +46,28 @@ Hard-boundary structure:
 
 The challenge set is currently **`architect-challenge-reference` / human-review pending**. Its labels were prepared during architecture/test design and are **not human calibration truth**. A judge may be tested against them, but passing the boundary challenge cannot grant ranking authority.
 
+### First live hard-boundary evidence — 2026-08-08
+
+Judge model: `openai/gpt-4.1-mini`
+
+The first real hard-boundary run deliberately used the same numerical thresholds as the baseline calibration. The judge **did not pass the overall MAE gate**, even though every prediction remained within one point of the current architect reference label:
+
+- overall MAE: **0.778** — threshold `<= 0.75`, therefore **FAIL**;
+- within-one accuracy: **100%**;
+- `choice_influence` MAE: **0.833**;
+- `personality_emotion` MAE: **0.500**;
+- `age_appropriateness` MAE: **1.000**;
+- prompt tokens: **1155**;
+- completion tokens: **173**;
+- total tokens: **1328**;
+- live test duration: approximately **3.4 seconds**.
+
+The detailed pattern is informative rather than catastrophic. The model never missed by more than one point. Its dominant tendency was to score borderline outputs **one point higher** than the current architect labels. Examples labelled 4 were commonly predicted as 5; several 3s became 4s; several 2s became 3s. `personality_emotion` was the strongest of the three rubrics, while `age_appropriateness` showed the largest systematic upward shift.
+
+This is exactly why the hard-boundary set exists: the baseline `MAE=0` result alone would have overstated judge precision. The current evidence says that `gpt-4.1-mini` understands the broad rubric very well, but its adjacent-score discrimination is not yet precise enough to satisfy our strict threshold on the unreviewed boundary labels. It therefore remains **advisory-only** and receives no ranking authority.
+
+Because the hard-boundary labels are still human-review pending, this result must not be interpreted as proof that the judge itself is wrong. A human review may confirm some current labels or move them toward the model's adjacent scores. The correct next comparison is human-reviewed labels versus the frozen live predictions, not silently changing thresholds to make the model pass.
+
 ### Why the boundary set is separate
 
 The original 18-example baseline is frozen because it already has real provider evidence attached to it. Replacing or silently expanding that file would make the historical `MAE=0` result ambiguous. Keeping the datasets separate gives us two stable measurements:
@@ -53,7 +75,7 @@ The original 18-example baseline is frozen because it already has real provider 
 1. **baseline agreement** — broad rubric understanding across 0–5;
 2. **boundary discrimination** — ability to distinguish nearby quality levels around 2/3/4.
 
-The live-provider workflow now supports selecting either `seed` or `hard-boundary` for an optional single paid calibration call. Boundary evidence is written under `L8-SEMANTIC-CALIBRATION-BOUNDARY-001`, so it cannot be mistaken for the baseline calibration used by scorecard trust annotation.
+The live-provider workflow supports selecting either `seed` or `hard-boundary` for an optional single paid calibration call. Boundary evidence is written under `L8-SEMANTIC-CALIBRATION-BOUNDARY-001`, so it cannot be mistaken for the baseline calibration used by scorecard trust annotation.
 
 ## Baseline review findings
 
@@ -80,6 +102,8 @@ Recommended review order:
 1. `choice-boundary-*` — decide how much remembered context is required before a prior choice materially changes the next story;
 2. `personality-boundary-*` — decide where mild impatience or shallow reassurance crosses from acceptable characterization into inconsistency;
 3. `age-boundary-*` — decide how much vocabulary/scientific abstraction remains comfortable for the 6–8 age band when concrete action still supports comprehension.
+
+The first live boundary result makes the third group especially important: the judge systematically scored the age examples one point more generously than the current architect labels.
 
 ## Promotion rule
 
