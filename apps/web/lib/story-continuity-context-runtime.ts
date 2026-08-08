@@ -13,9 +13,7 @@ import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
 export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
-  constructor(
-    private readonly beliefs = new DrizzleBeliefSourceRepository(),
-  ) {}
+  constructor(private readonly beliefs = new DrizzleBeliefSourceRepository()) {}
 
   async resolveContext(
     input: ResolveStoryContinuityContextInput,
