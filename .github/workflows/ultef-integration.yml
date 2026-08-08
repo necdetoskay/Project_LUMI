@@ -53,6 +53,10 @@ jobs:
         run: pnpm ultef:integration
       - name: Run L6 Golden Headless Journey
         run: pnpm ultef:golden
+      - name: Run L9 deterministic long-horizon state journey
+        run: pnpm ultef:l9-long-horizon
+      - name: Run L9 DB-backed ten-session long-horizon journey
+        run: pnpm ultef:l9-long-horizon-db
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -92,6 +96,14 @@ jobs:
             cat "$GOLDEN_FILE"
           else
             echo "L6 Golden Journey evidence was not produced."
+          fi
+          L9_FILE=$(find artifacts/ultef/runs -name 'L9-LONG-HORIZON-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$L9_FILE" ]; then
+            echo
+            echo "===== L9 LONG HORIZON ====="
+            cat "$L9_FILE"
+          else
+            echo "L9 long-horizon evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
