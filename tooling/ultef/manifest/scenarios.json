@@ -13,8 +13,8 @@
         "PX-LUMI-06",
         "PX-LUMI-09"
       ],
-      "status": "READY_FOR_IMPLEMENTATION",
-      "runner": null,
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:golden",
       "requires": [
         "profiles",
         "world",
@@ -24,11 +24,12 @@
         "persistence-reload",
         "L4-SCENE-SESSION-001",
         "PX-LUMI-09-001",
-        "PX-LUMI-09-002"
+        "PX-LUMI-09-002",
+        "disposable-postgresql"
       ],
       "blockedBy": [],
       "evidenceMode": "runtime-narrative",
-      "note": "The previously blocking DB-backed scene/session, world-commit, and materialized-rumor prerequisites all produced PASS evidence in ULTEF Integration run #12."
+      "note": "Executable headless journey is wired with deterministic story rendering and real PostgreSQL story/world/NPC persistence. Real provider rendering remains an L8 concern."
     },
     {
       "id": "L1-PROFILE-001",
