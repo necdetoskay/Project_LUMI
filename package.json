@@ -12,6 +12,7 @@
     "ultef": "node tooling/ultef/src/cli.mjs",
     "ultef:selftest": "node tooling/ultef/src/cli.mjs selftest",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
+    "ultef:isolation": "node tooling/ultef/src/cli.mjs L2-ISOLATION-MATRIX",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
