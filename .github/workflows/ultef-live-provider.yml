@@ -15,12 +15,16 @@ on:
         description: Set true to add one advisory semantic-judge call per model repeat.
         required: true
         default: "false"
+      run_calibration:
+        description: Set true to spend one extra judge call on the 18-example seed calibration set.
+        required: true
+        default: "false"
       judge_model:
-        description: OpenRouter model id used only for advisory semantic judging.
+        description: OpenRouter model id used for advisory judging and optional calibration.
         required: true
         default: openai/gpt-4.1-mini
       confirm_cost:
-        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (max 90 story calls; 105 total calls when semantic judge is enabled)
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (max 90 story calls; up to 106 total with semantic judge + calibration)
         required: true
         default: ""
 
@@ -52,6 +56,7 @@ jobs:
       ULTEF_L8_MODELS: ${{ inputs.models }}
       ULTEF_L8_REPEATS: ${{ inputs.repeats }}
       ULTEF_L8_SEMANTIC_JUDGE_ENABLED: ${{ inputs.enable_semantic_judge }}
+      ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: ${{ inputs.run_calibration }}
       ULTEF_L8_JUDGE_MODEL: ${{ inputs.judge_model }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
@@ -80,6 +85,10 @@ jobs:
             true|false) ;;
             *) echo "enable_semantic_judge must be true or false"; exit 1 ;;
           esac
+          case "${{ inputs.run_calibration }}" in
+            true|false) ;;
+            *) echo "run_calibration must be true or false"; exit 1 ;;
+          esac
           MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
           if [ "$MODEL_COUNT" -gt 3 ]; then
             echo "At most 3 models are allowed."
@@ -90,9 +99,14 @@ jobs:
           if [ "${{ inputs.enable_semantic_judge }}" = "true" ]; then
             JUDGE_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }}))
           fi
-          TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS))
+          CALIBRATION_CALLS=0
+          if [ "${{ inputs.run_calibration }}" = "true" ]; then
+            CALIBRATION_CALLS=1
+          fi
+          TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS + CALIBRATION_CALLS))
           echo "Planned paid story calls: $STORY_CALLS"
           echo "Planned paid semantic-judge calls: $JUDGE_CALLS"
+          echo "Planned paid calibration calls: $CALIBRATION_CALLS"
           echo "Planned total paid provider calls: $TOTAL_CALLS"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -108,6 +122,10 @@ jobs:
         run: |
           pnpm ultef:l8-scenario-selftest
           pnpm ultef:l8-semantic-selftest
+          pnpm ultef:l8-semantic-calibration-selftest
+      - name: Run optional live semantic judge calibration
+        if: ${{ inputs.run_calibration == 'true' }}
+        run: pnpm ultef:live-semantic-calibration
       - name: Run repeated L8 live six-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
       - name: Print L8 scorecard
@@ -124,9 +142,9 @@ jobs:
         if: always()
         shell: bash
         run: |
-          find artifacts/ultef/runs -name 'L8-LIVE-SCENARIO-PACK-001.md' -type f 2>/dev/null | sort | while read -r FILE; do
+          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
             echo
-            echo "===== L8 LIVE SCENARIO PACK ====="
+            echo "===== L8 LIVE EVIDENCE ====="
             cat "$FILE"
           done
       - name: Upload live-provider evidence
