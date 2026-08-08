@@ -3,10 +3,7 @@ import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import pg from "pg";
 
-import {
-  WorldCommitService,
-  __setTestCommitDb,
-} from "@lumi/story/application";
+import { WorldCommitService, __setTestCommitDb } from "@lumi/story/application";
 import { createDatabase as createStoryDatabase } from "@lumi/story/db/client";
 import {
   EvidenceValidator,
