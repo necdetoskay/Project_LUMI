@@ -181,9 +181,10 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
                 role: "user",
                 content: buildSemanticJudgePrompt({
                   narratives: {
-                    choice: outputs["L8-SCENARIO-CHOICE-001"],
-                    personality: outputs["L8-SCENARIO-PERSONALITY-001"],
-                    age: outputs["L8-SCENARIO-AGE-001"],
+                    choice: outputs["L8-SCENARIO-CHOICE-001"] ?? "",
+                    personality:
+                      outputs["L8-SCENARIO-PERSONALITY-001"] ?? "",
+                    age: outputs["L8-SCENARIO-AGE-001"] ?? "",
                   },
                 }),
               },
