@@ -17,8 +17,7 @@ const enabled = process.env.ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED === "true";
 const apiKey = process.env.OPENROUTER_API_KEY;
 const judgeModel = process.env.ULTEF_L8_JUDGE_MODEL;
 const calibrationSet = process.env.ULTEF_L8_CALIBRATION_SET ?? "seed";
-const ultefDescribe =
-  enabled && apiKey && judgeModel ? describe : describe.skip;
+const ultefDescribe = enabled && apiKey && judgeModel ? describe : describe.skip;
 
 const calibrationConfigs = {
   seed: {
