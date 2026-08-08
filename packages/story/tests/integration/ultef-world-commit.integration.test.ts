@@ -52,11 +52,13 @@ beforeAll(async () => {
   pool = new pg.Pool({ connectionString: url });
   __setTestCommitDb(db);
   await pool.query("CREATE SCHEMA IF NOT EXISTS story;");
-  const migration = readFileSync(
-    resolve(__dirname, "..", "..", "migrations", "0003_world_commit_system.sql"),
-    "utf-8",
-  );
-  await pool.query(migration);
+  for (const file of ["0003_world_commit_system.sql", "0004_story_outbox.sql"]) {
+    const migration = readFileSync(
+      resolve(__dirname, "..", "..", "migrations", file),
+      "utf-8",
+    );
+    await pool.query(migration);
+  }
 });
 
 afterAll(async () => {
