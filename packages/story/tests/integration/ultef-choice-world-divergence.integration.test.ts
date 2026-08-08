@@ -204,8 +204,8 @@ describeDb("ULTEF Sprint 01 — choice-derived world divergence", () => {
     const assertions = {
       eachCommittedOnce: commitsA.length === 1 && commitsB.length === 1,
       eachWorldAdvancedOnce:
-        versionsA[0]?.currentVersion === "1" &&
-        versionsB[0]?.currentVersion === "1",
+        versionsA[0]?.currentVersion === "2" &&
+        versionsB[0]?.currentVersion === "2",
       differentWorldHashes: resultA.worldStateHash !== resultB.worldStateHash,
       differentCommitIds: resultA.commitId !== resultB.commitId,
       eachHasOwnOutbox: outboxA.length > 0 && outboxB.length > 0,
