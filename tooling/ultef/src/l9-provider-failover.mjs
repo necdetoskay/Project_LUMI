@@ -5,7 +5,10 @@ const retryableFaults = new Set(["timeout", "429", "5xx", "malformed"]);
 
 function validateStoryOutput(output) {
   if (!output || typeof output !== "object") return false;
-  if (typeof output.narrative !== "string" || output.narrative.trim().length < 20)
+  if (
+    typeof output.narrative !== "string" ||
+    output.narrative.trim().length < 20
+  )
     return false;
   return (
     output.childSafety === true &&
@@ -86,8 +89,13 @@ const championSuccess = await routeWithFallback({
     throw new Error("fallback must not run after valid champion output");
   },
 });
-if (championSuccess.model !== CHAMPION || championSuccess.attempts.length !== 1) {
-  throw new Error("valid champion response should be accepted without fallback");
+if (
+  championSuccess.model !== CHAMPION ||
+  championSuccess.attempts.length !== 1
+) {
+  throw new Error(
+    "valid champion response should be accepted without fallback",
+  );
 }
 
 let unsafeFallbackRejected = false;
@@ -103,7 +111,9 @@ try {
   unsafeFallbackRejected = error?.message === "FALLBACK_VALIDATION_FAILED";
 }
 if (!unsafeFallbackRejected) {
-  throw new Error("unsafe fallback output must never bypass deterministic validation");
+  throw new Error(
+    "unsafe fallback output must never bypass deterministic validation",
+  );
 }
 
 let nonRetryableRejected = false;
