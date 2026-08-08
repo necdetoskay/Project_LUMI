@@ -69,14 +69,20 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       ownerA,
       householdA.id,
     );
-    let rejected = false;
-    let rejection = "";
+
+    let foreignResult = null;
+    let rejection = "scoped lookup returned no record";
     try {
-      await findChildProfileForUser(childA.id, ownerB, householdB.id);
+      foreignResult = await findChildProfileForUser(
+        childA.id,
+        ownerB,
+        householdB.id,
+      );
     } catch (error) {
-      rejected = true;
       rejection = error instanceof Error ? error.message : String(error);
     }
+    const rejected = foreignResult === null;
+
     const after = await findChildProfileForUser(
       childA.id,
       ownerA,
@@ -86,16 +92,16 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
     scenario.event(
       "cross-household.profile.read",
       rejected
-        ? `Household B attempted to read Deniz-A and was rejected: ${rejection}`
-        : "Household B unexpectedly read Deniz-A.",
-      { rejected },
+        ? `Household B attempted to read Deniz-A and received no protected record: ${rejection}`
+        : "Household B unexpectedly received Deniz-A.",
+      { rejected, foreignProfileId: foreignResult?.id ?? null },
     );
     scenario.event(
       "protected-state.reload",
-      "Household A reloaded Deniz-A after the rejected access attempt.",
+      "Household A reloaded Deniz-A after the foreign access attempt.",
     );
     scenario.assert(
-      "Foreign household access is rejected",
+      "Foreign household cannot obtain the protected child profile",
       rejected,
       true,
       rejected,
@@ -116,7 +122,7 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       "HouseholdA.childProfile.householdId",
       before?.householdId ?? null,
       after?.householdId ?? null,
-      "rejected foreign access must not mutate ownership",
+      "foreign access must not mutate ownership",
     );
 
     const passed =
@@ -126,7 +132,7 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
     const report = scenario.finish({
       result: passed ? "PASS" : "FAIL",
       reason: passed
-        ? "Foreign household profile access was rejected and protected state remained unchanged."
+        ? "Foreign household profile lookup returned no protected record and protected state remained unchanged."
         : "Household profile isolation assertions failed.",
     });
     await writeScenarioArtifacts(report, { environment: "integration" });
