@@ -56,6 +56,20 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: 'L4-HOOK-SCENE-001' }
   },
+  'L4-SCENE-SESSION-001': {
+    command: 'pnpm',
+    args: [
+      '--filter',
+      '@lumi/story',
+      'exec',
+      'vitest',
+      'run',
+      '--config',
+      'vitest.integration.config.ts',
+      'tests/integration/ultef-generated-scene-session.integration.test.ts'
+    ],
+    env: { ULTEF_SCENARIO: 'L4-SCENE-SESSION-001' }
+  },
   L0: { command: 'pnpm', args: ['test'] },
   L1: { command: 'pnpm', args: ['test'] },
   L2: { command: 'pnpm', args: ['--filter', '@lumi/profiles', 'test:int'] },
