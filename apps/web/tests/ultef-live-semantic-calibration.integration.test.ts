@@ -184,9 +184,13 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
     });
 
     if (calibrationSet !== "seed") {
+      const latestCalibration = calibrations.at(-1);
+      if (!latestCalibration) {
+        throw new Error("Calibration repeat invariant violated: no calibration result exists.");
+      }
       const humanReview = renderBoundaryHumanReview({
         dataset,
-        calibration: calibrations.at(-1),
+        calibration: latestCalibration,
         judgeModel: responseModel,
       });
       await writeFile(
