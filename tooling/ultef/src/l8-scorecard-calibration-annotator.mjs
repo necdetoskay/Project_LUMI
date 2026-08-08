@@ -9,6 +9,12 @@ const calibrationIds = [
   "L8-SEMANTIC-CALIBRATION-BOUNDARY-001",
   "L8-SEMANTIC-CALIBRATION-001",
 ];
+const BOUNDED_SCORING = Object.freeze({
+  deterministicQualityPoints: 60,
+  semanticPoints: 10,
+  latencyPoints: 15,
+  tokenEfficiencyPoints: 15,
+});
 
 const scorecardPath = await findLatestFile(scorecardsDir, (name) =>
   name.endsWith("-L8-MODEL-SCORECARD-001.json"),
@@ -33,6 +39,7 @@ const calibrationTrust = calibrationPath
     };
 
 scorecard.semanticJudgeCalibration = calibrationTrust;
+applyBoundedSemanticRanking(scorecard, calibrationTrust);
 await writeFile(
   scorecardPath,
   `${JSON.stringify(scorecard, null, 2)}\n`,
@@ -70,12 +77,106 @@ const section = [
   `- Dataset: ${calibrationTrust.datasetId ?? "n/a"}`,
   `- Note: ${calibrationTrust.note}`,
   "",
+  "## Bounded semantic ranking",
+  "",
+  `- Applied: ${scorecard.semanticRanking?.applied ? "yes" : "no"}`,
+  `- Winner after bounded semantic ranking: **${scorecard.winner ?? "none"}**`,
+  `- Deterministic quality max: ${BOUNDED_SCORING.deterministicQualityPoints}`,
+  `- Semantic max: ${BOUNDED_SCORING.semanticPoints}`,
+  `- Latency max: ${BOUNDED_SCORING.latencyPoints}`,
+  `- Token-efficiency max: ${BOUNDED_SCORING.tokenEfficiencyPoints}`,
+  "- A deterministic stability-gate failure always remains ineligible regardless of semantic score.",
+  "",
 ].join("\n");
 
 await writeFile(mdPath, `${markdown.trimEnd()}${section}`, "utf8");
 console.log(
-  `Semantic judge trust status: ${calibrationTrust.status} (rankingEligible=${calibrationTrust.semanticRankingEligible}).`,
+  `Semantic judge trust status: ${calibrationTrust.status} (rankingEligible=${calibrationTrust.semanticRankingEligible}, applied=${scorecard.semanticRanking?.applied === true}).`,
 );
+
+function applyBoundedSemanticRanking(scorecard, trust) {
+  const models = Array.isArray(scorecard.models) ? scorecard.models : [];
+  const canApply =
+    trust.semanticRankingEligible === true &&
+    models.some(
+      (model) =>
+        model.stabilityGate === true &&
+        Number.isFinite(Number(model.meanSemanticJudgePercent)) &&
+        Number(model.semanticJudgeSamples ?? 0) > 0,
+    );
+
+  if (!canApply) {
+    scorecard.semanticRanking = {
+      applied: false,
+      reason: trust.semanticRankingEligible
+        ? "Stable human-reviewed judge trust exists, but this scorecard has no usable semantic-judge samples."
+        : "Stable human-reviewed semantic trust is not available.",
+      weights: BOUNDED_SCORING,
+    };
+    return;
+  }
+
+  for (const model of models) {
+    const eligible = model.stabilityGate === true;
+    const semanticPercent = numberOrNull(model.meanSemanticJudgePercent);
+    const semanticSamples = Number(model.semanticJudgeSamples ?? 0);
+    const qualityRatio = clamp(numberOrNull(model.qualityPoints) ?? 0, 0, 70) / 70;
+    const deterministicQualityPoints = eligible
+      ? BOUNDED_SCORING.deterministicQualityPoints * qualityRatio
+      : 0;
+    const semanticPoints =
+      eligible && semanticPercent !== null && semanticSamples > 0
+        ? BOUNDED_SCORING.semanticPoints * clamp(semanticPercent, 0, 100) / 100
+        : 0;
+    const latencyPoints = eligible
+      ? clamp(
+          numberOrNull(model.latencyPoints) ?? 0,
+          0,
+          BOUNDED_SCORING.latencyPoints,
+        )
+      : 0;
+    const tokenPoints = eligible
+      ? clamp(
+          numberOrNull(model.tokenEfficiencyPoints) ?? 0,
+          0,
+          BOUNDED_SCORING.tokenEfficiencyPoints,
+        )
+      : 0;
+
+    model.preSemanticScore = model.score;
+    model.deterministicQualityPoints = round(deterministicQualityPoints);
+    model.semanticPoints = round(semanticPoints);
+    model.score = eligible
+      ? round(
+          deterministicQualityPoints +
+            semanticPoints +
+            latencyPoints +
+            tokenPoints,
+        )
+      : 0;
+    model.semanticRankingEligible =
+      eligible && semanticPercent !== null && semanticSamples > 0;
+  }
+
+  models.sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0));
+  scorecard.winner =
+    models.find((model) => model.stabilityGate === true)?.model ?? null;
+  scorecard.scoring = {
+    ...(scorecard.scoring ?? {}),
+    qualityPoints: BOUNDED_SCORING.deterministicQualityPoints,
+    semanticPoints: BOUNDED_SCORING.semanticPoints,
+    latencyPoints: BOUNDED_SCORING.latencyPoints,
+    tokenEfficiencyPoints: BOUNDED_SCORING.tokenEfficiencyPoints,
+    semanticJudge:
+      "Bounded ranking weight is active only because human-reviewed calibration and repeated stability both passed. Semantic scoring cannot override deterministic hard gates.",
+  };
+  scorecard.semanticRanking = {
+    applied: true,
+    reason:
+      "Human-reviewed calibration and repeated stability passed, and usable per-model semantic samples are present.",
+    weights: BOUNDED_SCORING,
+  };
+}
 
 async function readCalibrationTrust(file) {
   const report = JSON.parse(await readFile(file, "utf8"));
@@ -93,11 +194,7 @@ async function readCalibrationTrust(file) {
   const calibration = latestRepeat?.data?.calibration ?? null;
   const stability = stabilityEvent?.data?.stability ?? null;
   const datasetId =
-    stabilityEvent?.data?.datasetId ??
-    legacyEvent?.data?.datasetId ??
-    report.setup?.find?.((item) => item.label === "Calibration dataset")?.value
-      ?.id ??
-    null;
+    stabilityEvent?.data?.datasetId ?? legacyEvent?.data?.datasetId ?? null;
   const humanReview =
     stabilityEvent?.data?.humanReview ?? legacyEvent?.data?.humanReview ?? null;
   const judgeModel =
@@ -199,4 +296,16 @@ async function findLatestFile(base, predicate) {
     .map((entry) => path.join(base, entry.name))
     .sort();
   return files.at(-1) ?? null;
+}
+
+function numberOrNull(value) {
+  return Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function round(value) {
+  return Math.round(value * 100) / 100;
 }
