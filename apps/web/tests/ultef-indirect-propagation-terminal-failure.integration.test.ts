@@ -42,7 +42,8 @@ class AlwaysFailApplicator implements IndirectEffectApplicator {
 
 beforeAll(async () => {
   if (!enabled || !destructive || !databaseUrl) return;
-  const name = new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
+  const name =
+    new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
     throw new Error(
       `ULTEF terminal-failure test requires disposable DB name containing test/review; got '${name}'.`,
@@ -74,7 +75,8 @@ ultefDescribe("ULTEF Sprint 01 — indirect propagation terminal failure", () =>
   it("L4-INDIRECT-FAILURE-001 becomes terminally failed after max attempts and never materializes NPC state", async () => {
     const scenario = createScenario({
       id: "L4-INDIRECT-FAILURE-001",
-      title: "Permanent indirect-effect failure becomes terminal without NPC-state leakage",
+      title:
+        "Permanent indirect-effect failure becomes terminal without NPC-state leakage",
       level: "L4",
       projectGate: "PX-LUMI-09",
       seed: "indirect-terminal-failure-001",
@@ -163,7 +165,12 @@ ultefDescribe("ULTEF Sprint 01 — indirect propagation terminal failure", () =>
     };
 
     scenario.assert("First attempt fails", assertions.firstFailed, true, first);
-    scenario.assert("Second attempt fails", assertions.secondFailed, true, second);
+    scenario.assert(
+      "Second attempt fails",
+      assertions.secondFailed,
+      true,
+      second,
+    );
     scenario.assert("Third attempt fails", assertions.thirdFailed, true, third);
     scenario.assert(
       "Outbox becomes terminally failed",
