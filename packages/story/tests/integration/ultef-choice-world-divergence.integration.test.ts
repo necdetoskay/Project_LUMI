@@ -25,7 +25,8 @@ import { cleanupStoryFixture, seedStoryFixture } from "./ultef-fixtures";
 const enabled = process.env.ULTEF_SCENARIO === "L4-CHOICE-WORLD-DIVERGENCE-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const describeDb = enabled && destructive && databaseUrl ? describe : describe.skip;
+const describeDb =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 function fixture() {
   return {
@@ -49,9 +50,12 @@ let db: Database | null = null;
 
 beforeAll(async () => {
   if (!databaseUrl || !destructive || !enabled) return;
-  const dbName = new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
+  const dbName =
+    new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!dbName.includes("test") && !dbName.includes("review")) {
-    throw new Error(`ULTEF choice-world divergence requires disposable DB; got '${dbName}'.`);
+    throw new Error(
+      `ULTEF choice-world divergence requires disposable DB; got '${dbName}'.`,
+    );
   }
   pool = new pg.Pool({ connectionString: databaseUrl });
   queryClient = postgres(databaseUrl, { max: 2 });
@@ -65,9 +69,17 @@ afterAll(async () => {
   __setTestCommitDb(undefined);
   if (!pool) return;
   for (const branch of [branchA, branchB]) {
-    await pool.query("DELETE FROM story.story_outbox WHERE household_id = $1", [branch.householdId]);
-    await pool.query("DELETE FROM story.story_commit_records WHERE household_id = $1", [branch.householdId]);
-    await pool.query("DELETE FROM story.story_world_versions WHERE household_id = $1", [branch.householdId]);
+    await pool.query("DELETE FROM story.story_outbox WHERE household_id = $1", [
+      branch.householdId,
+    ]);
+    await pool.query(
+      "DELETE FROM story.story_commit_records WHERE household_id = $1",
+      [branch.householdId],
+    );
+    await pool.query(
+      "DELETE FROM story.story_world_versions WHERE household_id = $1",
+      [branch.householdId],
+    );
     await cleanupStoryFixture(pool, branch);
   }
   await pool.end();
@@ -144,8 +156,12 @@ describeDb("ULTEF Sprint 01 — choice-derived world divergence", () => {
     scenario.setup("Branch B choice", "Isiklari sessizce takip et");
 
     const service = new WorldCommitService();
-    const resultA = await service.commitManifest(commitInput(branchA, "ask-mira"));
-    const resultB = await service.commitManifest(commitInput(branchB, "follow-lights"));
+    const resultA = await service.commitManifest(
+      commitInput(branchA, "ask-mira"),
+    );
+    const resultB = await service.commitManifest(
+      commitInput(branchB, "follow-lights"),
+    );
 
     const commitsA = await db
       .select()
@@ -188,7 +204,8 @@ describeDb("ULTEF Sprint 01 — choice-derived world divergence", () => {
     const assertions = {
       eachCommittedOnce: commitsA.length === 1 && commitsB.length === 1,
       eachWorldAdvancedOnce:
-        versionsA[0]?.currentVersion === "1" && versionsB[0]?.currentVersion === "1",
+        versionsA[0]?.currentVersion === "1" &&
+        versionsB[0]?.currentVersion === "1",
       differentWorldHashes: resultA.worldStateHash !== resultB.worldStateHash,
       differentCommitIds: resultA.commitId !== resultB.commitId,
       eachHasOwnOutbox: outboxA.length > 0 && outboxB.length > 0,
@@ -199,33 +216,73 @@ describeDb("ULTEF Sprint 01 — choice-derived world divergence", () => {
         outboxB.every((row) => row.householdId === branchB.householdId),
     };
 
-    scenario.assert("Each choice produced one durable commit", assertions.eachCommittedOnce, true, {
-      branchA: commitsA.length,
-      branchB: commitsB.length,
-    });
-    scenario.assert("Each equivalent world advanced exactly once", assertions.eachWorldAdvancedOnce, true, {
-      branchA: versionsA[0]?.currentVersion ?? null,
-      branchB: versionsB[0]?.currentVersion ?? null,
-    });
-    scenario.assert("Different choices produced different world hashes", assertions.differentWorldHashes, true, {
-      branchA: resultA.worldStateHash,
-      branchB: resultB.worldStateHash,
-    });
-    scenario.assert("Different choices produced different commit identities", assertions.differentCommitIds, true, {
-      branchA: resultA.commitId,
-      branchB: resultB.commitId,
-    });
-    scenario.assert("Each branch produced its own indirect-effect outbox", assertions.eachHasOwnOutbox, true, {
-      branchA: outboxA.length,
-      branchB: outboxB.length,
-    });
-    scenario.assert("No commit/outbox crossed branch households", assertions.noCrossHouseholdLeak, true, {
-      branchACommitHouseholds: commitsA.map((row) => row.householdId),
-      branchBCommitHouseholds: commitsB.map((row) => row.householdId),
-    });
+    scenario.assert(
+      "Each choice produced one durable commit",
+      assertions.eachCommittedOnce,
+      true,
+      {
+        branchA: commitsA.length,
+        branchB: commitsB.length,
+      },
+    );
+    scenario.assert(
+      "Each equivalent world advanced exactly once",
+      assertions.eachWorldAdvancedOnce,
+      true,
+      {
+        branchA: versionsA[0]?.currentVersion ?? null,
+        branchB: versionsB[0]?.currentVersion ?? null,
+      },
+    );
+    scenario.assert(
+      "Different choices produced different world hashes",
+      assertions.differentWorldHashes,
+      true,
+      {
+        branchA: resultA.worldStateHash,
+        branchB: resultB.worldStateHash,
+      },
+    );
+    scenario.assert(
+      "Different choices produced different commit identities",
+      assertions.differentCommitIds,
+      true,
+      {
+        branchA: resultA.commitId,
+        branchB: resultB.commitId,
+      },
+    );
+    scenario.assert(
+      "Each branch produced its own indirect-effect outbox",
+      assertions.eachHasOwnOutbox,
+      true,
+      {
+        branchA: outboxA.length,
+        branchB: outboxB.length,
+      },
+    );
+    scenario.assert(
+      "No commit/outbox crossed branch households",
+      assertions.noCrossHouseholdLeak,
+      true,
+      {
+        branchACommitHouseholds: commitsA.map((row) => row.householdId),
+        branchBCommitHouseholds: commitsB.map((row) => row.householdId),
+      },
+    );
 
-    scenario.delta("branchA.worldHash", "equivalent-start-state", resultA.worldStateHash, "ask-mira outcome");
-    scenario.delta("branchB.worldHash", "equivalent-start-state", resultB.worldStateHash, "follow-lights outcome");
+    scenario.delta(
+      "branchA.worldHash",
+      "equivalent-start-state",
+      resultA.worldStateHash,
+      "ask-mira outcome",
+    );
+    scenario.delta(
+      "branchB.worldHash",
+      "equivalent-start-state",
+      resultB.worldStateHash,
+      "follow-lights outcome",
+    );
 
     const passed = Object.values(assertions).every(Boolean);
     const report = scenario.finish({
