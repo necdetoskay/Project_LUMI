@@ -4,7 +4,11 @@ import path from "node:path";
 const root = process.cwd();
 const runsDir = path.join(root, "artifacts", "ultef", "runs");
 const scorecardsDir = path.join(root, "artifacts", "ultef", "scorecards");
-const calibrationId = "L8-SEMANTIC-CALIBRATION-001";
+const calibrationIds = [
+  "L8-SEMANTIC-CALIBRATION-HUMAN-BOUNDARY-001",
+  "L8-SEMANTIC-CALIBRATION-BOUNDARY-001",
+  "L8-SEMANTIC-CALIBRATION-001",
+];
 
 const scorecardPath = await findLatestFile(scorecardsDir, (name) =>
   name.endsWith("-L8-MODEL-SCORECARD-001.json"),
@@ -15,14 +19,16 @@ if (!scorecardPath) {
   );
 }
 
-const calibrationPath = await findLatestScenarioFile(runsDir, calibrationId);
+const calibrationPath = await findLatestScenarioFile(runsDir, calibrationIds);
 const scorecard = JSON.parse(await readFile(scorecardPath, "utf8"));
 const calibrationTrust = calibrationPath
   ? await readCalibrationTrust(calibrationPath)
   : {
       status: "not-calibrated",
       eligible: false,
+      stable: false,
       humanReferenceReviewed: false,
+      semanticRankingEligible: false,
       note: "No live semantic calibration evidence was produced in this job.",
     };
 
@@ -43,61 +49,121 @@ try {
 
 const section = [
   "",
-  "## Semantic judge calibration",
+  "## Semantic judge trust",
   "",
   `- Trust status: **${calibrationTrust.status}**`,
   `- Calibration eligible: ${calibrationTrust.eligible ? "yes" : "no"}`,
+  `- Stability proven: ${calibrationTrust.stable ? "yes" : "no"}`,
   `- Human-reference labels reviewed: ${calibrationTrust.humanReferenceReviewed ? "yes" : "no"}`,
+  `- Eligible for bounded semantic ranking weight: ${calibrationTrust.semanticRankingEligible ? "yes" : "no"}`,
   `- MAE: ${calibrationTrust.mae ?? "n/a"}`,
+  `- MAE std-dev: ${calibrationTrust.maeStdDev ?? "n/a"}`,
+  `- Mean bias: ${calibrationTrust.meanBias ?? "n/a"}`,
+  `- Bias std-dev: ${calibrationTrust.biasStdDev ?? "n/a"}`,
   `- Within ±1: ${
-    calibrationTrust.withinOneRate === undefined
+    calibrationTrust.withinOneRate === undefined ||
+    calibrationTrust.withinOneRate === null
       ? "n/a"
       : `${Math.round(calibrationTrust.withinOneRate * 100)}%`
   }`,
   `- Judge model: ${calibrationTrust.judgeModel ?? "n/a"}`,
+  `- Dataset: ${calibrationTrust.datasetId ?? "n/a"}`,
   `- Note: ${calibrationTrust.note}`,
   "",
 ].join("\n");
 
 await writeFile(mdPath, `${markdown.trimEnd()}${section}`, "utf8");
 console.log(
-  `Semantic judge calibration status: ${calibrationTrust.status} (eligible=${calibrationTrust.eligible}).`,
+  `Semantic judge trust status: ${calibrationTrust.status} (rankingEligible=${calibrationTrust.semanticRankingEligible}).`,
 );
 
 async function readCalibrationTrust(file) {
   const report = JSON.parse(await readFile(file, "utf8"));
-  const event = report.timeline?.find(
+  const repeatEvents = (report.timeline ?? []).filter(
+    (item) => item.type === "semantic.calibration.repeat.completed",
+  );
+  const legacyEvent = (report.timeline ?? []).find(
     (item) => item.type === "semantic.calibration.completed",
   );
-  const calibration = event?.data?.calibration ?? null;
-  const judgeModel = event?.data?.judgeModel ?? null;
-  const eligible = calibration?.eligible === true;
+  const stabilityEvent = (report.timeline ?? []).find(
+    (item) => item.type === "semantic.calibration.stability.completed",
+  );
 
-  // The current seed file explicitly says its human labels still require review.
-  // Until a later reviewed dataset is introduced, calibration can demonstrate
-  // numerical agreement but cannot grant judge authority over model ranking.
-  const humanReferenceReviewed = false;
-  const status = eligible
-    ? "eligible-seed-unreviewed"
-    : "untrusted-calibration-failed";
+  const latestRepeat = repeatEvents.at(-1) ?? legacyEvent ?? null;
+  const calibration = latestRepeat?.data?.calibration ?? null;
+  const stability = stabilityEvent?.data?.stability ?? null;
+  const datasetId =
+    stabilityEvent?.data?.datasetId ??
+    legacyEvent?.data?.datasetId ??
+    report.setup?.find?.((item) => item.label === "Calibration dataset")?.value
+      ?.id ??
+    null;
+  const humanReview =
+    stabilityEvent?.data?.humanReview ?? legacyEvent?.data?.humanReview ?? null;
+  const judgeModel =
+    stabilityEvent?.data?.judgeModel ??
+    latestRepeat?.data?.judgeModel ??
+    legacyEvent?.data?.judgeModel ??
+    null;
+
+  const humanReferenceReviewed =
+    humanReview === "complete" || humanReview === "approved";
+  const eligible =
+    stability?.passRate !== undefined
+      ? stability.runs?.every?.((run) => run.eligible === true) === true ||
+        stability.passRate >= 2 / 3
+      : calibration?.eligible === true;
+  const stable = stability?.stable === true;
+  const semanticRankingEligible =
+    humanReferenceReviewed && eligible && stable === true;
+
+  let status;
+  let note;
+  if (!humanReferenceReviewed) {
+    status = eligible
+      ? "eligible-reference-unreviewed"
+      : "untrusted-calibration-failed";
+    note = eligible
+      ? "Numerical calibration passed, but the reference labels are not human-reviewed. Semantic scoring remains advisory-only with no ranking weight."
+      : "Calibration failed and the reference labels are not human-reviewed. Semantic scoring remains advisory-only.";
+  } else if (!eligible) {
+    status = "untrusted-calibration-failed";
+    note =
+      "Human-reviewed calibration exists, but the judge did not meet numerical thresholds. Semantic scoring receives no ranking weight.";
+  } else if (!stable) {
+    status = "calibrated-human-reviewed-stability-not-proven";
+    note =
+      "Human-reviewed calibration passed, but repeated stability has not been proven in this job. Semantic scoring remains advisory-only with no ranking weight.";
+  } else {
+    status = "trusted-for-advisory-stable";
+    note =
+      "Human-reviewed calibration and repeated stability both passed. The judge is eligible only for a deliberately bounded semantic ranking weight; deterministic hard gates remain authoritative.";
+  }
 
   return {
     status,
     eligible,
+    stable,
     humanReferenceReviewed,
-    mae: calibration?.mae ?? null,
-    withinOneRate: calibration?.withinOneRate ?? null,
-    rubrics: calibration?.rubrics ?? null,
-    thresholds: calibration?.thresholds ?? null,
+    semanticRankingEligible,
+    mae: stability?.meanMae ?? calibration?.mae ?? null,
+    maeStdDev: stability?.maeStdDev ?? null,
+    meanBias: stability?.meanBias ?? calibration?.meanBias ?? null,
+    biasStdDev: stability?.biasStdDev ?? null,
+    withinOneRate:
+      calibration?.withinOneRate ??
+      stability?.runs?.at?.(-1)?.withinOneRate ??
+      null,
+    rubrics: stability?.rubrics ?? calibration?.rubrics ?? null,
+    thresholds: stability?.thresholds ?? calibration?.thresholds ?? null,
     judgeModel,
+    datasetId,
     evidenceFile: file,
-    note: eligible
-      ? "The judge met numerical seed thresholds, but the seed human-reference labels still require explicit human review. Semantic scores remain advisory-only."
-      : "The judge did not meet the seed calibration thresholds and remains untrusted/advisory-only.",
+    note,
   };
 }
 
-async function findLatestScenarioFile(base, id) {
+async function findLatestScenarioFile(base, ids) {
   let entries = [];
   try {
     entries = await readdir(base, { withFileTypes: true });
@@ -107,12 +173,14 @@ async function findLatestScenarioFile(base, id) {
   const files = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const candidate = path.join(base, entry.name, `${id}.json`);
-    try {
-      await readFile(candidate, "utf8");
-      files.push(candidate);
-    } catch {
-      // Ignore unrelated run directories.
+    for (const id of ids) {
+      const candidate = path.join(base, entry.name, `${id}.json`);
+      try {
+        await readFile(candidate, "utf8");
+        files.push(candidate);
+      } catch {
+        // Ignore unrelated run directories.
+      }
     }
   }
   files.sort();
