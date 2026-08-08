@@ -115,7 +115,9 @@ describeDb("ULTEF L9 — commit recovery", () => {
       const service = new WorldCommitService();
       const extractor = new NarrativeEventExtractor();
       const validator = new EvidenceValidator();
-      const ruleEngine = new WorldCommitRuleEngine({ rules: defaultOutcomeRules() });
+      const ruleEngine = new WorldCommitRuleEngine({
+        rules: defaultOutcomeRules(),
+      });
 
       const snapshot = StoryContextSnapshot.create({
         storySessionId: fixture.storySessionId,
@@ -270,7 +272,10 @@ describeDb("ULTEF L9 — commit recovery", () => {
       );
 
       const passed =
-        failed && failureWasAtomic && recoveryCommittedOnce && replayWasIdempotent;
+        failed &&
+        failureWasAtomic &&
+        recoveryCommittedOnce &&
+        replayWasIdempotent;
       const report = scenario.finish({
         result: passed ? "PASS" : "FAIL",
         reason: passed
@@ -280,9 +285,10 @@ describeDb("ULTEF L9 — commit recovery", () => {
       await writeScenarioArtifacts(report, { environment: "integration" });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_outbox WHERE household_id = $1`, [
-        fixture.householdId,
-      ]);
+      await pool.query(
+        `DELETE FROM story.story_outbox WHERE household_id = $1`,
+        [fixture.householdId],
+      );
       await pool.query(
         `DELETE FROM story.story_commit_records WHERE household_id = $1`,
         [fixture.householdId],
