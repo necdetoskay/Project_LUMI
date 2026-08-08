@@ -38,6 +38,14 @@ const calibrationConfigs = {
     environment: "live-openrouter-opt-in-semantic-boundary-challenge",
     assertion: "Judge meets hard-boundary challenge thresholds",
   },
+  "human-reviewed-boundary-v1": {
+    file: "l8-semantic-calibration-human-reviewed-boundary-v1.json",
+    scenarioId: "L8-SEMANTIC-CALIBRATION-HUMAN-BOUNDARY-001",
+    title: "Semantic judge calibration against human-reviewed boundary v1",
+    seed: "semantic-calibration-human-reviewed-boundary-v1",
+    environment: "live-openrouter-opt-in-human-reviewed-boundary",
+    assertion: "Judge meets human-reviewed boundary calibration thresholds",
+  },
 } as const;
 
 ultefDescribe("ULTEF L8 semantic calibration", () => {
@@ -46,7 +54,7 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
       calibrationConfigs[calibrationSet as keyof typeof calibrationConfigs];
     if (!config) {
       throw new Error(
-        `Unsupported ULTEF_L8_CALIBRATION_SET=${calibrationSet}; expected seed or hard-boundary.`,
+        `Unsupported ULTEF_L8_CALIBRATION_SET=${calibrationSet}; expected seed, hard-boundary, or human-reviewed-boundary-v1.`,
       );
     }
 
@@ -110,7 +118,8 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
     );
     scenario.assert(config.assertion, calibration.eligible, true, calibration);
 
-    const isHumanReviewed = dataset.humanReview === "approved";
+    const isHumanReviewed =
+      dataset.humanReview === "approved" || dataset.humanReview === "complete";
     const report = scenario.finish({
       result: calibration.eligible ? "PASS" : "FAIL",
       reason: calibration.eligible
@@ -123,7 +132,7 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
       environment: config.environment,
     });
 
-    if (calibrationSet === "hard-boundary") {
+    if (calibrationSet !== "seed") {
       const humanReview = renderBoundaryHumanReview({
         dataset,
         calibration,
