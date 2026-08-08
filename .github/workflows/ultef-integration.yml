@@ -75,6 +75,9 @@ jobs:
       - name: Run Sprint 01 single active session guard
         run: pnpm ultef:session-single-active
 
+      - name: Run Sprint 01 invalid outcome rejection
+        run: pnpm ultef:outcome-rejection
+
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -91,7 +94,7 @@ jobs:
           else
             echo "L6 Golden Journey evidence was not produced."
           fi
-          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004; do
+          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004 L4-OUTCOME-REJECT-001; do
             FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1)
             if [ -n "$FILE" ]; then
               echo
