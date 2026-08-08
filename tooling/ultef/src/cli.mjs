@@ -74,6 +74,20 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: "L3-SESSION-003" },
   },
+  "L4-OUTCOME-REJECTION": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/story",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "vitest.integration.config.ts",
+      "tests/integration/ultef-outcome-rejection.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L4-OUTCOME-REJECTION" },
+  },
   "L3-NPC-001": {
     command: "pnpm",
     args: [
