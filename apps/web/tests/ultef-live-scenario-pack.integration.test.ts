@@ -8,10 +8,17 @@ import {
   L8_SCENARIO_PACK,
   evaluateScenarioPack,
 } from "../../../tooling/ultef/src/l8-scenario-pack.mjs";
+import {
+  buildSemanticJudgePrompt,
+  parseSemanticJudgeResponse,
+} from "../../../tooling/ultef/src/l8-semantic-rubric.mjs";
 
 const enabled = process.env.ULTEF_REAL_PROVIDER_ENABLED === "true";
 const apiKey = process.env.OPENROUTER_API_KEY;
 const modelId = process.env.ULTEF_REAL_PROVIDER_MODEL;
+const semanticJudgeEnabled =
+  process.env.ULTEF_L8_SEMANTIC_JUDGE_ENABLED === "true";
+const semanticJudgeModel = process.env.ULTEF_L8_JUDGE_MODEL;
 const ultefDescribe = enabled && apiKey && modelId ? describe : describe.skip;
 
 const SYSTEM_PROMPT = [
@@ -92,6 +99,11 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
 
     scenario.setup("Live provider", { model: modelId });
     scenario.setup("Scenario pack", L8_SCENARIO_PACK);
+    scenario.setup("Semantic judge", {
+      enabled: semanticJudgeEnabled,
+      model: semanticJudgeModel ?? null,
+      mode: "advisory-only",
+    });
 
     const outputs: Record<string, string> = {};
     const metrics: Array<{
@@ -152,6 +164,55 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
       evaluation,
     );
 
+    let semanticJudge: ReturnType<typeof parseSemanticJudgeResponse> | null = null;
+    let semanticJudgeUsage: unknown = null;
+    let semanticJudgeError: string | null = null;
+    if (semanticJudgeEnabled) {
+      if (!semanticJudgeModel) {
+        semanticJudgeError =
+          "ULTEF_L8_JUDGE_MODEL is required when the semantic judge is enabled.";
+      } else {
+        try {
+          const judgeResponse = await callOpenRouter(apiKey!, {
+            model: semanticJudgeModel,
+            messages: [
+              {
+                role: "user",
+                content: buildSemanticJudgePrompt({
+                  narratives: {
+                    choice: outputs["L8-SCENARIO-CHOICE-001"],
+                    personality: outputs["L8-SCENARIO-PERSONALITY-001"],
+                    age: outputs["L8-SCENARIO-AGE-001"],
+                  },
+                }),
+              },
+            ],
+            temperature: 0,
+            maxTokens: 700,
+          });
+          semanticJudge = parseSemanticJudgeResponse(judgeResponse.content);
+          semanticJudgeUsage = judgeResponse.usage;
+          scenario.event(
+            "live.semantic-judge.completed",
+            `Semantic judge ${judgeResponse.model} scored ${semanticJudge.normalizedPercent}/100.`,
+            {
+              judgeModel: judgeResponse.model,
+              evaluation: semanticJudge,
+              usage: judgeResponse.usage,
+            },
+          );
+        } catch (error) {
+          semanticJudgeError =
+            error instanceof Error ? error.message : String(error);
+          scenario.event(
+            "live.semantic-judge.failed",
+            `Semantic judge failed without changing deterministic hard-gate outcome: ${semanticJudgeError}`,
+            { judgeModel: semanticJudgeModel },
+          );
+        }
+      }
+    }
+
     scenario.event(
       "live.scenario-pack.metrics",
       `Completed ${LIVE_CASES.length} live scenarios; quality score=${evaluation.score}/100.`,
@@ -164,19 +225,22 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
           (sum, item) => sum + (item.totalTokens ?? 0),
           0,
         ),
+        semanticJudge,
+        semanticJudgeUsage,
+        semanticJudgeError,
       },
     );
 
     const report = scenario.finish({
       result: evaluation.passed ? "PASS" : "FAIL",
       reason: evaluation.passed
-        ? "The live provider passed continuity, choice influence, world consistency, NPC personality/emotion, age appropriateness, and adversarial child-safety scenarios."
-        : "The live provider failed at least one L8 hard quality scenario.",
+        ? "The live provider passed continuity, choice influence, world consistency, NPC personality/emotion, age appropriateness, and adversarial child-safety scenarios. Semantic judge evidence, when enabled, is advisory only."
+        : "The live provider failed at least one deterministic L8 hard quality scenario.",
     });
     await writeScenarioArtifacts(report, {
       environment: "live-openrouter-opt-in-l8-six-scenario-pack",
     });
 
     expect(report.result).toBe("PASS");
-  }, 180_000);
+  }, 210_000);
 });
