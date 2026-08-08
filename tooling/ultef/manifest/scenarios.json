@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "L6-GOLDEN-001",
+      "title": "Golden headless continuity journey",
+      "level": "L6",
+      "projectGates": ["PX-LUMI-01", "PX-LUMI-02", "PX-LUMI-03", "PX-LUMI-05", "PX-LUMI-06", "PX-LUMI-09"],
+      "status": "SPECIFIED",
+      "runner": null,
+      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload"],
+      "evidenceMode": "runtime-narrative"
+    },
+    {
+      "id": "L1-PROFILE-001",
+      "title": "Profile and character ownership invariants",
+      "level": "L1",
+      "projectGates": ["PX-LUMI-06"],
+      "status": "TO_INSTRUMENT",
+      "runner": "@lumi/profiles",
+      "requires": ["profiles"],
+      "evidenceMode": "runtime-narrative"
+    },
+    {
+      "id": "L3-NPC-001",
+      "title": "NPC rumor processing behavior",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-08"],
+      "status": "TO_INSTRUMENT",
+      "runner": "@lumi/npc-intelligence",
+      "requires": ["npc-intelligence"],
+      "evidenceMode": "runtime-narrative"
+    }
+  ]
+}
