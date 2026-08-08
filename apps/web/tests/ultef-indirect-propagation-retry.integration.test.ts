@@ -25,7 +25,8 @@ import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs
 const enabled = process.env.ULTEF_SCENARIO === "L4-INDIRECT-RETRY-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const ultefDescribe = enabled && destructive && databaseUrl ? describe : describe.skip;
+const ultefDescribe =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 const HOUSEHOLD_ID = "21000000-0000-4000-8000-000000000091";
 const WORLD_ID = "31000000-0000-4000-8000-000000000091";
@@ -91,14 +92,19 @@ ultefDescribe("ULTEF Sprint 01 — indirect propagation retry", () => {
   it("L4-INDIRECT-RETRY-001 keeps a transient failure pending and materializes exactly once on retry", async () => {
     const scenario = createScenario({
       id: "L4-INDIRECT-RETRY-001",
-      title: "Transient indirect-effect failure retries without duplicate materialization",
+      title:
+        "Transient indirect-effect failure retries without duplicate materialization",
       level: "L4",
       projectGate: "PX-LUMI-09",
       seed: "indirect-retry-001",
     });
     scenario.setup("Source NPC", { id: SOURCE_NPC, name: "Mira" });
     scenario.setup("Target NPC", { id: TARGET_NPC, name: "Bora" });
-    scenario.setup("Rumor", { factId: FACT_ID, claim: CLAIM, confidence: 0.75 });
+    scenario.setup("Rumor", {
+      factId: FACT_ID,
+      claim: CLAIM,
+      confidence: 0.75,
+    });
 
     await storyDb.insert(storyOutbox).values({
       householdId: HOUSEHOLD_ID,
@@ -160,7 +166,8 @@ ultefDescribe("ULTEF Sprint 01 — indirect propagation retry", () => {
     );
     scenario.assert(
       "Failure reason is persisted",
-      afterFirst?.lastError?.includes("ULTEF_TRANSIENT_PROPAGATION_FAILURE") === true,
+      afterFirst?.lastError?.includes("ULTEF_TRANSIENT_PROPAGATION_FAILURE") ===
+        true,
       true,
       afterFirst?.lastError ?? null,
     );
