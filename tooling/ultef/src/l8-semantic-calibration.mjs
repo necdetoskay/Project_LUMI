@@ -87,7 +87,9 @@ export function evaluateSemanticCalibration(referenceExamples, predictions) {
     rubrics[rubric] = {
       count: rubricRows.length,
       mae: round(mean(rubricRows.map((row) => row.absoluteError)) ?? Infinity),
-      meanBias: round(mean(rubricRows.map((row) => row.signedError)) ?? Infinity),
+      meanBias: round(
+        mean(rubricRows.map((row) => row.signedError)) ?? Infinity,
+      ),
       withinOneRate: round(
         rubricRows.filter((row) => row.withinOne).length / rubricRows.length,
       ),
