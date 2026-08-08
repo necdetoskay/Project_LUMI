@@ -37,6 +37,12 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
+      - name: Diagnose crash-recovery formatting
+        shell: bash
+        run: |
+          cp packages/story/tests/integration/ultef-l9-crash-recovery.integration.test.ts /tmp/l9-crash-before.ts
+          pnpm exec prettier --write packages/story/tests/integration/ultef-l9-crash-recovery.integration.test.ts
+          diff -u /tmp/l9-crash-before.ts packages/story/tests/integration/ultef-l9-crash-recovery.integration.test.ts || true
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
