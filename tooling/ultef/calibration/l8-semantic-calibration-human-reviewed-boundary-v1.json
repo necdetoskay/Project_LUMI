@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "L8-SEMANTIC-CALIBRATION-HUMAN-REVIEWED-BOUNDARY-V1",
+  "status": "human-reviewed-boundary-v1",
+  "humanReview": "complete",
+  "reviewedAt": "2026-08-08",
+  "notes": "Human-reviewed calibration truth derived from the frozen L8 hard-boundary challenge set. Scores were provided directly by the project owner. Decimal scores are intentionally preserved where supplied.",
+  "examples": [
+    {"id":"choice-boundary-4a","rubric":"choice_influence","humanScore":4,"text":"Arin, Mira'nın daha önce anlattığı köprü işaretini hatırladı. Bora başka bir yolu önerse de önce o işareti kontrol ettiler, sonra birlikte dereye doğru yürüdüler."},
+    {"id":"choice-boundary-4b","rubric":"choice_influence","humanScore":4,"text":"Mira'ya sormuş olması Arin'e nereden başlayacağını gösterdi. Buldukları ipucu sorunu hemen çözmedi ama sonraki aramalarının yönünü değiştirdi."},
+    {"id":"choice-boundary-3a","rubric":"choice_influence","humanScore":3,"text":"Arin Mira'nın söylediklerini düşündü ve köprünün yanına gitti. Oraya vardığında yeni gördüğü ayak izleri ilgisini çekti ve araştırma onların peşinden devam etti."},
+    {"id":"choice-boundary-3b","rubric":"choice_influence","humanScore":3,"text":"Mira ile konuşması sayesinde Arin eski köprüyü yeniden hatırladı. Fakat Bora'nın bulduğu parıltı asıl yönü belirledi ve ikisi ormana doğru ilerledi."},
+    {"id":"choice-boundary-2a","rubric":"choice_influence","humanScore":2,"text":"Arin Mira ile önceki konuşmasını Bora'ya anlattı. Ardından gökyüzündeki kuşları fark edip onların uçtuğu tepeyi araştırmaya karar verdiler."},
+    {"id":"choice-boundary-2b","rubric":"choice_influence","humanScore":2,"text":"Mira'nın adı Arin'in aklına geldi, fakat o sırada dereden gelen ses dikkatlerini çekti. Köprüyle ilgili eski konuşmaya dönmeden sesin kaynağını aradılar."},
+    {"id":"personality-boundary-4a","rubric":"personality_emotion","humanScore":5,"text":"Arin karanlık geçitte duraksayınca Bora hemen ilerlemedi. Önce etrafa baktı, sonra 'Ben önden bakarım, istersen burada bekle,' diyerek sakin bir çözüm önerdi."},
+    {"id":"personality-boundary-4b","rubric":"personality_emotion","humanScore":4,"text":"Bora acele etmek istiyordu ama Arin'in tedirgin olduğunu görünce sesini yumuşattı. Birlikte daha aydınlık taraftan gitmeyi kabul etti."},
+    {"id":"personality-boundary-3a","rubric":"personality_emotion","humanScore":3,"text":"Bora, Arin'in endişelendiğini fark etti. 'Bir şey olmaz,' dedi, kısa bir süre bekledi ve sonra yürümeye devam etmelerini önerdi."},
+    {"id":"personality-boundary-3b","rubric":"personality_emotion","humanScore":4,"text":"Arin geri dönmek isteyince Bora şaşırdı ama itiraz etmedi. Duygusu üzerinde fazla durmadan çıkış yolunu göstermeye başladı."},
+    {"id":"personality-boundary-2a","rubric":"personality_emotion","humanScore":2,"text":"Bora, Arin'in korktuğunu görünce 'Yine mi?' diye söylendi. Yine de onu yalnız bırakmadı ve daha kısa bir yol bulmaya çalıştı."},
+    {"id":"personality-boundary-2b","rubric":"personality_emotion","humanScore":3,"text":"Arin yavaşlayınca Bora sabırsızca öne geçti. Birkaç adım sonra durup Arin'i bekledi ve güvenli taraftan gelmesini söyledi."},
+    {"id":"age-boundary-4a","rubric":"age_appropriateness","humanScore":5,"text":"Arin taşı ışığa tuttu. Bora, taşın içindeki küçük kristallerin ışığı farklı yönlere gönderebileceğini söyledi. Sonra bunu bir el feneriyle denediler."},
+    {"id":"age-boundary-4b","rubric":"age_appropriateness","humanScore":4.5,"text":"Bora buna 'yansıma' dendiğini açıkladı: Işık taşa çarpıp başka tarafa gidiyordu. Arin hemen parlak ve mat taşları karşılaştırmak istedi."},
+    {"id":"age-boundary-3a","rubric":"age_appropriateness","humanScore":4,"text":"Bora, bazı minerallerin ışığı farklı biçimde yansıttığını ve bunun taşın yapısıyla ilgili olduğunu anlattı. Arin örnekleri dikkatle karşılaştırdı."},
+    {"id":"age-boundary-3b","rubric":"age_appropriateness","humanScore":3,"text":"Taşın yüzeyindeki kristallerin ışığı dağıtabileceğini konuştular. 'Kristal' ve 'yüzey' gibi birkaç zor kelime vardı ama deneyi birlikte yapmaları anlamayı kolaylaştırdı."},
+    {"id":"age-boundary-2a","rubric":"age_appropriateness","humanScore":2,"text":"Bora, mineral yoğunluğu ile ışığın kırılma davranışı arasında ilişki olabileceğini anlattı. Arin farklı örneklerin sonuçlarını karşılaştırdı."},
+    {"id":"age-boundary-2b","rubric":"age_appropriateness","humanScore":2,"text":"Kristal yapının optik özellikleri değiştirebildiğini ve farklı dalga boylarının farklı biçimde davranabileceğini konuşarak incelemeye devam ettiler."}
+  ]
+}
