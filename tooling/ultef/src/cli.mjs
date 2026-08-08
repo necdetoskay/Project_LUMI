@@ -151,6 +151,18 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: "L4-CHOICE-WORLD-DIVERGENCE-001" },
   },
+  "L5-CONTEXT-DIVERGENCE-001": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/web",
+      "exec",
+      "vitest",
+      "run",
+      "tests/ultef-continuity-context-divergence.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L5-CONTEXT-DIVERGENCE-001" },
+  },
   "L3-NPC-001": {
     command: "pnpm",
     args: [
