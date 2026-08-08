@@ -25,6 +25,12 @@ const ultefDescribe =
 
 let pool: pg.Pool;
 
+type LiveUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
 const CLAIM =
   "Bora, Mira'dan köprü ışıklarının fırtınadan önce yandığını duydu.";
 
@@ -82,11 +88,7 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
     const childProfileId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
     const boraNpcId = crypto.randomUUID();
-    let usage: {
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
-    } | null = null;
+    let usage: LiveUsage | null = null;
 
     const scenario = createScenario({
       id: "L7-LIVE-CONTINUITY-001",
@@ -188,6 +190,7 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
         characterConsistency &&
         childSafetyLexical &&
         schemaValid;
+      const usageSnapshot = usage as LiveUsage | null;
 
       scenario.event(
         "live.story.generated",
@@ -201,11 +204,11 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
       );
       scenario.event(
         "live.provider.metrics",
-        `Live provider completed in ${latencyMs}ms using ${usage?.totalTokens ?? "unknown"} tokens.`,
+        `Live provider completed in ${latencyMs}ms using ${usageSnapshot?.totalTokens ?? "unknown"} tokens.`,
         {
           modelId: generated.modelId,
           latencyMs,
-          usage,
+          usage: usageSnapshot,
           attempt: generated.attempt,
         },
       );
