@@ -25,7 +25,8 @@ import { cleanupStoryFixture, seedStoryFixture } from "./ultef-fixtures";
 const enabled = process.env.ULTEF_SCENARIO === "L9-CRASH-RECOVERY-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const describeDb = enabled && destructive && databaseUrl ? describe : describe.skip;
+const describeDb =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 let pool: pg.Pool | null = null;
 let queryClient: ReturnType<typeof postgres> | null = null;
@@ -194,7 +195,8 @@ describeDb("ULTEF L9 — crash/restart recovery", () => {
 
       const durableAcrossRestart =
         stateAfterRestart.commitCount === stateBeforeCrash.commitCount &&
-        stateAfterRestart.worldVersionCount === stateBeforeCrash.worldVersionCount &&
+        stateAfterRestart.worldVersionCount ===
+          stateBeforeCrash.worldVersionCount &&
         stateAfterRestart.worldVersion === stateBeforeCrash.worldVersion &&
         stateAfterRestart.eventCount === stateBeforeCrash.eventCount &&
         stateAfterRestart.outboxCount === stateBeforeCrash.outboxCount &&
@@ -203,13 +205,15 @@ describeDb("ULTEF L9 — crash/restart recovery", () => {
       const replayUsedPersistedIdempotency =
         replayed.commitId === committed.commitId &&
         stateAfterReplay.commitCount === stateAfterRestart.commitCount &&
-        stateAfterReplay.worldVersionCount === stateAfterRestart.worldVersionCount &&
+        stateAfterReplay.worldVersionCount ===
+          stateAfterRestart.worldVersionCount &&
         stateAfterReplay.worldVersion === stateAfterRestart.worldVersion &&
         stateAfterReplay.eventCount === stateAfterRestart.eventCount &&
         stateAfterReplay.outboxCount === stateAfterRestart.outboxCount;
       const pendingWorkSurvived =
         stateBeforeCrash.pendingOutboxCount >= 1 &&
-        stateAfterRestart.pendingOutboxCount === stateBeforeCrash.pendingOutboxCount;
+        stateAfterRestart.pendingOutboxCount ===
+          stateBeforeCrash.pendingOutboxCount;
 
       scenario.event(
         "process.restart.completed",
