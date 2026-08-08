@@ -17,6 +17,7 @@
     "ultef:session-idempotency": "node tooling/ultef/src/cli.mjs L3-SESSION-IDEMPOTENCY",
     "ultef:session-single-active": "node tooling/ultef/src/cli.mjs L3-SESSION-003",
     "ultef:outcome-rejection": "node tooling/ultef/src/cli.mjs L4-OUTCOME-REJECTION",
+    "ultef:outcome-atomic-rollback": "node tooling/ultef/src/cli.mjs L4-OUTCOME-ATOMIC-ROLLBACK",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
