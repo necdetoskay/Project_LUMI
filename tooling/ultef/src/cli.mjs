@@ -241,8 +241,14 @@ const commands = {
   },
   L0: { command: "pnpm", args: ["test"] },
   L1: { command: "pnpm", args: ["test"] },
-  L2: { command: "pnpm", args: ["--filter", "@lumi/profiles", "test:int"] },
-  L3: { command: "pnpm", args: ["--filter", "@lumi/npc-intelligence", "test"] },
+  L2: {
+    command: "pnpm",
+    args: ["--filter", "@lumi/profiles", "test:int"],
+  },
+  L3: {
+    command: "pnpm",
+    args: ["--filter", "@lumi/npc-intelligence", "test"],
+  },
   L9: { command: "pnpm", args: ["--filter", "@lumi/web", "test:e2e"] },
 };
 
