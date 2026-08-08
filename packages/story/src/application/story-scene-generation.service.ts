@@ -1,5 +1,6 @@
 import { buildHookSceneBrief } from "../domain/hook-scene-brief";
 import type { StoryHookState } from "../domain/story-types";
+import type { StoryContinuityContextPort } from "./story-continuity-context";
 import { buildStoryScenePrompt } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
@@ -39,6 +40,11 @@ export interface StorySceneGenerationInput {
   hook: StoryHookState;
   /** Injected settings boundary (resolves task/provider settings + key). */
   settingsPort: StorySceneLlmSettingsPort;
+  /** Optional bounded continuity source for prior canonical world/NPC state. */
+  continuityPort?: StoryContinuityContextPort;
+  /** Optional branch scope used by continuity adapters. */
+  childProfileId?: string | null;
+  characterId?: string | null;
   /** Injected LLM client (defaults to a caller that throws if not provided). */
   callOpenRouter?: OpenRouterCaller;
   /** Max generation attempts on invalid output (default 2). */
@@ -54,8 +60,9 @@ export interface StorySceneGenerationResult {
 /**
  * Generates an LLM-rendered story scene from an accepted hook. Deterministic
  * prompt (hook brief → prompt builder), production LLM path through the
- * injected settings port + caller, JSON parse + schema validation, bounded
- * retry with a fresh nonce on invalid output. Pure orchestration: no DB writes.
+ * injected settings port + caller, optional bounded continuity context, JSON
+ * parse + schema validation, and bounded retry with a fresh nonce on invalid
+ * output. Pure orchestration: no DB writes.
  */
 export class StorySceneGenerationService {
   async generateSceneFromHook(
@@ -64,6 +71,14 @@ export class StorySceneGenerationService {
     const maxAttempts = input.maxAttempts ?? 2;
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
+    const continuityContext = input.continuityPort
+      ? await input.continuityPort.resolveContext({
+          householdId: input.hook.householdId,
+          worldId: input.hook.worldId,
+          childProfileId: input.childProfileId ?? input.hook.childProfileId,
+          characterId: input.characterId ?? null,
+        })
+      : null;
 
     let lastError: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -74,6 +89,7 @@ export class StorySceneGenerationService {
         ageBand: settings.ageBand,
         locale: settings.locale,
         generationNonce,
+        continuityContext,
       });
 
       let response: OpenRouterCallResult;
