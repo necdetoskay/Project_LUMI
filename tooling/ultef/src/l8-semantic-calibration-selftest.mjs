@@ -13,7 +13,10 @@ const dataset = JSON.parse(
 const perfectPredictions = Object.fromEntries(
   dataset.examples.map((example) => [example.id, example.humanScore]),
 );
-const perfect = evaluateSemanticCalibration(dataset.examples, perfectPredictions);
+const perfect = evaluateSemanticCalibration(
+  dataset.examples,
+  perfectPredictions,
+);
 assert.equal(perfect.eligible, true);
 assert.equal(perfect.mae, 0);
 assert.equal(perfect.withinOneRate, 1);

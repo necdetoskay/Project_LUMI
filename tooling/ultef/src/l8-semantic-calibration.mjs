@@ -8,7 +8,9 @@ export function evaluateSemanticCalibration(referenceExamples, predictions) {
   const rows = referenceExamples.map((example) => {
     const predicted = Number(predictions?.[example.id]);
     if (!Number.isFinite(predicted) || predicted < 0 || predicted > 5) {
-      throw new Error(`Missing or invalid calibration prediction for ${example.id}.`);
+      throw new Error(
+        `Missing or invalid calibration prediction for ${example.id}.`,
+      );
     }
     const error = Math.abs(predicted - example.humanScore);
     return {
