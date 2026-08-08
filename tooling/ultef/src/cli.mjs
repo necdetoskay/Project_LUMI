@@ -3,10 +3,13 @@ import { spawnSync } from 'node:child_process';
 const requested = process.argv[2] ?? 'selftest';
 
 const commands = {
-  selftest: ['node', ['tooling/ultef/src/selftest.mjs']],
-  'L1-PROFILE-001': [
-    'pnpm',
-    [
+  selftest: {
+    command: 'node',
+    args: ['tooling/ultef/src/selftest.mjs']
+  },
+  'L1-PROFILE-001': {
+    command: 'pnpm',
+    args: [
       '--filter',
       '@lumi/profiles',
       'exec',
@@ -16,23 +19,39 @@ const commands = {
       'vitest.integration.config.ts',
       'tests/integration/ultef-profile.integration.test.ts'
     ]
-  ],
-  L0: ['pnpm', ['test']],
-  L1: ['pnpm', ['test']],
-  L2: ['pnpm', ['--filter', '@lumi/profiles', 'test:int']],
-  L3: ['pnpm', ['--filter', '@lumi/npc-intelligence', 'test']],
-  L9: ['pnpm', ['--filter', '@lumi/web', 'test:e2e']]
+  },
+  'L3-NPC-001': {
+    command: 'pnpm',
+    args: [
+      '--filter',
+      '@lumi/npc-intelligence',
+      'exec',
+      'vitest',
+      'run',
+      'tests/ultef/ultef-rumor.test.ts'
+    ],
+    env: { ULTEF_SCENARIO: 'L3-NPC-001' }
+  },
+  L0: { command: 'pnpm', args: ['test'] },
+  L1: { command: 'pnpm', args: ['test'] },
+  L2: { command: 'pnpm', args: ['--filter', '@lumi/profiles', 'test:int'] },
+  L3: { command: 'pnpm', args: ['--filter', '@lumi/npc-intelligence', 'test'] },
+  L9: { command: 'pnpm', args: ['--filter', '@lumi/web', 'test:e2e'] }
 };
 
-const command = commands[requested];
-if (!command) {
+const spec = commands[requested];
+if (!spec) {
   console.error(`ULTEF profile '${requested}' is not implemented yet.`);
   console.error(`Available foundation profiles: ${Object.keys(commands).join(', ')}`);
   process.exit(2);
 }
 
 console.log(`ULTEF foundation runner: ${requested}`);
-const result = spawnSync(command[0], command[1], { stdio: 'inherit', shell: process.platform === 'win32' });
+const result = spawnSync(spec.command, spec.args, {
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+  env: { ...process.env, ...(spec.env ?? {}) }
+});
 if (result.error) {
   console.error(result.error.message);
   process.exit(2);
