@@ -192,12 +192,23 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
       scenario.event(
         "live.story.generated",
         `Model ${generated.modelId}: ${narrative}`,
+        {
+          modelId: generated.modelId,
+          narrative,
+          characters: generated.scene.characters,
+          setting: generated.scene.setting,
+        },
       );
-      scenario.event("live.provider.metrics", {
-        latencyMs,
-        usage,
-        attempt: generated.attempt,
-      });
+      scenario.event(
+        "live.provider.metrics",
+        `Live provider completed in ${latencyMs}ms using ${usage?.totalTokens ?? "unknown"} tokens.`,
+        {
+          modelId: generated.modelId,
+          latencyMs,
+          usage,
+          attempt: generated.attempt,
+        },
+      );
       scenario.assert(
         "Continuity is visibly recalled",
         continuityRecall,
