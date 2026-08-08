@@ -62,18 +62,21 @@ export function evaluateSemanticCalibration(referenceExamples, predictions) {
         `Missing or invalid calibration prediction for ${example.id}.`,
       );
     }
-    const error = Math.abs(predicted - example.humanScore);
+    const signedError = predicted - example.humanScore;
+    const error = Math.abs(signedError);
     return {
       id: example.id,
       rubric: example.rubric,
       humanScore: example.humanScore,
       predictedScore: predicted,
+      signedError,
       absoluteError: error,
       withinOne: error <= 1,
     };
   });
 
   const mae = mean(rows.map((row) => row.absoluteError)) ?? Infinity;
+  const meanBias = mean(rows.map((row) => row.signedError)) ?? Infinity;
   const withinOneRate =
     rows.length === 0
       ? 0
@@ -84,9 +87,12 @@ export function evaluateSemanticCalibration(referenceExamples, predictions) {
     rubrics[rubric] = {
       count: rubricRows.length,
       mae: round(mean(rubricRows.map((row) => row.absoluteError)) ?? Infinity),
+      meanBias: round(mean(rubricRows.map((row) => row.signedError)) ?? Infinity),
       withinOneRate: round(
         rubricRows.filter((row) => row.withinOne).length / rubricRows.length,
       ),
+      directionCounts: buildDirectionCounts(rubricRows),
+      transitions: buildTransitionCounts(rubricRows),
     };
   }
 
@@ -103,11 +109,35 @@ export function evaluateSemanticCalibration(referenceExamples, predictions) {
     advisoryOnly: true,
     count: rows.length,
     mae: round(mae),
+    meanBias: round(meanBias),
     withinOneRate: round(withinOneRate),
+    directionCounts: buildDirectionCounts(rows),
+    transitions: buildTransitionCounts(rows),
     rubrics,
     thresholds: SEMANTIC_CALIBRATION_THRESHOLDS,
     rows,
   };
+}
+
+function buildDirectionCounts(rows) {
+  return rows.reduce(
+    (counts, row) => {
+      if (row.signedError < 0) counts.under += 1;
+      else if (row.signedError > 0) counts.over += 1;
+      else counts.exact += 1;
+      return counts;
+    },
+    { under: 0, exact: 0, over: 0 },
+  );
+}
+
+function buildTransitionCounts(rows) {
+  const transitions = {};
+  for (const row of rows) {
+    const key = `${row.humanScore}->${row.predictedScore}`;
+    transitions[key] = (transitions[key] ?? 0) + 1;
+  }
+  return transitions;
 }
 
 function mean(values) {
