@@ -26,6 +26,7 @@
     "ultef:continuity-divergence": "node tooling/ultef/src/cli.mjs L5-CONTEXT-DIVERGENCE-001",
     "ultef:context-to-story": "node tooling/ultef/src/cli.mjs L6-CONTEXT-TO-STORY-001",
     "ultef:live-provider-continuity": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-provider-continuity.integration.test.ts",
+    "ultef:live-scenario-pack": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-scenario-pack.integration.test.ts",
     "ultef:live-model-scorecard": "node tooling/ultef/src/live-model-scorecard.mjs",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
