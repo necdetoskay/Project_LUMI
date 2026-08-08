@@ -1,0 +1,10 @@
+{
+  "name": "@lumi/ultef",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "node src/cli.mjs",
+    "selftest": "node src/selftest.mjs"
+  }
+}
