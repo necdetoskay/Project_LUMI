@@ -350,7 +350,8 @@ describeDb("ULTEF Sprint 01 — invalid outcome rejection", () => {
 
       const scenario = createScenario({
         id: "L4-OUTCOME-REJECT-002",
-        title: "Outcome without evidence is rejected without world-state leakage",
+        title:
+          "Outcome without evidence is rejected without world-state leakage",
         level: "L4",
         projectGate: "PX-LUMI-09",
         seed: "runtime-uuid",
