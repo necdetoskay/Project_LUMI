@@ -16,23 +16,28 @@ on:
         required: true
         default: "false"
       run_calibration:
-        description: Set true to spend one extra judge call on the selected calibration/challenge set.
+        description: Set true to run the selected semantic calibration dataset.
         required: true
         default: "false"
       calibration_set:
-        description: "Calibration dataset selection: seed baseline or hard-boundary 2/3/4 challenge."
+        description: Calibration dataset selection.
         required: true
-        default: seed
+        default: human-reviewed-boundary-v1
         type: choice
         options:
           - seed
           - hard-boundary
+          - human-reviewed-boundary-v1
+      calibration_repeats:
+        description: Calibration judge repeats, 1-5. Use 3 for stability evidence.
+        required: true
+        default: "3"
       judge_model:
         description: OpenRouter model id used for advisory judging and optional calibration.
         required: true
         default: openai/gpt-4.1-mini
       confirm_cost:
-        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost (max 90 story calls; up to 106 total with semantic judge + calibration)
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost.
         required: true
         default: ""
 
@@ -66,6 +71,7 @@ jobs:
       ULTEF_L8_SEMANTIC_JUDGE_ENABLED: ${{ inputs.enable_semantic_judge }}
       ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: ${{ inputs.run_calibration }}
       ULTEF_L8_CALIBRATION_SET: ${{ inputs.calibration_set }}
+      ULTEF_L8_CALIBRATION_REPEATS: ${{ inputs.calibration_repeats }}
       ULTEF_L8_JUDGE_MODEL: ${{ inputs.judge_model }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
@@ -90,6 +96,10 @@ jobs:
             1|2|3|4|5) ;;
             *) echo "repeats must be an integer from 1 to 5"; exit 1 ;;
           esac
+          case "${{ inputs.calibration_repeats }}" in
+            1|2|3|4|5) ;;
+            *) echo "calibration_repeats must be an integer from 1 to 5"; exit 1 ;;
+          esac
           case "${{ inputs.enable_semantic_judge }}" in
             true|false) ;;
             *) echo "enable_semantic_judge must be true or false"; exit 1 ;;
@@ -99,8 +109,8 @@ jobs:
             *) echo "run_calibration must be true or false"; exit 1 ;;
           esac
           case "${{ inputs.calibration_set }}" in
-            seed|hard-boundary) ;;
-            *) echo "calibration_set must be seed or hard-boundary"; exit 1 ;;
+            seed|hard-boundary|human-reviewed-boundary-v1) ;;
+            *) echo "unsupported calibration_set"; exit 1 ;;
           esac
           MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
           if [ "$MODEL_COUNT" -gt 3 ]; then
@@ -114,10 +124,11 @@ jobs:
           fi
           CALIBRATION_CALLS=0
           if [ "${{ inputs.run_calibration }}" = "true" ]; then
-            CALIBRATION_CALLS=1
+            CALIBRATION_CALLS=${{ inputs.calibration_repeats }}
           fi
           TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS + CALIBRATION_CALLS))
           echo "Selected calibration set: ${{ inputs.calibration_set }}"
+          echo "Calibration repeats: ${{ inputs.calibration_repeats }}"
           echo "Planned paid story calls: $STORY_CALLS"
           echo "Planned paid semantic-judge calls: $JUDGE_CALLS"
           echo "Planned paid calibration calls: $CALIBRATION_CALLS"
@@ -137,7 +148,8 @@ jobs:
           pnpm ultef:l8-scenario-selftest
           pnpm ultef:l8-semantic-selftest
           pnpm ultef:l8-semantic-calibration-selftest
-      - name: Run optional live semantic judge calibration
+          pnpm ultef:l8-semantic-stability-selftest
+      - name: Run optional repeated live semantic judge calibration
         if: ${{ inputs.run_calibration == 'true' }}
         run: pnpm ultef:live-semantic-calibration
       - name: Run repeated L8 live six-scenario model scorecard
@@ -155,11 +167,11 @@ jobs:
           else
             echo "L8 model scorecard was not produced."
           fi
-      - name: Print L8 live scenario evidence
+      - name: Print L8 live evidence
         if: always()
         shell: bash
         run: |
-          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-BOUNDARY-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
+          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-BOUNDARY-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-HUMAN-BOUNDARY-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
             echo
             echo "===== L8 LIVE EVIDENCE ====="
             cat "$FILE"
