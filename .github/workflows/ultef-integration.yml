@@ -8,7 +8,7 @@ on:
 jobs:
   db-backed-ultef:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17
@@ -71,6 +71,8 @@ jobs:
         env:
           ULTEF_SCENARIO: L9-BACKUP-RESTORE-001
         run: pnpm --filter @lumi/story exec vitest run --config vitest.integration.config.ts tests/integration/ultef-l9-backup-restore.integration.test.ts
+      - name: Run L9 container deployment rollback recovery
+        run: pnpm ultef:l9-deployment-rollback
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -166,6 +168,14 @@ jobs:
             cat "$BACKUP_FILE"
           else
             echo "L9 backup-restore evidence was not produced."
+          fi
+          DEPLOY_FILE=$(find artifacts/ultef/runs -name 'L9-DEPLOY-ROLLBACK-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$DEPLOY_FILE" ]; then
+            echo
+            echo "===== L9 DEPLOYMENT ROLLBACK ====="
+            cat "$DEPLOY_FILE"
+          else
+            echo "L9 deployment rollback evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
