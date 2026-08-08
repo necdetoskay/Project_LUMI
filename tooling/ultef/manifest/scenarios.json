@@ -43,6 +43,42 @@
       "evidenceMode": "runtime-narrative"
     },
     {
+      "id": "L2-ISOLATION-001",
+      "title": "Foreign household cannot load child profile",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-06"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:isolation",
+      "requires": ["profiles", "profiles-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Proves rejection plus protected profile reload with unchanged household ownership."
+    },
+    {
+      "id": "L2-ISOLATION-002",
+      "title": "Foreign household cannot read or mutate story session",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-01", "PX-LUMI-06"],
+      "status": "SPECIFIED",
+      "requires": ["production story-session authorization/scoping boundary"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Implementation waits for verification of the correct production auth/scoping entry point; it must not be reduced to a raw repository test."
+    },
+    {
+      "id": "L2-ISOLATION-003",
+      "title": "NPC belief state never crosses household boundary",
+      "level": "L2",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-06"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:isolation",
+      "requires": [
+        "profiles-migrations",
+        "npc-intelligence beliefs migration",
+        "disposable-postgresql"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "note": "Persists a real hearsay belief in Household A and proves the same NPC/fact identity is invisible from Household B after reload."
+    },
+    {
       "id": "L3-NPC-001",
       "title": "NPC rumor propagation behavior",
       "level": "L3",
