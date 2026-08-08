@@ -5,11 +5,32 @@
       "id": "L6-GOLDEN-001",
       "title": "Golden headless continuity journey",
       "level": "L6",
-      "projectGates": ["PX-LUMI-01", "PX-LUMI-02", "PX-LUMI-03", "PX-LUMI-05", "PX-LUMI-06", "PX-LUMI-09"],
+      "projectGates": [
+        "PX-LUMI-01",
+        "PX-LUMI-02",
+        "PX-LUMI-03",
+        "PX-LUMI-05",
+        "PX-LUMI-06",
+        "PX-LUMI-09"
+      ],
       "status": "BLOCKED",
       "runner": null,
-      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001", "PX-LUMI-09-002"],
-      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 has not yet produced DB-backed execution evidence"],
+      "requires": [
+        "profiles",
+        "world",
+        "story",
+        "npc-intelligence",
+        "production-outcome-commit",
+        "persistence-reload",
+        "L4-SCENE-SESSION-001",
+        "PX-LUMI-09-001",
+        "PX-LUMI-09-002"
+      ],
+      "blockedBy": [
+        "L4-SCENE-SESSION-001 has not yet produced execution evidence",
+        "PX-LUMI-09-001 has not yet produced execution evidence",
+        "PX-LUMI-09-002 has not yet produced DB-backed execution evidence"
+      ],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -39,9 +60,19 @@
       "projectGates": ["PX-LUMI-05", "PX-LUMI-08"],
       "status": "INSTRUMENTED",
       "runner": "pnpm ultef:opportunity-hook",
-      "requires": ["web-route", "profiles-contract", "world-contract", "story-contract", "npc-intelligence-contract"],
+      "requires": [
+        "web-route",
+        "profiles-contract",
+        "world-contract",
+        "story-contract",
+        "npc-intelligence-contract"
+      ],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["package adapters are test doubles", "does not prove DB persistence", "does not prove outbox worker/application"]
+      "limitations": [
+        "package adapters are test doubles",
+        "does not prove DB persistence",
+        "does not prove outbox worker/application"
+      ]
     },
     {
       "id": "L4-HOOK-SCENE-001",
@@ -52,7 +83,11 @@
       "runner": "pnpm ultef:hook-scene",
       "requires": ["story-generation-pipeline"],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["provider caller is deterministic test double", "does not prove persistence or advanceSession/reader wiring", "real provider coverage belongs to L8"]
+      "limitations": [
+        "provider caller is deterministic test double",
+        "does not prove persistence or advanceSession/reader wiring",
+        "real provider coverage belongs to L8"
+      ]
     },
     {
       "id": "L4-SCENE-SESSION-001",
@@ -61,9 +96,18 @@
       "projectGates": ["PX-LUMI-01", "PX-LUMI-05"],
       "status": "INSTRUMENTED",
       "runner": "pnpm ultef:scene-session",
-      "requires": ["DATABASE_URL", "story-migrations", "generated-scene-session-wiring", "session-persistence", "reader-reload"],
+      "requires": [
+        "DATABASE_URL",
+        "story-migrations",
+        "generated-scene-session-wiring",
+        "session-persistence",
+        "reader-reload"
+      ],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["requires integration database", "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"]
+      "limitations": [
+        "requires integration database",
+        "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"
+      ]
     },
     {
       "id": "PX-LUMI-09-001",
@@ -72,9 +116,16 @@
       "projectGates": ["PX-LUMI-09"],
       "status": "INSTRUMENTED",
       "runner": "pnpm ultef:world-commit",
-      "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story world-commit migrations"],
+      "requires": [
+        "STORY_TEST_ENABLE_DESTRUCTIVE=true",
+        "STORY_TEST_DATABASE_URL",
+        "story world-commit migrations"
+      ],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["proves durable commit record/world version/event/outbox and retry idempotency", "does not by itself prove downstream NPC materialized state mutation; PX-LUMI-09-002 covers that"]
+      "limitations": [
+        "proves durable commit record/world version/event/outbox and retry idempotency",
+        "does not by itself prove downstream NPC materialized state mutation; PX-LUMI-09-002 covers that"
+      ]
     },
     {
       "id": "PX-LUMI-09-002",
@@ -83,9 +134,18 @@
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
       "status": "INSTRUMENTED",
       "runner": "pnpm ultef:materialized-rumor",
-      "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story outbox schema", "npc_intelligence beliefs migration", "production rumor composition"],
+      "requires": [
+        "STORY_TEST_ENABLE_DESTRUCTIVE=true",
+        "STORY_TEST_DATABASE_URL",
+        "story outbox schema",
+        "npc_intelligence beliefs migration",
+        "production rumor composition"
+      ],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["requires a disposable PostgreSQL database whose name contains test or review", "execution evidence is required before this gate can be treated as PASS"]
+      "limitations": [
+        "requires a disposable PostgreSQL database whose name contains test or review",
+        "execution evidence is required before this gate can be treated as PASS"
+      ]
     }
   ]
 }

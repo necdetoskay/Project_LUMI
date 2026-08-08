@@ -69,7 +69,10 @@ export class WorldCommitService {
     }
 
     const allowedEntityIds = new Set(snapshot.entities.map((e) => e.entityId));
-    const events: NarrativeEvent[] = extractor.extract({ manifest, allowedEntityIds });
+    const events: NarrativeEvent[] = extractor.extract({
+      manifest,
+      allowedEntityIds,
+    });
     const { direct: changes } = ruleEngine.apply(events);
     const db = getDb();
     const idempotencyKey = `story-commit:${manifest.id}`;
@@ -96,7 +99,9 @@ export class WorldCommitService {
     const db = getDb();
     const existing = await this.repo.findCommitByManifest(db, manifest.id);
     if (!existing) {
-      throw new Error(`NO_COMMIT_TO_COMPENSATE: manifest ${manifest.id} has no committed record`);
+      throw new Error(
+        `NO_COMMIT_TO_COMPENSATE: manifest ${manifest.id} has no committed record`,
+      );
     }
 
     const committedChanges = existing.changes as WorldChange[];
@@ -113,8 +118,14 @@ export class WorldCommitService {
       status: "committed",
     }));
 
-    const worldVersion = await this.repo.getWorldVersion(db, manifest.householdId, manifest.worldId);
-    const before = worldVersion ? Number(worldVersion.currentVersion) : existing.worldVersionAfter;
+    const worldVersion = await this.repo.getWorldVersion(
+      db,
+      manifest.householdId,
+      manifest.worldId,
+    );
+    const before = worldVersion
+      ? Number(worldVersion.currentVersion)
+      : existing.worldVersionAfter;
     const after = before + 1;
     const worldStateHash = await hashObject({
       version: after,
@@ -210,7 +221,10 @@ export async function commitOutcomeWithTx(
   }
 
   const allowedEntityIds = new Set(snapshot.entities.map((e) => e.entityId));
-  const events: NarrativeEvent[] = extractor.extract({ manifest, allowedEntityIds });
+  const events: NarrativeEvent[] = extractor.extract({
+    manifest,
+    allowedEntityIds,
+  });
   const ruleResult = ruleEngine.apply(events);
   const changes: WorldChange[] = ruleResult.direct;
   const indirectIntents = ruleResult.indirect;
@@ -233,7 +247,11 @@ export async function commitOutcomeWithTx(
     };
   }
 
-  const worldVersion = await repo.getWorldVersion(tx, manifest.householdId, manifest.worldId);
+  const worldVersion = await repo.getWorldVersion(
+    tx,
+    manifest.householdId,
+    manifest.worldId,
+  );
   const before = worldVersion ? Number(worldVersion.currentVersion) : 1;
   const after = before + 1;
   const worldStateHash = await hashObject({

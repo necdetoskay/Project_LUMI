@@ -54,7 +54,12 @@ export async function seedStoryFixture(pool: pg.Pool, ids: StoryFixtureIds) {
        age_group, default_language, version
      ) VALUES ($1, $2, $3, 'ULTEF Fixture Story', $4, 'interactive', 'generated', 'published', '6-8', 'tr', 1)
      ON CONFLICT (id) DO NOTHING`,
-    [ids.storyDefinitionId, ids.householdId, ids.childProfileId, `ultef-fixture-${ids.storyDefinitionId}`],
+    [
+      ids.storyDefinitionId,
+      ids.householdId,
+      ids.childProfileId,
+      `ultef-fixture-${ids.storyDefinitionId}`,
+    ],
   );
   await pool.query(
     `INSERT INTO story.story_versions (
@@ -92,16 +97,43 @@ export async function seedStoryFixture(pool: pg.Pool, ids: StoryFixtureIds) {
 }
 
 export async function cleanupStoryFixture(pool: pg.Pool, ids: StoryFixtureIds) {
-  await pool.query(`DELETE FROM story.story_idempotency_ledger WHERE story_session_id = $1`, [ids.storySessionId]);
-  await pool.query(`DELETE FROM story.story_event_store WHERE story_session_id = $1`, [ids.storySessionId]);
-  await pool.query(`DELETE FROM story.story_session_checkpoints WHERE story_session_id = $1`, [ids.storySessionId]);
-  await pool.query(`DELETE FROM story.story_session_scene_visits WHERE story_session_id = $1`, [ids.storySessionId]);
-  await pool.query(`DELETE FROM story.story_sessions WHERE id = $1`, [ids.storySessionId]);
-  await pool.query(`DELETE FROM story.story_scenes WHERE story_version_id = $1`, [ids.storyVersionId]);
-  await pool.query(`DELETE FROM story.story_versions WHERE id = $1`, [ids.storyVersionId]);
-  await pool.query(`DELETE FROM story.story_definitions WHERE id = $1`, [ids.storyDefinitionId]);
+  await pool.query(
+    `DELETE FROM story.story_idempotency_ledger WHERE story_session_id = $1`,
+    [ids.storySessionId],
+  );
+  await pool.query(
+    `DELETE FROM story.story_event_store WHERE story_session_id = $1`,
+    [ids.storySessionId],
+  );
+  await pool.query(
+    `DELETE FROM story.story_session_checkpoints WHERE story_session_id = $1`,
+    [ids.storySessionId],
+  );
+  await pool.query(
+    `DELETE FROM story.story_session_scene_visits WHERE story_session_id = $1`,
+    [ids.storySessionId],
+  );
+  await pool.query(`DELETE FROM story.story_sessions WHERE id = $1`, [
+    ids.storySessionId,
+  ]);
+  await pool.query(
+    `DELETE FROM story.story_scenes WHERE story_version_id = $1`,
+    [ids.storyVersionId],
+  );
+  await pool.query(`DELETE FROM story.story_versions WHERE id = $1`, [
+    ids.storyVersionId,
+  ]);
+  await pool.query(`DELETE FROM story.story_definitions WHERE id = $1`, [
+    ids.storyDefinitionId,
+  ]);
   await pool.query(`DELETE FROM profile.worlds WHERE id = $1`, [ids.worldId]);
-  await pool.query(`DELETE FROM profile.lumi_characters WHERE id = $1`, [ids.characterId]);
-  await pool.query(`DELETE FROM profile.child_profiles WHERE id = $1`, [ids.childProfileId]);
-  await pool.query(`DELETE FROM profile.households WHERE id = $1`, [ids.householdId]);
+  await pool.query(`DELETE FROM profile.lumi_characters WHERE id = $1`, [
+    ids.characterId,
+  ]);
+  await pool.query(`DELETE FROM profile.child_profiles WHERE id = $1`, [
+    ids.childProfileId,
+  ]);
+  await pool.query(`DELETE FROM profile.households WHERE id = $1`, [
+    ids.householdId,
+  ]);
 }

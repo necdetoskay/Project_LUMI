@@ -4,9 +4,7 @@ import { resolve } from "node:path";
 import pg from "pg";
 import { sql } from "drizzle-orm";
 
-import {
-  __setTestPropagationDb,
-} from "@lumi/story/application";
+import { __setTestPropagationDb } from "@lumi/story/application";
 import { createDatabase as createStoryDatabase } from "@lumi/story/db/client";
 import { storyOutbox } from "@lumi/story/db/schema/story";
 import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
@@ -19,7 +17,8 @@ import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs
 const enabled = process.env.ULTEF_SCENARIO === "PX-LUMI-09-002";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const ultefDescribe = enabled && destructive && databaseUrl ? describe : describe.skip;
+const ultefDescribe =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 const HOUSEHOLD_ID = "20000000-0000-4000-8000-000000000091";
 const WORLD_ID = "30000000-0000-4000-8000-000000000091";
@@ -58,13 +57,29 @@ beforeAll(async () => {
   await pool.query("CREATE SCHEMA IF NOT EXISTS npc_intelligence;");
 
   const storyOutboxMigration = readFileSync(
-    resolve(process.cwd(), "..", "..", "packages", "story", "migrations", "0004_story_outbox.sql"),
+    resolve(
+      process.cwd(),
+      "..",
+      "..",
+      "packages",
+      "story",
+      "migrations",
+      "0004_story_outbox.sql",
+    ),
     "utf8",
   );
   await pool.query(storyOutboxMigration);
 
   const beliefMigration = readFileSync(
-    resolve(process.cwd(), "..", "..", "packages", "npc-intelligence", "migrations", "0003_npc_beliefs.sql"),
+    resolve(
+      process.cwd(),
+      "..",
+      "..",
+      "packages",
+      "npc-intelligence",
+      "migrations",
+      "0003_npc_beliefs.sql",
+    ),
     "utf8",
   );
   await pool.query(beliefMigration);
@@ -83,9 +98,17 @@ beforeAll(async () => {
     );
   `);
 
-  await pool.query("DELETE FROM story.story_event_store WHERE actor_household_id = $1", [HOUSEHOLD_ID]);
-  await pool.query("DELETE FROM story.story_outbox WHERE household_id = $1", [HOUSEHOLD_ID]);
-  await pool.query("DELETE FROM npc_intelligence.beliefs WHERE household_id = $1", [HOUSEHOLD_ID]);
+  await pool.query(
+    "DELETE FROM story.story_event_store WHERE actor_household_id = $1",
+    [HOUSEHOLD_ID],
+  );
+  await pool.query("DELETE FROM story.story_outbox WHERE household_id = $1", [
+    HOUSEHOLD_ID,
+  ]);
+  await pool.query(
+    "DELETE FROM npc_intelligence.beliefs WHERE household_id = $1",
+    [HOUSEHOLD_ID],
+  );
 });
 
 afterAll(async () => {
@@ -107,7 +130,10 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
     scenario.setup("Source NPC", { id: SOURCE_NPC, name: "Mira" });
     scenario.setup("Target NPC", { id: TARGET_NPC, name: "Bora" });
     scenario.setup("Rumor", { factId: FACT_ID, claim: CLAIM, confidence: 0.8 });
-    scenario.setup("Persistence", "real disposable PostgreSQL: story outbox + npc_intelligence beliefs");
+    scenario.setup(
+      "Persistence",
+      "real disposable PostgreSQL: story outbox + npc_intelligence beliefs",
+    );
 
     await storyDb.insert(storyOutbox).values({
       householdId: HOUSEHOLD_ID,
@@ -131,10 +157,18 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
       appliedAt: null,
       createdAt: new Date(),
     });
-    scenario.event("outbox.enqueued", "Mira's rumor was queued as a pending npc_rumor_spread intent for Bora.");
+    scenario.event(
+      "outbox.enqueued",
+      "Mira's rumor was queued as a pending npc_rumor_spread intent for Bora.",
+    );
 
     const before = await beliefRepository.getBeliefs(TARGET_NPC, HOUSEHOLD_ID);
-    scenario.assert("Bora does not know the rumor before propagation", before.length === 0, 0, before.length);
+    scenario.assert(
+      "Bora does not know the rumor before propagation",
+      before.length === 0,
+      0,
+      before.length,
+    );
 
     const runtime = createRumorMaterializationRuntime({ beliefRepository });
     const first = await runtime.propagate({ householdId: HOUSEHOLD_ID });
@@ -144,7 +178,10 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
       first,
     );
 
-    const reloaded = await beliefRepository.getBeliefs(TARGET_NPC, HOUSEHOLD_ID);
+    const reloaded = await beliefRepository.getBeliefs(
+      TARGET_NPC,
+      HOUSEHOLD_ID,
+    );
     const belief = reloaded.find((item) => item.factId === FACT_ID);
     scenario.event(
       "npc.belief.reloaded",
@@ -159,27 +196,90 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
       .where(sql`${storyOutbox.householdId} = ${HOUSEHOLD_ID}`);
     const outbox = outboxRows[0];
 
-    scenario.assert("One pending intent was applied", first.applied === 1, 1, first.applied);
-    scenario.assert("Bora has exactly one materialized belief", reloaded.length === 1, 1, reloaded.length);
-    scenario.assert("Belief source is hearsay", belief?.source === "hearsay", "hearsay", belief?.source ?? null);
-    scenario.assert("Rumor claim survived materialization", belief?.claim === CLAIM, CLAIM, belief?.claim ?? null);
-    scenario.assert("Confidence survived materialization", belief?.confidence === 0.8, 0.8, belief?.confidence ?? null);
-    scenario.assert("Provenance identifies Mira", belief?.provenance.includes(SOURCE_NPC) === true, true, belief?.provenance ?? null);
-    scenario.assert("Outbox became applied", outbox?.status === "applied", "applied", outbox?.status ?? null);
+    scenario.assert(
+      "One pending intent was applied",
+      first.applied === 1,
+      1,
+      first.applied,
+    );
+    scenario.assert(
+      "Bora has exactly one materialized belief",
+      reloaded.length === 1,
+      1,
+      reloaded.length,
+    );
+    scenario.assert(
+      "Belief source is hearsay",
+      belief?.source === "hearsay",
+      "hearsay",
+      belief?.source ?? null,
+    );
+    scenario.assert(
+      "Rumor claim survived materialization",
+      belief?.claim === CLAIM,
+      CLAIM,
+      belief?.claim ?? null,
+    );
+    scenario.assert(
+      "Confidence survived materialization",
+      belief?.confidence === 0.8,
+      0.8,
+      belief?.confidence ?? null,
+    );
+    scenario.assert(
+      "Provenance identifies Mira",
+      belief?.provenance.includes(SOURCE_NPC) === true,
+      true,
+      belief?.provenance ?? null,
+    );
+    scenario.assert(
+      "Outbox became applied",
+      outbox?.status === "applied",
+      "applied",
+      outbox?.status ?? null,
+    );
 
-    scenario.delta("Bora.beliefs.bridge-lights.present", false, Boolean(belief), "story indirect effect materialized into NPC belief storage");
-    scenario.delta("Bora.beliefs.bridge-lights.confidence", null, belief?.confidence ?? null, "rumor confidence persisted");
-    scenario.delta("story.outbox.status", "pending", outbox?.status ?? null, "propagator acknowledged materialization");
+    scenario.delta(
+      "Bora.beliefs.bridge-lights.present",
+      false,
+      Boolean(belief),
+      "story indirect effect materialized into NPC belief storage",
+    );
+    scenario.delta(
+      "Bora.beliefs.bridge-lights.confidence",
+      null,
+      belief?.confidence ?? null,
+      "rumor confidence persisted",
+    );
+    scenario.delta(
+      "story.outbox.status",
+      "pending",
+      outbox?.status ?? null,
+      "propagator acknowledged materialization",
+    );
 
     const second = await runtime.propagate({ householdId: HOUSEHOLD_ID });
-    const afterRetry = await beliefRepository.getBeliefs(TARGET_NPC, HOUSEHOLD_ID);
+    const afterRetry = await beliefRepository.getBeliefs(
+      TARGET_NPC,
+      HOUSEHOLD_ID,
+    );
     scenario.event(
       "propagation.retried",
       `A second propagation pass processed ${second.processed} pending intents; Bora still has ${afterRetry.length} belief record.`,
       second,
     );
-    scenario.assert("Retry does not create a duplicate belief", afterRetry.length === 1, 1, afterRetry.length);
-    scenario.assert("Applied outbox is not reprocessed", second.processed === 0, 0, second.processed);
+    scenario.assert(
+      "Retry does not create a duplicate belief",
+      afterRetry.length === 1,
+      1,
+      afterRetry.length,
+    );
+    scenario.assert(
+      "Applied outbox is not reprocessed",
+      second.processed === 0,
+      0,
+      second.processed,
+    );
 
     const passed =
       first.applied === 1 &&
@@ -197,7 +297,9 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
         : "The materialized rumor chain did not satisfy persistence, reload, or idempotency expectations.",
     });
 
-    await writeScenarioArtifacts(report, { environment: "disposable-postgres-integration" });
+    await writeScenarioArtifacts(report, {
+      environment: "disposable-postgres-integration",
+    });
     expect(report.result).toBe("PASS");
   });
 });

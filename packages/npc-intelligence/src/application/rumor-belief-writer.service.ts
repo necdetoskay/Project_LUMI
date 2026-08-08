@@ -15,10 +15,14 @@ export interface WriteRumorBeliefInput {
 
 export class RumorBeliefWriterService {
   constructor(
-    private readonly beliefs = new BeliefService(new DrizzleBeliefSourceRepository()),
+    private readonly beliefs = new BeliefService(
+      new DrizzleBeliefSourceRepository(),
+    ),
   ) {}
 
-  async writeHearsay(input: WriteRumorBeliefInput): Promise<{ writes: number; belief: Belief }> {
+  async writeHearsay(
+    input: WriteRumorBeliefInput,
+  ): Promise<{ writes: number; belief: Belief }> {
     const existing = await this.beliefs.getActiveBeliefs(
       input.targetNpcId,
       input.householdId,
@@ -42,7 +46,9 @@ export class RumorBeliefWriterService {
       status: "active",
     };
 
-    await this.beliefs.saveBeliefs(input.targetNpcId, input.householdId, [belief]);
+    await this.beliefs.saveBeliefs(input.targetNpcId, input.householdId, [
+      belief,
+    ]);
     return { writes: 1, belief };
   }
 }

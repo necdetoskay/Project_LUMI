@@ -32,7 +32,8 @@ export class RumorSpreadApplicator implements IndirectEffectApplicator {
       provenance: string[];
       hops: number;
     };
-    if (!payload.targetNpcId || !payload.factId || !payload.claim) return { writes: 0 };
+    if (!payload.targetNpcId || !payload.factId || !payload.claim)
+      return { writes: 0 };
     if (!this.writer) {
       throw new Error("RUMOR_BELIEF_WRITER_NOT_CONFIGURED");
     }

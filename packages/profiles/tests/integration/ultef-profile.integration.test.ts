@@ -30,7 +30,9 @@ describe("ULTEF L1-PROFILE-001 — profile household isolation", () => {
         reason: "A real profiles integration database is required.",
       });
       await writeScenarioArtifacts(report, { environment: "integration" });
-      throw new Error("ULTEF L1-PROFILE-001 BLOCKED: DATABASE_URL is not configured");
+      throw new Error(
+        "ULTEF L1-PROFILE-001 BLOCKED: DATABASE_URL is not configured",
+      );
     }
 
     const ownerUserId = crypto.randomUUID();
@@ -118,9 +120,17 @@ describe("ULTEF L1-PROFILE-001 — profile household isolation", () => {
         outsiderRejected,
       );
 
-      scenario.delta("household.childProfiles.count", 0, 1, "child profile creation");
+      scenario.delta(
+        "household.childProfiles.count",
+        0,
+        1,
+        "child profile creation",
+      );
 
-      const allPassed = outsiderRejected && ownerRead?.id === child.id && child.householdId === household.id;
+      const allPassed =
+        outsiderRejected &&
+        ownerRead?.id === child.id &&
+        child.householdId === household.id;
       const report = scenario.finish({
         result: allPassed ? "PASS" : "FAIL",
         reason: allPassed
@@ -131,7 +141,10 @@ describe("ULTEF L1-PROFILE-001 — profile household isolation", () => {
 
       expect(report.result).toBe("PASS");
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith("ULTEF L1-PROFILE-001 BLOCKED")) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith("ULTEF L1-PROFILE-001 BLOCKED")
+      ) {
         throw error;
       }
 

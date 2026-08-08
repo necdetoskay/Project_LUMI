@@ -36,7 +36,9 @@ const MAX_ERROR_LENGTH = 400;
 
 function boundedError(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error);
-  return raw.length <= MAX_ERROR_LENGTH ? raw : `${raw.slice(0, MAX_ERROR_LENGTH - 3)}...`;
+  return raw.length <= MAX_ERROR_LENGTH
+    ? raw
+    : `${raw.slice(0, MAX_ERROR_LENGTH - 3)}...`;
 }
 
 export class IndirectEffectPropagator {
@@ -50,8 +52,17 @@ export class IndirectEffectPropagator {
   async propagate(input: PropagateInput): Promise<PropagateResult> {
     const db = getDb();
     const limit = input.limit ?? 50;
-    const pending = await this.repo.claimPendingOutbox(db, input.householdId, limit);
-    const result: PropagateResult = { processed: 0, applied: 0, failed: 0, skipped: 0 };
+    const pending = await this.repo.claimPendingOutbox(
+      db,
+      input.householdId,
+      limit,
+    );
+    const result: PropagateResult = {
+      processed: 0,
+      applied: 0,
+      failed: 0,
+      skipped: 0,
+    };
 
     for (const row of pending) {
       result.processed += 1;

@@ -78,7 +78,8 @@ ultefDescribe("ULTEF L3-NPC-001 — NPC rumor propagation", () => {
     });
 
     for (const intent of result.intents) {
-      const targetName = intent.targetNpcId === sameHouseholdNpcId ? "Bora" : intent.targetNpcId;
+      const targetName =
+        intent.targetNpcId === sameHouseholdNpcId ? "Bora" : intent.targetNpcId;
       scenario.event(
         "rumor.propagated",
         `Mira'nin soylentisi ${targetName} NPC'sine aktarildi; confidence ${intent.confidence.toFixed(2)}, hop ${intent.hops}.`,
@@ -91,8 +92,12 @@ ultefDescribe("ULTEF L3-NPC-001 — NPC rumor propagation", () => {
       );
     }
 
-    const boraIntent = result.intents.find((item) => item.targetNpcId === sameHouseholdNpcId);
-    const laleIntent = result.intents.find((item) => item.targetNpcId === foreignNpcId);
+    const boraIntent = result.intents.find(
+      (item) => item.targetNpcId === sameHouseholdNpcId,
+    );
+    const laleIntent = result.intents.find(
+      (item) => item.targetNpcId === foreignNpcId,
+    );
 
     scenario.assert(
       "Same-household trusted NPC receives the rumor",
@@ -114,18 +119,35 @@ ultefDescribe("ULTEF L3-NPC-001 — NPC rumor propagation", () => {
     );
     scenario.assert(
       "Provenance records Mira then Bora",
-      JSON.stringify(boraIntent?.provenance) === JSON.stringify([sourceNpcId, sameHouseholdNpcId]),
+      JSON.stringify(boraIntent?.provenance) ===
+        JSON.stringify([sourceNpcId, sameHouseholdNpcId]),
       [sourceNpcId, sameHouseholdNpcId],
       boraIntent?.provenance ?? null,
     );
 
     if (boraIntent) {
-      scenario.delta("rumor.confidence", rumor.confidence, boraIntent.confidence, "one-hop propagation decay");
-      scenario.delta("rumor.hops", rumor.hops, boraIntent.hops, "Mira -> Bora transfer");
-      scenario.delta("rumor.provenance", rumor.provenance, boraIntent.provenance, "recipient appended to provenance");
+      scenario.delta(
+        "rumor.confidence",
+        rumor.confidence,
+        boraIntent.confidence,
+        "one-hop propagation decay",
+      );
+      scenario.delta(
+        "rumor.hops",
+        rumor.hops,
+        boraIntent.hops,
+        "Mira -> Bora transfer",
+      );
+      scenario.delta(
+        "rumor.provenance",
+        rumor.provenance,
+        boraIntent.provenance,
+        "recipient appended to provenance",
+      );
     }
 
-    const allPassed = Boolean(boraIntent) && !laleIntent && boraIntent?.confidence === 0.8;
+    const allPassed =
+      Boolean(boraIntent) && !laleIntent && boraIntent?.confidence === 0.8;
     const report = scenario.finish({
       result: allPassed ? "PASS" : "FAIL",
       reason: allPassed

@@ -4,7 +4,10 @@ import { NotFoundError, ValidationError } from "../domain/errors";
 import type { GeneratedScene } from "./story-scene-output";
 import { getStoryDb } from "./db";
 import { hashObject } from "./hash";
-import { advanceSession, getSessionPlaybackState } from "./story-session.service";
+import {
+  advanceSession,
+  getSessionPlaybackState,
+} from "./story-session.service";
 
 let testDb: Database | undefined;
 
@@ -73,8 +76,13 @@ export async function persistGeneratedSceneAndAdvance(
   });
   const generatedSceneKey = `generated:${input.sessionId}:${sourceFingerprint}`;
 
-  const existingScenes = await repo.findScenesByVersion(db, session.storyVersionId);
-  const existing = existingScenes.find((scene) => scene.sceneKey === generatedSceneKey);
+  const existingScenes = await repo.findScenesByVersion(
+    db,
+    session.storyVersionId,
+  );
+  const existing = existingScenes.find(
+    (scene) => scene.sceneKey === generatedSceneKey,
+  );
 
   let generatedSceneId: string;
   let reusedPersistedScene = false;

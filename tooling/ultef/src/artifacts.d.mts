@@ -1,4 +1,4 @@
-import type { UltefReport } from './evidence.mjs';
+import type { UltefReport } from "./evidence.mjs";
 
 export declare function writeScenarioArtifacts(
   report: UltefReport,

@@ -11,7 +11,12 @@ export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
     const rows = await this.db
       .select()
       .from(npcBeliefs)
-      .where(and(eq(npcBeliefs.npcId, npcId), eq(npcBeliefs.householdId, householdId)));
+      .where(
+        and(
+          eq(npcBeliefs.npcId, npcId),
+          eq(npcBeliefs.householdId, householdId),
+        ),
+      );
 
     return rows.map((row) => ({
       id: row.id,
@@ -25,11 +30,15 @@ export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
       createdAt: row.createdAt,
       lastVerifiedAt: row.lastVerifiedAt,
       expiresAt: row.expiresAt,
-      status: row.status as Belief["status"]
+      status: row.status as Belief["status"],
     }));
   }
 
-  async saveBeliefs(npcId: string, householdId: string, beliefs: Belief[]): Promise<void> {
+  async saveBeliefs(
+    npcId: string,
+    householdId: string,
+    beliefs: Belief[],
+  ): Promise<void> {
     await this.db.transaction(async (tx) => {
       for (const belief of beliefs) {
         await tx
@@ -46,7 +55,7 @@ export class DrizzleBeliefSourceRepository implements NpcBeliefSourcePort {
             createdAt: belief.createdAt,
             lastVerifiedAt: belief.lastVerifiedAt,
             expiresAt: belief.expiresAt,
-            status: belief.status
+            status: belief.status,
           })
           .onConflictDoNothing();
       }

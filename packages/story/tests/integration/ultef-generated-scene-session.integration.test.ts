@@ -45,16 +45,24 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
 
     const scenario = createScenario({
       id: "L4-SCENE-SESSION-001",
-      title: "Generated scene persists and becomes reader-visible session state",
+      title:
+        "Generated scene persists and becomes reader-visible session state",
       level: "L4",
       projectGate: "PX-LUMI-05",
       seed: "scene-session-001",
     });
-    scenario.setup("Child", { id: ids.childProfileId, name: "Deniz", ageBand: "6-8" });
+    scenario.setup("Child", {
+      id: ids.childProfileId,
+      name: "Deniz",
+      ageBand: "6-8",
+    });
     scenario.setup("Character", { id: ids.characterId, name: "Arin" });
     scenario.setup("NPC", { name: "Mira" });
     scenario.setup("World", { id: ids.worldId, name: "Gunes Vadisi" });
-    scenario.event("story.session.started", "Deniz icin Arin'in Gunes Vadisi hikaye oturumu gercek household/profile/world foreign-key zinciriyle baslatildi.");
+    scenario.event(
+      "story.session.started",
+      "Deniz icin Arin'in Gunes Vadisi hikaye oturumu gercek household/profile/world foreign-key zinciriyle baslatildi.",
+    );
 
     await repo.createSceneVisit(db, {
       id: crypto.randomUUID(),
@@ -74,7 +82,10 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       moment: "Arin soylentinin kaynagini sormaya karar verdi.",
       nextPrompt: "Bunu ilk kim gordu?",
     };
-    scenario.event("story.scene.generated", `Generated scene: ${generated.narrative}`);
+    scenario.event(
+      "story.scene.generated",
+      `Generated scene: ${generated.narrative}`,
+    );
 
     const result = await persistGeneratedSceneAndAdvance({
       sessionId: ids.storySessionId,
@@ -84,31 +95,81 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       sourceHookId: "rumor-hook-001",
       idempotencyKey: `ultef-generated-scene:${ids.storySessionId}`,
     });
-    scenario.event("story.session.advanced", `Session generated sahneye ilerledi; version 1 -> ${result.playbackState.session.version}.`);
+    scenario.event(
+      "story.session.advanced",
+      `Session generated sahneye ilerledi; version 1 -> ${result.playbackState.session.version}.`,
+    );
 
     const reloaded = await repo.findSessionById(db, ids.storySessionId);
-    const persistedScene = await repo.findSceneById(db, result.generatedSceneId);
+    const persistedScene = await repo.findSceneById(
+      db,
+      result.generatedSceneId,
+    );
     const visits = await repo.findSceneVisitsBySession(db, ids.storySessionId);
     const checkpoint = await repo.findLatestCheckpoint(db, ids.storySessionId);
-    scenario.event("story.reader.reloaded", "Session, generated scene, visit ve checkpoint PostgreSQL'den yeniden okundu.");
+    scenario.event(
+      "story.reader.reloaded",
+      "Session, generated scene, visit ve checkpoint PostgreSQL'den yeniden okundu.",
+    );
 
     const assertions = {
       persistedOnce: result.reusedPersistedScene === false,
       playbackVersionAdvanced: result.playbackState.session.version === 2,
-      readerPointsToGenerated: reloaded?.currentSceneId === result.generatedSceneId,
+      readerPointsToGenerated:
+        reloaded?.currentSceneId === result.generatedSceneId,
       narrativeReloaded: persistedScene?.narrativeText === generated.narrative,
       visitPersisted: visits.at(-1)?.sceneId === result.generatedSceneId,
       checkpointPersisted: checkpoint?.sceneId === result.generatedSceneId,
     };
 
-    scenario.assert("Generated scene persisted once", assertions.persistedOnce, false, result.reusedPersistedScene);
-    scenario.assert("Session version advanced", assertions.playbackVersionAdvanced, 2, result.playbackState.session.version);
-    scenario.assert("Reader points to generated scene", assertions.readerPointsToGenerated, result.generatedSceneId, reloaded?.currentSceneId ?? null);
-    scenario.assert("Narrative survives DB reload", assertions.narrativeReloaded, generated.narrative, persistedScene?.narrativeText ?? null);
-    scenario.assert("Scene visit persisted", assertions.visitPersisted, result.generatedSceneId, visits.at(-1)?.sceneId ?? null);
-    scenario.assert("Checkpoint persisted", assertions.checkpointPersisted, result.generatedSceneId, checkpoint?.sceneId ?? null);
-    scenario.delta("story.session.version", 1, reloaded?.version ?? null, "generated scene advancement");
-    scenario.delta("story.session.currentSceneId", ids.entrySceneId, reloaded?.currentSceneId ?? null, "reader-visible generated scene");
+    scenario.assert(
+      "Generated scene persisted once",
+      assertions.persistedOnce,
+      false,
+      result.reusedPersistedScene,
+    );
+    scenario.assert(
+      "Session version advanced",
+      assertions.playbackVersionAdvanced,
+      2,
+      result.playbackState.session.version,
+    );
+    scenario.assert(
+      "Reader points to generated scene",
+      assertions.readerPointsToGenerated,
+      result.generatedSceneId,
+      reloaded?.currentSceneId ?? null,
+    );
+    scenario.assert(
+      "Narrative survives DB reload",
+      assertions.narrativeReloaded,
+      generated.narrative,
+      persistedScene?.narrativeText ?? null,
+    );
+    scenario.assert(
+      "Scene visit persisted",
+      assertions.visitPersisted,
+      result.generatedSceneId,
+      visits.at(-1)?.sceneId ?? null,
+    );
+    scenario.assert(
+      "Checkpoint persisted",
+      assertions.checkpointPersisted,
+      result.generatedSceneId,
+      checkpoint?.sceneId ?? null,
+    );
+    scenario.delta(
+      "story.session.version",
+      1,
+      reloaded?.version ?? null,
+      "generated scene advancement",
+    );
+    scenario.delta(
+      "story.session.currentSceneId",
+      ids.entrySceneId,
+      reloaded?.currentSceneId ?? null,
+      "reader-visible generated scene",
+    );
 
     const passed = Object.values(assertions).every(Boolean);
     const report = scenario.finish({

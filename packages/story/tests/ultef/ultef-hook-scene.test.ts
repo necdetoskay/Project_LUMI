@@ -40,7 +40,11 @@ ultefDescribe("ULTEF L4-HOOK-SCENE-001 — StoryHook to generated scene", () => 
       consumedAt: null,
     };
 
-    scenario.setup("Child profile", { id: hook.childProfileId, name: "Deniz", ageBand: "6-8" });
+    scenario.setup("Child profile", {
+      id: hook.childProfileId,
+      name: "Deniz",
+      ageBand: "6-8",
+    });
     scenario.setup("Character", { id: "character-arin", name: "Arin" });
     scenario.setup("World", { id: hook.worldId, name: "Gunes Vadisi" });
     scenario.setup("Source NPC", { id: hook.sourceNpcId, name: "Mira" });
@@ -71,30 +75,42 @@ ultefDescribe("ULTEF L4-HOOK-SCENE-001 — StoryHook to generated scene", () => 
       },
     };
 
-    const caller = vi.fn().mockImplementation(async (_apiKey: string, input: { messages: Array<{ content: string }> }) => {
-      const userPrompt = input.messages[1]?.content ?? "";
-      scenario.event(
-        "story.prompt.built",
-        "Story prompt olusturuldu; 6-8 yas siniri ve Mira'nin kopru soylentisi prompt icinde yer aldi.",
-        {
-          includesAgeBand: userPrompt.includes("6-8"),
-          includesRumor: userPrompt.includes("Eski koprunun isiklari firtinadan once yaniyor."),
+    const caller = vi
+      .fn()
+      .mockImplementation(
+        async (
+          _apiKey: string,
+          input: { messages: Array<{ content: string }> },
+        ) => {
+          const userPrompt = input.messages[1]?.content ?? "";
+          scenario.event(
+            "story.prompt.built",
+            "Story prompt olusturuldu; 6-8 yas siniri ve Mira'nin kopru soylentisi prompt icinde yer aldi.",
+            {
+              includesAgeBand: userPrompt.includes("6-8"),
+              includesRumor: userPrompt.includes(
+                "Eski koprunun isiklari firtinadan once yaniyor.",
+              ),
+            },
+          );
+
+          return {
+            model: "ultef-deterministic-model",
+            content: JSON.stringify({
+              sceneId: "scene-eski-kopru-001",
+              setting:
+                "Gunes Vadisi'ndeki eski kutuphanenin sicak ve aydinlik okuma kosesi",
+              characters: ["Arin", "Mira"],
+              narrative:
+                "Mira, Arin'e eski koprunun isiklarinin firtinadan once yandigina dair duydugu soylentiyi anlatti. Arin merakla bunun ilk kim tarafindan goruldugunu sordu. Mira, birlikte guvenli bir sekilde daha fazla bilgi toplamayi onerdi.",
+              moment:
+                "Arin yeni bir gizemi sakin ve merakli bicimde arastirmaya karar verdi.",
+              nextPrompt:
+                "Arin Mira'ya soylentiyi ilk kimin duydugunu sorabilir.",
+            }),
+          };
         },
       );
-
-      return {
-        model: "ultef-deterministic-model",
-        content: JSON.stringify({
-          sceneId: "scene-eski-kopru-001",
-          setting: "Gunes Vadisi'ndeki eski kutuphanenin sicak ve aydinlik okuma kosesi",
-          characters: ["Arin", "Mira"],
-          narrative:
-            "Mira, Arin'e eski koprunun isiklarinin firtinadan once yandigina dair duydugu soylentiyi anlatti. Arin merakla bunun ilk kim tarafindan goruldugunu sordu. Mira, birlikte guvenli bir sekilde daha fazla bilgi toplamayi onerdi.",
-          moment: "Arin yeni bir gizemi sakin ve merakli bicimde arastirmaya karar verdi.",
-          nextPrompt: "Arin Mira'ya soylentiyi ilk kimin duydugunu sorabilir.",
-        }),
-      };
-    });
 
     const service = new StorySceneGenerationService();
     const generated = await service.generateSceneFromHook({
@@ -119,21 +135,65 @@ ultefDescribe("ULTEF L4-HOOK-SCENE-001 — StoryHook to generated scene", () => 
       { narrative: generated.scene.narrative },
     );
 
-    const rumorPreserved = generated.scene.narrative.includes("koprunun isiklarinin firtinadan once yandigina");
+    const rumorPreserved = generated.scene.narrative.includes(
+      "koprunun isiklarinin firtinadan once yandigina",
+    );
     const miraPresent = generated.scene.characters.includes("Mira");
     const arinPresent = generated.scene.characters.includes("Arin");
-    const safeAction = generated.scene.narrative.includes("guvenli bir sekilde");
+    const safeAction = generated.scene.narrative.includes(
+      "guvenli bir sekilde",
+    );
 
-    scenario.assert("Rumor meaning survives hook -> prompt -> generated scene", rumorPreserved, true, rumorPreserved);
-    scenario.assert("Source NPC Mira appears in the generated scene", miraPresent, true, miraPresent);
-    scenario.assert("Player character Arin appears in the generated scene", arinPresent, true, arinPresent);
-    scenario.assert("Generated action remains explicitly safe for the age band", safeAction, true, safeAction);
-    scenario.assert("Generated scene passes production output validation", Boolean(generated.scene.sceneId), true, Boolean(generated.scene.sceneId));
+    scenario.assert(
+      "Rumor meaning survives hook -> prompt -> generated scene",
+      rumorPreserved,
+      true,
+      rumorPreserved,
+    );
+    scenario.assert(
+      "Source NPC Mira appears in the generated scene",
+      miraPresent,
+      true,
+      miraPresent,
+    );
+    scenario.assert(
+      "Player character Arin appears in the generated scene",
+      arinPresent,
+      true,
+      arinPresent,
+    );
+    scenario.assert(
+      "Generated action remains explicitly safe for the age band",
+      safeAction,
+      true,
+      safeAction,
+    );
+    scenario.assert(
+      "Generated scene passes production output validation",
+      Boolean(generated.scene.sceneId),
+      true,
+      Boolean(generated.scene.sceneId),
+    );
 
-    scenario.delta("story.hook.status", "pending", "rendered-to-scene", "generation pipeline consumed hook content semantically");
-    scenario.delta("story.scene.count", 0, 1, "validated scene generated in-memory");
+    scenario.delta(
+      "story.hook.status",
+      "pending",
+      "rendered-to-scene",
+      "generation pipeline consumed hook content semantically",
+    );
+    scenario.delta(
+      "story.scene.count",
+      0,
+      1,
+      "validated scene generated in-memory",
+    );
 
-    const allPassed = rumorPreserved && miraPresent && arinPresent && safeAction && Boolean(generated.scene.sceneId);
+    const allPassed =
+      rumorPreserved &&
+      miraPresent &&
+      arinPresent &&
+      safeAction &&
+      Boolean(generated.scene.sceneId);
     const report = scenario.finish({
       result: allPassed ? "PASS" : "FAIL",
       reason: allPassed
@@ -141,7 +201,9 @@ ultefDescribe("ULTEF L4-HOOK-SCENE-001 — StoryHook to generated scene", () => 
         : "The generated scene did not preserve one or more required hook/story invariants.",
     });
 
-    await writeScenarioArtifacts(report, { environment: "integration-deterministic-provider-double" });
+    await writeScenarioArtifacts(report, {
+      environment: "integration-deterministic-provider-double",
+    });
     expect(report.result).toBe("PASS");
   });
 });
