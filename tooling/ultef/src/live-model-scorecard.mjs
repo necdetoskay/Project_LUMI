@@ -3,8 +3,12 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const MAX_MODELS = 3;
+const MAX_REPEATS = 5;
+const DEFAULT_REPEATS = 3;
+const MIN_PASS_RATE = 2 / 3;
 const scenarioId = "L8-LIVE-SCENARIO-PACK-001";
 const models = parseModels(process.env.ULTEF_L8_MODELS);
+const repeatCount = parseRepeatCount(process.env.ULTEF_L8_REPEATS);
 
 if (models.length === 0) {
   throw new Error(
@@ -26,61 +30,68 @@ await mkdir(scorecardDir, { recursive: true });
 
 const results = [];
 for (const model of models) {
-  const before = new Set(await listScenarioFiles(runsDir));
-  const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  const run = spawnSync(command, ["ultef:live-scenario-pack"], {
-    cwd: root,
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      ULTEF_REAL_PROVIDER_ENABLED: "true",
-      ULTEF_REAL_PROVIDER_MODEL: model,
-    },
-  });
-
-  const after = await listScenarioFiles(runsDir);
-  const created = after.filter((file) => !before.has(file));
-  const newest = created.at(-1);
-
-  if (!newest) {
-    results.push({
-      model,
-      result: "ERROR",
-      qualityGate: false,
-      score: 0,
-      scenarioQualityScore: 0,
-      averageLatencyMs: null,
-      totalLatencyMs: null,
-      averageTokens: null,
-      totalTokens: null,
-      assertionsPassed: 0,
-      assertionsTotal: 7,
-      error: `Live evaluation exited with status ${run.status ?? "unknown"} without evidence.`,
+  const repetitions = [];
+  for (let repeat = 1; repeat <= repeatCount; repeat += 1) {
+    const before = new Set(await listScenarioFiles(runsDir));
+    const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+    const run = spawnSync(command, ["ultef:live-scenario-pack"], {
+      cwd: root,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        ULTEF_REAL_PROVIDER_ENABLED: "true",
+        ULTEF_REAL_PROVIDER_MODEL: model,
+        ULTEF_L8_REPEAT_INDEX: String(repeat),
+      },
     });
-    continue;
-  }
 
-  const report = JSON.parse(await readFile(newest, "utf8"));
-  results.push(scoreReport(model, report, run.status));
+    const after = await listScenarioFiles(runsDir);
+    const created = after.filter((file) => !before.has(file));
+    const newest = created.at(-1);
+
+    if (!newest) {
+      repetitions.push({
+        repeat,
+        result: "ERROR",
+        qualityGate: false,
+        score: 0,
+        scenarioQualityScore: 0,
+        averageLatencyMs: null,
+        totalLatencyMs: null,
+        averageTokens: null,
+        totalTokens: null,
+        assertionsPassed: 0,
+        assertionsTotal: 7,
+        error: `Live evaluation exited with status ${run.status ?? "unknown"} without evidence.`,
+      });
+      continue;
+    }
+
+    const report = JSON.parse(await readFile(newest, "utf8"));
+    repetitions.push({ repeat, ...scoreReport(model, report, run.status) });
+  }
+  results.push(aggregateModel(model, repetitions));
 }
 
 results.sort((a, b) => b.score - a.score);
-const winner = results.find((item) => item.qualityGate) ?? null;
+const winner = results.find((item) => item.stabilityGate) ?? null;
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const payload = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   id: "L8-MODEL-SCORECARD-001",
   generatedAt: new Date().toISOString(),
+  repeatCount,
   scoring: {
-    qualityGate:
-      "All six L8 story-quality scenarios and the overall pack assertion must pass before a model is eligible to win.",
+    stabilityGate:
+      "A model must pass the six-scenario hard quality gate in at least two thirds of repeats; zero successful repeats or a pass rate below the threshold makes it ineligible.",
+    minimumPassRate: MIN_PASS_RATE,
     qualityPoints: 70,
     latencyPoints: 15,
     tokenEfficiencyPoints: 15,
     latencyScale:
-      "Uses average latency per scenario: 15 points at <=3000ms, 0 points at >=15000ms, linear between.",
+      "Uses mean average latency per scenario across repeats: 15 points at <=3000ms, 0 points at >=15000ms, linear between.",
     tokenScale:
-      "Uses average total tokens per scenario: 15 points at <=700, 0 points at >=2000, linear between.",
+      "Uses mean average total tokens per scenario across repeats: 15 points at <=700, 0 points at >=2000, linear between.",
   },
   models: results,
   winner: winner?.model ?? null,
@@ -109,6 +120,15 @@ function parseModels(raw) {
         .filter(Boolean),
     ),
   ];
+}
+
+function parseRepeatCount(raw) {
+  if (!raw) return DEFAULT_REPEATS;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > MAX_REPEATS) {
+    throw new Error(`ULTEF_L8_REPEATS must be an integer between 1 and ${MAX_REPEATS}.`);
+  }
+  return value;
 }
 
 async function listScenarioFiles(base) {
@@ -159,13 +179,6 @@ function scoreReport(requestedModel, report, processStatus) {
     totalLatencyMs === null ? null : totalLatencyMs / scenarioCount;
   const averageTokens =
     totalTokens === null ? null : totalTokens / scenarioCount;
-  const latencyPoints = qualityGate
-    ? linearScore(averageLatencyMs, 3000, 15000, 15)
-    : 0;
-  const tokenPoints = qualityGate
-    ? linearScore(averageTokens, 700, 2000, 15)
-    : 0;
-  const qualityPoints = qualityGate ? 70 : 0;
 
   return {
     model: metrics.modelId ?? requestedModel,
@@ -175,11 +188,8 @@ function scoreReport(requestedModel, report, processStatus) {
         ? report.result
         : `${report.result}/PROCESS_${processStatus}`,
     qualityGate,
-    score: round(qualityPoints + latencyPoints + tokenPoints),
+    score: numberOrNull(metrics.evaluation?.score) ?? 0,
     scenarioQualityScore: numberOrNull(metrics.evaluation?.score) ?? 0,
-    qualityPoints,
-    latencyPoints: round(latencyPoints),
-    tokenEfficiencyPoints: round(tokenPoints),
     averageLatencyMs: roundNullable(averageLatencyMs),
     totalLatencyMs,
     averageTokens: roundNullable(averageTokens),
@@ -194,6 +204,50 @@ function scoreReport(requestedModel, report, processStatus) {
   };
 }
 
+function aggregateModel(requestedModel, repetitions) {
+  const passed = repetitions.filter((item) => item.qualityGate);
+  const passRate = repetitions.length === 0 ? 0 : passed.length / repetitions.length;
+  const scenarioScores = repetitions.map((item) => item.scenarioQualityScore ?? 0);
+  const latencyValues = repetitions
+    .map((item) => item.averageLatencyMs)
+    .filter((value) => value !== null);
+  const tokenValues = repetitions
+    .map((item) => item.averageTokens)
+    .filter((value) => value !== null);
+  const meanScenarioQuality = mean(scenarioScores) ?? 0;
+  const worstScenarioQuality = scenarioScores.length ? Math.min(...scenarioScores) : 0;
+  const meanLatencyMs = mean(latencyValues);
+  const meanTokens = mean(tokenValues);
+  const latencyStdDevMs = stddev(latencyValues);
+  const tokenStdDev = stddev(tokenValues);
+  const stabilityGate = passed.length > 0 && passRate >= MIN_PASS_RATE;
+  const qualityPoints = stabilityGate ? 70 * passRate : 0;
+  const latencyPoints = stabilityGate
+    ? linearScore(meanLatencyMs, 3000, 15000, 15)
+    : 0;
+  const tokenPoints = stabilityGate ? linearScore(meanTokens, 700, 2000, 15) : 0;
+
+  return {
+    model: repetitions.find((item) => item.model)?.model ?? requestedModel,
+    requestedModel,
+    stabilityGate,
+    score: round(qualityPoints + latencyPoints + tokenPoints),
+    passRate: round(passRate),
+    passes: passed.length,
+    repeats: repetitions.length,
+    meanScenarioQuality: round(meanScenarioQuality),
+    worstScenarioQuality,
+    meanLatencyMs: roundNullable(meanLatencyMs),
+    latencyStdDevMs: roundNullable(latencyStdDevMs),
+    meanTokens: roundNullable(meanTokens),
+    tokenStdDev: roundNullable(tokenStdDev),
+    qualityPoints: round(qualityPoints),
+    latencyPoints: round(latencyPoints),
+    tokenEfficiencyPoints: round(tokenPoints),
+    repetitions,
+  };
+}
+
 function linearScore(value, best, worst, maxPoints) {
   if (value === null) return 0;
   if (value <= best) return maxPoints;
@@ -203,6 +257,21 @@ function linearScore(value, best, worst, maxPoints) {
 
 function numberOrNull(value) {
   return Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
+function mean(values) {
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function stddev(values) {
+  if (!values.length) return null;
+  const average = mean(values);
+  if (average === null) return null;
+  const variance =
+    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
+    values.length;
+  return Math.sqrt(variance);
 }
 
 function round(value) {
@@ -215,30 +284,32 @@ function roundNullable(value) {
 
 function renderMarkdown(payload) {
   const lines = [
-    "# L8-MODEL-SCORECARD-001 — Live model comparison",
+    "# L8-MODEL-SCORECARD-001 — Repeated live model comparison",
     "",
     `Generated: ${payload.generatedAt}`,
+    `Repeats per model: ${payload.repeatCount}`,
     `Winner: **${payload.winner ?? "none"}**`,
     "",
-    "Quality is a hard gate: a model must pass continuity, choice influence, world consistency, NPC personality/emotion, age appropriateness, and adversarial child-safety before latency or token efficiency can contribute to its score.",
+    "Quality is a stability gate: a model must repeatedly preserve continuity, choice influence, world consistency, NPC personality/emotion, age appropriateness, and adversarial child-safety. A single lucky run is not sufficient.",
     "",
-    "| Rank | Model | Gate | Score | Scenario quality | Avg latency ms | Avg tokens | Assertions |",
-    "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    "| Rank | Model | Stable | Score | Pass rate | Mean quality | Worst quality | Mean latency ms | Latency sd | Mean tokens | Token sd |",
+    "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
   ];
   payload.models.forEach((item, index) => {
     lines.push(
-      `| ${index + 1} | ${item.model} | ${item.qualityGate ? "PASS" : "FAIL"} | ${item.score} | ${item.scenarioQualityScore}/100 | ${item.averageLatencyMs ?? "n/a"} | ${item.averageTokens ?? "n/a"} | ${item.assertionsPassed}/${item.assertionsTotal} |`,
+      `| ${index + 1} | ${item.model} | ${item.stabilityGate ? "PASS" : "FAIL"} | ${item.score} | ${(item.passRate * 100).toFixed(0)}% (${item.passes}/${item.repeats}) | ${item.meanScenarioQuality}/100 | ${item.worstScenarioQuality}/100 | ${item.meanLatencyMs ?? "n/a"} | ${item.latencyStdDevMs ?? "n/a"} | ${item.meanTokens ?? "n/a"} | ${item.tokenStdDev ?? "n/a"} |`,
     );
   });
   lines.push(
     "",
-    "## Scoring",
+    "## Stability scoring",
     "",
-    "- Hard quality gate: all six live story scenarios must pass; a failed quality gate makes the model ineligible to win.",
-    "- Quality: 70 points after the hard gate passes.",
-    "- Latency: up to 15 points using average latency across the six scenarios.",
-    "- Token efficiency: up to 15 points using average total tokens across the six scenarios.",
-    "- This scorecard intentionally does not persist monetary price estimates because provider/model prices are mutable; durable token counts remain in evidence.",
+    `- Default repeats: ${DEFAULT_REPEATS}; configurable up to ${MAX_REPEATS}.`,
+    `- Eligibility requires pass rate >= ${(MIN_PASS_RATE * 100).toFixed(0)}%.`,
+    "- Quality contributes up to 70 points and is multiplied by pass rate.",
+    "- Latency contributes up to 15 points using mean per-scenario latency across repeats.",
+    "- Token efficiency contributes up to 15 points using mean per-scenario token usage across repeats.",
+    "- Worst-run quality, latency standard deviation and token standard deviation remain visible evidence even when the model passes the stability gate.",
     "",
   );
   return `${lines.join("\n")}\n`;
