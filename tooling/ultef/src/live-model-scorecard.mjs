@@ -149,12 +149,16 @@ function scoreReport(requestedModel, report, processStatus) {
     report.result === "PASS" &&
     assertionsTotal >= 4 &&
     assertionsPassed === assertionsTotal;
-  const scenarioCount = Math.max(1, metrics.metrics?.length ?? storyEvents.length ?? 1);
+  const scenarioCount = Math.max(
+    1,
+    metrics.metrics?.length ?? storyEvents.length ?? 1,
+  );
   const totalLatencyMs = numberOrNull(metrics.totalLatencyMs);
   const totalTokens = numberOrNull(metrics.totalTokens);
   const averageLatencyMs =
     totalLatencyMs === null ? null : totalLatencyMs / scenarioCount;
-  const averageTokens = totalTokens === null ? null : totalTokens / scenarioCount;
+  const averageTokens =
+    totalTokens === null ? null : totalTokens / scenarioCount;
   const latencyPoints = qualityGate
     ? linearScore(averageLatencyMs, 3000, 15000, 15)
     : 0;
