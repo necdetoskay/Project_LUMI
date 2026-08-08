@@ -8,9 +8,9 @@ L8 turns real-provider verification into a controlled, repeatable model-comparis
 
 L8 is never part of ordinary pull-request CI. It runs only through the manually dispatched `ULTEF Live Provider Evaluation` workflow and requires the explicit confirmation value `RUN_LIVE_PROVIDER`.
 
-A single run accepts one to three comma-separated OpenRouter model ids and one to five repeats per model. Each repeat executes six live story scenarios. Therefore the default three-repeat run costs 18 live calls per model; three models at the default consume 54 calls. The absolute workflow maximum is 3 models x 5 repeats x 6 scenarios = 90 paid provider calls. The workflow prints the planned call count before provider execution.
+A single run accepts one to three comma-separated OpenRouter model ids and one to five repeats per model. Each repeat executes six live story scenarios. Therefore the default three-repeat run costs 18 live story calls per model; three models at the default consume 54 story calls. The absolute story-call maximum is 90. If the optional semantic judge is enabled, each model repeat adds one judge call, so the absolute total provider-call maximum becomes 105. The workflow prints story, judge and total planned call counts before provider execution.
 
-The scenario evaluator itself is tested on every normal CI run through `pnpm ultef:l8-scenario-selftest` and does not call an external model.
+The deterministic scenario evaluator and semantic-rubric parser are tested on every normal CI run through `pnpm ultef:l8-scenario-selftest` and `pnpm ultef:l8-semantic-selftest`; neither calls an external model.
 
 ## Six-dimensional scenario pack
 
@@ -37,6 +37,18 @@ A single lucky generation is not sufficient evidence for model selection. The sc
 
 With the default three repeats, this means a model must pass at least 2/3 complete packs. A model that occasionally fails therefore remains visible as unstable even when its average output looks strong.
 
+## Advisory semantic rubric judge
+
+The deterministic hard gates remain authoritative. An optional semantic judge may be enabled to score three nuanced dimensions from 0 to 5 in one additional judge call per model repeat:
+
+- choice influence — whether the prior child choice actually drives the later scene rather than being superficially mentioned;
+- NPC personality/emotion consistency — whether Bora remains meaningfully calm, supportive and empathetic to Arin's anxiety;
+- age appropriateness — whether the prose genuinely reads as suitable for ages 6-8 rather than merely avoiding a small jargon list.
+
+The judge must return strict JSON matching the repository rubric contract. Invalid JSON, missing fields, out-of-range scores or judge-provider failures are captured as evidence but do not change the deterministic result.
+
+Semantic judge results are **advisory only** in this version. The scorecard records the semantic mean and standard deviation across repeats, but semantic scores cannot turn a deterministic FAIL into PASS, cannot override safety/world/continuity gates, and do not contribute to winner scoring until the judge itself has been calibrated against a human-reviewed reference set.
+
 ## Stability-aware score
 
 Eligible models receive a score out of 100:
@@ -45,14 +57,15 @@ Eligible models receive a score out of 100:
 - up to 15 points from mean per-scenario latency across repeats, with full points at <= 3 seconds and zero at >= 15 seconds;
 - up to 15 points from mean per-scenario total tokens across repeats, with full points at <= 700 tokens and zero at >= 2000 tokens.
 
-Latency and token scores are linearly interpolated between their best and worst bounds. Worst-run quality and variance metrics remain visible evidence and are never hidden by the final aggregate score.
+Latency and token scores are linearly interpolated between their best and worst bounds. Worst-run quality and variance metrics remain visible evidence and are never hidden by the final aggregate score. Semantic rubric mean/std-dev are displayed separately as advisory evidence.
 
 ## Evidence
 
 Every repeat produces canonical `L8-LIVE-SCENARIO-PACK-001` runtime evidence containing:
 
 - the exact generated narrative for every scenario;
-- evaluator gates for all six quality dimensions;
+- evaluator gates for all six deterministic quality dimensions;
+- optional semantic-rubric scores/reasons and judge usage/error evidence;
 - per-scenario latency;
 - prompt/completion/total token usage when returned by the provider;
 - total latency and token usage across the pack.
@@ -62,7 +75,7 @@ The repeated multi-model runner then emits:
 - `artifacts/ultef/scorecards/*-L8-MODEL-SCORECARD-001.json`
 - `artifacts/ultef/scorecards/*-L8-MODEL-SCORECARD-001.md`
 
-The scorecard stores every repetition plus aggregated stability evidence: pass rate, passes/repeats, mean/worst quality, mean latency and standard deviation, mean tokens and standard deviation, score components, and the selected winner when one satisfies the stability gate.
+The scorecard stores every repetition plus aggregated stability evidence: pass rate, passes/repeats, mean/worst quality, mean latency and standard deviation, mean tokens and standard deviation, optional semantic mean/std-dev, score components, and the selected winner when one satisfies the stability gate.
 
 ## Why monetary cost is not embedded yet
 
@@ -70,4 +83,4 @@ Provider and model prices can change independently of the repository. L8 therefo
 
 ## Current limitation
 
-Repeated execution makes the benchmark substantially more reliable, but the current pack still uses one prompt fixture per dimension and one age band. The next maturity steps are additional age bands, broader NPC personality fixtures, multi-session choice trees, semantic/rubric judging beyond lexical gates, and longer-term historical trend comparison between model versions.
+Repeated execution plus the semantic judge makes the benchmark substantially more informative, but the current pack still uses one prompt fixture per dimension and one age band. The next maturity steps are a human-reviewed judge-calibration set, additional age bands, broader NPC personality fixtures, multi-session choice trees, and longer-term historical trend comparison between model versions.
