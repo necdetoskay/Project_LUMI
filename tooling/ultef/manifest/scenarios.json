@@ -6,9 +6,10 @@
       "title": "Golden headless continuity journey",
       "level": "L6",
       "projectGates": ["PX-LUMI-01", "PX-LUMI-02", "PX-LUMI-03", "PX-LUMI-05", "PX-LUMI-06", "PX-LUMI-09"],
-      "status": "SPECIFIED",
+      "status": "BLOCKED",
       "runner": null,
-      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload"],
+      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001"],
+      "blockedBy": ["L4-SCENE-SESSION-001", "production-outcome-commit/persistence continuity not yet fully instrumented"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -52,6 +53,17 @@
       "requires": ["story-generation-pipeline"],
       "evidenceMode": "runtime-narrative",
       "limitations": ["provider caller is deterministic test double", "does not prove persistence or advanceSession/reader wiring", "real provider coverage belongs to L8"]
+    },
+    {
+      "id": "L4-SCENE-SESSION-001",
+      "title": "Generated scene to persisted session and reader state",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-01", "PX-LUMI-05"],
+      "status": "BLOCKED",
+      "runner": null,
+      "requires": ["generated-scene-session-wiring", "session-persistence", "reader-reload"],
+      "blockedBy": ["PRODUCT_GAP: generated-scene-session-wiring"],
+      "evidenceMode": "runtime-narrative"
     }
   ]
 }
