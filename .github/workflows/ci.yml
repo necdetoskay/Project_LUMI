@@ -37,6 +37,11 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
+      - name: Diagnose concurrency test formatting
+        run: |
+          pnpm exec prettier --write apps/web/tests/ultef-l9-concurrency.integration.test.ts
+          git diff -- apps/web/tests/ultef-l9-concurrency.integration.test.ts
+          git diff --exit-code -- apps/web/tests/ultef-l9-concurrency.integration.test.ts
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
