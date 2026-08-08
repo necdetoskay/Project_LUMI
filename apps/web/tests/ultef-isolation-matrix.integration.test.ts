@@ -7,7 +7,10 @@ import {
 } from "@lumi/profiles/application";
 import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
-import { RumorBeliefWriterService } from "@lumi/npc-intelligence/application";
+import {
+  BeliefService,
+  RumorBeliefWriterService,
+} from "@lumi/npc-intelligence/application";
 
 import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
@@ -156,7 +159,7 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
 
     const npcDb = createNpcDatabase(databaseUrl);
     const repository = new DrizzleBeliefSourceRepository(npcDb);
-    const writer = new RumorBeliefWriterService(repository as never);
+    const writer = new RumorBeliefWriterService(new BeliefService(repository));
     const sourceNpcId = crypto.randomUUID();
     const targetNpcId = crypto.randomUUID();
     const factId = `ultef-isolation-${crypto.randomUUID()}`;
