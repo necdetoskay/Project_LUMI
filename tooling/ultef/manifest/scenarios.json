@@ -9,7 +9,7 @@
       "status": "BLOCKED",
       "runner": null,
       "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001", "PX-LUMI-09-002"],
-      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 still needs composition-root wiring and DB execution evidence"],
+      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 has not yet produced DB-backed execution evidence"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -74,18 +74,18 @@
       "runner": "pnpm ultef:world-commit",
       "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story world-commit migrations"],
       "evidenceMode": "runtime-narrative",
-      "limitations": ["proves durable commit record/world version/event/outbox and retry idempotency", "does not by itself prove downstream NPC materialized state mutation; that requires applicator/reload instrumentation"]
+      "limitations": ["proves durable commit record/world version/event/outbox and retry idempotency", "does not by itself prove downstream NPC materialized state mutation; PX-LUMI-09-002 covers that"]
     },
     {
       "id": "PX-LUMI-09-002",
       "title": "Materialized indirect outcome propagation",
       "level": "L4",
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
-      "status": "BLOCKED",
-      "runner": null,
-      "requires": ["IndirectEffectPropagator", "RumorSpreadApplicator writer port", "RumorBeliefWriterService", "npc_intelligence.beliefs persistence", "composition-root wiring", "NPC persistence reload test"],
-      "blockedBy": ["IMPLEMENTATION_GAP: real belief persistence and writer now exist, but the story propagator still needs a production composition-root binding plus DB-backed ULTEF execution evidence"],
-      "evidenceMode": "runtime-narrative"
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:materialized-rumor",
+      "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story outbox schema", "npc_intelligence beliefs migration", "production rumor composition"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": ["requires a disposable PostgreSQL database whose name contains test or review", "execution evidence is required before this gate can be treated as PASS"]
     }
   ]
 }
