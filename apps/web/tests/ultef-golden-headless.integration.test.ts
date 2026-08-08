@@ -410,17 +410,35 @@ ultefDescribe(
           "DELETE FROM story.story_world_versions WHERE household_id = $1",
           [fixture.householdId],
         );
-        await pool.query(
-          `DELETE FROM story.story_session_characters
-           WHERE story_session_id IN (
-             SELECT id FROM story.story_sessions WHERE household_id = $1 AND id <> $2
-           )`,
+        const laterSessionIds = await pool.query<{ id: string }>(
+          "SELECT id FROM story.story_sessions WHERE household_id = $1 AND id <> $2",
           [fixture.householdId, fixture.storySessionId],
         );
-        await pool.query(
-          "DELETE FROM story.story_sessions WHERE household_id = $1 AND id <> $2",
-          [fixture.householdId, fixture.storySessionId],
-        );
+        for (const row of laterSessionIds.rows) {
+          await pool.query(
+            "DELETE FROM story.story_idempotency_ledger WHERE story_session_id = $1",
+            [row.id],
+          );
+          await pool.query(
+            "DELETE FROM story.story_event_store WHERE story_session_id = $1",
+            [row.id],
+          );
+          await pool.query(
+            "DELETE FROM story.story_session_checkpoints WHERE story_session_id = $1",
+            [row.id],
+          );
+          await pool.query(
+            "DELETE FROM story.story_session_scene_visits WHERE story_session_id = $1",
+            [row.id],
+          );
+          await pool.query(
+            "DELETE FROM story.story_session_characters WHERE story_session_id = $1",
+            [row.id],
+          );
+          await pool.query("DELETE FROM story.story_sessions WHERE id = $1", [
+            row.id,
+          ]);
+        }
         await cleanupStoryFixture(pool, fixture);
       }
     });
