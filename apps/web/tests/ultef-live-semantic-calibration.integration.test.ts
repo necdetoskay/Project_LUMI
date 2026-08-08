@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -20,15 +21,11 @@ const ultefDescribe =
 
 ultefDescribe("ULTEF L8-SEMANTIC-CALIBRATION-001", () => {
   it("compares one live batch judge call against the seed human-reference set", async () => {
-    const dataset = JSON.parse(
-      await readFile(
-        new URL(
-          "../../../tooling/ultef/calibration/l8-semantic-calibration.json",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
+    const datasetPath = path.resolve(
+      process.cwd(),
+      "../../tooling/ultef/calibration/l8-semantic-calibration.json",
     );
+    const dataset = JSON.parse(await readFile(datasetPath, "utf8"));
 
     const scenario = createScenario({
       id: "L8-SEMANTIC-CALIBRATION-001",
