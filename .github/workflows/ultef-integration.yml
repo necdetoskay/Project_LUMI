@@ -49,6 +49,8 @@ jobs:
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Prepare story schema
         run: pnpm --filter @lumi/story story:migrate
+      - name: Prepare auth schema
+        run: pnpm --filter @lumi/web auth:migrate
       - name: Run ULTEF DB integration profile
         run: pnpm ultef:integration
       - name: Run L6 Golden Headless Journey
@@ -73,6 +75,8 @@ jobs:
         run: pnpm --filter @lumi/story exec vitest run --config vitest.integration.config.ts tests/integration/ultef-l9-backup-restore.integration.test.ts
       - name: Run L9 container deployment rollback recovery
         run: pnpm ultef:l9-deployment-rollback
+      - name: Run L9 dependency outage recovery
+        run: pnpm ultef:l9-dependency-outage
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -176,6 +180,14 @@ jobs:
             cat "$DEPLOY_FILE"
           else
             echo "L9 deployment rollback evidence was not produced."
+          fi
+          OUTAGE_FILE=$(find artifacts/ultef/runs -name 'L9-DEPENDENCY-OUTAGE-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$OUTAGE_FILE" ]; then
+            echo
+            echo "===== L9 DEPENDENCY OUTAGE ====="
+            cat "$OUTAGE_FILE"
+          else
+            echo "L9 dependency-outage evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
