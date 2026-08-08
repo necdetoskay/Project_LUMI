@@ -88,6 +88,20 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: "L4-OUTCOME-REJECTION" },
   },
+  "L4-OUTCOME-ATOMIC-ROLLBACK": {
+    command: "pnpm",
+    args: [
+      "--filter",
+      "@lumi/story",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "vitest.integration.config.ts",
+      "tests/integration/ultef-outcome-atomic-rollback.integration.test.ts",
+    ],
+    env: { ULTEF_SCENARIO: "L4-OUTCOME-ATOMIC-ROLLBACK" },
+  },
   "L3-NPC-001": {
     command: "pnpm",
     args: [
