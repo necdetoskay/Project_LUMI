@@ -17,6 +17,7 @@
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
     "ultef:scene-session": "node tooling/ultef/src/cli.mjs L4-SCENE-SESSION-001",
     "ultef:world-commit": "node tooling/ultef/src/cli.mjs PX-LUMI-09-001",
+    "ultef:materialized-rumor": "node tooling/ultef/src/cli.mjs PX-LUMI-09-002",
     "ultef:L0": "node tooling/ultef/src/cli.mjs L0",
     "ultef:L1": "node tooling/ultef/src/cli.mjs L1",
     "ultef:L2": "node tooling/ultef/src/cli.mjs L2",
