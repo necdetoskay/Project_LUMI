@@ -143,11 +143,7 @@ function applyBoundedSemanticRanking(scorecard, trust) {
       meanTokens: numberOrNull(model.meanTokens),
     });
     const latencyPoints = eligible
-      ? clamp(
-          performance.latencyPoints,
-          0,
-          BOUNDED_SCORING.latencyPoints,
-        )
+      ? clamp(performance.latencyPoints, 0, BOUNDED_SCORING.latencyPoints)
       : 0;
     const tokenPoints = eligible
       ? clamp(
