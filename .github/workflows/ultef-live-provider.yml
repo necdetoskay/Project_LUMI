@@ -128,6 +128,9 @@ jobs:
         run: pnpm ultef:live-semantic-calibration
       - name: Run repeated L8 live six-scenario model scorecard
         run: pnpm ultef:live-model-scorecard
+      - name: Annotate scorecard with semantic calibration trust
+        if: always()
+        run: pnpm ultef:l8-annotate-calibration
       - name: Print L8 scorecard
         if: always()
         shell: bash
