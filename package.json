@@ -22,6 +22,7 @@
     "ultef:l9-provider-failover": "node tooling/ultef/src/l9-provider-failover.mjs",
     "ultef:l9-concurrency": "ULTEF_SCENARIO=L9-CONCURRENCY-001 pnpm --filter @lumi/web exec vitest run tests/ultef-l9-concurrency.integration.test.ts",
     "ultef:l9-crash-recovery": "ULTEF_SCENARIO=L9-CRASH-RECOVERY-001 pnpm --filter @lumi/story exec vitest run --config vitest.integration.config.ts tests/integration/ultef-l9-crash-recovery.integration.test.ts",
+    "ultef:l9-load": "ULTEF_SCENARIO=L9-LOAD-001 pnpm --filter @lumi/web exec vitest run tests/ultef-l9-load.integration.test.ts",
     "ultef:live-semantic-calibration": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-semantic-calibration.integration.test.ts",
     "ultef:l8-annotate-calibration": "node tooling/ultef/src/l8-scorecard-calibration-annotator.mjs",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
