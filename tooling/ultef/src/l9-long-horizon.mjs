@@ -115,8 +115,14 @@ const transitions = [
     choice: "plan-next-journey-together",
     apply(state) {
       state.choices.push(this.choice);
-      assert.equal(state.npc.bora.memories.includes("arin-helped-bora-cross-stream"), true);
-      assert.equal(state.npc.bora.memories.includes("arin-chose-safe-route-during-storm"), true);
+      assert.equal(
+        state.npc.bora.memories.includes("arin-helped-bora-cross-stream"),
+        true,
+      );
+      assert.equal(
+        state.npc.bora.memories.includes("arin-chose-safe-route-during-storm"),
+        true,
+      );
       assert.equal(state.inventory.includes("origin-compass"), true);
       assert.equal(state.inventory.includes("silver-leaf-token"), true);
     },
@@ -136,11 +142,31 @@ for (const transition of transitions) {
   const after = structuredClone(state);
   const afterFingerprint = fingerprint(after);
 
-  assert.notEqual(afterFingerprint, beforeFingerprint, `${transition.id} must mutate journey state.`);
-  assert.equal(state.turn, evidence.length + 1, `${transition.id} turn sequence drifted.`);
-  assert.equal(new Set(state.choices).size, state.choices.length, `${transition.id} duplicated a choice.`);
-  assert.equal(new Set(state.inventory).size, state.inventory.length, `${transition.id} duplicated inventory.`);
-  assert.equal(new Set(state.npc.bora.memories).size, state.npc.bora.memories.length, `${transition.id} duplicated NPC memory.`);
+  assert.notEqual(
+    afterFingerprint,
+    beforeFingerprint,
+    `${transition.id} must mutate journey state.`,
+  );
+  assert.equal(
+    state.turn,
+    evidence.length + 1,
+    `${transition.id} turn sequence drifted.`,
+  );
+  assert.equal(
+    new Set(state.choices).size,
+    state.choices.length,
+    `${transition.id} duplicated a choice.`,
+  );
+  assert.equal(
+    new Set(state.inventory).size,
+    state.inventory.length,
+    `${transition.id} duplicated inventory.`,
+  );
+  assert.equal(
+    new Set(state.npc.bora.memories).size,
+    state.npc.bora.memories.length,
+    `${transition.id} duplicated NPC memory.`,
+  );
 
   evidence.push({
     step: transition.id,
@@ -175,8 +201,16 @@ const report = {
 };
 
 await mkdir(outDir, { recursive: true });
-await writeFile(path.join(outDir, `${SCENARIO_ID}.json`), `${JSON.stringify(report, null, 2)}\n`, "utf8");
-await writeFile(path.join(outDir, `${SCENARIO_ID}.md`), markdown(report), "utf8");
+await writeFile(
+  path.join(outDir, `${SCENARIO_ID}.json`),
+  `${JSON.stringify(report, null, 2)}\n`,
+  "utf8",
+);
+await writeFile(
+  path.join(outDir, `${SCENARIO_ID}.md`),
+  markdown(report),
+  "utf8",
+);
 
 console.log(`${SCENARIO_ID}: PASS`);
 console.log(`Transitions: ${evidence.length}`);
@@ -215,7 +249,9 @@ function markdown(report) {
   ];
 
   for (const item of report.transitions) {
-    lines.push(`| ${item.step} | ${item.choice} | \`${item.beforeFingerprint.slice(0, 12)}\` | \`${item.afterFingerprint.slice(0, 12)}\` |`);
+    lines.push(
+      `| ${item.step} | ${item.choice} | \`${item.beforeFingerprint.slice(0, 12)}\` | \`${item.afterFingerprint.slice(0, 12)}\` |`,
+    );
   }
 
   lines.push(

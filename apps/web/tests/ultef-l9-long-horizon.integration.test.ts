@@ -160,7 +160,8 @@ ultefDescribe(
               characters: ["Arin", "Mira"],
               moment: `Arin onceki yolculuklarini hatirlarken Mira ${marker} isaretini kaydetti.`,
               narrative: `Deniz'in onceki secimlerinin izini suren Arin, Mira ile ${marker} isaretini konustu ve bunu sonraki yolculukta hatirlamak uzere kaydetti.`,
-              nextPrompt: "Arin bir sonraki yolculukta onceki isareti hatirlayacak.",
+              nextPrompt:
+                "Arin bir sonraki yolculukta onceki isareti hatirlayacak.",
             },
             sourceHookId: `l9-long-hook-${step}`,
             modelId: "deterministic-ultef-provider",
