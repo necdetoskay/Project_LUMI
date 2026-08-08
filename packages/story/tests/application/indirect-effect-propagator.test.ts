@@ -97,8 +97,9 @@ describe("IndirectEffectPropagator", () => {
 
     const result = await propagator.propagate({ householdId: HOUSEHOLD });
 
-    expect(result).toEqual({ processed: 1, applied: 0, failed: 0, skipped: 1 });
+    expect(result).toEqual({ processed: 0, applied: 0, failed: 0, skipped: 1 });
     expect(applicator.apply).not.toHaveBeenCalled();
+    expect(mockRepo.markOutbox).not.toHaveBeenCalled();
   });
 
   it("isolates a failed intent: marks failed/retry, others proceed", async () => {
@@ -128,7 +129,7 @@ describe("IndirectEffectPropagator", () => {
     ).toContain("INDIRECT_EFFECT_FAILED");
   });
 
-  it("marks failed after max attempts and stops retrying", async () => {
+  it("leaves terminal failed rows untouched after max attempts", async () => {
     mockRepo.claimPendingOutbox.mockResolvedValue([
       makeRow({ status: "failed", attemptCount: "3" }),
     ]);
@@ -137,15 +138,8 @@ describe("IndirectEffectPropagator", () => {
 
     const result = await propagator.propagate({ householdId: HOUSEHOLD });
 
-    expect(result.failed).toBe(1);
+    expect(result).toEqual({ processed: 0, applied: 0, failed: 0, skipped: 1 });
     expect(applicator.apply).not.toHaveBeenCalled();
-    expect(mockRepo.markOutbox).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.any(String),
-      expect.objectContaining({
-        status: "failed",
-        lastError: "max attempts exceeded",
-      }),
-    );
+    expect(mockRepo.markOutbox).not.toHaveBeenCalled();
   });
 });
