@@ -164,7 +164,8 @@ ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
       evaluation,
     );
 
-    let semanticJudge: ReturnType<typeof parseSemanticJudgeResponse> | null = null;
+    let semanticJudge: ReturnType<typeof parseSemanticJudgeResponse> | null =
+      null;
     let semanticJudgeUsage: unknown = null;
     let semanticJudgeError: string | null = null;
     if (semanticJudgeEnabled) {
