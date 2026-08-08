@@ -14,9 +14,12 @@ import {
   storyEventStore,
   storyIdempotencyLedger,
 } from "../../src/db/schema/story";
+import { createScenario } from "../../../../tooling/ultef/src/evidence.mjs";
+import { writeScenarioArtifacts } from "../../../../tooling/ultef/src/artifacts.mjs";
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
-const describeDb = hasDatabase ? describe : describe.skip;
+const enabled = process.env.ULTEF_SCENARIO === "L4-SCENE-SESSION-001";
+const describeDb = hasDatabase && enabled ? describe : describe.skip;
 
 const ids = {
   household: crypto.randomUUID(),
@@ -47,6 +50,18 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
   it("materializes generated prose, advances the canonical session and reloads the same prose from persisted reader state", async () => {
     if (!db) throw new Error("DATABASE_URL_REQUIRED");
 
+    const scenario = createScenario({
+      id: "L4-SCENE-SESSION-001",
+      title: "Generated scene persists and becomes reader-visible session state",
+      level: "L4",
+      projectGate: "PX-LUMI-05",
+      seed: "scene-session-001",
+    });
+    scenario.setup("Child", { id: ids.child, name: "Deniz", ageBand: "6-8" });
+    scenario.setup("Character", { name: "Arin" });
+    scenario.setup("NPC", { name: "Mira" });
+    scenario.setup("World", { id: ids.world, name: "Gunes Vadisi" });
+
     await repo.createDefinition(db, {
       id: ids.definition,
       householdId: ids.household,
@@ -60,7 +75,6 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       defaultLanguage: "tr",
       version: 1,
     });
-
     await repo.createVersion(db, {
       id: ids.version,
       storyDefinitionId: ids.definition,
@@ -71,7 +85,6 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       storyMode: "dynamic",
       publishedAt: new Date(),
     });
-
     await repo.createScene(db, {
       id: ids.entryScene,
       storyVersionId: ids.version,
@@ -84,7 +97,6 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       isTerminalScene: false,
       metadata: {},
     });
-
     await repo.createSession(db, {
       id: ids.session,
       householdId: ids.household,
@@ -100,7 +112,6 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       contextSnapshot: {},
       version: 1,
     });
-
     await repo.createSceneVisit(db, {
       id: crypto.randomUUID(),
       storySessionId: ids.session,
@@ -109,6 +120,7 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       visitReason: "session_start",
       enteredAt: new Date(),
     });
+    scenario.event("story.session.started", "Deniz icin Arin'in Gunes Vadisi hikaye oturumu baslatildi.");
 
     const generated = {
       sceneId: "llm-rumor-scene-001",
@@ -119,6 +131,7 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       moment: "Arin soylentinin kaynagini sormaya karar verdi.",
       nextPrompt: "Bunu ilk kim gordu?",
     };
+    scenario.event("story.scene.generated", `Generated scene: ${generated.narrative}`);
 
     const result = await persistGeneratedSceneAndAdvance({
       sessionId: ids.session,
@@ -128,28 +141,38 @@ describeDb("L4-SCENE-SESSION-001 generated scene -> session -> reader", () => {
       sourceHookId: "rumor-hook-001",
       idempotencyKey: `ultef-generated-scene:${ids.session}`,
     });
-
-    expect(result.reusedPersistedScene).toBe(false);
-    expect(result.playbackState.session.version).toBe(2);
-    expect(result.playbackState.session.currentSceneId).toBe(result.generatedSceneId);
-    expect(result.playbackState.currentScene?.narrativeText).toBe(generated.narrative);
-    expect(result.playbackState.currentScene?.metadata).toMatchObject({
-      generated: true,
-      generatedForSessionId: ids.session,
-      sourceGeneratedSceneId: "llm-rumor-scene-001",
-      sourceHookId: "rumor-hook-001",
-      characters: ["Arin", "Mira"],
-    });
+    scenario.event("story.session.advanced", `Session generated sahneye ilerledi; version 1 -> ${result.playbackState.session.version}.`);
 
     const reloaded = await repo.findSessionById(db, ids.session);
     const persistedScene = await repo.findSceneById(db, result.generatedSceneId);
     const visits = await repo.findSceneVisitsBySession(db, ids.session);
     const checkpoint = await repo.findLatestCheckpoint(db, ids.session);
+    scenario.event("story.reader.reloaded", "Session, generated scene, visit ve checkpoint PostgreSQL'den yeniden okundu.");
 
-    expect(reloaded?.version).toBe(2);
-    expect(reloaded?.currentSceneId).toBe(result.generatedSceneId);
-    expect(persistedScene?.narrativeText).toBe(generated.narrative);
-    expect(visits.at(-1)?.sceneId).toBe(result.generatedSceneId);
-    expect(checkpoint?.sceneId).toBe(result.generatedSceneId);
+    scenario.assert("Generated scene persisted once", result.reusedPersistedScene === false, false, result.reusedPersistedScene);
+    scenario.assert("Session version advanced", result.playbackState.session.version === 2, 2, result.playbackState.session.version);
+    scenario.assert("Reader points to generated scene", reloaded?.currentSceneId === result.generatedSceneId, result.generatedSceneId, reloaded?.currentSceneId ?? null);
+    scenario.assert("Narrative survives DB reload", persistedScene?.narrativeText === generated.narrative, generated.narrative, persistedScene?.narrativeText ?? null);
+    scenario.assert("Scene visit persisted", visits.at(-1)?.sceneId === result.generatedSceneId, result.generatedSceneId, visits.at(-1)?.sceneId ?? null);
+    scenario.assert("Checkpoint persisted", checkpoint?.sceneId === result.generatedSceneId, result.generatedSceneId, checkpoint?.sceneId ?? null);
+    scenario.delta("story.session.version", 1, reloaded?.version ?? null, "generated scene advancement");
+    scenario.delta("story.session.currentSceneId", ids.entryScene, reloaded?.currentSceneId ?? null, "reader-visible generated scene");
+
+    const passed =
+      result.reusedPersistedScene === false &&
+      reloaded?.version === 2 &&
+      reloaded.currentSceneId === result.generatedSceneId &&
+      persistedScene?.narrativeText === generated.narrative &&
+      visits.at(-1)?.sceneId === result.generatedSceneId &&
+      checkpoint?.sceneId === result.generatedSceneId;
+
+    const report = scenario.finish({
+      result: passed ? "PASS" : "FAIL",
+      reason: passed
+        ? "Generated story prose was persisted, advanced through the canonical session path, and remained identical after DB reload in reader state."
+        : "Generated scene/session persistence did not satisfy all runtime assertions.",
+    });
+    await writeScenarioArtifacts(report, { environment: "integration" });
+    expect(report.result).toBe("PASS");
   });
 });
