@@ -26,7 +26,7 @@ export function buildSemanticJudgePrompt(input) {
     "Evaluate only the supplied text against the rubric. Do not rewrite the stories.",
     "Use integer scores from 0 to 5, where 5 is excellent and 0 is a clear failure.",
     "Return strict JSON only, with no markdown or prose outside JSON.",
-    "Required shape: {\"scores\":{\"choice_influence\":{\"score\":0,\"reason\":\"...\"},\"personality_emotion\":{\"score\":0,\"reason\":\"...\"},\"age_appropriateness\":{\"score\":0,\"reason\":\"...\"}}}",
+    'Required shape: {"scores":{"choice_influence":{"score":0,"reason":"..."},"personality_emotion":{"score":0,"reason":"..."},"age_appropriateness":{"score":0,"reason":"..."}}}',
     "",
   ];
 
@@ -77,7 +77,8 @@ export function parseSemanticJudgeResponse(raw) {
   }
 
   const values = Object.values(normalized).map((item) => item.score);
-  const meanScore = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const meanScore =
+    values.reduce((sum, value) => sum + value, 0) / values.length;
   return {
     scores: normalized,
     meanScore: Math.round(meanScore * 100) / 100,
