@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import "./l8-boundary-human-review-selftest.mjs";
 import { evaluateSemanticCalibration } from "./l8-semantic-calibration.mjs";
 
 const seedDataset = JSON.parse(
