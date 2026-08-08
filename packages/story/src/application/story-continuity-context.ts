@@ -14,6 +14,8 @@ export interface ResolveStoryContinuityContextInput {
   worldId: string;
   childProfileId?: string | null;
   characterId?: string | null;
+  /** Relevant NPCs for this generation request; adapters must not widen scope. */
+  npcIds?: string[];
 }
 
 /**
