@@ -97,11 +97,23 @@
       "title": "Completed session cannot advance without persistence leak",
       "level": "L3",
       "projectGates": ["PX-LUMI-01"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:session-negative",
       "requires": ["story", "story-migrations", "disposable-postgresql"],
       "evidenceMode": "runtime-narrative",
-      "note": "Completes a real session, attempts a later advance with the current version, and asserts the rejected transition creates no new visit, checkpoint, event or session mutation."
+      "lastValidatedBy": "ULTEF Integration #51",
+      "note": "A real completed session rejected a later advance and DB reload proved status, version, current scene, visits, checkpoints and story events did not change."
+    },
+    {
+      "id": "L3-SESSION-004",
+      "title": "Duplicate session advance idempotency key produces one mutation",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-01"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:session-idempotency",
+      "requires": ["story", "story-migrations", "disposable-postgresql"],
+      "evidenceMode": "runtime-narrative",
+      "note": "Runs the same session advance twice with the same idempotency key and verifies exactly one version change, visit, checkpoint, event and session_advance ledger entry."
     },
     {
       "id": "L3-NPC-001",
