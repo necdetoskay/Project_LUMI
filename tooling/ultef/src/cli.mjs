@@ -36,6 +36,11 @@ const commands = {
     args: ['--filter', '@lumi/story', 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts', 'tests/integration/ultef-world-commit.integration.test.ts'],
     env: { ULTEF_SCENARIO: 'PX-LUMI-09-001' }
   },
+  'PX-LUMI-09-002': {
+    command: 'pnpm',
+    args: ['--filter', '@lumi/web', 'exec', 'vitest', 'run', 'tests/ultef-materialized-rumor.integration.test.ts'],
+    env: { ULTEF_SCENARIO: 'PX-LUMI-09-002' }
+  },
   L0: { command: 'pnpm', args: ['test'] },
   L1: { command: 'pnpm', args: ['test'] },
   L2: { command: 'pnpm', args: ['--filter', '@lumi/profiles', 'test:int'] },
