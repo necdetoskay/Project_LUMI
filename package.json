@@ -11,6 +11,7 @@
     "test": "turbo run test",
     "ultef": "node tooling/ultef/src/cli.mjs",
     "ultef:selftest": "node tooling/ultef/src/cli.mjs selftest",
+    "ultef:l8-scenario-selftest": "node tooling/ultef/src/l8-scenario-pack-selftest.mjs",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
     "ultef:isolation": "node tooling/ultef/src/cli.mjs L2-ISOLATION-MATRIX",
     "ultef:session-negative": "node tooling/ultef/src/cli.mjs L3-SESSION-NEGATIVE",
