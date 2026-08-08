@@ -67,6 +67,8 @@ jobs:
         run: pnpm ultef:outcome-atomic-rollback
       - name: Run Sprint 01 indirect propagation retry
         run: pnpm ultef:indirect-retry
+      - name: Run Sprint 01 terminal indirect propagation failure
+        run: pnpm ultef:indirect-terminal-failure
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -83,7 +85,7 @@ jobs:
           else
             echo "L6 Golden Journey evidence was not produced."
           fi
-          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004 L4-OUTCOME-REJECT-001 L4-OUTCOME-REJECT-002 L4-OUTCOME-ROLLBACK-001 L4-INDIRECT-RETRY-001; do
+          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-003 L3-SESSION-004 L4-OUTCOME-REJECT-001 L4-OUTCOME-REJECT-002 L4-OUTCOME-ROLLBACK-001 L4-INDIRECT-RETRY-001 L4-INDIRECT-FAILURE-001; do
             FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1)
             if [ -n "$FILE" ]; then
               echo
