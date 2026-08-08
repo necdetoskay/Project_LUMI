@@ -93,3 +93,5 @@ export type {
   RumorSafetyCheckInput,
   RumorSafetyCheckResult,
 } from "./rumor-safety-filter.service";
+export { RumorBeliefWriterService } from "./rumor-belief-writer.service";
+export type { WriteRumorBeliefInput } from "./rumor-belief-writer.service";
