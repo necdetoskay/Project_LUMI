@@ -8,8 +8,8 @@
       "projectGates": ["PX-LUMI-01", "PX-LUMI-02", "PX-LUMI-03", "PX-LUMI-05", "PX-LUMI-06", "PX-LUMI-09"],
       "status": "BLOCKED",
       "runner": null,
-      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001"],
-      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "materialized downstream NPC/world continuity still requires dedicated instrumentation"],
+      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001", "PX-LUMI-09-002"],
+      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "PX-LUMI-09-002 is blocked by missing concrete NPC rumor materialization"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -75,6 +75,17 @@
       "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story world-commit migrations"],
       "evidenceMode": "runtime-narrative",
       "limitations": ["proves durable commit record/world version/event/outbox and retry idempotency", "does not by itself prove downstream NPC materialized state mutation; that requires applicator/reload instrumentation"]
+    },
+    {
+      "id": "PX-LUMI-09-002",
+      "title": "Materialized indirect outcome propagation",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
+      "status": "BLOCKED",
+      "runner": null,
+      "requires": ["IndirectEffectPropagator", "concrete npc rumor belief/hearsay applicator", "NPC persistence reload"],
+      "blockedBy": ["PRODUCT_GAP: RumorSpreadApplicator is a placeholder and does not persist NPC belief/hearsay state"],
+      "evidenceMode": "runtime-narrative"
     }
   ]
 }
