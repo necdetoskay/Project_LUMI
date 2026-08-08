@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockRepo = {
-  findSessionById: vi.fn(),
-  findScenesByVersion: vi.fn(),
-  createScene: vi.fn(),
-};
-
-const advanceSession = vi.fn();
+const { mockRepo, advanceSession } = vi.hoisted(() => ({
+  mockRepo: {
+    findSessionById: vi.fn(),
+    findScenesByVersion: vi.fn(),
+    createScene: vi.fn(),
+  },
+  advanceSession: vi.fn(),
+}));
 
 vi.mock("../../src/db/repositories/drizzle/drizzle-story.repository", () => ({
   DrizzleStoryRepository: class {
@@ -28,6 +29,11 @@ vi.mock("../../src/application/hash", () => ({
 
 vi.mock("../../src/application/story-session.service", () => ({
   advanceSession,
+  getSessionPlaybackState: vi.fn(async () => ({
+    session: { ...session, version: 5, currentSceneId: "persisted-scene" },
+    currentScene: { narrativeText: generatedScene.narrative },
+    visits: [],
+  })),
 }));
 
 import { persistGeneratedSceneAndAdvance } from "../../src/application/generated-scene-session.service";
