@@ -1,4 +1,8 @@
-export function renderBoundaryHumanReview({ dataset, calibration, judgeModel }) {
+export function renderBoundaryHumanReview({
+  dataset,
+  calibration,
+  judgeModel,
+}) {
   const rows = Array.isArray(calibration?.rows) ? calibration.rows : [];
   const predictionById = new Map(
     rows.map((row) => [row.id, row.predictedScore]),
