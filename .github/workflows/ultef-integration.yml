@@ -8,7 +8,7 @@ on:
 jobs:
   db-backed-ultef:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 120
     services:
       postgres:
         image: postgres:17
@@ -77,21 +77,33 @@ jobs:
         run: pnpm ultef:continuity-divergence
       - name: Run Sprint 01 continuity context to generated story
         run: pnpm ultef:context-to-story
+      - name: Run corrected L8 leaderboard calibration
+        env:
+          ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: "true"
+          ULTEF_L8_CALIBRATION_SET: human-reviewed-boundary-v1
+          ULTEF_L8_CALIBRATION_REPEATS: "3"
+          ULTEF_L8_JUDGE_MODEL: openai/gpt-4.1-mini
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: pnpm ultef:live-semantic-calibration
+      - name: Run corrected L8 three-model leaderboard
+        env:
+          ULTEF_REAL_PROVIDER_ENABLED: "true"
+          ULTEF_L8_MODELS: openai/gpt-4.1-mini,google/gemini-2.5-flash,anthropic/claude-haiku-4.5
+          ULTEF_L8_REPEATS: "3"
+          ULTEF_L8_SEMANTIC_JUDGE_ENABLED: "true"
+          ULTEF_L8_JUDGE_MODEL: openai/gpt-4.1-mini
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: pnpm ultef:live-model-scorecard
+      - name: Apply calibrated bounded semantic ranking
+        if: always()
+        run: pnpm ultef:l8-annotate-calibration
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
-          if [ -f artifacts/ultef/latest/integration-summary.md ]; then
-            cat artifacts/ultef/latest/integration-summary.md
-          else
-            echo "ULTEF integration summary was not produced."
-          fi
-          GOLDEN_FILE=$(find artifacts/ultef/runs -name 'L6-GOLDEN-001.md' -type f 2>/dev/null | sort | tail -n 1)
-          if [ -n "$GOLDEN_FILE" ]; then
-            echo
-            echo "===== L6 GOLDEN HEADLESS JOURNEY ====="
-            cat "$GOLDEN_FILE"
-          else
-            echo "L6 Golden Journey evidence was not produced."
+          SCORECARD_FILE=$(find artifacts/ultef/scorecards -name '*-L8-MODEL-SCORECARD-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$SCORECARD_FILE" ]; then
+            echo "===== L8 LUMI MODEL LEADERBOARD ====="
+            cat "$SCORECARD_FILE"
           fi
       - name: Upload ULTEF evidence
         if: always()
