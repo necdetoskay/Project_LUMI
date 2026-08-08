@@ -13,12 +13,12 @@
     },
     {
       "id": "L1-PROFILE-001",
-      "title": "Profile and character ownership invariants",
+      "title": "Profile household isolation",
       "level": "L1",
       "projectGates": ["PX-LUMI-06"],
-      "status": "TO_INSTRUMENT",
-      "runner": "@lumi/profiles",
-      "requires": ["profiles"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:profile",
+      "requires": ["profiles", "DATABASE_URL", "profiles-migrations"],
       "evidenceMode": "runtime-narrative"
     },
     {
