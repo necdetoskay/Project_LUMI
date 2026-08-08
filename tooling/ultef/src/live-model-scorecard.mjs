@@ -54,7 +54,7 @@ for (const model of models) {
       averageTokens: null,
       totalTokens: null,
       assertionsPassed: 0,
-      assertionsTotal: 4,
+      assertionsTotal: 7,
       error: `Live evaluation exited with status ${run.status ?? "unknown"} without evidence.`,
     });
     continue;
@@ -68,12 +68,12 @@ results.sort((a, b) => b.score - a.score);
 const winner = results.find((item) => item.qualityGate) ?? null;
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const payload = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: "L8-MODEL-SCORECARD-001",
   generatedAt: new Date().toISOString(),
   scoring: {
     qualityGate:
-      "All three core L8 scenarios and the overall pack assertion must pass before a model is eligible to win.",
+      "All six L8 story-quality scenarios and the overall pack assertion must pass before a model is eligible to win.",
     qualityPoints: 70,
     latencyPoints: 15,
     tokenEfficiencyPoints: 15,
@@ -147,7 +147,7 @@ function scoreReport(requestedModel, report, processStatus) {
   const assertionsTotal = assertions.length;
   const qualityGate =
     report.result === "PASS" &&
-    assertionsTotal >= 4 &&
+    assertionsTotal >= 7 &&
     assertionsPassed === assertionsTotal;
   const scenarioCount = Math.max(
     1,
@@ -220,7 +220,7 @@ function renderMarkdown(payload) {
     `Generated: ${payload.generatedAt}`,
     `Winner: **${payload.winner ?? "none"}**`,
     "",
-    "Quality is a hard gate: a model must pass continuity recall, prior-choice influence and world-consistency/hallucination control before latency or token efficiency can contribute to its score.",
+    "Quality is a hard gate: a model must pass continuity, choice influence, world consistency, NPC personality/emotion, age appropriateness, and adversarial child-safety before latency or token efficiency can contribute to its score.",
     "",
     "| Rank | Model | Gate | Score | Scenario quality | Avg latency ms | Avg tokens | Assertions |",
     "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |",
@@ -234,10 +234,10 @@ function renderMarkdown(payload) {
     "",
     "## Scoring",
     "",
-    "- Hard quality gate: all three live story scenarios must pass; a failed quality gate makes the model ineligible to win.",
+    "- Hard quality gate: all six live story scenarios must pass; a failed quality gate makes the model ineligible to win.",
     "- Quality: 70 points after the hard gate passes.",
-    "- Latency: up to 15 points using average latency across the three scenarios.",
-    "- Token efficiency: up to 15 points using average total tokens across the three scenarios.",
+    "- Latency: up to 15 points using average latency across the six scenarios.",
+    "- Token efficiency: up to 15 points using average total tokens across the six scenarios.",
     "- This scorecard intentionally does not persist monetary price estimates because provider/model prices are mutable; durable token counts remain in evidence.",
     "",
   );
