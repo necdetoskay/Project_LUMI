@@ -157,7 +157,9 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
       },
     );
     scenario.assert(
-      repeatCount === 1 ? config.assertion : "Judge meets repeated calibration stability thresholds",
+      repeatCount === 1
+        ? config.assertion
+        : "Judge meets repeated calibration stability thresholds",
       passed,
       true,
       repeatCount === 1 ? calibrations[0] : stability,
@@ -201,7 +203,9 @@ ultefDescribe("ULTEF L8 semantic calibration", () => {
 function parseRepeatCount(raw: string): number {
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 1 || value > 5) {
-    throw new Error("ULTEF_L8_CALIBRATION_REPEATS must be an integer from 1 to 5.");
+    throw new Error(
+      "ULTEF_L8_CALIBRATION_REPEATS must be an integer from 1 to 5.",
+    );
   }
   return value;
 }
