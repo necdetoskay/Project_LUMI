@@ -34,7 +34,11 @@ export function parseSemanticCalibrationJudgeResponse(raw, referenceExamples) {
   }
 
   const predictions = parsed?.predictions;
-  if (!predictions || typeof predictions !== "object" || Array.isArray(predictions)) {
+  if (
+    !predictions ||
+    typeof predictions !== "object" ||
+    Array.isArray(predictions)
+  ) {
     throw new Error("L8 semantic calibration response is missing predictions.");
   }
 
