@@ -65,20 +65,23 @@ export class IndirectEffectPropagator {
     };
 
     for (const row of pending) {
-      result.processed += 1;
-      const attempt = Number(row.attemptCount ?? "0") + 1;
-
-      if (row.status === "applied") {
+      // Repository compatibility: older claim logic may surface terminal rows.
+      // Terminal/applied effects are immutable and must never consume another
+      // attempt or be reported as processed.
+      if (row.status === "applied" || row.status === "failed") {
         result.skipped += 1;
         continue;
       }
+
+      result.processed += 1;
+      const attempt = Number(row.attemptCount ?? "0") + 1;
 
       if (attempt > this.maxAttempts) {
         result.failed += 1;
         await this.repo.markOutbox(db, row.id, {
           status: "failed",
-          attemptCount: attempt,
-          lastError: "max attempts exceeded",
+          attemptCount: Number(row.attemptCount ?? "0"),
+          lastError: row.lastError ?? "max attempts exceeded",
           appliedAt: null,
         });
         continue;
