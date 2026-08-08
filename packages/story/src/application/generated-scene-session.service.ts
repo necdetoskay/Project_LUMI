@@ -4,7 +4,7 @@ import { NotFoundError, ValidationError } from "../domain/errors";
 import type { GeneratedScene } from "./story-scene-output";
 import { getStoryDb } from "./db";
 import { hashObject } from "./hash";
-import { advanceSession } from "./story-session.service";
+import { advanceSession, getSessionPlaybackState } from "./story-session.service";
 
 let testDb: Database | undefined;
 
@@ -115,7 +115,7 @@ export async function persistGeneratedSceneAndAdvance(
     });
   }
 
-  const playbackState = await advanceSession({
+  await advanceSession({
     sessionId: input.sessionId,
     expectedVersion: input.expectedVersion,
     nextSceneId: generatedSceneId,
@@ -124,6 +124,13 @@ export async function persistGeneratedSceneAndAdvance(
     actorUserId: input.actorUserId,
     contextSnapshot: input.contextSnapshot,
   });
+
+  // advanceSession historically returned its playback snapshot from a separate
+  // connection while the transaction was still open, which could expose the
+  // pre-commit session version even though persistence succeeded. Always read
+  // once more after the transaction completes so callers receive the same
+  // state that a reader/reload observes.
+  const playbackState = await getSessionPlaybackState(input.sessionId);
 
   return {
     generatedSceneId,
