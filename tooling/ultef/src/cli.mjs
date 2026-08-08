@@ -32,6 +32,18 @@ const commands = {
     ],
     env: { ULTEF_SCENARIO: 'L3-NPC-001' }
   },
+  'L4-OPPORTUNITY-HOOK-001': {
+    command: 'pnpm',
+    args: [
+      '--filter',
+      '@lumi/web',
+      'exec',
+      'vitest',
+      'run',
+      'tests/ultef-opportunity-to-hook.test.ts'
+    ],
+    env: { ULTEF_SCENARIO: 'L4-OPPORTUNITY-HOOK-001' }
+  },
   L0: { command: 'pnpm', args: ['test'] },
   L1: { command: 'pnpm', args: ['test'] },
   L2: { command: 'pnpm', args: ['--filter', '@lumi/profiles', 'test:int'] },
