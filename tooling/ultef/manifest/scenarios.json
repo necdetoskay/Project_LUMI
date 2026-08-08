@@ -30,6 +30,17 @@
       "runner": "pnpm ultef:npc-rumor",
       "requires": ["npc-intelligence"],
       "evidenceMode": "runtime-narrative"
+    },
+    {
+      "id": "L4-OPPORTUNITY-HOOK-001",
+      "title": "Accepted NPC opportunity to StoryHook composition",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-05", "PX-LUMI-08"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:opportunity-hook",
+      "requires": ["web-route", "profiles-contract", "world-contract", "story-contract", "npc-intelligence-contract"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": ["package adapters are test doubles", "does not prove DB persistence", "does not prove outbox worker/application"]
     }
   ]
 }
