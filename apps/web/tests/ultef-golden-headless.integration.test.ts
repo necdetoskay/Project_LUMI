@@ -319,14 +319,14 @@ ultefDescribe(
           bridgeBelief?.provenance ?? null,
         );
 
-        const completed = await completeSession({
+        await completeSession({
           sessionId: fixture.storySessionId,
           expectedVersion: 2,
           idempotencyKey: "l6-golden-complete",
         });
         scenario.event(
           "story.completed",
-          `Ilk story session ${completed.session.sessionStatus} durumuna getirildi.`,
+          "Ilk story session completed durumuna getirildi.",
         );
 
         const later = await startSession({
