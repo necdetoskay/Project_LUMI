@@ -77,14 +77,6 @@ jobs:
         run: pnpm ultef:continuity-divergence
       - name: Run Sprint 01 continuity context to generated story
         run: pnpm ultef:context-to-story
-      - name: Run one-shot three-repeat human-reviewed semantic stability probe
-        env:
-          ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: "true"
-          ULTEF_L8_CALIBRATION_SET: human-reviewed-boundary-v1
-          ULTEF_L8_CALIBRATION_REPEATS: "3"
-          ULTEF_L8_JUDGE_MODEL: openai/gpt-4.1-mini
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: pnpm ultef:live-semantic-calibration
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -93,11 +85,13 @@ jobs:
           else
             echo "ULTEF integration summary was not produced."
           fi
-          STABILITY_FILE=$(find artifacts/ultef/runs -name 'L8-SEMANTIC-CALIBRATION-HUMAN-BOUNDARY-001.md' -type f 2>/dev/null | sort | tail -n 1)
-          if [ -n "$STABILITY_FILE" ]; then
+          GOLDEN_FILE=$(find artifacts/ultef/runs -name 'L6-GOLDEN-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$GOLDEN_FILE" ]; then
             echo
-            echo "===== L8 HUMAN-REVIEWED SEMANTIC STABILITY ====="
-            cat "$STABILITY_FILE"
+            echo "===== L6 GOLDEN HEADLESS JOURNEY ====="
+            cat "$GOLDEN_FILE"
+          else
+            echo "L6 Golden Journey evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
