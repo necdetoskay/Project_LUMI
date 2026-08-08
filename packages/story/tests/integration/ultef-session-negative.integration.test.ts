@@ -1,7 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { advanceSession } from "../../src/application/story-session.service";
+import {
+  advanceSession,
+  completeSession,
+} from "../../src/application/story-session.service";
 import { createScenario } from "../../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../../tooling/ultef/src/artifacts.mjs";
 import { cleanupStoryFixture, seedStoryFixture } from "./ultef-fixtures";
@@ -28,8 +31,9 @@ async function readProtectedState(db: pg.Pool) {
   const session = await db.query<{
     version: number;
     current_scene_id: string | null;
+    session_status: string;
   }>(
-    `SELECT version, current_scene_id
+    `SELECT version, current_scene_id, session_status
        FROM story.story_sessions
       WHERE id = $1`,
     [ids.storySessionId],
@@ -56,6 +60,7 @@ async function readProtectedState(db: pg.Pool) {
   return {
     version: session.rows[0]?.version ?? null,
     currentSceneId: session.rows[0]?.current_scene_id ?? null,
+    sessionStatus: session.rows[0]?.session_status ?? null,
     visitCount: Number(visits.rows[0]?.count ?? 0),
     checkpointCount: Number(checkpoints.rows[0]?.count ?? 0),
     eventCount: Number(events.rows[0]?.count ?? 0),
@@ -71,8 +76,8 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
       `INSERT INTO story.story_scenes (
          id, story_version_id, scene_key, sequence_number, scene_type, title,
          narrative_text, is_entry_scene, is_terminal_scene, metadata
-       ) VALUES ($1, $2, 'stale-target', 1, 'narrative', 'Stale Target',
-         'Bu sahne stale version denemesinde asla ziyaret edilmemeli.', FALSE, FALSE, '{}'::jsonb)`,
+       ) VALUES ($1, $2, 'negative-target', 1, 'narrative', 'Negative Target',
+         'Bu sahne reddedilen gecislerde asla ziyaret edilmemeli.', FALSE, FALSE, '{}'::jsonb)`,
       [nextSceneId, ids.storyVersionId],
     );
   });
@@ -102,7 +107,7 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
     });
     scenario.setup("Attempted target scene", {
       id: nextSceneId,
-      title: "Stale Target",
+      title: "Negative Target",
     });
 
     const before = await readProtectedState(pool);
@@ -218,6 +223,171 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
       reason: passed
         ? "Stale session transition was rejected and no protected session state leaked into persistence."
         : "Stale session rejection or no-leak assertions failed.",
+    });
+    await writeScenarioArtifacts(report, { environment: "integration" });
+    expect(report.result).toBe("PASS");
+  });
+
+  it("L3-SESSION-002 rejects advance after completion without leaking new state", async () => {
+    if (!pool) throw new Error("DATABASE_URL_REQUIRED");
+
+    const active = await readProtectedState(pool);
+    if (active.sessionStatus !== "active" || active.version !== 1) {
+      throw new Error("SESSION_FIXTURE_NOT_ACTIVE");
+    }
+
+    await completeSession({
+      sessionId: ids.storySessionId,
+      expectedVersion: 1,
+      idempotencyKey: `ultef-complete:${ids.storySessionId}`,
+    });
+
+    const scenario = createScenario({
+      id: "L3-SESSION-002",
+      title: "Completed session cannot advance and produces no persistence leak",
+      level: "L3",
+      projectGate: "PX-LUMI-01",
+      seed: "runtime-uuid",
+    });
+
+    const before = await readProtectedState(pool);
+    scenario.setup("Child", { id: ids.childProfileId, name: "Deniz" });
+    scenario.setup("Character", { id: ids.characterId, name: "Arin" });
+    scenario.setup("Completed session", {
+      id: ids.storySessionId,
+      version: before.version,
+      status: before.sessionStatus,
+    });
+    scenario.setup("Attempted target scene", {
+      id: nextSceneId,
+      title: "Negative Target",
+    });
+
+    let rejected = false;
+    let rejection = "";
+    try {
+      await advanceSession({
+        sessionId: ids.storySessionId,
+        expectedVersion: before.version ?? 2,
+        nextSceneId,
+        idempotencyKey: `ultef-completed-advance:${ids.storySessionId}`,
+      });
+    } catch (error) {
+      rejected = true;
+      rejection = error instanceof Error ? error.message : String(error);
+    }
+
+    const after = await readProtectedState(pool);
+
+    scenario.event(
+      "session.advance.completed",
+      rejected
+        ? `Tamamlanmis hikaye oturumu yeniden ilerletilmeye calisildi ve reddedildi: ${rejection}`
+        : "Tamamlanmis hikaye oturumu beklenmedik sekilde ilerletildi.",
+      { rejected, status: before.sessionStatus, version: before.version },
+    );
+    scenario.event(
+      "protected-state.reload",
+      "Reddedilen tamamlanmis-session gecisinden sonra session state ve yan etkiler PostgreSQL'den yeniden okundu.",
+    );
+
+    const assertions = {
+      completedBeforeAttempt: before.sessionStatus === "completed",
+      rejected,
+      statusUnchanged: after.sessionStatus === "completed",
+      versionUnchanged: before.version === after.version,
+      sceneUnchanged: before.currentSceneId === after.currentSceneId,
+      visitsUnchanged: before.visitCount === after.visitCount,
+      checkpointsUnchanged: before.checkpointCount === after.checkpointCount,
+      eventsUnchanged: before.eventCount === after.eventCount,
+    };
+
+    scenario.assert(
+      "Session was completed before the forbidden advance",
+      assertions.completedBeforeAttempt,
+      "completed",
+      before.sessionStatus,
+    );
+    scenario.assert(
+      "Completed session advance is rejected",
+      assertions.rejected,
+      true,
+      rejected,
+    );
+    scenario.assert(
+      "Session remains completed",
+      assertions.statusUnchanged,
+      "completed",
+      after.sessionStatus,
+    );
+    scenario.assert(
+      "Session version did not change after rejected advance",
+      assertions.versionUnchanged,
+      before.version,
+      after.version,
+    );
+    scenario.assert(
+      "Current scene did not change after rejected advance",
+      assertions.sceneUnchanged,
+      before.currentSceneId,
+      after.currentSceneId,
+    );
+    scenario.assert(
+      "No new scene visit leaked",
+      assertions.visitsUnchanged,
+      before.visitCount,
+      after.visitCount,
+    );
+    scenario.assert(
+      "No new checkpoint leaked",
+      assertions.checkpointsUnchanged,
+      before.checkpointCount,
+      after.checkpointCount,
+    );
+    scenario.assert(
+      "No new story event leaked",
+      assertions.eventsUnchanged,
+      before.eventCount,
+      after.eventCount,
+    );
+
+    scenario.delta(
+      "story.session.status",
+      before.sessionStatus,
+      after.sessionStatus,
+      "rejected advance after completion",
+    );
+    scenario.delta(
+      "story.session.version",
+      before.version,
+      after.version,
+      "rejected advance after completion",
+    );
+    scenario.delta(
+      "story.session.visitCount",
+      before.visitCount,
+      after.visitCount,
+      "no-leak verification",
+    );
+    scenario.delta(
+      "story.session.checkpointCount",
+      before.checkpointCount,
+      after.checkpointCount,
+      "no-leak verification",
+    );
+    scenario.delta(
+      "story.session.eventCount",
+      before.eventCount,
+      after.eventCount,
+      "no-leak verification",
+    );
+
+    const passed = Object.values(assertions).every(Boolean);
+    const report = scenario.finish({
+      result: passed ? "PASS" : "FAIL",
+      reason: passed
+        ? "Completed session rejected a later advance and persistence remained unchanged after the rejected operation."
+        : "Completed-session rejection or no-leak assertions failed.",
     });
     await writeScenarioArtifacts(report, { environment: "integration" });
     expect(report.result).toBe("PASS");
