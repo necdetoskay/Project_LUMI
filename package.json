@@ -24,7 +24,7 @@
     "ultef:choice-world-divergence": "node tooling/ultef/src/cli.mjs L4-CHOICE-WORLD-DIVERGENCE-001",
     "ultef:continuity-divergence": "node tooling/ultef/src/cli.mjs L5-CONTEXT-DIVERGENCE-001",
     "ultef:context-to-story": "node tooling/ultef/src/cli.mjs L6-CONTEXT-TO-STORY-001",
-    "ultef:live-provider-continuity": "node tooling/ultef/src/cli.mjs L7-LIVE-CONTINUITY-001",
+    "ultef:live-provider-continuity": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-provider-continuity.integration.test.ts",
     "ultef:npc-rumor": "node tooling/ultef/src/cli.mjs L3-NPC-001",
     "ultef:opportunity-hook": "node tooling/ultef/src/cli.mjs L4-OPPORTUNITY-HOOK-001",
     "ultef:hook-scene": "node tooling/ultef/src/cli.mjs L4-HOOK-SCENE-001",
