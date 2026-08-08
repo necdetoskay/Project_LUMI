@@ -86,10 +86,7 @@ ultefDescribe(
       const npcA = crypto.randomUUID();
       const npcB = crypto.randomUUID();
 
-      await Promise.all([
-        seedStoryFixture(pool, a),
-        seedStoryFixture(pool, b),
-      ]);
+      await Promise.all([seedStoryFixture(pool, a), seedStoryFixture(pool, b)]);
 
       const scenario = createScenario({
         id: "L9-CONCURRENCY-001",
