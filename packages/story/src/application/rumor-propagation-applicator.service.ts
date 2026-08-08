@@ -6,6 +6,7 @@ export const RUMOR_SPREAD_INTENT_TYPE = "npc_rumor_spread";
 export interface RumorBeliefWriterPort {
   writeHearsay(input: {
     householdId: string;
+    worldId?: string;
     sourceNpcId: string;
     targetNpcId: string;
     factId: string;
@@ -40,6 +41,7 @@ export class RumorSpreadApplicator implements IndirectEffectApplicator {
 
     return this.writer.writeHearsay({
       householdId: intent.householdId,
+      worldId: intent.worldId,
       sourceNpcId: payload.sourceNpcId,
       targetNpcId: payload.targetNpcId,
       factId: payload.factId,
