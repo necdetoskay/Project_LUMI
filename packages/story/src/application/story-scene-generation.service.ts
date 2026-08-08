@@ -71,12 +71,16 @@ export class StorySceneGenerationService {
     const maxAttempts = input.maxAttempts ?? 2;
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
+    const relevantNpcIds = [input.hook.sourceNpcId, input.hook.targetNpcId].filter(
+      (value): value is string => Boolean(value),
+    );
     const continuityContext = input.continuityPort
       ? await input.continuityPort.resolveContext({
           householdId: input.hook.householdId,
           worldId: input.hook.worldId,
           childProfileId: input.childProfileId ?? input.hook.childProfileId,
           characterId: input.characterId ?? null,
+          npcIds: [...new Set(relevantNpcIds)],
         })
       : null;
 
