@@ -96,8 +96,14 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
 
     scenario.setup("Child", { id: ids.childProfileId, name: "Deniz" });
     scenario.setup("Character", { id: ids.characterId, name: "Arin" });
-    scenario.setup("Protected session", { id: ids.storySessionId, expectedVersion: 1 });
-    scenario.setup("Attempted target scene", { id: nextSceneId, title: "Stale Target" });
+    scenario.setup("Protected session", {
+      id: ids.storySessionId,
+      expectedVersion: 1,
+    });
+    scenario.setup("Attempted target scene", {
+      id: nextSceneId,
+      title: "Stale Target",
+    });
 
     const before = await readProtectedState(pool);
     let rejected = false;
@@ -138,18 +144,73 @@ describeDb("ULTEF Sprint 01 — session negative paths", () => {
       eventsUnchanged: before.eventCount === after.eventCount,
     };
 
-    scenario.assert("Stale expectedVersion is rejected", assertions.rejected, true, rejected);
-    scenario.assert("Session version did not change", assertions.versionUnchanged, before.version, after.version);
-    scenario.assert("Current scene did not change", assertions.sceneUnchanged, before.currentSceneId, after.currentSceneId);
-    scenario.assert("No scene visit leaked", assertions.visitsUnchanged, before.visitCount, after.visitCount);
-    scenario.assert("No checkpoint leaked", assertions.checkpointsUnchanged, before.checkpointCount, after.checkpointCount);
-    scenario.assert("No story event leaked", assertions.eventsUnchanged, before.eventCount, after.eventCount);
+    scenario.assert(
+      "Stale expectedVersion is rejected",
+      assertions.rejected,
+      true,
+      rejected,
+    );
+    scenario.assert(
+      "Session version did not change",
+      assertions.versionUnchanged,
+      before.version,
+      after.version,
+    );
+    scenario.assert(
+      "Current scene did not change",
+      assertions.sceneUnchanged,
+      before.currentSceneId,
+      after.currentSceneId,
+    );
+    scenario.assert(
+      "No scene visit leaked",
+      assertions.visitsUnchanged,
+      before.visitCount,
+      after.visitCount,
+    );
+    scenario.assert(
+      "No checkpoint leaked",
+      assertions.checkpointsUnchanged,
+      before.checkpointCount,
+      after.checkpointCount,
+    );
+    scenario.assert(
+      "No story event leaked",
+      assertions.eventsUnchanged,
+      before.eventCount,
+      after.eventCount,
+    );
 
-    scenario.delta("story.session.version", before.version, after.version, "rejected stale transition");
-    scenario.delta("story.session.currentSceneId", before.currentSceneId, after.currentSceneId, "rejected stale transition");
-    scenario.delta("story.session.visitCount", before.visitCount, after.visitCount, "no-leak verification");
-    scenario.delta("story.session.checkpointCount", before.checkpointCount, after.checkpointCount, "no-leak verification");
-    scenario.delta("story.session.eventCount", before.eventCount, after.eventCount, "no-leak verification");
+    scenario.delta(
+      "story.session.version",
+      before.version,
+      after.version,
+      "rejected stale transition",
+    );
+    scenario.delta(
+      "story.session.currentSceneId",
+      before.currentSceneId,
+      after.currentSceneId,
+      "rejected stale transition",
+    );
+    scenario.delta(
+      "story.session.visitCount",
+      before.visitCount,
+      after.visitCount,
+      "no-leak verification",
+    );
+    scenario.delta(
+      "story.session.checkpointCount",
+      before.checkpointCount,
+      after.checkpointCount,
+      "no-leak verification",
+    );
+    scenario.delta(
+      "story.session.eventCount",
+      before.eventCount,
+      after.eventCount,
+      "no-leak verification",
+    );
 
     const passed = Object.values(assertions).every(Boolean);
     const report = scenario.finish({
