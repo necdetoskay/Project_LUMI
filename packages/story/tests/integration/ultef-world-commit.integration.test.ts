@@ -16,12 +16,10 @@ import {
   WorldCommitRuleEngine,
   defaultOutcomeRules,
 } from "../../src/domain/outcome";
-import {
-  WorldCommitService,
-  __setTestCommitDb,
-} from "../../src/application/world-commit.service";
+import { WorldCommitService, __setTestCommitDb } from "../../src/application/world-commit.service";
 import { createScenario } from "../../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../../tooling/ultef/src/artifacts.mjs";
+import { cleanupStoryFixture, seedStoryFixture } from "./ultef-fixtures";
 
 const ENABLE_DESTRUCTIVE = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
 const DATABASE_URL = process.env.STORY_TEST_DATABASE_URL;
@@ -29,9 +27,7 @@ const SAFE_DENYLIST = ["lumi", "postgres", "template1", "template0"];
 
 function requireSafeTestDb(): string {
   if (!ENABLE_DESTRUCTIVE || !DATABASE_URL) {
-    throw new Error(
-      "ULTEF BLOCKED: STORY_TEST_ENABLE_DESTRUCTIVE=true and STORY_TEST_DATABASE_URL are required",
-    );
+    throw new Error("ULTEF BLOCKED: STORY_TEST_ENABLE_DESTRUCTIVE=true and STORY_TEST_DATABASE_URL are required");
   }
   const name = new URL(DATABASE_URL).pathname.replace(/^\//, "").split("?")[0]!;
   if (!name || SAFE_DENYLIST.includes(name) || (!name.includes("test") && !name.includes("review"))) {
@@ -53,10 +49,7 @@ beforeAll(async () => {
   __setTestCommitDb(db);
   await pool.query("CREATE SCHEMA IF NOT EXISTS story;");
   for (const file of ["0003_world_commit_system.sql", "0004_story_outbox.sql"]) {
-    const migration = readFileSync(
-      resolve(__dirname, "..", "..", "migrations", file),
-      "utf-8",
-    );
+    const migration = readFileSync(resolve(__dirname, "..", "..", "migrations", file), "utf-8");
     await pool.query(migration);
   }
 });
@@ -70,135 +63,145 @@ afterAll(async () => {
 
 describe.skipIf(!ENABLE_DESTRUCTIVE)("PX-LUMI-09-001 outcome commit narrative", () => {
   it("persists an NPC story outcome, world-version delta, event evidence and idempotency", async () => {
-    const householdId = crypto.randomUUID();
-    const worldId = crypto.randomUUID();
-    const storySessionId = crypto.randomUUID();
-    const npcId = crypto.randomUUID();
-
-    const scenario = createScenario({
-      id: "PX-LUMI-09-001",
-      title: "Story outcome is committed durably and idempotently",
-      level: "L4",
-      projectGate: "PX-LUMI-09",
-      seed: "world-commit-001",
-    });
-    scenario.setup("Household", householdId);
-    scenario.setup("World", worldId);
-    scenario.setup("Story session", storySessionId);
-    scenario.setup("NPC", { id: npcId, name: "Mira" });
-    scenario.setup("Observed state before story outcome", { "need.hunger": 40 });
-
-    const manifest = OutcomeManifest.create({
-      storySessionId,
-      householdId,
-      worldId,
-      source: "story_session",
-      sourceSceneId: "ultef-scene-mira-bridge",
-      changes: [
-        {
-          key: "ultef-mira-hunger",
-          outcomeType: "npc_state_update",
-          entityId: npcId,
-          operation: "set",
-          field: "need.hunger",
-          value: 80,
-          evidenceRef: "scene://ultef/mira-bridge#outcome-1",
-        },
-      ],
-    });
-    const snapshot = StoryContextSnapshot.create({
-      storySessionId,
-      householdId,
-      worldId,
-      worldStateHash: "ultef-before",
-      entities: [
-        {
-          entityId: npcId,
-          entityKind: "npc",
-          state: { need: { hunger: 40 } },
-          stateHash: "ultef-mira-before",
-        },
-      ],
-    });
-
-    scenario.event(
-      "story.outcome.proposed",
-      "Hikâye sonucu Mira için need.hunger değerini 40'tan 80'e ayarlamayı önerdi.",
-      { evidenceRef: "scene://ultef/mira-bridge#outcome-1" },
-    );
-
-    const service = new WorldCommitService();
-    const input = {
-      manifest,
-      snapshot,
-      extractor: new NarrativeEventExtractor(),
-      validator: new EvidenceValidator(),
-      ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+    const fixture = {
+      householdId: crypto.randomUUID(),
+      childProfileId: crypto.randomUUID(),
+      characterId: crypto.randomUUID(),
+      worldId: crypto.randomUUID(),
+      storyDefinitionId: crypto.randomUUID(),
+      storyVersionId: crypto.randomUUID(),
+      entrySceneId: crypto.randomUUID(),
+      storySessionId: crypto.randomUUID(),
     };
-    const first = await service.commitManifest(input);
-    scenario.event(
-      "world.commit.applied",
-      `Outcome commit edildi; world version ${first.worldVersionBefore} -> ${first.worldVersionAfter}.`,
-      { commitId: first.commitId, worldStateHash: first.worldStateHash },
-    );
-    scenario.delta("world.version", first.worldVersionBefore, first.worldVersionAfter, "story outcome commit");
-    scenario.delta("proposedChange.Mira.need.hunger", 40, 80, "validated world change recorded by commit pipeline");
+    const npcId = crypto.randomUUID();
+    await seedStoryFixture(pool, fixture);
 
-    const persistedCommits = await db
-      .select()
-      .from(schema.storyCommitRecords)
-      .where(eq(schema.storyCommitRecords.id, first.commitId));
-    const persistedVersion = await db
-      .select()
-      .from(schema.storyWorldVersions)
-      .where(
-        and(
-          eq(schema.storyWorldVersions.householdId, householdId),
-          eq(schema.storyWorldVersions.worldId, worldId),
-        ),
+    try {
+      const scenario = createScenario({
+        id: "PX-LUMI-09-001",
+        title: "Story outcome is committed durably and idempotently",
+        level: "L4",
+        projectGate: "PX-LUMI-09",
+        seed: "world-commit-001",
+      });
+      scenario.setup("Household", fixture.householdId);
+      scenario.setup("World", fixture.worldId);
+      scenario.setup("Story session", fixture.storySessionId);
+      scenario.setup("NPC", { id: npcId, name: "Mira" });
+      scenario.setup("Observed state before story outcome", { "need.hunger": 40 });
+
+      const manifest = OutcomeManifest.create({
+        storySessionId: fixture.storySessionId,
+        householdId: fixture.householdId,
+        worldId: fixture.worldId,
+        source: "story_session",
+        sourceSceneId: "ultef-scene-mira-bridge",
+        changes: [
+          {
+            key: "ultef-mira-hunger",
+            outcomeType: "npc_state_update",
+            entityId: npcId,
+            operation: "set",
+            field: "need.hunger",
+            value: 80,
+            evidenceRef: "scene://ultef/mira-bridge#outcome-1",
+          },
+        ],
+      });
+      const snapshot = StoryContextSnapshot.create({
+        storySessionId: fixture.storySessionId,
+        householdId: fixture.householdId,
+        worldId: fixture.worldId,
+        worldStateHash: "ultef-before",
+        entities: [
+          {
+            entityId: npcId,
+            entityKind: "npc",
+            state: { need: { hunger: 40 } },
+            stateHash: "ultef-mira-before",
+          },
+        ],
+      });
+
+      scenario.event(
+        "story.outcome.proposed",
+        "Hikâye sonucu Mira için need.hunger değerini 40'tan 80'e ayarlamayı önerdi.",
+        { evidenceRef: "scene://ultef/mira-bridge#outcome-1" },
       );
-    const persistedEvents = await db
-      .select()
-      .from(schema.storyEventStore)
-      .where(eq(schema.storyEventStore.storySessionId, storySessionId));
-    const persistedOutbox = await db
-      .select()
-      .from(schema.storyOutbox)
-      .where(eq(schema.storyOutbox.commitId, first.commitId));
 
-    scenario.event("world.commit.reloaded", "Commit, world version, event ve indirect-effect outbox kayıtları veritabanından yeniden okundu.");
+      const service = new WorldCommitService();
+      const input = {
+        manifest,
+        snapshot,
+        extractor: new NarrativeEventExtractor(),
+        validator: new EvidenceValidator(),
+        ruleEngine: new WorldCommitRuleEngine({ rules: defaultOutcomeRules() }),
+      };
+      const first = await service.commitManifest(input);
+      scenario.event(
+        "world.commit.applied",
+        `Outcome commit edildi; world version ${first.worldVersionBefore} -> ${first.worldVersionAfter}.`,
+        { commitId: first.commitId, worldStateHash: first.worldStateHash },
+      );
+      scenario.delta("world.version", first.worldVersionBefore, first.worldVersionAfter, "story outcome commit");
+      scenario.delta("proposedChange.Mira.need.hunger", 40, 80, "validated world change recorded by commit pipeline");
 
-    const second = await service.commitManifest(input);
-    const commitsAfterRetry = await db
-      .select()
-      .from(schema.storyCommitRecords)
-      .where(eq(schema.storyCommitRecords.manifestId, manifest.id));
-    scenario.event("world.commit.retried", "Aynı manifest ikinci kez uygulandı; idempotency guard mevcut commit'i yeniden kullandı.", {
-      firstCommitId: first.commitId,
-      retryCommitId: second.commitId,
-    });
+      const persistedCommits = await db.select().from(schema.storyCommitRecords).where(eq(schema.storyCommitRecords.id, first.commitId));
+      const persistedVersion = await db
+        .select()
+        .from(schema.storyWorldVersions)
+        .where(
+          and(
+            eq(schema.storyWorldVersions.householdId, fixture.householdId),
+            eq(schema.storyWorldVersions.worldId, fixture.worldId),
+          ),
+        );
+      const persistedEvents = await db
+        .select()
+        .from(schema.storyEventStore)
+        .where(eq(schema.storyEventStore.storySessionId, fixture.storySessionId));
+      const persistedOutbox = await db.select().from(schema.storyOutbox).where(eq(schema.storyOutbox.commitId, first.commitId));
 
-    scenario.assert("Commit record persisted", persistedCommits.length === 1, 1, persistedCommits.length);
-    scenario.assert("World version persisted", persistedVersion.length === 1, String(first.worldVersionAfter), persistedVersion[0]?.currentVersion);
-    scenario.assert("World commit event persisted", persistedEvents.some((event) => event.eventType === "STORY_WORLD_COMMIT_APPLIED"), true, persistedEvents.map((event) => event.eventType));
-    scenario.assert("Indirect NPC rumor intent persisted", persistedOutbox.some((row) => row.intentType === "npc_rumor_spread"), true, persistedOutbox.map((row) => row.intentType));
-    scenario.assert("Retry reused same commit", second.commitId === first.commitId, first.commitId, second.commitId);
-    scenario.assert("Retry did not duplicate commit", commitsAfterRetry.length === 1, 1, commitsAfterRetry.length);
+      scenario.event("world.commit.reloaded", "Commit, world version, event ve indirect-effect outbox kayıtları veritabanından yeniden okundu.");
 
-    const passed = persistedCommits.length === 1 &&
-      persistedVersion.length === 1 &&
-      persistedEvents.some((event) => event.eventType === "STORY_WORLD_COMMIT_APPLIED") &&
-      persistedOutbox.some((row) => row.intentType === "npc_rumor_spread") &&
-      second.commitId === first.commitId && commitsAfterRetry.length === 1;
+      const second = await service.commitManifest(input);
+      const commitsAfterRetry = await db
+        .select()
+        .from(schema.storyCommitRecords)
+        .where(eq(schema.storyCommitRecords.manifestId, manifest.id));
+      scenario.event("world.commit.retried", "Aynı manifest ikinci kez uygulandı; idempotency guard mevcut commit'i yeniden kullandı.", {
+        firstCommitId: first.commitId,
+        retryCommitId: second.commitId,
+      });
 
-    const report = scenario.finish({
-      result: passed ? "PASS" : "FAIL",
-      reason: passed
-        ? "Validated story outcome was durably committed and remained idempotent after DB reload/retry."
-        : "One or more durable commit/idempotency assertions failed.",
-    });
-    await writeScenarioArtifacts(report, { environment: "integration" });
+      scenario.assert("Commit record persisted", persistedCommits.length === 1, 1, persistedCommits.length);
+      scenario.assert("World version persisted", persistedVersion.length === 1, String(first.worldVersionAfter), persistedVersion[0]?.currentVersion);
+      scenario.assert("World commit event persisted", persistedEvents.some((event) => event.eventType === "STORY_WORLD_COMMIT_APPLIED"), true, persistedEvents.map((event) => event.eventType));
+      scenario.assert("Indirect NPC rumor intent persisted", persistedOutbox.some((row) => row.intentType === "npc_rumor_spread"), true, persistedOutbox.map((row) => row.intentType));
+      scenario.assert("Retry reused same commit", second.commitId === first.commitId, first.commitId, second.commitId);
+      scenario.assert("Retry did not duplicate commit", commitsAfterRetry.length === 1, 1, commitsAfterRetry.length);
 
-    expect(report.result).toBe("PASS");
+      const passed =
+        persistedCommits.length === 1 &&
+        persistedVersion.length === 1 &&
+        persistedEvents.some((event) => event.eventType === "STORY_WORLD_COMMIT_APPLIED") &&
+        persistedOutbox.some((row) => row.intentType === "npc_rumor_spread") &&
+        second.commitId === first.commitId &&
+        commitsAfterRetry.length === 1;
+
+      const report = scenario.finish({
+        result: passed ? "PASS" : "FAIL",
+        reason: passed
+          ? "Validated story outcome was durably committed and remained idempotent after DB reload/retry."
+          : "One or more durable commit/idempotency assertions failed.",
+      });
+      await writeScenarioArtifacts(report, { environment: "integration" });
+      expect(report.result).toBe("PASS");
+    } finally {
+      await pool.query(`DELETE FROM story.story_outbox WHERE household_id = $1`, [fixture.householdId]);
+      await pool.query(`DELETE FROM story.story_commit_records WHERE household_id = $1`, [fixture.householdId]);
+      await pool.query(`DELETE FROM story.story_world_versions WHERE household_id = $1`, [fixture.householdId]);
+      await cleanupStoryFixture(pool, fixture);
+    }
   });
 });
