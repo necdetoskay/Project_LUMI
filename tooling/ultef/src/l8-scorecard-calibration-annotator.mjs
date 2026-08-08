@@ -120,13 +120,15 @@ function applyBoundedSemanticRanking(scorecard, trust) {
     const eligible = model.stabilityGate === true;
     const semanticPercent = numberOrNull(model.meanSemanticJudgePercent);
     const semanticSamples = Number(model.semanticJudgeSamples ?? 0);
-    const qualityRatio = clamp(numberOrNull(model.qualityPoints) ?? 0, 0, 70) / 70;
+    const qualityRatio =
+      clamp(numberOrNull(model.qualityPoints) ?? 0, 0, 70) / 70;
     const deterministicQualityPoints = eligible
       ? BOUNDED_SCORING.deterministicQualityPoints * qualityRatio
       : 0;
     const semanticPoints =
       eligible && semanticPercent !== null && semanticSamples > 0
-        ? BOUNDED_SCORING.semanticPoints * clamp(semanticPercent, 0, 100) / 100
+        ? (BOUNDED_SCORING.semanticPoints * clamp(semanticPercent, 0, 100)) /
+          100
         : 0;
     const latencyPoints = eligible
       ? clamp(
