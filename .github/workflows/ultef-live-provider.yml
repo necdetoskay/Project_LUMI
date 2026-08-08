@@ -1,0 +1,89 @@
+name: ULTEF Live Provider Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenRouter model id for the live continuity evaluation
+        required: true
+        default: openai/gpt-4.1-mini
+      confirm_cost:
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost
+        required: true
+        default: ""
+
+jobs:
+  live-provider-continuity:
+    if: ${{ inputs.confirm_cost == 'RUN_LIVE_PROVIDER' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      ULTEF_REAL_PROVIDER_ENABLED: "true"
+      ULTEF_REAL_PROVIDER_MODEL: ${{ inputs.model }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Verify live-provider secret
+        shell: bash
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "OPENROUTER_API_KEY repository secret is required."
+            exit 1
+          fi
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare profile schema
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Run L7 live-provider continuity evaluation
+        run: pnpm ultef:live-provider-continuity
+      - name: Print L7 narrative evidence
+        if: always()
+        shell: bash
+        run: |
+          FILE=$(find artifacts/ultef/runs -name 'L7-LIVE-CONTINUITY-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$FILE" ]; then
+            cat "$FILE"
+          else
+            echo "L7 live-provider evidence was not produced."
+          fi
+      - name: Upload live-provider evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-live-provider-evidence
+          path: artifacts/ultef/
+          if-no-files-found: warn
+          retention-days: 14
