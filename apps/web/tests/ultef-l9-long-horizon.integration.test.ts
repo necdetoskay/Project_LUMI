@@ -355,6 +355,38 @@ ultefDescribe(
           "DELETE FROM story.story_world_versions WHERE household_id = $1",
           [fixture.householdId],
         );
+        await pool.query(
+          `DELETE FROM story.story_idempotency_ledger
+            WHERE story_session_id IN (
+              SELECT id FROM story.story_sessions WHERE household_id = $1 AND world_id = $2
+            )`,
+          [fixture.householdId, fixture.worldId],
+        );
+        await pool.query(
+          `DELETE FROM story.story_event_store
+            WHERE story_session_id IN (
+              SELECT id FROM story.story_sessions WHERE household_id = $1 AND world_id = $2
+            )`,
+          [fixture.householdId, fixture.worldId],
+        );
+        await pool.query(
+          `DELETE FROM story.story_session_checkpoints
+            WHERE story_session_id IN (
+              SELECT id FROM story.story_sessions WHERE household_id = $1 AND world_id = $2
+            )`,
+          [fixture.householdId, fixture.worldId],
+        );
+        await pool.query(
+          `DELETE FROM story.story_session_scene_visits
+            WHERE story_session_id IN (
+              SELECT id FROM story.story_sessions WHERE household_id = $1 AND world_id = $2
+            )`,
+          [fixture.householdId, fixture.worldId],
+        );
+        await pool.query(
+          `DELETE FROM story.story_sessions WHERE household_id = $1 AND world_id = $2`,
+          [fixture.householdId, fixture.worldId],
+        );
         await cleanupStoryFixture(pool, fixture);
       }
     });
