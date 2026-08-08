@@ -53,106 +53,102 @@ const LIVE_CASES = [
 ] as const;
 
 ultefDescribe("ULTEF L8-LIVE-SCENARIO-PACK-001", () => {
-  it(
-    "runs continuity, choice influence and world-consistency scenarios against one live provider",
-    async () => {
-      const scenario = createScenario({
-        id: "L8-LIVE-SCENARIO-PACK-001",
-        title: "Live provider passes the L8 core story-quality scenario pack",
-        level: "L8",
-        projectGate: "PX-LUMI-09",
-        seed: "live-provider-nondeterministic-three-scenario-pack",
+  it("runs continuity, choice influence and world-consistency scenarios against one live provider", async () => {
+    const scenario = createScenario({
+      id: "L8-LIVE-SCENARIO-PACK-001",
+      title: "Live provider passes the L8 core story-quality scenario pack",
+      level: "L8",
+      projectGate: "PX-LUMI-09",
+      seed: "live-provider-nondeterministic-three-scenario-pack",
+    });
+
+    scenario.setup("Live provider", { model: modelId });
+    scenario.setup("Scenario pack", L8_SCENARIO_PACK);
+
+    const outputs: Record<string, string> = {};
+    const metrics: Array<{
+      scenarioId: string;
+      latencyMs: number;
+      promptTokens: number | null;
+      completionTokens: number | null;
+      totalTokens: number | null;
+    }> = [];
+
+    for (const liveCase of LIVE_CASES) {
+      const startedAt = Date.now();
+      const response = await callOpenRouter(apiKey!, {
+        model: modelId!,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: liveCase.prompt },
+        ],
+        temperature: 0.2,
+        maxTokens: 500,
       });
-
-      scenario.setup("Live provider", { model: modelId });
-      scenario.setup("Scenario pack", L8_SCENARIO_PACK);
-
-      const outputs: Record<string, string> = {};
-      const metrics: Array<{
-        scenarioId: string;
-        latencyMs: number;
-        promptTokens: number | null;
-        completionTokens: number | null;
-        totalTokens: number | null;
-      }> = [];
-
-      for (const liveCase of LIVE_CASES) {
-        const startedAt = Date.now();
-        const response = await callOpenRouter(apiKey!, {
-          model: modelId!,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: liveCase.prompt },
-          ],
-          temperature: 0.2,
-          maxTokens: 500,
-        });
-        const latencyMs = Date.now() - startedAt;
-        outputs[liveCase.id] = response.content;
-        metrics.push({
-          scenarioId: liveCase.id,
-          latencyMs,
-          promptTokens: response.usage?.promptTokens ?? null,
-          completionTokens: response.usage?.completionTokens ?? null,
-          totalTokens: response.usage?.totalTokens ?? null,
-        });
-        scenario.event(
-          "live.scenario.generated",
-          `${liveCase.id}: ${response.content}`,
-          {
-            scenarioId: liveCase.id,
-            modelId: response.model,
-            narrative: response.content,
-            latencyMs,
-            usage: response.usage,
-          },
-        );
-      }
-
-      const evaluation = evaluateScenarioPack(outputs);
-      for (const definition of L8_SCENARIO_PACK) {
-        const result = evaluation.scenarios[definition.id];
-        scenario.assert(
-          `${definition.title} passes`,
-          result.passed,
-          true,
-          result,
-        );
-      }
-      scenario.assert(
-        "All L8 core scenarios pass the hard quality gate",
-        evaluation.passed,
-        true,
-        evaluation,
-      );
-
+      const latencyMs = Date.now() - startedAt;
+      outputs[liveCase.id] = response.content;
+      metrics.push({
+        scenarioId: liveCase.id,
+        latencyMs,
+        promptTokens: response.usage?.promptTokens ?? null,
+        completionTokens: response.usage?.completionTokens ?? null,
+        totalTokens: response.usage?.totalTokens ?? null,
+      });
       scenario.event(
-        "live.scenario-pack.metrics",
-        `Completed ${LIVE_CASES.length} live scenarios; quality score=${evaluation.score}/100.`,
+        "live.scenario.generated",
+        `${liveCase.id}: ${response.content}`,
         {
-          modelId,
-          evaluation,
-          metrics,
-          totalLatencyMs: metrics.reduce((sum, item) => sum + item.latencyMs, 0),
-          totalTokens: metrics.reduce(
-            (sum, item) => sum + (item.totalTokens ?? 0),
-            0,
-          ),
+          scenarioId: liveCase.id,
+          modelId: response.model,
+          narrative: response.content,
+          latencyMs,
+          usage: response.usage,
         },
       );
+    }
 
-      const report = scenario.finish({
-        result: evaluation.passed ? "PASS" : "FAIL",
-        reason: evaluation.passed
-          ? "The live provider preserved continuity, honored the prior child choice, and respected a canonical unknown-information boundary across the L8 core scenario pack."
-          : "The live provider failed at least one L8 hard quality scenario: continuity recall, choice influence, or world consistency.",
-      });
-      await writeScenarioArtifacts(report, {
-        environment: "live-openrouter-opt-in-l8-scenario-pack",
-      });
+    const evaluation = evaluateScenarioPack(outputs);
+    for (const definition of L8_SCENARIO_PACK) {
+      const result = evaluation.scenarios[definition.id];
+      scenario.assert(
+        `${definition.title} passes`,
+        result.passed,
+        true,
+        result,
+      );
+    }
+    scenario.assert(
+      "All L8 core scenarios pass the hard quality gate",
+      evaluation.passed,
+      true,
+      evaluation,
+    );
 
-      expect(report.result).toBe("PASS");
-    },
-    90_000,
-  );
+    scenario.event(
+      "live.scenario-pack.metrics",
+      `Completed ${LIVE_CASES.length} live scenarios; quality score=${evaluation.score}/100.`,
+      {
+        modelId,
+        evaluation,
+        metrics,
+        totalLatencyMs: metrics.reduce((sum, item) => sum + item.latencyMs, 0),
+        totalTokens: metrics.reduce(
+          (sum, item) => sum + (item.totalTokens ?? 0),
+          0,
+        ),
+      },
+    );
+
+    const report = scenario.finish({
+      result: evaluation.passed ? "PASS" : "FAIL",
+      reason: evaluation.passed
+        ? "The live provider preserved continuity, honored the prior child choice, and respected a canonical unknown-information boundary across the L8 core scenario pack."
+        : "The live provider failed at least one L8 hard quality scenario: continuity recall, choice influence, or world consistency.",
+    });
+    await writeScenarioArtifacts(report, {
+      environment: "live-openrouter-opt-in-l8-scenario-pack",
+    });
+
+    expect(report.result).toBe("PASS");
+  }, 90_000);
 });
