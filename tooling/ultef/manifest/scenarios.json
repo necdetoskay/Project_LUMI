@@ -8,8 +8,8 @@
       "projectGates": ["PX-LUMI-01", "PX-LUMI-02", "PX-LUMI-03", "PX-LUMI-05", "PX-LUMI-06", "PX-LUMI-09"],
       "status": "BLOCKED",
       "runner": null,
-      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001"],
-      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "production-outcome-commit/persistence continuity not yet fully instrumented"],
+      "requires": ["profiles", "world", "story", "npc-intelligence", "production-outcome-commit", "persistence-reload", "L4-SCENE-SESSION-001", "PX-LUMI-09-001"],
+      "blockedBy": ["L4-SCENE-SESSION-001 has not yet produced execution evidence", "PX-LUMI-09-001 has not yet produced execution evidence", "materialized downstream NPC/world continuity still requires dedicated instrumentation"],
       "evidenceMode": "runtime-narrative"
     },
     {
@@ -64,6 +64,17 @@
       "requires": ["DATABASE_URL", "story-migrations", "generated-scene-session-wiring", "session-persistence", "reader-reload"],
       "evidenceMode": "runtime-narrative",
       "limitations": ["requires integration database", "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"]
+    },
+    {
+      "id": "PX-LUMI-09-001",
+      "title": "Story outcome commit durability and idempotency",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-09"],
+      "status": "INSTRUMENTED",
+      "runner": "pnpm ultef:world-commit",
+      "requires": ["STORY_TEST_ENABLE_DESTRUCTIVE=true", "STORY_TEST_DATABASE_URL", "story world-commit migrations"],
+      "evidenceMode": "runtime-narrative",
+      "limitations": ["proves durable commit record/world version/event/outbox and retry idempotency", "does not by itself prove downstream NPC materialized state mutation; that requires applicator/reload instrumentation"]
     }
   ]
 }
