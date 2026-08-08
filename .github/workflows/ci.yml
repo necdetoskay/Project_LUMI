@@ -33,6 +33,8 @@ jobs:
         run: pnpm ultef:l8-semantic-stability-selftest
       - name: Validate ULTEF L8 scorecard performance scoring
         run: pnpm ultef:l8-scorecard-scoring-selftest
+      - name: Run ULTEF L9 long-horizon continuity journey
+        run: pnpm ultef:l9-long-horizon
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
