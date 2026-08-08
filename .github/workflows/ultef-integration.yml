@@ -66,8 +66,11 @@ jobs:
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
 
-      - name: Run Sprint 01 stale session no-leak scenario
+      - name: Run Sprint 01 session negative scenarios
         run: pnpm ultef:session-negative
+
+      - name: Run Sprint 01 session idempotency scenario
+        run: pnpm ultef:session-idempotency
 
       - name: Print human-readable ULTEF summary
         if: always()
@@ -85,7 +88,7 @@ jobs:
           else
             echo "L6 Golden Journey evidence was not produced."
           fi
-          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001; do
+          for SCENARIO in L2-ISOLATION-001 L2-ISOLATION-003 L3-SESSION-001 L3-SESSION-002 L3-SESSION-004; do
             FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1)
             if [ -n "$FILE" ]; then
               echo
