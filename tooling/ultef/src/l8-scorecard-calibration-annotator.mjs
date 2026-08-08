@@ -6,12 +6,13 @@ const runsDir = path.join(root, "artifacts", "ultef", "runs");
 const scorecardsDir = path.join(root, "artifacts", "ultef", "scorecards");
 const calibrationId = "L8-SEMANTIC-CALIBRATION-001";
 
-const scorecardPath = await findLatestFile(
-  scorecardsDir,
-  (name) => name.endsWith("-L8-MODEL-SCORECARD-001.json"),
+const scorecardPath = await findLatestFile(scorecardsDir, (name) =>
+  name.endsWith("-L8-MODEL-SCORECARD-001.json"),
 );
 if (!scorecardPath) {
-  throw new Error("L8 model scorecard JSON was not found for calibration annotation.");
+  throw new Error(
+    "L8 model scorecard JSON was not found for calibration annotation.",
+  );
 }
 
 const calibrationPath = await findLatestScenarioFile(runsDir, calibrationId);
@@ -26,7 +27,11 @@ const calibrationTrust = calibrationPath
     };
 
 scorecard.semanticJudgeCalibration = calibrationTrust;
-await writeFile(scorecardPath, `${JSON.stringify(scorecard, null, 2)}\n`, "utf8");
+await writeFile(
+  scorecardPath,
+  `${JSON.stringify(scorecard, null, 2)}\n`,
+  "utf8",
+);
 
 const mdPath = scorecardPath.replace(/\.json$/, ".md");
 let markdown = "";
