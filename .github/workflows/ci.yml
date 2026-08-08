@@ -27,6 +27,8 @@ jobs:
         run: pnpm ultef:l8-scenario-selftest
       - name: Validate ULTEF L8 semantic rubric parser
         run: pnpm ultef:l8-semantic-selftest
+      - name: Validate ULTEF L8 semantic calibration metrics
+        run: pnpm ultef:l8-semantic-calibration-selftest
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
