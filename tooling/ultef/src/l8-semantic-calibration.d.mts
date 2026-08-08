@@ -11,18 +11,30 @@ export type SemanticCalibrationReference = {
   text: string;
 };
 
+export type SemanticCalibrationDirectionCounts = {
+  under: number;
+  exact: number;
+  over: number;
+};
+
 export type SemanticCalibrationEvaluation = {
   eligible: boolean;
   advisoryOnly: true;
   count: number;
   mae: number;
+  meanBias: number;
   withinOneRate: number;
+  directionCounts: SemanticCalibrationDirectionCounts;
+  transitions: Record<string, number>;
   rubrics: Record<
     string,
     {
       count: number;
       mae: number;
+      meanBias: number;
       withinOneRate: number;
+      directionCounts: SemanticCalibrationDirectionCounts;
+      transitions: Record<string, number>;
     }
   >;
   thresholds: typeof SEMANTIC_CALIBRATION_THRESHOLDS;
@@ -31,6 +43,7 @@ export type SemanticCalibrationEvaluation = {
     rubric: string;
     humanScore: number;
     predictedScore: number;
+    signedError: number;
     absoluteError: number;
     withinOne: boolean;
   }>;
