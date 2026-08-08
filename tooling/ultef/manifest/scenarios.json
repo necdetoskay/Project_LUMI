@@ -13,7 +13,7 @@
         "PX-LUMI-06",
         "PX-LUMI-09"
       ],
-      "status": "BLOCKED",
+      "status": "READY_FOR_IMPLEMENTATION",
       "runner": null,
       "requires": [
         "profiles",
@@ -26,12 +26,9 @@
         "PX-LUMI-09-001",
         "PX-LUMI-09-002"
       ],
-      "blockedBy": [
-        "L4-SCENE-SESSION-001 has not yet produced execution evidence",
-        "PX-LUMI-09-001 has not yet produced execution evidence",
-        "PX-LUMI-09-002 has not yet produced DB-backed execution evidence"
-      ],
-      "evidenceMode": "runtime-narrative"
+      "blockedBy": [],
+      "evidenceMode": "runtime-narrative",
+      "note": "The previously blocking DB-backed scene/session, world-commit, and materialized-rumor prerequisites all produced PASS evidence in ULTEF Integration run #12."
     },
     {
       "id": "L1-PROFILE-001",
@@ -94,7 +91,7 @@
       "title": "Generated scene to persisted session and reader state",
       "level": "L4",
       "projectGates": ["PX-LUMI-01", "PX-LUMI-05"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:scene-session",
       "requires": [
         "DATABASE_URL",
@@ -104,6 +101,7 @@
         "reader-reload"
       ],
       "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #12",
       "limitations": [
         "requires integration database",
         "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"
@@ -114,7 +112,7 @@
       "title": "Story outcome commit durability and idempotency",
       "level": "L4",
       "projectGates": ["PX-LUMI-09"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:world-commit",
       "requires": [
         "STORY_TEST_ENABLE_DESTRUCTIVE=true",
@@ -122,6 +120,7 @@
         "story world-commit migrations"
       ],
       "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #12",
       "limitations": [
         "proves durable commit record/world version/event/outbox and retry idempotency",
         "does not by itself prove downstream NPC materialized state mutation; PX-LUMI-09-002 covers that"
@@ -132,7 +131,7 @@
       "title": "Materialized indirect outcome propagation",
       "level": "L4",
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08", "PX-LUMI-09"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:materialized-rumor",
       "requires": [
         "STORY_TEST_ENABLE_DESTRUCTIVE=true",
@@ -142,9 +141,9 @@
         "production rumor composition"
       ],
       "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF Integration #12",
       "limitations": [
-        "requires a disposable PostgreSQL database whose name contains test or review",
-        "execution evidence is required before this gate can be treated as PASS"
+        "requires a disposable PostgreSQL database whose name contains test or review"
       ]
     }
   ]
