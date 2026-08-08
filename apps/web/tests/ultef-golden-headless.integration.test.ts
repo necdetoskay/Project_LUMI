@@ -411,6 +411,13 @@ ultefDescribe(
           [fixture.householdId],
         );
         await pool.query(
+          `DELETE FROM story.story_session_characters
+           WHERE story_session_id IN (
+             SELECT id FROM story.story_sessions WHERE household_id = $1 AND id <> $2
+           )`,
+          [fixture.householdId, fixture.storySessionId],
+        );
+        await pool.query(
           "DELETE FROM story.story_sessions WHERE household_id = $1 AND id <> $2",
           [fixture.householdId, fixture.storySessionId],
         );
