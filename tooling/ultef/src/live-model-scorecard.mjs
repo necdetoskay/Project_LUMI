@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const MAX_MODELS = 3;
-const scenarioId = "L7-LIVE-CONTINUITY-001";
+const scenarioId = "L8-LIVE-SCENARIO-PACK-001";
 const models = parseModels(process.env.ULTEF_L8_MODELS);
 
 if (models.length === 0) {
@@ -28,7 +28,7 @@ const results = [];
 for (const model of models) {
   const before = new Set(await listScenarioFiles(runsDir));
   const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  const run = spawnSync(command, ["ultef:live-provider-continuity"], {
+  const run = spawnSync(command, ["ultef:live-scenario-pack"], {
     cwd: root,
     stdio: "inherit",
     env: {
@@ -48,9 +48,10 @@ for (const model of models) {
       result: "ERROR",
       qualityGate: false,
       score: 0,
-      latencyMs: null,
-      promptTokens: null,
-      completionTokens: null,
+      scenarioQualityScore: 0,
+      averageLatencyMs: null,
+      totalLatencyMs: null,
+      averageTokens: null,
       totalTokens: null,
       assertionsPassed: 0,
       assertionsTotal: 4,
@@ -67,19 +68,19 @@ results.sort((a, b) => b.score - a.score);
 const winner = results.find((item) => item.qualityGate) ?? null;
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const payload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: "L8-MODEL-SCORECARD-001",
   generatedAt: new Date().toISOString(),
   scoring: {
     qualityGate:
-      "All four L7 assertions must pass before a model is eligible to win.",
+      "All three core L8 scenarios and the overall pack assertion must pass before a model is eligible to win.",
     qualityPoints: 70,
     latencyPoints: 15,
     tokenEfficiencyPoints: 15,
     latencyScale:
-      "15 points at <=3000ms, 0 points at >=15000ms, linear between.",
+      "Uses average latency per scenario: 15 points at <=3000ms, 0 points at >=15000ms, linear between.",
     tokenScale:
-      "15 points at <=700 total tokens, 0 points at >=2000, linear between.",
+      "Uses average total tokens per scenario: 15 points at <=700, 0 points at >=2000, linear between.",
   },
   models: results,
   winner: winner?.model ?? null,
@@ -134,11 +135,13 @@ async function listScenarioFiles(base) {
 
 function scoreReport(requestedModel, report, processStatus) {
   const metrics =
-    report.timeline?.find((event) => event.type === "live.provider.metrics")
-      ?.data ?? {};
-  const liveStory =
-    report.timeline?.find((event) => event.type === "live.story.generated")
-      ?.data ?? {};
+    report.timeline?.find(
+      (event) => event.type === "live.scenario-pack.metrics",
+    )?.data ?? {};
+  const storyEvents =
+    report.timeline?.filter(
+      (event) => event.type === "live.scenario.generated",
+    ) ?? [];
   const assertions = report.assertions ?? [];
   const assertionsPassed = assertions.filter((item) => item.passed).length;
   const assertionsTotal = assertions.length;
@@ -146,17 +149,22 @@ function scoreReport(requestedModel, report, processStatus) {
     report.result === "PASS" &&
     assertionsTotal >= 4 &&
     assertionsPassed === assertionsTotal;
-  const latencyMs = numberOrNull(metrics.latencyMs);
-  const usage = metrics.usage ?? null;
-  const totalTokens = numberOrNull(usage?.totalTokens);
+  const scenarioCount = Math.max(1, metrics.metrics?.length ?? storyEvents.length ?? 1);
+  const totalLatencyMs = numberOrNull(metrics.totalLatencyMs);
+  const totalTokens = numberOrNull(metrics.totalTokens);
+  const averageLatencyMs =
+    totalLatencyMs === null ? null : totalLatencyMs / scenarioCount;
+  const averageTokens = totalTokens === null ? null : totalTokens / scenarioCount;
   const latencyPoints = qualityGate
-    ? linearScore(latencyMs, 3000, 15000, 15)
+    ? linearScore(averageLatencyMs, 3000, 15000, 15)
     : 0;
-  const tokenPoints = qualityGate ? linearScore(totalTokens, 700, 2000, 15) : 0;
+  const tokenPoints = qualityGate
+    ? linearScore(averageTokens, 700, 2000, 15)
+    : 0;
   const qualityPoints = qualityGate ? 70 : 0;
 
   return {
-    model: liveStory.modelId ?? metrics.modelId ?? requestedModel,
+    model: metrics.modelId ?? requestedModel,
     requestedModel,
     result:
       processStatus === 0
@@ -164,16 +172,21 @@ function scoreReport(requestedModel, report, processStatus) {
         : `${report.result}/PROCESS_${processStatus}`,
     qualityGate,
     score: round(qualityPoints + latencyPoints + tokenPoints),
+    scenarioQualityScore: numberOrNull(metrics.evaluation?.score) ?? 0,
     qualityPoints,
     latencyPoints: round(latencyPoints),
     tokenEfficiencyPoints: round(tokenPoints),
-    latencyMs,
-    promptTokens: numberOrNull(usage?.promptTokens),
-    completionTokens: numberOrNull(usage?.completionTokens),
+    averageLatencyMs: roundNullable(averageLatencyMs),
+    totalLatencyMs,
+    averageTokens: roundNullable(averageTokens),
     totalTokens,
     assertionsPassed,
     assertionsTotal,
-    narrative: liveStory.narrative ?? null,
+    scenarios: metrics.evaluation?.scenarios ?? null,
+    narratives: storyEvents.map((event) => ({
+      scenarioId: event.data?.scenarioId ?? null,
+      narrative: event.data?.narrative ?? event.summary ?? null,
+    })),
   };
 }
 
@@ -192,6 +205,10 @@ function round(value) {
   return Math.round(value * 100) / 100;
 }
 
+function roundNullable(value) {
+  return value === null ? null : round(value);
+}
+
 function renderMarkdown(payload) {
   const lines = [
     "# L8-MODEL-SCORECARD-001 — Live model comparison",
@@ -199,24 +216,25 @@ function renderMarkdown(payload) {
     `Generated: ${payload.generatedAt}`,
     `Winner: **${payload.winner ?? "none"}**`,
     "",
-    "Quality is a hard gate: a model that fails continuity, character consistency, child-safety, or schema validity cannot win even if it is faster or cheaper in tokens.",
+    "Quality is a hard gate: a model must pass continuity recall, prior-choice influence and world-consistency/hallucination control before latency or token efficiency can contribute to its score.",
     "",
-    "| Rank | Model | Gate | Score | Latency ms | Tokens | Assertions |",
-    "| ---: | --- | --- | ---: | ---: | ---: | ---: |",
+    "| Rank | Model | Gate | Score | Scenario quality | Avg latency ms | Avg tokens | Assertions |",
+    "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |",
   ];
   payload.models.forEach((item, index) => {
     lines.push(
-      `| ${index + 1} | ${item.model} | ${item.qualityGate ? "PASS" : "FAIL"} | ${item.score} | ${item.latencyMs ?? "n/a"} | ${item.totalTokens ?? "n/a"} | ${item.assertionsPassed}/${item.assertionsTotal} |`,
+      `| ${index + 1} | ${item.model} | ${item.qualityGate ? "PASS" : "FAIL"} | ${item.score} | ${item.scenarioQualityScore}/100 | ${item.averageLatencyMs ?? "n/a"} | ${item.averageTokens ?? "n/a"} | ${item.assertionsPassed}/${item.assertionsTotal} |`,
     );
   });
   lines.push(
     "",
     "## Scoring",
     "",
-    "- Quality gate: 70 points, only when all required L7 assertions pass.",
-    "- Latency: up to 15 points; full points at <=3s, zero at >=15s.",
-    "- Token efficiency: up to 15 points; full points at <=700 total tokens, zero at >=2000.",
-    "- This v1 scorecard intentionally does not estimate monetary cost because provider/model prices are mutable; token counts remain durable evidence.",
+    "- Hard quality gate: all three live story scenarios must pass; a failed quality gate makes the model ineligible to win.",
+    "- Quality: 70 points after the hard gate passes.",
+    "- Latency: up to 15 points using average latency across the three scenarios.",
+    "- Token efficiency: up to 15 points using average total tokens across the three scenarios.",
+    "- This scorecard intentionally does not persist monetary price estimates because provider/model prices are mutable; durable token counts remain in evidence.",
     "",
   );
   return `${lines.join("\n")}\n`;
