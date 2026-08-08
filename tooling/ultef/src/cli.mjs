@@ -4,6 +4,19 @@ const requested = process.argv[2] ?? 'selftest';
 
 const commands = {
   selftest: ['node', ['tooling/ultef/src/selftest.mjs']],
+  'L1-PROFILE-001': [
+    'pnpm',
+    [
+      '--filter',
+      '@lumi/profiles',
+      'exec',
+      'vitest',
+      'run',
+      '--config',
+      'vitest.integration.config.ts',
+      'tests/integration/ultef-profile.integration.test.ts'
+    ]
+  ],
   L0: ['pnpm', ['test']],
   L1: ['pnpm', ['test']],
   L2: ['pnpm', ['--filter', '@lumi/profiles', 'test:int']],
