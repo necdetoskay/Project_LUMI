@@ -94,10 +94,10 @@ afterAll(async () => {
   if (pool) await pool.end();
 });
 
-ultefDescribe("ULTEF L9-LOAD-001 — DB-backed sustained mutation baseline", () => {
-  it(
-    "sustains concurrent tenant scene advances, commits and idempotent replays without state leakage",
-    async () => {
+ultefDescribe(
+  "ULTEF L9-LOAD-001 — DB-backed sustained mutation baseline",
+  () => {
+    it("sustains concurrent tenant scene advances, commits and idempotent replays without state leakage", async () => {
       const fixtures = Array.from({ length: TENANT_COUNT }, () => fixture());
       const npcIds = fixtures.map(() => crypto.randomUUID());
       const durations: number[] = [];
@@ -380,7 +380,6 @@ ultefDescribe("ULTEF L9-LOAD-001 — DB-backed sustained mutation baseline", () 
           await cleanupStoryFixture(pool, ids);
         }
       }
-    },
-    60_000,
-  );
-});
+    }, 60_000);
+  },
+);
