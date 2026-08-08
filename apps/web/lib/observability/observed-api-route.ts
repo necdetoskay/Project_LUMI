@@ -2,6 +2,7 @@ import { withCorrelation } from "@lumi/logger";
 import { generateCorrelationId, isValidCorrelationId } from "@lumi/logger";
 
 import {
+  emitCorrelationInvalid,
   emitHttpRequestDuration,
   emitHttpRequestError,
   emitHttpRequestTotal,
@@ -19,6 +20,10 @@ function getOrCreateCorrelationId(request: Request): string {
 
   if (existing && isValidCorrelationId(existing)) {
     return existing;
+  }
+
+  if (existing) {
+    emitCorrelationInvalid();
   }
 
   return generateCorrelationId();
