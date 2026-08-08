@@ -12,10 +12,12 @@ import { RumorBeliefWriterService } from "@lumi/npc-intelligence/application";
 import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
 
-const databaseUrl = process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
 const enabled = process.env.ULTEF_SCENARIO === "L2-ISOLATION-MATRIX";
-const ultefDescribe = enabled && destructive && databaseUrl ? describe : describe.skip;
+const ultefDescribe =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
   it("L2-ISOLATION-001 rejects cross-household profile access without changing protected state", async () => {
@@ -46,11 +48,24 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       ageBand: "6-8",
     });
 
-    scenario.setup("Protected household", { id: householdA.id, alias: "Household A" });
-    scenario.setup("Foreign household", { id: householdB.id, alias: "Household B" });
-    scenario.setup("Protected child", { id: childA.id, name: childA.displayName });
+    scenario.setup("Protected household", {
+      id: householdA.id,
+      alias: "Household A",
+    });
+    scenario.setup("Foreign household", {
+      id: householdB.id,
+      alias: "Household B",
+    });
+    scenario.setup("Protected child", {
+      id: childA.id,
+      name: childA.displayName,
+    });
 
-    const before = await findChildProfileForUser(childA.id, ownerA, householdA.id);
+    const before = await findChildProfileForUser(
+      childA.id,
+      ownerA,
+      householdA.id,
+    );
     let rejected = false;
     let rejection = "";
     try {
@@ -59,7 +74,11 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       rejected = true;
       rejection = error instanceof Error ? error.message : String(error);
     }
-    const after = await findChildProfileForUser(childA.id, ownerA, householdA.id);
+    const after = await findChildProfileForUser(
+      childA.id,
+      ownerA,
+      householdA.id,
+    );
 
     scenario.event(
       "cross-household.profile.read",
@@ -72,7 +91,12 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       "protected-state.reload",
       "Household A reloaded Deniz-A after the rejected access attempt.",
     );
-    scenario.assert("Foreign household access is rejected", rejected, true, rejected);
+    scenario.assert(
+      "Foreign household access is rejected",
+      rejected,
+      true,
+      rejected,
+    );
     scenario.assert(
       "Protected child remains owned by Household A",
       after?.householdId === householdA.id,
@@ -92,7 +116,10 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       "rejected foreign access must not mutate ownership",
     );
 
-    const passed = rejected && after?.householdId === householdA.id && after?.id === childA.id;
+    const passed =
+      rejected &&
+      after?.householdId === householdA.id &&
+      after?.id === childA.id;
     const report = scenario.finish({
       result: passed ? "PASS" : "FAIL",
       reason: passed
@@ -150,8 +177,14 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
     const persistedA = beliefsA.find((belief) => belief.factId === factId);
     const leakedB = beliefsB.find((belief) => belief.factId === factId);
 
-    scenario.setup("Source household", { id: householdA.id, alias: "Household A" });
-    scenario.setup("Foreign household", { id: householdB.id, alias: "Household B" });
+    scenario.setup("Source household", {
+      id: householdA.id,
+      alias: "Household A",
+    });
+    scenario.setup("Foreign household", {
+      id: householdB.id,
+      alias: "Household B",
+    });
     scenario.setup("Target NPC", { id: targetNpcId, alias: "Bora" });
     scenario.event(
       "belief.persisted",
@@ -164,8 +197,18 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
         ? "Household B unexpectedly observed Household A's belief."
         : "Household B queried the same NPC/fact identity but no foreign belief was visible.",
     );
-    scenario.assert("Household A can reload its persisted belief", Boolean(persistedA), true, Boolean(persistedA));
-    scenario.assert("Household B cannot observe Household A belief", !leakedB, true, !leakedB);
+    scenario.assert(
+      "Household A can reload its persisted belief",
+      Boolean(persistedA),
+      true,
+      Boolean(persistedA),
+    );
+    scenario.assert(
+      "Household B cannot observe Household A belief",
+      !leakedB,
+      true,
+      !leakedB,
+    );
     scenario.delta(
       "HouseholdB.visibleBeliefCountForFact",
       0,
