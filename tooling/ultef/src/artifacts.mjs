@@ -4,7 +4,7 @@ import path from 'node:path';
 import { renderNarrative } from './evidence.mjs';
 
 export async function writeScenarioArtifacts(report, options = {}) {
-  const rootDir = options.rootDir ?? path.resolve('artifacts/ultef');
+  const rootDir = options.rootDir ?? path.join(readRepoRoot(), 'artifacts', 'ultef');
   const runId = options.runId ?? makeRunId(report.startedAt);
   const runDir = path.join(rootDir, 'runs', runId);
   const latestDir = path.join(rootDir, 'latest');
@@ -40,6 +40,14 @@ function buildRunMetadata(report, options) {
     generatedAt: new Date().toISOString(),
     durationMs: Math.max(0, Date.parse(report.finishedAt) - Date.parse(report.startedAt))
   };
+}
+
+function readRepoRoot() {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  } catch {
+    return process.cwd();
+  }
 }
 
 function readGitSha() {
