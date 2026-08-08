@@ -16,9 +16,17 @@ on:
         required: true
         default: "false"
       run_calibration:
-        description: Set true to spend one extra judge call on the 18-example seed calibration set.
+        description: Set true to spend one extra judge call on the selected calibration/challenge set.
         required: true
         default: "false"
+      calibration_set:
+        description: Calibration dataset: seed baseline or hard-boundary 2/3/4 challenge.
+        required: true
+        default: seed
+        type: choice
+        options:
+          - seed
+          - hard-boundary
       judge_model:
         description: OpenRouter model id used for advisory judging and optional calibration.
         required: true
@@ -57,6 +65,7 @@ jobs:
       ULTEF_L8_REPEATS: ${{ inputs.repeats }}
       ULTEF_L8_SEMANTIC_JUDGE_ENABLED: ${{ inputs.enable_semantic_judge }}
       ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: ${{ inputs.run_calibration }}
+      ULTEF_L8_CALIBRATION_SET: ${{ inputs.calibration_set }}
       ULTEF_L8_JUDGE_MODEL: ${{ inputs.judge_model }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
@@ -89,6 +98,10 @@ jobs:
             true|false) ;;
             *) echo "run_calibration must be true or false"; exit 1 ;;
           esac
+          case "${{ inputs.calibration_set }}" in
+            seed|hard-boundary) ;;
+            *) echo "calibration_set must be seed or hard-boundary"; exit 1 ;;
+          esac
           MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
           if [ "$MODEL_COUNT" -gt 3 ]; then
             echo "At most 3 models are allowed."
@@ -104,6 +117,7 @@ jobs:
             CALIBRATION_CALLS=1
           fi
           TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS + CALIBRATION_CALLS))
+          echo "Selected calibration set: ${{ inputs.calibration_set }}"
           echo "Planned paid story calls: $STORY_CALLS"
           echo "Planned paid semantic-judge calls: $JUDGE_CALLS"
           echo "Planned paid calibration calls: $CALIBRATION_CALLS"
@@ -145,7 +159,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
+          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-BOUNDARY-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
             echo
             echo "===== L8 LIVE EVIDENCE ====="
             cat "$FILE"
