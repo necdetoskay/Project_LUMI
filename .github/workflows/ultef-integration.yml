@@ -59,6 +59,8 @@ jobs:
         run: pnpm ultef:l9-long-horizon-db
       - name: Run L9 commit recovery journey
         run: pnpm ultef:l9-commit-recovery
+      - name: Run L9 concurrent tenant isolation journey
+        run: pnpm ultef:l9-concurrency
       - name: Run Sprint 01 household isolation matrix
         run: pnpm ultef:isolation
       - name: Run Sprint 01 session negative scenarios
@@ -114,6 +116,14 @@ jobs:
             cat "$RECOVERY_FILE"
           else
             echo "L9 commit-recovery evidence was not produced."
+          fi
+          CONCURRENCY_FILE=$(find artifacts/ultef/runs -name 'L9-CONCURRENCY-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$CONCURRENCY_FILE" ]; then
+            echo
+            echo "===== L9 CONCURRENCY ====="
+            cat "$CONCURRENCY_FILE"
+          else
+            echo "L9 concurrency evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
