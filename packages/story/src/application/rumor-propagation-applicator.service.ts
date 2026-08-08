@@ -16,18 +16,12 @@ export interface RumorBeliefWriterPort {
   }): Promise<{ writes: number }>;
 }
 
-/**
- * Applies `npc_rumor_spread` outbox intents through an injected belief writer.
- * Story remains package-safe: the composition root supplies the concrete
- * npc-intelligence adapter.
- */
+/** Applies rumor outbox intents through a composition-root supplied writer. */
 export class RumorSpreadApplicator implements IndirectEffectApplicator {
-  constructor(private readonly writer: RumorBeliefWriterPort) {}
+  constructor(private readonly writer?: RumorBeliefWriterPort) {}
 
   async apply(intent: StoryOutboxRecord): Promise<{ writes: number }> {
-    if (intent.intentType !== RUMOR_SPREAD_INTENT_TYPE) {
-      return { writes: 0 };
-    }
+    if (intent.intentType !== RUMOR_SPREAD_INTENT_TYPE) return { writes: 0 };
 
     const payload = intent.payload as {
       sourceNpcId: string;
@@ -38,9 +32,9 @@ export class RumorSpreadApplicator implements IndirectEffectApplicator {
       provenance: string[];
       hops: number;
     };
-
-    if (!payload.targetNpcId || !payload.factId || !payload.claim) {
-      return { writes: 0 };
+    if (!payload.targetNpcId || !payload.factId || !payload.claim) return { writes: 0 };
+    if (!this.writer) {
+      throw new Error("RUMOR_BELIEF_WRITER_NOT_CONFIGURED");
     }
 
     return this.writer.writeHearsay({
