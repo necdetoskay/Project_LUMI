@@ -95,7 +95,8 @@ describeDb("ULTEF Sprint 01 — single active session guard", () => {
 
     const scenario = createScenario({
       id: "L3-SESSION-003",
-      title: "Second active child/world session is rejected without persistence leak",
+      title:
+        "Second active child/world session is rejected without persistence leak",
       level: "L3",
       projectGate: "PX-LUMI-01",
       seed: "runtime-uuid",
