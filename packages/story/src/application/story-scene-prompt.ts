@@ -1,5 +1,9 @@
 import type { HookSceneBrief } from "../domain/hook-scene-brief";
 import { mapHookToScene } from "./hook-scene-mapping.service";
+import {
+  normalizeStoryContinuityContext,
+  type StoryContinuityContext,
+} from "./story-continuity-context";
 
 export interface StoryScenePromptInput {
   brief: HookSceneBrief;
@@ -11,16 +15,26 @@ export interface StoryScenePromptInput {
   locale: string;
   /** Generation nonce: each LLM call must differ. */
   generationNonce: string;
+  /** Bounded, prompt-safe continuity facts from prior canonical state. */
+  continuityContext?: StoryContinuityContext | null;
 }
 
 /**
  * Builds a deterministic Turkish prompt for story-scene generation from an
  * accepted hook brief. Mirrors the origin-generator prompt style: system
- * persona, constraints (boundary, age band, locale), the hook brief, and an
- * explicit JSON output schema. Deterministic for a fixed input.
+ * persona, constraints (boundary, age band, locale), the hook brief, bounded
+ * canonical continuity facts, and an explicit JSON output schema.
+ * Deterministic for a fixed input.
  */
 export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
-  const { brief, contentBoundary, ageBand, locale, generationNonce } = input;
+  const {
+    brief,
+    contentBoundary,
+    ageBand,
+    locale,
+    generationNonce,
+    continuityContext,
+  } = input;
   const sceneType = mapHookToScene(brief.hookType);
 
   const claimLine = brief.claim ? `- Hikaye ipucu (claim): ${brief.claim}` : "";
@@ -49,6 +63,17 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
     .filter((line) => line.length > 0)
     .join("\n");
 
+  const continuity = normalizeStoryContinuityContext(continuityContext);
+  const continuityLines = continuity.facts
+    .map((fact) => {
+      const source = fact.source ? ` (kaynak: ${fact.source})` : "";
+      return `- [${fact.key}] ${fact.summary}${source}`;
+    })
+    .join("\n");
+  const continuitySection = continuityLines
+    ? `\nKanonik süreklilik bilgileri (önceki hikâyelerden; bunlarla çelişme, ilgiliyse doğal biçimde kullan):\n${continuityLines}\n`
+    : "";
+
   return `Sen Project LUMI için güvenli, yaşa uygun çocuk hikayesi sahnesi üreten bir AI asistansın.
 
 Görev: Kabul edilmiş bir etkileşim ipucundan (story hook) yola çıkarak tek bir sahne üret. Sahne, çocuk okuyucunun hikayede ilerlediği anı anlatır ve ipucunun içeriğini doğal biçimde yansıtır.
@@ -65,7 +90,7 @@ Sahne tipi: ${sceneType}
 
 Etkileşim ipucu özeti:
 ${details}
-
+${continuitySection}
 JSON şeması (kesinlikle uy):
 {
   "sceneId": "deterministik sahne kimliği (kısa, örn. hook-brief-bazlı slug)",
