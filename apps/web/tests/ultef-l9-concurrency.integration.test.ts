@@ -262,7 +262,8 @@ ultefDescribe(
         const commitIdsDistinct =
           resultA.committed.commitId !== resultB.committed.commitId;
         const sceneIdsDistinct =
-          resultA.generated.generatedSceneId !== resultB.generated.generatedSceneId;
+          resultA.generated.generatedSceneId !==
+          resultB.generated.generatedSceneId;
 
         scenario.event(
           "concurrency.parallel-run.completed",
