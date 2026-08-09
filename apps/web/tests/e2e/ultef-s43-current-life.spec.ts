@@ -42,7 +42,9 @@ test.describe("S43 current-life child navigation contract", () => {
     }
   });
 
-  test("character current-life route remains auth protected", async ({ page }) => {
+  test("character current-life route remains auth protected", async ({
+    page,
+  }) => {
     await page.goto("/app/profiles/test-profile/characters/test-character");
     await expect(page).toHaveURL(/\/login/);
   });
@@ -57,7 +59,9 @@ test.describe("S43 current-life child navigation contract", () => {
     expect(source).toContain("Bir geçmiş hikâyeyi açmak yalnızca okumadır");
   });
 
-  test("canonical data endpoints reject unauthenticated access", async ({ request }) => {
+  test("canonical data endpoints reject unauthenticated access", async ({
+    request,
+  }) => {
     const characterResponse = await request.get(
       "/api/characters/test-character?householdId=test-household",
     );

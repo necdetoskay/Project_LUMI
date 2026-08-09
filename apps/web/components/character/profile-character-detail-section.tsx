@@ -160,8 +160,10 @@ export function ProfileCharacterDetailSection({
   }
 
   const currentLocation = world?.currentLocation?.displayName ?? null;
-  const fallbackLocation = character.startingLocation ?? character.homeArchetype;
-  const locationTitle = currentLocation ?? fallbackLocation ?? "Henüz bilinmiyor";
+  const fallbackLocation =
+    character.startingLocation ?? character.homeArchetype;
+  const locationTitle =
+    currentLocation ?? fallbackLocation ?? "Henüz bilinmiyor";
   const hasCanonicalCurrentLocation = Boolean(currentLocation);
 
   return (
@@ -174,13 +176,19 @@ export function ProfileCharacterDetailSection({
           <Link href="/app" className="hover:text-primary">
             Ailem
           </Link>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-base"
+            aria-hidden="true"
+          >
             chevron_right
           </span>
           <Link href="/app/profiles" className="hover:text-primary">
             Çocuklar
           </Link>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-base"
+            aria-hidden="true"
+          >
             chevron_right
           </span>
           <Link
@@ -189,7 +197,10 @@ export function ProfileCharacterDetailSection({
           >
             Profil
           </Link>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-base"
+            aria-hidden="true"
+          >
             chevron_right
           </span>
           <span className="text-on-surface">{character.name}</span>
@@ -215,7 +226,10 @@ export function ProfileCharacterDetailSection({
                   className="storybook-button"
                   href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     menu_book
                   </span>
                   Hikâyelere git
@@ -224,7 +238,10 @@ export function ProfileCharacterDetailSection({
                   className="storybook-button-secondary"
                   href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     map
                   </span>
                   Dünyamı aç
@@ -238,7 +255,9 @@ export function ProfileCharacterDetailSection({
               <div className="relative z-10 flex h-full min-h-[220px] flex-col justify-between rounded-[1.7rem] border border-white/70 bg-white/55 p-5 backdrop-blur-sm">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">
-                    {hasCanonicalCurrentLocation ? "Bulunduğun yer" : "Son bildiğimiz yer"}
+                    {hasCanonicalCurrentLocation
+                      ? "Bulunduğun yer"
+                      : "Son bildiğimiz yer"}
                   </p>
                   <h2 className="mt-2 text-3xl font-extrabold text-on-surface">
                     {locationTitle}
@@ -251,7 +270,10 @@ export function ProfileCharacterDetailSection({
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold text-on-surface">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-white/80 text-primary">
-                    <span className="material-symbols-outlined" aria-hidden="true">
+                    <span
+                      className="material-symbols-outlined"
+                      aria-hidden="true"
+                    >
                       location_on
                     </span>
                   </span>
@@ -490,10 +512,15 @@ function StateSurface({
     <main className="storybook-page min-h-full">
       <div className="mx-auto max-w-[900px] px-5 py-12">
         <section className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-8 text-center shadow-sm">
-          <span className="material-symbols-outlined text-4xl text-primary" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-4xl text-primary"
+            aria-hidden="true"
+          >
             {icon}
           </span>
-          <h1 className="mt-4 text-2xl font-extrabold text-on-surface">{title}</h1>
+          <h1 className="mt-4 text-2xl font-extrabold text-on-surface">
+            {title}
+          </h1>
           <p className="mx-auto mt-3 max-w-xl leading-7 text-on-surface-variant">
             {message}
           </p>
