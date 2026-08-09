@@ -50,9 +50,9 @@ describe(SCENARIO_ID, () => {
     expect(clockAfter.version).toBeGreaterThan(clockBefore.version);
 
     const normalPolicy = computeAbsencePolicy({
-      lastSeenAt: new Date("2026-08-07T08:00:00.000Z"),
+      childLastSeenAt: new Date("2026-08-07T08:00:00.000Z"),
+      absentDays: 2,
       now: new Date("2026-08-09T08:00:00.000Z"),
-      absenceDays: 2,
     });
     const normalPlan = planner.plan(
       WORLD_ID,
@@ -65,17 +65,17 @@ describe(SCENARIO_ID, () => {
 
     expect(normalPolicy.phase).toBe("normal");
     expect(normalPolicy.frozen).toBe(false);
-    expect(normalPlan.allocations.some((entry) => entry.npcId === RELEVANT_NPC_ID)).toBe(
-      true,
-    );
-    expect(normalPlan.allocations.some((entry) => entry.npcId === IRRELEVANT_NPC_ID)).toBe(
-      false,
-    );
+    expect(
+      normalPlan.allocations.some((entry) => entry.npcId === RELEVANT_NPC_ID),
+    ).toBe(true);
+    expect(
+      normalPlan.allocations.some((entry) => entry.npcId === IRRELEVANT_NPC_ID),
+    ).toBe(false);
 
     const limitedPolicy = computeAbsencePolicy({
-      lastSeenAt: new Date("2026-07-31T08:00:00.000Z"),
+      childLastSeenAt: new Date("2026-07-31T08:00:00.000Z"),
+      absentDays: 9,
       now: new Date("2026-08-09T08:00:00.000Z"),
-      absenceDays: 9,
     });
     const limitedPlan = planner.plan(
       WORLD_ID,
@@ -91,9 +91,9 @@ describe(SCENARIO_ID, () => {
     expect(limitedPlan.totalBudget).toBe(40);
 
     const frozenPolicy = computeAbsencePolicy({
-      lastSeenAt: new Date("2026-07-30T08:00:00.000Z"),
+      childLastSeenAt: new Date("2026-07-30T08:00:00.000Z"),
+      absentDays: 10,
       now: new Date("2026-08-09T08:00:00.000Z"),
-      absenceDays: 10,
     });
     const frozenPlan = planner.plan(
       WORLD_ID,
@@ -134,7 +134,8 @@ describe(SCENARIO_ID, () => {
         },
         {
           step: "two-day-normal",
-          expected: "relevant NPC is considered while stale low-relevance NPC is ignored",
+          expected:
+            "relevant NPC is considered while stale low-relevance NPC is ignored",
           observed: {
             policy: normalPolicy,
             consideredNpcIds: normalPlan.allocations.map((entry) => entry.npcId),
@@ -144,7 +145,8 @@ describe(SCENARIO_ID, () => {
         },
         {
           step: "nine-day-limited",
-          expected: "simulation is strongly reduced and autonomous NPC decisions are disabled",
+          expected:
+            "simulation is strongly reduced and autonomous NPC decisions are disabled",
           observed: {
             policy: limitedPolicy,
             totalBudget: limitedPlan.totalBudget,
@@ -153,7 +155,8 @@ describe(SCENARIO_ID, () => {
         },
         {
           step: "ten-day-freeze",
-          expected: "long inactivity freezes background simulation and prevents uncontrolled drift",
+          expected:
+            "long inactivity freezes background simulation and prevents uncontrolled drift",
           observed: {
             policy: frozenPolicy,
             totalBudget: frozenPlan.totalBudget,
