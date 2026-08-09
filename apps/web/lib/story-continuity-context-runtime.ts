@@ -1,4 +1,8 @@
 import { getCharacterContinuitySnapshot } from "@lumi/profiles/application";
+import type {
+  CanonicalMemoryPort,
+  NpcBeliefSourcePort,
+} from "@lumi/npc-intelligence/ports";
 import {
   getLatestChoiceWorldContinuityFacts,
   type ResolveStoryContinuityContextInput,
@@ -24,8 +28,10 @@ export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
   constructor(
-    private readonly beliefs = new DrizzleBeliefSourceRepository(),
-    private readonly memories = new DrizzleCanonicalMemoryRepository(),
+    private readonly beliefs: NpcBeliefSourcePort =
+      new DrizzleBeliefSourceRepository(),
+    private readonly memories: CanonicalMemoryPort =
+      new DrizzleCanonicalMemoryRepository(),
   ) {}
 
   async resolveContext(
