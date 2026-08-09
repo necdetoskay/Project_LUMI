@@ -1,7 +1,7 @@
 import {
   STORY_REWARD_SYSTEM_AUTHORITY,
   grantStoryRewardAsSystem,
-} from "@lumi/profiles/application";
+} from "../../../packages/profiles/src/application/index.ts";
 import type {
   InventoryGrantInput,
   InventoryGrantPort,
