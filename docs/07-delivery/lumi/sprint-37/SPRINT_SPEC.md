@@ -1,6 +1,6 @@
 # Sprint 37 — Generated Hook Scene → Story Reader Production Wiring
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
@@ -61,14 +61,18 @@ Required evidence:
 
 ## Exit criteria
 
-- [ ] Real web `StorySceneLlmSettingsPort` adapter exists and is production wired.
-- [ ] Generated hook scenes enter canonical `advanceSession` semantics.
-- [ ] Story Reader returns the committed generated scene.
-- [ ] Replay and tenant isolation are DB-backed tested.
-- [ ] Failure before commit leaves session state unchanged.
-- [ ] `PX-LUMI-S37-HOOK-READER-PROD-001` is PASS.
-- [ ] CI / Security / Integration / PX / S36 regressions are green.
-- [ ] Sprint closeout evidence is recorded and status becomes COMPLETE.
+- [x] Real web `StorySceneLlmSettingsPort` adapter exists and is production wired.
+- [x] Generated hook scenes enter canonical `advanceSession` semantics.
+- [x] Story Reader returns the committed generated scene.
+- [x] Replay and tenant isolation are DB-backed tested.
+- [x] Failure before commit leaves session state unchanged.
+- [x] `PX-LUMI-S37-HOOK-READER-PROD-001` is PASS.
+- [x] CI / Security / Integration / PX / S36 regressions are green.
+- [x] Sprint closeout evidence is recorded and status becomes COMPLETE.
+
+## Closeout evidence
+
+See `S37_STATUS.md`. Implementation evidence head `a2de3b02e236a1e0becf9e5c2925c8da4799e27c` passed S37 #8, Integration #467, Security #651, CI #707 (including Build Artifact), PX-LUMI #105, PX-02 #82, PX-04 #71, PX-05 #64, S36 #28 and S35 #38.
 
 ## Follow-up
 
