@@ -46,6 +46,13 @@ jobs:
           pnpm --filter @lumi/web exec vitest run
           tests/ultef-opportunity-to-hook.test.ts
 
+      - name: Run PX-LUMI-10 age-aware story generation evidence
+        env:
+          ULTEF_SCENARIO: L4-HOOK-SCENE-001
+        run: >-
+          pnpm --filter @lumi/story exec vitest run
+          tests/ultef/ultef-hook-scene.test.ts
+
       - name: Print PX-LUMI evidence
         if: always()
         shell: bash
@@ -58,7 +65,8 @@ jobs:
           for SCENARIO in \
             PX-LUMI-07-WORLD-TIME-001 \
             L3-NPC-001 \
-            L4-OPPORTUNITY-HOOK-001
+            L4-OPPORTUNITY-HOOK-001 \
+            L4-HOOK-SCENE-001
           do
             FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1 || true)
             if [ -n "$FILE" ]; then
