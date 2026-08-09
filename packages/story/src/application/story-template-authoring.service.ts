@@ -175,7 +175,8 @@ export async function createStoryTemplateRevision(
     });
   }
 
-  const storyMode = input.storyMode ?? sourceVersion?.storyMode ?? "interactive";
+  const storyMode =
+    input.storyMode ?? sourceVersion?.storyMode ?? "interactive";
   assertKnownStoryMode(storyMode);
   const version = StoryVersion.create({
     storyDefinitionId: input.storyDefinitionId,
