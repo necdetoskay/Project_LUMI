@@ -3,59 +3,58 @@
 Status: CANONICAL TEST BACKLOG
 Date: 2026-08-09
 
-> Önceki kanonik test aileleri korunur. Bu güncelleme Politics, Governance & Community Decision-Making doğrulama ailesini ekler.
+> Önceki kanonik test aileleri korunur. Bu güncelleme Rumors, Secrets, Mysteries & Information Flow doğrulama ailesini ekler.
 
-## Governance & community decision family
+## Information flow, rumors, secrets & mysteries family
 
-- GOV-IDENTITY-001: settlement governance norms/structure long horizon'da random drift etmez; değişim canonical history/evidence ile açıklanır.
-- GOV-AUTHORITY-001: formal authority, popularity ve social influence birbirine yanlışlıkla eşitlenmez.
-- GOV-ISSUE-INFLUENCE-001: expertise/issue-specific influence yalnız ilgili decision context'inde ağırlık oluşturur.
-- GOV-DECISION-001: community decision participating actors'ın goals, roles, knowledge, relationships, expertise ve culture context'iyle açıklanabilir.
-- GOV-CHILD-AGENCY-001: child öneri/kanıt/ikna ile decision'ı etkileyebilir fakat settlement child option'ına otomatik itaat etmez.
-- GOV-CHILD-IMPACT-001: child contribution tamamen anlamsız da değildir; uygun evidence/support ile outcome veya solution set'i değiştirebilir.
-- GOV-DISSENT-001: farklı makul görüşler antagonist/düşman üretmeden coexist edebilir.
-- GOV-MEMORY-001: geçmiş community decisions ve sonuçları sonraki ilgili decision context'ini etkileyebilir; source history korunur.
-- GOV-COMMIT-001: accepted decision world mutation gerektiriyorsa Approved Community Action -> authoritative World Commit üzerinden gerçekleşir.
-- GOV-NO-LLM-MUTATION-001: Story Generator kendi başına governance result veya world-state mutation commit edemez.
-- GOV-ROLE-CHANGE-001: leadership/responsibility role change canonical cause/history gerektirir ve chronology ile tutarlıdır.
-- GOV-CULTURE-001: farklı communities farklı decision norms taşıyabilir; governance behavior ilgili cultural canon ile uyumludur.
-- GOV-KNOWLEDGE-001: decision actor bilmediği canonical fact'i reasoning sırasında kullanmaz.
-- GOV-RUMOR-001: rumor/belief decision'ı etkileyebilir fakat canonical fact olarak değerlendirilmez; provenance/confidence korunur.
-- GOV-CONSEQUENCE-001: committed community decision sonraki world/story state'te gerçek, traceable consequence oluşturur.
-- GOV-TRADEOFF-001: bir community priority seçimi başka non-critical action'ın gecikmesi gibi makul trade-off üretebilir; aşırı economy simülasyonu gerekmez.
-- GOV-GAME-LEAK-001: authority/influence/faction/reputation değerleri child UI/story'de strategy-game score olarak sızmaz.
-- GOV-AGE-001: disagreement, fairness, favoritism ve power temaları child age/safety policy'ye uygun anlatılır.
-- GOV-TENANT-001: governance state, decision history, influence graph ve community actions başka universe/tenant'a sızmaz.
+- INFO-TRUTH-001: world truth, actor knowledge, belief, rumor ve secret state'leri birbirine collapse olmaz.
+- INFO-PROVENANCE-001: öğrenilen bilgi source/type/confidence/provenance ile trace edilebilir.
+- INFO-PROPAGATE-001: information yalnız gerçek observation/report/reveal/transfer olduğunda recipient knowledge'a geçer.
+- INFO-NO-BROADCAST-001: private/limited information magical broadcast ile tüm NPC/child knowledge'a yayılmaz.
+- INFO-RUMOR-DRIFT-001: rumor propagation sırasında distortion olabilir fakat canonical truth overwrite edilmez.
+- INFO-RUMOR-SOURCE-001: rumor'un kimden/kimin aracılığıyla geldiği gerektiğinde trace edilebilir.
+- INFO-SECRET-001: NPC secret reveal basit numeric trust threshold yerine relationship/context/promise/fear/uncertainty reasoning'ine bağlıdır.
+- INFO-PROMISE-001: confidential promise memory ve sonraki disclosure decision'ında doğru aktör/context ile etkili olur.
+- INFO-CONFLICT-001: conflicting claims evidence olmadan tek fact'e yanlış merge edilmez.
+- INFO-MYSTERY-001: mystery answer ilgili clue/authorized reveal/discovery öncesinde child/NPC dialogue'a sızmaz.
+- INFO-MYSTERY-CANON-001: emergent mystery resolution önceki canonical clues, topology, timeline ve world facts ile çelişmeden commit edilir.
+- INFO-RED-HERRING-001: mistaken belief/observation kullanılabilir fakat false claim world truth'a terfi etmez; sistem deceptive noise spam üretmez.
+- INFO-MAP-001: UNKNOWN/RUMORED/REVEALED/DISCOVERED map state gerçek character knowledge state ile eşleşir.
+- INFO-MEMORY-001: eski mystery-critical clue gerektiğinde deep memory/archive üzerinden geri çağrılabilir.
+- INFO-DECAY-001: düşük-importance rumor/claim retrieval priority kaybedebilir fakat protected critical clue yanlışlıkla kaybolmaz.
+- INFO-SAFETY-SECRET-001: child safety açısından uygunsuz 'ebeveynden/trusted adult'tan sakla' secrecy scenario üretilemez veya commit edilemez.
+- INFO-AUTHORIZED-TRUTH-001: backend/system truth yalnız authorized actors'a doğru zamanda context builder üzerinden açılır.
+- INFO-TENANT-001: knowledge graph, rumor, secret, mystery truth ve provenance başka tenant/universe/child boundary'sine sızmaz.
 
-## Cross-system governance tests
+## Cross-system information tests
 
-- MEM-GOV-001: governance memory collective history ile actor-specific memory'yi yanlış merge etmez.
-- NPC-GOV-001: NPC governance preference personality/role/knowledge/culture ile uyumludur fakat deterministic faction script'e dönüşmez.
-- CULTURE-GOV-001: cultural norms governance behavior'ı etkileyebilir fakat individual dissent'i imkânsız hale getirmez.
-- WORLD-GOV-COMMIT-001: community action world topology/location/settlement state mutation yapıyorsa existing world invariants ve transaction boundary korunur.
-- TIME-GOV-001: proposal, discussion, decision ve consequence temporal causality sırasını ihlal etmez.
-- KNOWLEDGE-GOV-001: private/unknown information meeting/dialogue sırasında magical broadcast olmaz.
-- NARRATIVE-GOV-001: governance conflict exposition/politics lecture yerine age-appropriate character/community narrative olarak ifade edilir.
-- NARRATIVE-GOV-AGENCY-001: story child'a anlamlı participation verir fakat 'chosen ruler/savior' zorunluluğu yaratmaz.
+- MEM-INFO-001: memory recall actor knowledge authorization'ını bypass etmez.
+- NPC-INFO-001: NPC decisions/dialogue yalnız actor knowledge + beliefs + memories üzerinden yapılır; hidden system truth kullanılmaz.
+- REL-SECRET-001: secret disclosure relationship evidence üretebilir fakat hard-coded friendship gate'e dönüşmez.
+- MAP-INFO-001: rumor öğrenme/silme/doğrulama map fog/marker state'ine doğru yansır.
+- ITEM-INFO-001: item inscription/property yalnız discover edilen/authorized knowledge kadar reveal edilir.
+- CULTURE-INFO-001: cultural belief/legend canonical fact yerine geçmez; aynı claim farklı cultures'ta farklı interpretation taşıyabilir.
+- GOV-INFO-001: governance reasoning incomplete/rumored knowledge ile çalışabilir fakat fact certainty uydurmaz.
+- NARRATIVE-INFO-001: Story Generator hidden mystery truth'u exposition/spoiler yoluyla sızdırmaz.
+- NARRATIVE-CONFLICT-001: conflicting accounts story opportunity olarak korunabilir; evaluator tek görüşü evidence olmadan doğrulamaz.
 
-## L9-COMMUNITY-GOVERNANCE
+## L9-MYSTERY-INFORMATION-JOURNEY
 
-Yaklaşık bir world-year boyunca bir veya daha fazla settlement'ta şu journey çalıştırılır:
+50-100 story/world-time boyunca şu journey çalıştırılır:
 
-community need -> multiple actor priorities -> incomplete/rumored knowledge -> discussion -> child suggestion/evidence -> support/disagreement -> decision -> approved community action -> authoritative world consequence -> collective/personal memories -> later recurring problem -> changed actors/knowledge -> possible leadership/responsibility change -> second decision with historical context.
+hidden world truth -> witness observation -> private knowledge -> report -> rumor -> multi-hop propagation -> distortion -> conflicting account -> map rumor marker -> item/map clue discovery -> NPC-held secret -> promise/confidentiality -> investigation -> old clue recall -> additional evidence -> truth discovery -> authoritative resolution -> collective knowledge propagation.
 
 Final assertions:
 
-- decisions actor/context/history üzerinden açıklanabilir olmalı,
-- authority/social influence/expertise birbirine collapse olmamalı,
-- child agency meaningful fakat automatic obedience üretmemeli,
-- dissent yaşa uygun ve çok-perspektifli kalmalı,
-- committed consequences authoritative world state'te görünmeli,
-- Story Generator direct mutation yapmamalı,
-- past decisions relevant future reasoning'e taşınmalı,
-- leadership changes canonical cause taşımalı,
-- knowledge/rumor provenance korunmalı,
-- governance culture ile uyumlu fakat NPC individuality'yi ezmemeli,
-- game-mechanic leakage, tenant leakage, replay duplication ve temporal causality ihlali olmamalı.
+- final truth yalnız doğru aktörler tarafından doğru zamanda bilinmeli,
+- rumor distortion canonical truth'u değiştirmemeli,
+- knowledge provenance korunmalı,
+- conflicting claims evidence olmadan collapse olmamalı,
+- map fog/rumor/discovery states actor knowledge ile eşleşmeli,
+- mystery answer early leak olmamalı,
+- old critical clue retrievable olmalı,
+- secret/promise logic relationship/context ile doğal çalışmalı,
+- unsafe secrecy hard invariant ile engellenmeli,
+- tenant isolation, chronology, replay/idempotency ve context-cost sınırları korunmalı.
 
-Master acceptance principle: community decisions rastgele LLM improvizasyonu değil, yaşayan topluluğun geçmişi, bilgisi, rolleri, ilişkileri ve değerlerinden doğan açıklanabilir sonuçlar olmalıdır.
+Master acceptance principle: sistemin bir gerçeği bilmesi, karakterlerin de onu bildiği anlamına gelmez; information flow yaşayan dünyanın canonical parçasıdır.
