@@ -146,9 +146,7 @@ run("ULTEF S38 story template authoring/versioning", () => {
         householdId: h1,
         storyDefinitionId: definition.id,
       });
-      const v1After = afterV2.versions.find(
-        (version) => version.id === v1.id,
-      );
+      const v1After = afterV2.versions.find((version) => version.id === v1.id);
       const v2After = afterV2.versions.find(
         (version) => version.id === v2.storyVersionId,
       );
