@@ -5,22 +5,34 @@ import {
   type StoryContinuityContext,
   type StoryContinuityContextPort,
 } from "@lumi/story/application";
-import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
+import {
+  DrizzleBeliefSourceRepository,
+  DrizzleCanonicalMemoryRepository,
+} from "@lumi/npc-intelligence/db";
+
+const MAX_BELIEF_FACTS_PER_NPC = 12;
+const MAX_CHARACTER_MEMORY_FACTS = 12;
+const MAX_NPC_MEMORY_FACTS = 8;
 
 /**
  * Web composition-root adapter that turns persisted character state, committed
- * choice/world consequences, and NPC beliefs into bounded, prompt-safe story
- * continuity facts. Every read stays inside the exact household/world scope.
+ * choice/world consequences, bounded canonical memories and NPC beliefs into
+ * prompt-safe story continuity facts. Every read stays inside the exact
+ * household/world/owner scope.
  */
 export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
-  constructor(private readonly beliefs = new DrizzleBeliefSourceRepository()) {}
+  constructor(
+    private readonly beliefs = new DrizzleBeliefSourceRepository(),
+    private readonly memories = new DrizzleCanonicalMemoryRepository(),
+  ) {}
 
   async resolveContext(
     input: ResolveStoryContinuityContextInput,
   ): Promise<StoryContinuityContext> {
     const facts: StoryContinuityContext["facts"] = [];
+    const now = new Date();
 
     if (input.childProfileId && input.characterId) {
       const character = await getCharacterContinuitySnapshot(
@@ -69,6 +81,24 @@ export class NpcBeliefStoryContinuityContextAdapter
           });
         }
       }
+
+      const characterMemories = await this.memories.listRelevant({
+        householdId: input.householdId,
+        worldId: input.worldId,
+        childProfileId: input.childProfileId,
+        ownerType: "character",
+        ownerId: input.characterId,
+        now,
+        limit: MAX_CHARACTER_MEMORY_FACTS,
+      });
+
+      for (const memory of characterMemories) {
+        facts.push({
+          key: `memory:character:${memory.id}`,
+          summary: memory.summary,
+          source: "canonical_memory",
+        });
+      }
     }
 
     facts.push(
@@ -79,17 +109,27 @@ export class NpcBeliefStoryContinuityContextAdapter
     );
 
     const npcIds = [...new Set(input.npcIds ?? [])].filter(Boolean);
-    const now = new Date();
 
     for (const npcId of npcIds) {
-      const beliefs = await this.beliefs.getBeliefs(
-        npcId,
-        input.householdId,
-        input.worldId,
-      );
-      for (const belief of beliefs) {
-        if (belief.status !== "active") continue;
-        if (belief.expiresAt && belief.expiresAt <= now) continue;
+      const [beliefs, npcMemories] = await Promise.all([
+        this.beliefs.getBeliefs(npcId, input.householdId, input.worldId),
+        this.memories.listRelevant({
+          householdId: input.householdId,
+          worldId: input.worldId,
+          ownerType: "npc",
+          ownerId: npcId,
+          now,
+          limit: MAX_NPC_MEMORY_FACTS,
+        }),
+      ]);
+
+      for (const belief of beliefs
+        .filter(
+          (belief) =>
+            belief.status === "active" &&
+            (!belief.expiresAt || belief.expiresAt > now),
+        )
+        .slice(0, MAX_BELIEF_FACTS_PER_NPC)) {
         facts.push({
           key: `${npcId}:${belief.factId}`,
           summary: `NPC ${npcId} şu bilgiyi biliyor: ${belief.claim}`,
@@ -97,6 +137,14 @@ export class NpcBeliefStoryContinuityContextAdapter
             belief.source === "hearsay" && belief.provenance.length > 0
               ? `hearsay:${belief.provenance.join(",")}`
               : belief.source,
+        });
+      }
+
+      for (const memory of npcMemories) {
+        facts.push({
+          key: `memory:npc:${memory.id}`,
+          summary: memory.summary,
+          source: "canonical_memory",
         });
       }
     }
