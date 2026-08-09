@@ -45,6 +45,8 @@ jobs:
         run: pnpm --filter @lumi/profiles profile:migrate
       - name: Prepare NPC intelligence schema
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
       - name: Run PX-LUMI-02 character reload to later story closure
         run: pnpm ultef:px02-character-continuity
       - name: Print PX-02 evidence
