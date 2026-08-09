@@ -21,8 +21,10 @@ const ultefDescribe =
 
 let pool: pg.Pool;
 
-const DIRECT_CLAIM = "Bora eski koprunun kapisinin kilitli oldugunu kendi gozleriyle gordu.";
-const HEARSAY_CLAIM = "Mira, Bora'ya kopru isiklarinin firtinadan once yandigini anlatti.";
+const DIRECT_CLAIM =
+  "Bora eski koprunun kapisinin kilitli oldugunu kendi gozleriyle gordu.";
+const HEARSAY_CLAIM =
+  "Mira, Bora'ya kopru isiklarinin firtinadan once yandigini anlatti.";
 const FABRICATED_CLAIM = "Bora gizli bir ejderha yumurtasi buldu.";
 
 function assertSafeDisposableDatabase(url: string) {
@@ -50,7 +52,9 @@ function makeHook(input: {
     hookType: "rumor",
     sourceNpcId: input.npcId,
     targetNpcId: null,
-    payload: { claim: "Bora onceki bilgileriyle yeni bir ipucunu degerlendiriyor." },
+    payload: {
+      claim: "Bora onceki bilgileriyle yeni bir ipucunu degerlendiriyor.",
+    },
     constraints: {},
     sceneType: "narrative",
     status: "pending",
@@ -117,7 +121,8 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     const npcId = crypto.randomUUID();
     const scenario = createScenario({
       id: SCENARIO_ID,
-      title: "Direct observation and hearsay remain coherent in later story context",
+      title:
+        "Direct observation and hearsay remain coherent in later story context",
       level: "L4",
       projectGate: "PX-LUMI-03",
       seed: "px-lumi-03-memory-coherence-001",
@@ -201,13 +206,14 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
       );
 
       const prompts: string[] = [];
-      const generated = await new StorySceneGenerationService().generateSceneFromHook({
-        hook: makeHook({ householdId, childProfileId, worldId, npcId }),
-        settingsPort,
-        continuityPort: adapter,
-        characterId: "Arin",
-        callOpenRouter: capturingCaller(prompts),
-      });
+      const generated =
+        await new StorySceneGenerationService().generateSceneFromHook({
+          hook: makeHook({ householdId, childProfileId, worldId, npcId }),
+          settingsPort,
+          continuityPort: adapter,
+          characterId: "Arin",
+          callOpenRouter: capturingCaller(prompts),
+        });
       const prompt = prompts[0] ?? "";
 
       scenario.event(
