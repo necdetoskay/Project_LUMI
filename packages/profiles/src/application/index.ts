@@ -100,4 +100,14 @@ export {
 } from "./inventory.service";
 export type { InventorySummary } from "./inventory.service";
 
+export {
+  STORY_REWARD_SYSTEM_AUTHORITY,
+  grantStoryRewardAsSystem,
+} from "./system-inventory-grant.service";
+export type {
+  InventorySystemAuthority,
+  StoryRewardSystemGrantInput,
+  StoryRewardSystemGrantResult,
+} from "./system-inventory-grant.service";
+
 export * from "./llm-settings";
