@@ -1,0 +1,54 @@
+name: ULTEF PX-LUMI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  project-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run PX-LUMI-07 world time progression
+        env:
+          ULTEF_SCENARIO: PX-LUMI-07-WORLD-TIME-001
+        run: >-
+          pnpm --filter @lumi/simulation exec vitest run
+          tests/ultef/ultef-world-time.test.ts
+
+      - name: Print PX-LUMI evidence
+        if: always()
+        shell: bash
+        run: |
+          PX07_FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-07-WORLD-TIME-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$PX07_FILE" ]; then
+            echo "===== PX-LUMI-07 WORLD TIME PROGRESSION ====="
+            cat "$PX07_FILE"
+          else
+            echo "PX-LUMI-07 evidence was not produced."
+          fi
+
+      - name: Upload PX-LUMI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-px-lumi-evidence
+          path: artifacts/ultef/
+          if-no-files-found: warn
+          retention-days: 14
