@@ -38,6 +38,23 @@ Test yaklaşımı üç katmanlıdır:
 - GAMIFICATION-LEAK-001: growth vector/stat/bonus çocuk anlatısına oyun metriği olarak sızmaz.
 - L9-GROWTH-JOURNEY: 100+ story boyunca kişilik tutarlılığı ve yavaş gelişim.
 
+## Relationships & social life family
+
+- REL-EVIDENCE-001: tek olay aşırı relationship shift yaratmaz; değişim canonical evidence'e dayanır.
+- REL-PERSPECTIVE-001: aynı event child ve NPC tarafında farklı interpretation oluşturabilir.
+- REL-MEMORY-001: relationship change gerçek shared/actor-specific memory ile trace edilebilir.
+- REL-PROMISE-001: verilen söz sonraki encounter'da doğru aktör tarafından doğru bağlamda hatırlanır.
+- REL-GIFT-001: hediye ownership + memory + relationship evidence zinciri doğru çalışır.
+- REL-NPC-NPC-001: NPC-NPC relationships child yokken policy sınırlarında değişebilir.
+- REL-FAMILY-001: family actors başlangıç shared-history/context'i ile generic NPC'den farklı davranabilir.
+- REL-NEGATIVE-001: kırgınlık/yanlış anlaşılma/rekabet güvenli biçimde mümkün; sistem monoton pozitif friendship üretmez.
+- REL-REPAIR-001: misunderstanding/resentment doğal narrative interaction ile onarılabilir.
+- REL-AGENCY-001: relationship state child choice'u zorla belirlemez.
+- REL-UI-LEAK-001: trust/affection/respect sayıları child UI veya story'ye stat olarak sızmaz.
+- REL-HOOK-001: relationship history uygun olduğunda NPC arc/story hook/Saga seed doğurabilir.
+- REL-TENANT-001: başka child/household social graph, relationship state veya memories sızmaz.
+- L9-SOCIAL-LIFE-JOURNEY: 100+ story boyunca multi-NPC relationships, shared memories, misunderstandings, promises, gifts, NPC-NPC changes ve repairs doğal biçimde ilerler; identity/knowledge/tenant isolation korunur.
+
 ## NPC / world evolution family
 
 - NPC-AUTO-001: child yardım etmese de uygun NPC arc kontrollü ilerler.
@@ -151,6 +168,7 @@ ULTEF Living Universe Journey, aynı canonical universe üzerinde 10 -> 25 -> 50
 - timeline and temporal causality
 - world/location persistence
 - NPC identity and autonomy
+- social relationship continuity and actor perspectives
 - episodic/semantic memory and retrieval quality
 - character growth drift
 - inventory/object identity and ownership
