@@ -1,7 +1,15 @@
-import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  isNull,
+  notInArray,
+  or,
+} from "drizzle-orm";
 
 import type { CanonicalMemory } from "../../../domain/memory";
-import { isRetrievableMemory, validateCanonicalMemory } from "../../../domain/memory";
+import { validateCanonicalMemory } from "../../../domain/memory";
 import type {
   CanonicalMemoryPort,
   CanonicalMemoryQuery,
@@ -80,26 +88,28 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
 
   async listRelevant(query: CanonicalMemoryQuery): Promise<CanonicalMemory[]> {
     const limit = normalizeMemoryRetrievalLimit(query.limit);
-    const scope = [
-      eq(canonicalMemories.householdId, query.householdId),
-      eq(canonicalMemories.worldId, query.worldId),
-      eq(canonicalMemories.ownerType, query.ownerType),
-      eq(canonicalMemories.ownerId, query.ownerId),
-      or(isNull(canonicalMemories.expiresAt), gt(canonicalMemories.expiresAt, query.now))!,
-    ];
-
-    if (query.childProfileId !== undefined) {
-      scope.push(
-        query.childProfileId === null
-          ? isNull(canonicalMemories.childProfileId)
-          : eq(canonicalMemories.childProfileId, query.childProfileId),
-      );
-    }
+    const profileScope =
+      query.childProfileId == null
+        ? isNull(canonicalMemories.childProfileId)
+        : eq(canonicalMemories.childProfileId, query.childProfileId);
 
     const rows = await this.db
       .select()
       .from(canonicalMemories)
-      .where(and(...scope))
+      .where(
+        and(
+          eq(canonicalMemories.householdId, query.householdId),
+          eq(canonicalMemories.worldId, query.worldId),
+          eq(canonicalMemories.ownerType, query.ownerType),
+          eq(canonicalMemories.ownerId, query.ownerId),
+          profileScope,
+          notInArray(canonicalMemories.lifecycle, ["archived", "superseded"]),
+          or(
+            isNull(canonicalMemories.expiresAt),
+            gt(canonicalMemories.expiresAt, query.now),
+          ),
+        ),
+      )
       .orderBy(
         desc(canonicalMemories.salience),
         desc(canonicalMemories.confidence),
@@ -107,6 +117,6 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
       )
       .limit(limit);
 
-    return rows.map(mapRow).filter((memory) => isRetrievableMemory(memory, query.now));
+    return rows.map(mapRow);
   }
 }
