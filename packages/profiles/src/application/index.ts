@@ -25,6 +25,19 @@ export type {
 } from "./child-profile.service";
 
 export {
+  CHILD_INTERESTS,
+  DEVELOPMENT_GOALS,
+  getChildPersonalization,
+  updateChildPersonalization,
+} from "./child-profile-personalization.service";
+export type {
+  ChildInterest,
+  DevelopmentGoal,
+  ChildPersonalizationResult,
+  UpdateChildPersonalizationInput,
+} from "./child-profile-personalization.service";
+
+export {
   getPolicy,
   updatePolicy,
   appendPolicyAudit,
