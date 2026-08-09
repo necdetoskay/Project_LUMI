@@ -1,7 +1,7 @@
 import {
   STORY_REWARD_SYSTEM_AUTHORITY,
   grantStoryRewardAsSystem,
-} from "../../../packages/profiles/src/application/index.ts";
+} from "../../../packages/profiles/src/application/index";
 import type {
   InventoryGrantInput,
   InventoryGrantPort,
