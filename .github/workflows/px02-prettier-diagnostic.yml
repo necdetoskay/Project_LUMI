@@ -1,0 +1,23 @@
+name: PX-02 Prettier Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  prettier-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Render exact Prettier diff
+        run: |
+          pnpm exec prettier --write apps/web/tests/ultef-px-character-continuity.integration.test.ts
+          git diff -- apps/web/tests/ultef-px-character-continuity.integration.test.ts
