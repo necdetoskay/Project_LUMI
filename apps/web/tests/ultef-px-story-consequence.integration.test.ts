@@ -23,8 +23,7 @@ import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs
 import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 
 const enabled =
-  process.env.ULTEF_SCENARIO ===
-  "PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001";
+  process.env.ULTEF_SCENARIO === "PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
 const ultefDescribe =
@@ -127,7 +126,8 @@ ultefDescribe("PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001", () => {
     const userId = crypto.randomUUID();
     const scenario = createScenario({
       id: "PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001",
-      title: "Committed choice consequence reaches durable world and later story context",
+      title:
+        "Committed choice consequence reaches durable world and later story context",
       level: "PX-LUMI",
       projectGate: "PX-LUMI-05",
       seed: "px-lumi-05-choice-consequence-continuity-001",
@@ -285,11 +285,15 @@ ultefDescribe("PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001", () => {
         optionId: option.id,
         worldVersion: 1,
       });
-      scenario.event("choice_presented", "Presented active-scene choice option", {
-        choicePointId: choice.point.id,
-        optionId: option.id,
-        available: true,
-      });
+      scenario.event(
+        "choice_presented",
+        "Presented active-scene choice option",
+        {
+          choicePointId: choice.point.id,
+          optionId: option.id,
+          available: true,
+        },
+      );
       scenario.event("choice_committed", "Committed real persisted choice", {
         committedChoiceId: committed.committedChoice.id,
         consequenceId: committed.consequence.id,
@@ -341,51 +345,63 @@ ultefDescribe("PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001", () => {
       );
       expect(commitCount.rows[0]?.count).toBe(1);
 
-      const continuity = await new NpcBeliefStoryContinuityContextAdapter().resolveContext(
-        {
+      const continuity =
+        await new NpcBeliefStoryContinuityContextAdapter().resolveContext({
           householdId,
           worldId,
           childProfileId,
           characterId,
           npcIds: [],
-        },
-      );
+        });
       const choiceFact = continuity.facts.find((fact) =>
         fact.summary.includes("flags.bridge_open=true"),
       );
       expect(choiceFact).toBeDefined();
 
       const prompts: string[] = [];
-      const generated = await new StorySceneGenerationService().generateSceneFromHook({
-        hook: makeHook({ householdId, childProfileId, worldId }),
-        childProfileId,
-        characterId,
-        continuityPort: new NpcBeliefStoryContinuityContextAdapter(),
-        settingsPort,
-        callOpenRouter: consequenceAwareCaller(prompts),
-        maxAttempts: 1,
-      });
+      const generated =
+        await new StorySceneGenerationService().generateSceneFromHook({
+          hook: makeHook({ householdId, childProfileId, worldId }),
+          childProfileId,
+          characterId,
+          continuityPort: new NpcBeliefStoryContinuityContextAdapter(),
+          settingsPort,
+          callOpenRouter: consequenceAwareCaller(prompts),
+          maxAttempts: 1,
+        });
       expect(prompts).toHaveLength(1);
       expect(prompts[0]).toContain(
         "Kalıcı seçim sonucu: flags.bridge_open=true.",
       );
       expect(generated.scene.narrative).toContain("actigi koprunun hala acik");
 
-      scenario.event("world_commit", "Committed choice-derived world consequence", {
-        manifestId: firstCommit.manifest.id,
-        commitId: firstCommit.commit.commitId,
-        worldVersionBefore: firstCommit.commit.worldVersionBefore,
-        worldVersionAfter: firstCommit.commit.worldVersionAfter,
-        evidenceRef: firstCommit.evidenceRef,
-      });
-      scenario.event("replay", "Replayed the same committed choice consequence", {
-        commitId: replayCommit.commit.commitId,
-        worldVersionAfter: replayCommit.commit.worldVersionAfter,
-      });
-      scenario.event("later_story", "Generated later scene from committed choice continuity", {
-        continuityFact: choiceFact?.summary,
-        narrative: generated.scene.narrative,
-      });
+      scenario.event(
+        "world_commit",
+        "Committed choice-derived world consequence",
+        {
+          manifestId: firstCommit.manifest.id,
+          commitId: firstCommit.commit.commitId,
+          worldVersionBefore: firstCommit.commit.worldVersionBefore,
+          worldVersionAfter: firstCommit.commit.worldVersionAfter,
+          evidenceRef: firstCommit.evidenceRef,
+        },
+      );
+      scenario.event(
+        "replay",
+        "Replayed the same committed choice consequence",
+        {
+          commitId: replayCommit.commit.commitId,
+          worldVersionAfter: replayCommit.commit.worldVersionAfter,
+        },
+      );
+      scenario.event(
+        "later_story",
+        "Generated later scene from committed choice continuity",
+        {
+          continuityFact: choiceFact?.summary,
+          narrative: generated.scene.narrative,
+        },
+      );
       scenario.delta("world.version", 1, 2, "choice-derived world commit");
       scenario.delta(
         "world.flags.bridge_open",
