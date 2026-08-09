@@ -7,23 +7,21 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 
 | ID | Decision | Status |
 |---|---|---|
-| UXD-001..084 | Önceki kanonik UI/UX, living-universe, relationships ve autonomous NPC decisions | ACCEPTED |
-| UXD-085 | Settlement yalnız bina koleksiyonu değildir; narrative-relevant identity, state ve community life taşır | ACCEPTED |
-| UXD-086 | Settlement internal state vektörel olabilir ancak child UI'a sayısal city-sim/reputation metriği olarak sızmaz | ACCEPTED |
-| UXD-087 | Functional NPC roles (ör. fırıncı, tamirci) availability/story possibilities'i etkileyebilir; tam ekonomik supply-chain simülasyonu yapılmaz | ACCEPTED |
-| UXD-088 | Environment/world events settlement needs oluşturabilir; community child olmadan da makul çözüm/recovery gösterebilir | ACCEPTED |
-| UXD-089 | Child dünyanın tek kurtarıcısı değildir; world continues without child fakat child contribution outcome'u anlamlı biçimde değiştirebilir | ACCEPTED |
-| UXD-090 | Collective/community memory actor-specific memories'ten ayrıdır; tek event farklı collective ve personal interpretations üretebilir | ACCEPTED |
-| UXD-091 | Festivals/traditions world time, culture, NPC routines, relationships ve memory ile bağlanabilir | ACCEPTED |
-| UXD-092 | Her community event Saga olmaz; everyday/low-stakes stories first-class narrative type olarak korunur | ACCEPTED |
-| UXD-093 | Narrative pacing Saga, adventure, everyday, relationship ve exploration türleri arasında çeşitlilik gözetir | ACCEPTED |
-| UXD-094 | Community events farklı significance seviyeleri taşır; her olay permanent memory/story üretmez | ACCEPTED |
-| UXD-095 | Background community NPC narrative significance kazandıkça persistent NPC'ye terfi edebilir | ACCEPTED |
-| UXD-096 | Settlement büyümesi/değişimi canonical reason gerektirir; yalnız zaman geçti diye rastgele bina/service oluşmaz | ACCEPTED |
-| UXD-097 | Economy lightweight tutulur: availability, scarcity, local specialty, trade connection ve major disruption narrative relevance kadar modellenir | ACCEPTED |
-| UXD-098 | RPG merkezli gold/wealth loop LUMI'nin ana modeli değildir; para varsa narrative context içinde ikincil kalır | ACCEPTED |
-| UXD-099 | Community knowledge sihirli global bilgi değildir; knowledge propagation/provenance ile NPC'lere yayılır | ACCEPTED |
-| UXD-100 | Reputation tek puan değildir; known-for, collective impressions ve actor-specific perceptions semantik olarak temsil edilir | ACCEPTED |
+| UXD-001..100 | Önceki kanonik UI/UX, living-universe, relationships, autonomous NPC ve settlement/community decisions | ACCEPTED |
+| UXD-101 | Culture bir settlement/location için dekor değil; shared norms, traditions, stories, symbols ve meaning-making katmanıdır | ACCEPTED |
+| UXD-102 | Cultural detail progressive olabilir; world bootstrap'ta yalnız temel cultural anchors gerekir, geri kalanı hikâyelerle derinleşebilir | ACCEPTED |
+| UXD-103 | Recurring traditions/festivals world-time ile geri gelir fakat her tekrar birebir aynı story değildir; geçmiş yılların memories/state'i yeni versiyonu etkiler | ACCEPTED |
+| UXD-104 | Collective/cultural memory ile historical world truth ayrı tutulur; toplum aynı olayı zamanla farklı anlatabilir | ACCEPTED |
+| UXD-105 | Legend, belief ve cultural interpretation canonical fact değildir; provenance/knowledge boundary korunur | ACCEPTED |
+| UXD-106 | Culture shared tendency/norm üretir fakat bütün NPC'leri aynı kişilik/karar kalıbına dönüştürmez | ACCEPTED |
+| UXD-107 | Cultural identity yavaş/evidence-based değişir; migration, generation, world events ve repeated practice dönüşüm sebebi olabilir | ACCEPTED |
+| UXD-108 | Child küçük ve anlamlı cultural contribution bırakabilir fakat tek eylem tüm topluluk kültürünü aniden dönüştürmez | ACCEPTED |
+| UXD-109 | Farklı regions/settlements ayırt edilebilir cultural identities taşır; komşu bölgeler bazı ortak anchors paylaşabilir | ACCEPTED |
+| UXD-110 | Aynı canonical item/event farklı cultures tarafından farklı yorumlanabilir; interpretation object/world truth'u değiştirmez | ACCEPTED |
+| UXD-111 | Character origin hangi cultural knowledge/traditions'ın başlangıçta bilindiğini etkiler; yabancı kültür otomatik bilinmez | ACCEPTED |
+| UXD-112 | Cultural voice/dialogue küçük hitap, deyim, sözcük ve davranış farklılıklarıyla aktarılır; okunabilirliği bozan yapay lehçe kullanılmaz | ACCEPTED |
+| UXD-113 | Cultural symbols, food, music, architecture, clothing ve local stories narrative/visual identity'yi destekleyebilir fakat checklist olarak her sahneye zorlanmaz | ACCEPTED |
+| UXD-114 | Cultural conflict/generational difference yaşa uygun biçimde story source olabilir; culture stat/score veya faction game mechanic olarak sunulmaz | ACCEPTED |
 
 ## Change control
 
