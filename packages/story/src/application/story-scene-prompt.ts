@@ -71,8 +71,8 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
     })
     .join("\n");
   const continuitySection = continuityLines
-    ? `\nKanonik süreklilik bilgileri (önceki hikâyelerden; bunlarla çelişme, ilgiliyse doğal biçimde kullan):\n${continuityLines}\n`
-    : "";
+    ? `\nKanonik süreklilik bilgileri (önceki hikâyelerden; bunlarla çelişme, ilgiliyse doğal biçimde kullan):\n${continuityLines}\n\nSüreklilik kullanım kanıtı:\n- Sahnede gerçekten kullandığın süreklilik maddelerinin anahtarlarını usedContinuityKeys alanına yaz.\n- Yalnız yukarıdaki köşeli parantezlerde verilen anahtarları kullan.\n- Bir madde sahnede fiilen kullanılmadıysa anahtarını yazma.\n- Hiçbir süreklilik maddesi kullanılmadıysa boş dizi döndür.\n`
+    : `\nSüreklilik kullanım kanıtı:\n- Bu istekte kanonik süreklilik maddesi verilmedi; usedContinuityKeys mutlaka boş dizi olmalı.\n`;
 
   return `Sen Project LUMI için güvenli, yaşa uygun çocuk hikayesi sahnesi üreten bir AI asistansın.
 
@@ -98,6 +98,7 @@ JSON şeması (kesinlikle uy):
   "characters": ["sahnede yer alan karakter adları"],
   "narrative": "hikaye anlatımı (1-4000 karakter, Türkçe, çocuk için güvenli)",
   "moment": "sahnenin tek cümlelik duygusal anı",
-  "nextPrompt": "bir sonraki sahne için kısa yönlendirme (opsiyonel)"
+  "nextPrompt": "bir sonraki sahne için kısa yönlendirme (opsiyonel)",
+  "usedContinuityKeys": ["yalnız sahnede gerçekten kullanılan, promptta verilmiş süreklilik anahtarları"]
 }`;
 }
