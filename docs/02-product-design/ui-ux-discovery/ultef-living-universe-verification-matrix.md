@@ -3,53 +3,55 @@
 Status: CANONICAL TEST BACKLOG
 Date: 2026-08-09
 
-> Önceki kanonik test aileleri (Memory, Growth, Relationships, World Evolution, Time, Weather/Ecology, Progressive World, Item, Feedback, Narrative ve UI/UX) korunur. Bu güncelleme autonomous NPC life test ailesini genişletir.
+> Önceki kanonik test aileleri korunur. Bu güncelleme Settlement / Community / Everyday World Life doğrulama ailesini ekler.
 
-## Autonomous NPC goals, routines & social events family
+## Settlement / community / everyday world family
 
-- NPC-GOAL-001: aynı long-term goal farklı canonical koşullarda farklı geçerli yollarla ilerleyebilir; scripted quest chain'e kilitlenmez.
-- NPC-GOAL-CANON-001: NPC goal ilerlemek için topology, time, ownership, world state veya protected narrative invariant'ı ihlal edemez.
-- NPC-GOAL-OFFLINE-001: child yokken uygun non-critical goal kontrollü ilerleyebilir; child-presence-required kritik arc tamamlanamaz.
-- NPC-ROUTINE-001: routine bir tendency'dir; weather, event, need, relationship veya active goal tarafından doğal biçimde değişebilir.
-- NPC-LOCATION-001: NPC'nin current canonical location'ı child-facing encounter ile tutarlıdır; NPC sırf story istedi diye teleport olmaz.
-- NPC-KNOWLEDGE-001: NPC decision sırasında bilmediği canonical world fact'i kullanmaz.
-- NPC-BELIEF-001: yanlış belief/rumor NPC davranışını etkileyebilir fakat world truth'u mutate etmez.
-- NPC-PERSONALITY-001: personality karar distribution/eğilimini etkiler fakat aynı trait her durumda aynı eylemi zorlamaz.
-- NPC-EMOTION-001: emotion/stakes/context personality tendency'yi makul biçimde değiştirebilir.
-- NPC-INITIATIVE-001: urgency + relationship + relevance yeterliyse NPC child'a kendisi ulaşabilir.
-- NPC-PACING-001: autonomous initiative/events child-facing notification/story-hook spam oluşturmaz.
-- NPC-SOCIAL-001: child olmadan meaningful NPC-NPC social event oluşabilir ve significance policy'ye göre persist edilir.
-- NPC-SOCIAL-FILTER-001: önemsiz günlük etkileşimler gereksiz canonical event/memory büyümesi oluşturmaz.
-- NPC-SOCIAL-KNOWLEDGE-001: child bulunmadığı private NPC-NPC event'i otomatik öğrenmez.
-- NPC-RUMOR-001: event bilgisi NPC'ler arasında yayılırken fact/observation/report/rumor ayrımı ve provenance korunur.
-- NPC-RUMOR-DRIFT-001: rumor değişebilir/bozulabilir fakat değişmiş rumor canonical fact olarak overwrite edilmez.
-- NPC-FAILURE-001: NPC goal başarısız olabilir; failure valid state transition ve future narrative consequence üretir.
-- NPC-FAILURE-GAME-LEAK-001: NPC failure child UI/story'de quest failed/stat loss dili olarak sızmaz.
-- NPC-RESOLUTION-001: düşük relevance/influence NPC'ler gereksiz yüksek simulation resolution/cost tüketmez.
-- NPC-TENANT-001: autonomous event, goal, routine, rumor ve knowledge başka household/universe/child boundary'sine sızmaz.
-- L9-NPC-AUTONOMOUS-LIFE: 100+ story/world-time boyunca çoklu NPC goals, routine deviations, NPC-NPC events, rumors, failures, initiative ve offline progression çalıştırılır; identity, location, chronology, knowledge provenance, relationship continuity, tenant isolation, pacing ve simulation cost doğrulanır.
+- SETTLEMENT-IDENTITY-001: yerleşimin temel kimliği uzun horizon'da rastgele değişmez; değişim canonical event/history ile açıklanabilir.
+- SETTLEMENT-STATE-001: internal settlement vectors child UI/story'ye city-sim stat/score olarak sızmaz.
+- SETTLEMENT-EVENT-001: canonical environment/world event settlement state ve available possibilities üzerinde anlamlı etki oluşturur.
+- SETTLEMENT-RECOVERY-001: community child müdahalesi olmadan da uygun aktör/role/state ile makul recovery gösterebilir.
+- SETTLEMENT-CHILD-IMPACT-001: child contribution sonucu hızlandırabilir, yönünü değiştirebilir veya yeni possibility açabilir; katkı anlamsızlaşmaz.
+- SETTLEMENT-NO-SAVIOR-001: child yardım etmediğinde settlement sonsuza kadar frozen/problem state'te kalmaz.
+- SETTLEMENT-ROLE-001: functional NPC role availability ilgili service/story possibility'yi etkiler fakat aşırı supply-chain simülasyonu gerektirmez.
+- SETTLEMENT-MEMORY-001: collective memory actor-specific memory ile karıştırılmaz ve source event trace korunur.
+- SETTLEMENT-CULTURE-001: festival/tradition doğru world-time/cultural context içinde oluşur ve ilgili NPC routines/memories ile tutarlıdır.
+- SETTLEMENT-EVENT-SIGNIFICANCE-001: önemsiz community event'ler gereksiz permanent memory/story/state büyümesi oluşturmaz.
+- SETTLEMENT-NPC-PROMOTION-001: background community NPC ancak anlamlı repeated/narrative significance sonrası persistent entity olur.
+- SETTLEMENT-GROWTH-001: yeni building/path/service canonical reason olmadan ortaya çıkmaz.
+- SETTLEMENT-ECONOMY-001: scarcity/availability canonical trade/environment disruption'a dayanır; Story Generator rastgele ekonomik kriz uydurmaz.
+- SETTLEMENT-ECONOMY-SCOPE-001: lightweight economy sınırı korunur; gereksiz per-NPC salary/price/supply-chain simulation maliyeti oluşmaz.
+- SETTLEMENT-KNOWLEDGE-001: community-level fact tüm NPC'lere sihirli biçimde yayılmaz; propagation/provenance gerekir.
+- SETTLEMENT-REPUTATION-001: child hakkında collective impression tek reputation score'a indirgenmez; farklı NPC perceptions korunur.
+- STORY-DIVERSITY-001: Narrative Director sürekli Saga/adventure üretmez; story-type diversity uzun horizon'da korunur.
+- STORY-EVERYDAY-001: düşük-stakes everyday story coherence, emotional value ve character/world continuity açısından kaliteli olabilir.
+- STORY-PACING-MIX-001: Saga/adventure/everyday/relationship/exploration ritmi monoton high-stakes pattern'e dönüşmez.
+- SETTLEMENT-TENANT-001: settlement state, collective memory, community knowledge ve NPC graph başka universe/tenant'a sızmaz.
 
-## Cross-system additions
+## Cross-system settlement tests
 
-- NARRATIVE-NPC-LOCATION-001: Story Generator canonical NPC location ile çelişen encounter uydurmaz.
-- NARRATIVE-NPC-KNOWLEDGE-001: NPC dialogue yalnız NPC-authorized knowledge/beliefs/memories üzerinden bilgi verebilir.
-- REL-AUTONOMOUS-001: autonomous NPC-NPC event relationship evidence oluşturduğunda source event trace korunur.
-- MEM-NPC-AUTONOMOUS-001: autonomous event yalnız olaya katılan/öğrenen aktörlerde uygun memory/knowledge üretir.
-- TIME-NPC-CAUSAL-001: routine, travel, rumor propagation ve social events temporal causality'yi ihlal etmez.
-- WORLD-NPC-TRAVEL-001: NPC movement world topology/travel constraints ile uyumludur.
+- WORLD-SETTLEMENT-CAUSE-001: settlement mutation world timeline/canonical event ile nedensel olarak açıklanabilir.
+- MEM-COLLECTIVE-001: collective event kişisel episodic memory yerine yanlışlıkla tüm aktörlere kopyalanmaz.
+- NPC-COMMUNITY-ROLE-001: NPC role/state değişikliği ilgili community capabilities'e yansır.
+- TIME-FESTIVAL-001: recurring tradition world calendar ile tutarlı tekrarlanır; replay/offline yanlış duplicate event oluşturmaz.
+- NARRATIVE-EVERYDAY-001: everyday story oyun görevine, filler'a veya didaktik egzersize dönüşmeden anlamlı narrative sunar.
+- NARRATIVE-COMMUNITY-KNOWLEDGE-001: dialog community knowledge provenance'ını ihlal etmez.
 
-## Long-horizon master program additions
+## L9-LIVING-VILLAGE-YEAR
 
-10 -> 25 -> 50 -> 100+ story/world-time checkpoints artık ayrıca şunları ölçer:
+Yaklaşık bir world-year boyunca tek settlement üzerinde şu zincir çalıştırılır:
 
-- NPC goal progress without scripted convergence
-- routine diversity without identity drift
-- canonical NPC location continuity
-- autonomous social-event significance filtering
-- private-event knowledge isolation
-- rumor provenance and distortion safety
-- initiative frequency/pacing
-- NPC failure and recovery consequences
-- simulation-resolution/cost growth
+season changes -> festivals/traditions -> weather/environment disruptions -> NPC routines/goals -> functional role availability -> lightweight scarcity -> child presence/absence -> autonomous recovery -> new/background NPC promotion -> collective/personal memories -> community knowledge propagation -> everyday/relationship/adventure/Saga story mix -> settlement growth/change.
 
-Master acceptance principle değişmez: ayrı motorların PASS olması yeterli değildir; birleşik yolculukta sistemlerin birbirini bozmadığı kanıtlanmalıdır.
+Final assertions:
+
+- settlement değişmiş ama identity/history continuity korunmuş olmalı,
+- her büyük mutation canonical cause ile trace edilebilmeli,
+- child tek zorunlu problem çözücü olmamalı fakat contribution meaningful olmalı,
+- community knowledge magical broadcast olmamalı,
+- collective/personal memories ayrılmalı,
+- economy scope/maliyet kontrol altında kalmalı,
+- story mix monotonlaşmamalı,
+- tenant isolation, chronology, replay/idempotency korunmalı.
+
+Master acceptance principle: 100 hikâye sonra her şeyin değişmesi başarı değildir; bugünkü state'in geçmiş canonical events üzerinden açıklanabilir olması başarıdır.
