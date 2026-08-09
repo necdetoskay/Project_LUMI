@@ -72,6 +72,9 @@ export {
 } from "./character-domain.service";
 export type { CharacterDomainSummary } from "./character-domain.service";
 
+export { getCharacterContinuitySnapshot } from "./character-continuity.service";
+export type { CharacterContinuitySnapshot } from "./character-continuity.service";
+
 export {
   createItemDefinition,
   acquireItem,
