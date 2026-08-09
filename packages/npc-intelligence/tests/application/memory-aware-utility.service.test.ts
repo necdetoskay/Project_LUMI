@@ -26,7 +26,7 @@ function score(candidateId: string, total: number): UtilityScore {
 
 const memory: DecisionMemoryEvidence = {
   memoryId: "memory-1",
-  kind: "event",
+  kind: "experience",
   effectiveSalience: 1,
   confidence: 1,
   candidateAffinity: {
