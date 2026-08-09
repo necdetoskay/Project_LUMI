@@ -43,6 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Prepare profile schema
         run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
       - name: Prepare NPC intelligence schema
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Prepare story schema
