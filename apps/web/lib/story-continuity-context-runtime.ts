@@ -22,7 +22,7 @@ const MAX_NPC_MEMORY_FACTS = 8;
  * Web composition-root adapter that turns persisted character state, committed
  * choice/world consequences, bounded canonical memories and NPC beliefs into
  * prompt-safe story continuity facts. Every read stays inside the exact
- * household/world/owner scope.
+ * household/world/owner/profile scope.
  */
 export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
@@ -122,6 +122,7 @@ export class NpcBeliefStoryContinuityContextAdapter
         this.memories.listRelevant({
           householdId: input.householdId,
           worldId: input.worldId,
+          childProfileId: input.childProfileId ?? null,
           ownerType: "npc",
           ownerId: npcId,
           now,
