@@ -56,7 +56,10 @@ export default async function RegisterPage({
           }
         >
           {error ? (
-            <div className="storybook-message storybook-message-error" role="alert">
+            <div
+              className="storybook-message storybook-message-error"
+              role="alert"
+            >
               {error}
             </div>
           ) : null}

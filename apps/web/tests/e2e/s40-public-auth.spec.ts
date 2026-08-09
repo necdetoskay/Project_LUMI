@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const forbiddenGameLanguage = /\b(xp|level|quest|skill points?|görev puanı|seviye atla)\b/i;
+const forbiddenGameLanguage =
+  /\b(xp|level|quest|skill points?|görev puanı|seviye atla)\b/i;
 
 async function expectNoGamificationLeak(pageText: string) {
   expect(pageText).not.toMatch(forbiddenGameLanguage);
@@ -18,9 +19,27 @@ test.describe("ULTEF S40 public/auth visual contract", () => {
         name: "Her dönüşte seni hatırlayan bir dünya.",
       }),
     ).toBeVisible();
-    await expect(page.getByText("Önce hikâye kalitesi")).toBeVisible();
-    await expect(page.getByText("Hatırlayan bir dünya")).toBeVisible();
-    await expect(page.getByText("Oyun değil, yaşayan anlatı")).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Önce hikâye kalitesi",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Hatırlayan bir dünya",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "Oyun değil, yaşayan anlatı",
+        exact: true,
+      }),
+    ).toBeVisible();
 
     const text = await page.locator("body").innerText();
     expect(text).not.toContain("Gelişim Analizi");

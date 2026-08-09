@@ -28,12 +28,21 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="storybook-hero-panel" aria-label="LUMI dünya önizlemesi">
+        <div
+          className="storybook-hero-panel"
+          aria-label="LUMI dünya önizlemesi"
+        >
           <div className="storybook-hero-art" aria-hidden="true">
-            <div className="storybook-cabin" style={{ left: "18%", bottom: "5.8rem" }}>
+            <div
+              className="storybook-cabin"
+              style={{ left: "18%", bottom: "5.8rem" }}
+            >
               <div className="storybook-cabin-window">✦</div>
             </div>
-            <div className="storybook-moon" style={{ right: "12%", top: "12%" }}>
+            <div
+              className="storybook-moon"
+              style={{ right: "12%", top: "12%" }}
+            >
               ☾
             </div>
           </div>
@@ -47,15 +56,19 @@ export default function HomePage() {
 
       <div className="storybook-feature-grid" aria-label="LUMI yaklaşımı">
         <article className="storybook-feature">
-          <div className="storybook-feature-icon" aria-hidden="true">📖</div>
+          <div className="storybook-feature-icon" aria-hidden="true">
+            📖
+          </div>
           <h2>Önce hikâye kalitesi</h2>
           <p>
-            Görsel, ses ve etkileşim destekleyicidir. Asıl merkez tutarlı,
-            merak uyandıran ve yaşa uygun hikâyedir.
+            Görsel, ses ve etkileşim destekleyicidir. Asıl merkez tutarlı, merak
+            uyandıran ve yaşa uygun hikâyedir.
           </p>
         </article>
         <article className="storybook-feature">
-          <div className="storybook-feature-icon" aria-hidden="true">🧭</div>
+          <div className="storybook-feature-icon" aria-hidden="true">
+            🧭
+          </div>
           <h2>Hatırlayan bir dünya</h2>
           <p>
             Önemli anılar, ilişkiler, eşyalar ve keşifler sonraki hikâyelerde
@@ -63,11 +76,13 @@ export default function HomePage() {
           </p>
         </article>
         <article className="storybook-feature">
-          <div className="storybook-feature-icon" aria-hidden="true">🌿</div>
+          <div className="storybook-feature-icon" aria-hidden="true">
+            🌿
+          </div>
           <h2>Oyun değil, yaşayan anlatı</h2>
           <p>
-            XP, level veya görev listeleri yerine ilerleme; karakterlerin,
-            anıların ve dünyanın davranışlarında hissedilir.
+            Puan tabloları ve oyun ilerleme göstergeleri yerine değişim;
+            karakterlerin, anıların ve dünyanın davranışlarında hissedilir.
           </p>
         </article>
       </div>
