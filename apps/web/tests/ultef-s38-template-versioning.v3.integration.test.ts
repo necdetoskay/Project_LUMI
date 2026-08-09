@@ -121,15 +121,21 @@ run("ULTEF S38 story template authoring/versioning", () => {
       const cloneOk =
         v2.versionNumber === 2 &&
         graph1.scenes.length === graph2.scenes.length &&
-        graph1.scenes.every((scene, index) =>
-          scene.narrativeText === graph2.scenes[index]?.narrativeText &&
-          scene.id !== graph2.scenes[index]?.id,
+        graph1.scenes.every(
+          (scene, index) =>
+            scene.narrativeText === graph2.scenes[index]?.narrativeText &&
+            scene.id !== graph2.scenes[index]?.id,
         );
-      scenario.assert("v2 cloned canonical v1 graph with independent identities", cloneOk, true, {
-        v1: v1.id,
-        v2: v2.storyVersionId,
-        sceneCount: graph2.scenes.length,
-      });
+      scenario.assert(
+        "v2 cloned canonical v1 graph with independent identities",
+        cloneOk,
+        true,
+        {
+          v1: v1.id,
+          v2: v2.storyVersionId,
+          sceneCount: graph2.scenes.length,
+        },
+      );
 
       await publishStoryTemplateRevision({
         householdId: h1,
@@ -140,7 +146,9 @@ run("ULTEF S38 story template authoring/versioning", () => {
         householdId: h1,
         storyDefinitionId: definition.id,
       });
-      const v1After = afterV2.versions.find((version) => version.id === v1.id);
+      const v1After = afterV2.versions.find(
+        (version) => version.id === v1.id,
+      );
       const v2After = afterV2.versions.find(
         (version) => version.id === v2.storyVersionId,
       );
@@ -176,12 +184,22 @@ run("ULTEF S38 story template authoring/versioning", () => {
 
       const v3Scenes = [
         {
-          ...v1Scenes[0],
-          narrativeText: "Lumi fenerin yanındaki sessiz bahçede yeni bir harita buldu.",
+          sceneKey: "entry",
+          sequenceNumber: 0,
+          sceneType: "narrative",
+          title: "Başlangıç",
+          narrativeText:
+            "Lumi fenerin yanındaki sessiz bahçede yeni bir harita buldu.",
+          isEntryScene: true,
         },
         {
-          ...v1Scenes[1],
-          narrativeText: "Harita, bir sonraki güvenli yolculuğun yönünü gösterdi.",
+          sceneKey: "ending",
+          sequenceNumber: 1,
+          sceneType: "ending",
+          title: "Işık",
+          narrativeText:
+            "Harita, bir sonraki güvenli yolculuğun yönünü gösterdi.",
+          isTerminalScene: true,
         },
       ];
       const v3 = await createStoryTemplateRevision({
@@ -207,10 +225,15 @@ run("ULTEF S38 story template authoring/versioning", () => {
         graph3.scenes[0]?.narrativeText.includes("sessiz bahçede") === true &&
         afterV3.versions.find((version) => version.id === v2.storyVersionId)
           ?.publicationStatus === "retired";
-      scenario.assert("v3 replacement graph became canonical published revision", replacementOk, true, {
-        current: afterV3.definition.currentPublishedVersionId,
-        versionNumber: v3.versionNumber,
-      });
+      scenario.assert(
+        "v3 replacement graph became canonical published revision",
+        replacementOk,
+        true,
+        {
+          current: afterV3.definition.currentPublishedVersionId,
+          versionNumber: v3.versionNumber,
+        },
+      );
 
       let tenantRejected = false;
       try {
@@ -229,7 +252,12 @@ run("ULTEF S38 story template authoring/versioning", () => {
         tenantRejected,
       );
 
-      const pass = cloneOk && promotionOk && immutableRejected && replacementOk && tenantRejected;
+      const pass =
+        cloneOk &&
+        promotionOk &&
+        immutableRejected &&
+        replacementOk &&
+        tenantRejected;
       const report = scenario.finish({
         result: pass ? "PASS" : "FAIL",
         reason: pass
@@ -256,9 +284,14 @@ run("ULTEF S38 story template authoring/versioning", () => {
           `DELETE FROM story.story_versions WHERE story_definition_id=$1`,
           [definitionId],
         );
-        await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [definitionId]);
+        await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [
+          definitionId,
+        ]);
       }
-      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`, [h1, h2]);
+      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`, [
+        h1,
+        h2,
+      ]);
     }
   });
 });
