@@ -61,7 +61,10 @@ export default function ProfilesClientPage() {
               className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant transition-colors hover:text-primary"
               href="/app"
             >
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-[18px]"
+                aria-hidden="true"
+              >
                 arrow_back
               </span>
               Aile hikâye evine dön
@@ -73,8 +76,9 @@ export default function ProfilesClientPage() {
               Her profil başka bir hikâye dünyasının kapısı
             </h1>
             <p className="mt-3 max-w-[44rem] text-base leading-7 text-on-surface-variant md:text-lg">
-              Çocukların temel bilgilerini burada görebilir, profillerine geçebilir
-              veya yeni bir çocuk için güvenli bir başlangıç oluşturabilirsiniz.
+              Çocukların temel bilgilerini burada görebilir, profillerine
+              geçebilir veya yeni bir çocuk için güvenli bir başlangıç
+              oluşturabilirsiniz.
             </p>
           </div>
           <Link className="storybook-button" href="/app/onboarding">
@@ -91,7 +95,10 @@ export default function ProfilesClientPage() {
             id="empty-state"
           >
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary-fixed text-primary">
-              <span className="material-symbols-outlined text-[30px]" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-[30px]"
+                aria-hidden="true"
+              >
                 person_add
               </span>
             </div>
@@ -99,8 +106,9 @@ export default function ProfilesClientPage() {
               Henüz bir çocuk profili yok
             </h2>
             <p className="mx-auto mt-3 max-w-[36rem] text-base leading-7 text-on-surface-variant">
-              İlk profil, çocuğun yaşına ve ileride kişiselleştirilecek ilgi alanlarına
-              göre kendi hikâye dünyasını kurabilmemiz için başlangıç noktasıdır.
+              İlk profil, çocuğun yaşına ve ileride kişiselleştirilecek ilgi
+              alanlarına göre kendi hikâye dünyasını kurabilmemiz için başlangıç
+              noktasıdır.
             </p>
             <Link className="storybook-button mt-6" href="/app/onboarding">
               İlk profili oluştur
@@ -132,7 +140,10 @@ export default function ProfilesClientPage() {
                     <div className="absolute bottom-0 left-0 right-0 h-16 rounded-t-[50%] bg-white/25" />
                     <div className="relative z-10 flex min-h-[142px] flex-col justify-between">
                       <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
-                        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+                        <span
+                          className="material-symbols-outlined text-[28px]"
+                          aria-hidden="true"
+                        >
                           face_6
                         </span>
                       </div>
@@ -154,7 +165,9 @@ export default function ProfilesClientPage() {
                           Başlangıç
                         </p>
                         <p className="mt-1 text-sm font-bold text-on-surface">
-                          {new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+                          {new Date(profile.createdAt).toLocaleDateString(
+                            "tr-TR",
+                          )}
                         </p>
                       </div>
                       <div>
@@ -194,8 +207,8 @@ export default function ProfilesClientPage() {
                 {profiles.length} çocuk profili
               </h2>
               <p className="mt-3 text-sm leading-6 text-white/75">
-                Her profil kendi karakterini, anılarını ve dünya sürekliliğini ayrı
-                tutacak şekilde ele alınır.
+                Her profil kendi karakterini, anılarını ve dünya sürekliliğini
+                ayrı tutacak şekilde ele alınır.
               </p>
               <div className="mt-6 rounded-[1.25rem] bg-white/10 p-4">
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/55">
@@ -237,7 +250,10 @@ function ErrorDisplay({ message }: { message: string }) {
       <div className="mx-auto w-full max-w-[1180px] px-5 py-10 md:px-6">
         <div className="rounded-[2rem] border border-error-container bg-white/85 px-7 py-10 text-error shadow-sm">
           <p>{message}</p>
-          <Link className="mt-5 inline-flex font-bold underline" href="/app/onboarding">
+          <Link
+            className="mt-5 inline-flex font-bold underline"
+            href="/app/onboarding"
+          >
             Kuruluma git
           </Link>
         </div>

@@ -38,14 +38,20 @@ describe("ULTEF S41 parent home and child profile contract", () => {
     expect(parentHome).toContain("Dünyalardan Haberler");
     expect(parentHome).toContain("uydurma haber göstermiyor");
     expect(parentHome).toContain("doğrulanmış bir dünya olayı akışı yok");
-    expect(parentHome).not.toMatch(/Mino .*geldi|festival başladı|köprü .*yıkıldı/i);
+    expect(parentHome).not.toMatch(
+      /Mino .*geldi|festival başladı|köprü .*yıkıldı/i,
+    );
   });
 
   it("keeps profile management routes and API contracts reachable", () => {
     expect(profileLibrary).toContain('fetch("/api/onboarding")');
     expect(profileLibrary).toContain("/api/child-profiles?householdId=");
-    expect(profileLibrary).toContain("/app/profiles/${encodeURIComponent(profile.id)}");
-    expect(profileLibrary).toContain("/app/character-onboarding?childProfileId=");
+    expect(profileLibrary).toContain(
+      "/app/profiles/${encodeURIComponent(profile.id)}",
+    );
+    expect(profileLibrary).toContain(
+      "/app/character-onboarding?childProfileId=",
+    );
   });
 
   it("removes technical and game framing from parent-facing copy", () => {

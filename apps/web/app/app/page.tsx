@@ -38,12 +38,19 @@ export default async function ProtectedAppPage() {
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
                   className="storybook-button"
-                  href={state.hasHousehold ? "/app/onboarding" : "/app/onboarding"}
+                  href={
+                    state.hasHousehold ? "/app/onboarding" : "/app/onboarding"
+                  }
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     {state.hasHousehold ? "person_add" : "auto_awesome"}
                   </span>
-                  {state.hasHousehold ? "Yeni çocuk profili" : "Aile evrenini oluştur"}
+                  {state.hasHousehold
+                    ? "Yeni çocuk profili"
+                    : "Aile evrenini oluştur"}
                 </Link>
                 {firstProfile ? (
                   <Link
@@ -77,7 +84,10 @@ export default async function ProtectedAppPage() {
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold text-on-surface">
                   <span className="grid h-10 w-10 place-items-center rounded-full bg-white/80 text-primary">
-                    <span className="material-symbols-outlined" aria-hidden="true">
+                    <span
+                      className="material-symbols-outlined"
+                      aria-hidden="true"
+                    >
                       family_restroom
                     </span>
                   </span>
@@ -96,7 +106,10 @@ export default async function ProtectedAppPage() {
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
                 Çocuklarım
               </p>
-              <h2 id="children-heading" className="mt-2 text-3xl font-extrabold text-on-surface">
+              <h2
+                id="children-heading"
+                className="mt-2 text-3xl font-extrabold text-on-surface"
+              >
                 Her çocuk için ayrı bir dünya
               </h2>
             </div>
@@ -108,7 +121,10 @@ export default async function ProtectedAppPage() {
           {state.childProfiles.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-outline-variant bg-white/75 p-8 text-center md:p-12">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary-fixed text-primary">
-                <span className="material-symbols-outlined text-[30px]" aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-[30px]"
+                  aria-hidden="true"
+                >
                   face_retouching_natural
                 </span>
               </div>
@@ -116,8 +132,9 @@ export default async function ProtectedAppPage() {
                 İlk çocuk profilini oluşturalım
               </h3>
               <p className="mx-auto mt-3 max-w-[38rem] text-base leading-7 text-on-surface-variant">
-                Profil; yaş grubu, ilgi alanları ve ileride hikâyeleri kişiselleştirecek
-                gelişim tercihleri için güvenli başlangıç noktasıdır.
+                Profil; yaş grubu, ilgi alanları ve ileride hikâyeleri
+                kişiselleştirecek gelişim tercihleri için güvenli başlangıç
+                noktasıdır.
               </p>
               <Link className="storybook-button mt-6" href="/app/onboarding">
                 Profili oluşturmaya başla
@@ -144,7 +161,10 @@ export default async function ProtectedAppPage() {
                     <div className="absolute -right-5 -top-6 h-24 w-24 rounded-full bg-white/50" />
                     <div className="relative z-10 flex h-full flex-col justify-between gap-8">
                       <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
-                        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+                        <span
+                          className="material-symbols-outlined text-[28px]"
+                          aria-hidden="true"
+                        >
                           face_6
                         </span>
                       </div>
@@ -175,7 +195,10 @@ export default async function ProtectedAppPage() {
                         href={`/app/profiles/${encodeURIComponent(profile.id)}`}
                         aria-label={`${profile.displayName} profilini aç`}
                       >
-                        <span className="material-symbols-outlined" aria-hidden="true">
+                        <span
+                          className="material-symbols-outlined"
+                          aria-hidden="true"
+                        >
                           tune
                         </span>
                       </Link>
@@ -202,7 +225,10 @@ export default async function ProtectedAppPage() {
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
                   Dünyalardan Haberler
                 </p>
-                <h2 id="world-news-heading" className="mt-2 text-2xl font-extrabold text-on-surface">
+                <h2
+                  id="world-news-heading"
+                  className="mt-2 text-2xl font-extrabold text-on-surface"
+                >
                   Gerçek durumdan gelen küçük notlar
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-on-surface-variant">
