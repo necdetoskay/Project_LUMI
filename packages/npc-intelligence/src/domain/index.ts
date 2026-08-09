@@ -5,6 +5,7 @@ export * from "./decision-trace";
 export * from "./errors";
 export * from "./goals";
 export * from "./hash";
+export * from "./memory";
 export * from "./needs";
 export * from "./opportunity";
 export * from "./opportunity-scoring";
