@@ -67,6 +67,16 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 | UXD-058 | SaaS commercialization ayrı gelecek değerlendirmesi | BACKLOG |
 | UXD-059 | Her accepted behavior ULTEF scenario/invariant ile eşleştirilir | ACCEPTED |
 | UXD-060 | 10/25/50/100+ story Living Universe long-horizon verification program | ACCEPTED |
+| UXD-061 | Relationship bir puan değil, shared history/evidence ile oluşan living social bond | ACCEPTED |
+| UXD-062 | Relationship state çok boyutlu olabilir; trust/affection/respect/comfort/resentment vb. child UI'a sayısal sızmaz | ACCEPTED |
+| UXD-063 | Relationship changes Story -> Outcome -> Shared Memory -> Relationship Evidence zincirinden doğar | ACCEPTED |
+| UXD-064 | Aynı olay aktörlerce farklı yorumlanabilir; intention ile NPC interpretation ayrıdır | ACCEPTED |
+| UXD-065 | NPC-NPC relationships child dışında da değişebilir ve emergent narrative source olabilir | ACCEPTED |
+| UXD-066 | Family relationships richer initial shared-history/memory/routine context ile başlar | ACCEPTED |
+| UXD-067 | İlişkiler her zaman olumlu ilerlemek zorunda değildir; kırgınlık/yanlış anlaşılma/rekabet yaşa uygun narrative gerçeklik olarak mümkündür | ACCEPTED |
+| UXD-068 | Promise, gift ve shared memories relationship evidence üretir; quest/reward metriği olarak gösterilmez | ACCEPTED |
+| UXD-069 | Hayatımdakiler/social UI social graph'ı CRM/stat ekranına dönüştürmeden yakınlık ve ortak geçmişi anlatır | ACCEPTED |
+| UXD-070 | Relationship state future NPC arc/Saga/story hook doğurabilir fakat child agency'yi zorlamaz | ACCEPTED |
 
 ## Change control
 
