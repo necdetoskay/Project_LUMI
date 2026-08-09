@@ -89,5 +89,41 @@ export const canonicalMemories = npcIntelligenceSchema.table(
   ],
 );
 
+export const canonicalMemoryUsages = npcIntelligenceSchema.table(
+  "memory_usages",
+  {
+    id: primaryId(),
+    householdId: uuid("household_id").notNull(),
+    worldId: uuid("world_id").notNull(),
+    childProfileId: uuid("child_profile_id"),
+    ownerType: varchar("owner_type", { length: 20 }).notNull(),
+    ownerId: uuid("owner_id").notNull(),
+    memoryId: uuid("memory_id").notNull(),
+    sceneId: uuid("scene_id").notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("npc_memory_usages_scene_memory_uq").on(
+      table.householdId,
+      table.worldId,
+      table.sceneId,
+      table.memoryId,
+    ),
+    index("npc_memory_usages_memory_idx").on(
+      table.householdId,
+      table.worldId,
+      table.memoryId,
+      table.usedAt,
+    ),
+    check(
+      "npc_memory_usages_owner_type_check",
+      sql`${table.ownerType} IN ('character','npc','profile')`,
+    ),
+  ],
+);
+
 export type CanonicalMemoryRecord = typeof canonicalMemories.$inferSelect;
 export type NewCanonicalMemoryRecord = typeof canonicalMemories.$inferInsert;
+export type CanonicalMemoryUsageRecord = typeof canonicalMemoryUsages.$inferSelect;
