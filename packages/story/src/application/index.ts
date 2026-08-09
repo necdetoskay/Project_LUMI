@@ -77,6 +77,16 @@ export type {
 } from "./choice/choice.service";
 
 export {
+  CHOICE_WORLD_HANDOFF_RULE_VERSION,
+  commitPersistedChoiceConsequence,
+  getLatestChoiceWorldContinuityFacts,
+} from "./choice/choice-world-consequence.service";
+export type {
+  CommitPersistedChoiceConsequenceInput,
+  CommitPersistedChoiceConsequenceResult,
+} from "./choice/choice-world-consequence.service";
+
+export {
   evaluateRule,
   evaluateOptionAvailability,
 } from "./choice/rule-evaluator";
