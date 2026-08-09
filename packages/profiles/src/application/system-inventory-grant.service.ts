@@ -33,7 +33,9 @@ export interface StoryRewardSystemGrantResult {
   itemInstanceId: string;
 }
 
-function toDefinitionState(record: Record<string, unknown>): ItemDefinitionState {
+function toDefinitionState(
+  record: Record<string, unknown>,
+): ItemDefinitionState {
   return {
     id: record.id as string,
     definitionKey: record.definitionKey as string,
@@ -71,7 +73,8 @@ function toInstanceState(record: Record<string, unknown>): ItemInstanceState {
     durabilityCurrent: (record.durabilityCurrent as number) ?? null,
     durabilityMax: (record.durabilityMax as number) ?? null,
     quantity: record.quantity as number,
-    customProperties: (record.customProperties as Record<string, unknown>) ?? {},
+    customProperties:
+      (record.customProperties as Record<string, unknown>) ?? {},
     originType: record.originType as ItemInstanceState["originType"],
     originId: (record.originId as string) ?? null,
   };

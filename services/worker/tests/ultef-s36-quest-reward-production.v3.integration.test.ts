@@ -202,10 +202,9 @@ run("ULTEF S36 quest reward production", () => {
       });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(
-        `DELETE FROM story.story_outbox WHERE household_id=$1`,
-        [h1],
-      );
+      await pool.query(`DELETE FROM story.story_outbox WHERE household_id=$1`, [
+        h1,
+      ]);
       await pool.query(
         `DELETE FROM profile.inventory_idempotency_ledger
           WHERE actor_household_id IN($1,$2)`,
