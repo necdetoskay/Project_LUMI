@@ -131,17 +131,19 @@
       "title": "NPC rumor propagation behavior",
       "level": "L3",
       "projectGates": ["PX-LUMI-03", "PX-LUMI-08"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:npc-rumor",
       "requires": ["npc-intelligence"],
-      "evidenceMode": "runtime-narrative"
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF PX-LUMI #9",
+      "note": "Runtime evidence proved same-household autonomous rumor propagation, deterministic confidence decay and cross-household exclusion."
     },
     {
       "id": "L4-OPPORTUNITY-HOOK-001",
       "title": "Accepted NPC opportunity to StoryHook composition",
       "level": "L4",
       "projectGates": ["PX-LUMI-05", "PX-LUMI-08"],
-      "status": "INSTRUMENTED",
+      "status": "EXECUTED_PASS",
       "runner": "pnpm ultef:opportunity-hook",
       "requires": [
         "web-route",
@@ -151,6 +153,7 @@
         "npc-intelligence-contract"
       ],
       "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF PX-LUMI #9",
       "limitations": [
         "package adapters are test doubles",
         "does not prove DB persistence",
@@ -192,6 +195,38 @@
         "requires integration database",
         "generation provider is outside this scenario; L4-HOOK-SCENE-001 covers generation and L8 covers real provider"
       ]
+    },
+    {
+      "id": "PX-LUMI-04-EMOTION-DECISION-001",
+      "title": "Event-derived persisted emotion to decision utility",
+      "level": "L4",
+      "projectGates": ["PX-LUMI-04"],
+      "status": "BLOCKED",
+      "requires": [
+        "event-to-emotion directional delta evaluator",
+        "profile-backed production emotional state adapter",
+        "persisted emotion to decision-context wiring"
+      ],
+      "blockedBy": [
+        "no production event-to-emotion delta derivation was found",
+        "context layer currently exposes only InMemoryEmotionalStateAdapter for emotion state",
+        "directly passing a hand-built vector into DecisionContextBuilder would not prove the production boundary"
+      ],
+      "evidenceMode": "runtime-narrative",
+      "note": "Bounded profile emotion persistence and downstream UtilityEvaluator emotion consumption both exist, but the production orchestration links required by PX-LUMI-04 are incomplete. See PX_LUMI_04_EMOTIONAL_CONSISTENCY_BLOCKER.md."
+    },
+    {
+      "id": "PX-LUMI-07-WORLD-TIME-001",
+      "title": "Bounded world time progression and inactivity freeze",
+      "level": "L3",
+      "projectGates": ["PX-LUMI-07"],
+      "status": "EXECUTED_PASS",
+      "runner": "ULTEF PX-LUMI workflow / @lumi/simulation Vitest",
+      "requires": ["simulation WorldClock", "absence policy", "BudgetPlanner"],
+      "blockedBy": [],
+      "evidenceMode": "runtime-narrative",
+      "lastValidatedBy": "ULTEF PX-LUMI #9",
+      "note": "Runtime evidence proves forward-only world time, relevance filtering, limited nine-day behavior and a ten-day zero-budget background simulation freeze."
     },
     {
       "id": "PX-LUMI-09-001",
