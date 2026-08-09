@@ -7,23 +7,22 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 
 | ID | Decision | Status |
 |---|---|---|
-| UXD-001..114 | Önceki kanonik UI/UX, living-universe, social, settlement ve culture decisions | ACCEPTED |
-| UXD-115 | Governance çocuk için devlet/politika simülatörü değil; community decisions, responsibility, disagreement ve consequences katmanıdır | ACCEPTED |
-| UXD-116 | Farklı communities farklı canonical decision norms/structures taşıyabilir; governance culture ve history ile uyumlu olmalıdır | ACCEPTED |
-| UXD-117 | Formal authority, social influence, popularity, expertise ve issue-specific influence aynı kavram değildir; internal state çok boyutlu olabilir | ACCEPTED |
-| UXD-118 | Community decisions ilgili actors'ın goals, roles, authorized knowledge, relationships, expertise ve cultural norms'undan açıklanabilir biçimde doğar | ACCEPTED |
-| UXD-119 | Child community decision'ı etkileyebilir, öneri/kanıt sunabilir ve destek oluşturabilir; fakat settlement child seçimine otomatik itaat etmez | ACCEPTED |
-| UXD-120 | Yaşa uygun disagreement/dissent antagonist gerektirmeden mümkündür; farklı makul öncelikler aynı community içinde bulunabilir | ACCEPTED |
-| UXD-121 | Accepted community decision gerçek consequence üretecekse Approved Community Action -> authoritative World Commit zincirinden geçer | ACCEPTED |
-| UXD-122 | Story Generator tek başına governance decision veya world mutation commit edemez | ACCEPTED |
-| UXD-123 | Community/governance memory geçmiş kararları, sonuçlarını ve güvenilir evidence'i sonraki karar context'ine taşıyabilir | ACCEPTED |
-| UXD-124 | Leadership/responsibility roles değişebilir fakat değişim canonical cause/history gerektirir; random reassignment yapılamaz | ACCEPTED |
-| UXD-125 | Governance norms communities arasında farklılaşabilir; sistem bunları çocuk için üstün/aşağı siyasi model olarak sıralamaz | ACCEPTED |
-| UXD-126 | Governance disagreement/story hooks Saga veya everyday story doğurabilir fakat child tek başına tüm political/social structure'ı yeniden yazamaz | ACCEPTED |
-| UXD-127 | Ağır güç/yozlaşma temaları age-appropriateness ve child-safety sınırlarına tabidir; küçük yaşta basit fairness/favoritism/promise düzeyinde kalır | ACCEPTED |
-| UXD-128 | Child-facing governance technical graph/authority/reputation/faction score olarak değil narrative community life ve consequences olarak ifade edilir | ACCEPTED |
-| UXD-129 | Decision actor bilmediği fact'i kullanamaz; rumor/belief/partial knowledge world truth yerine geçmez | ACCEPTED |
-| UXD-130 | Governance state, decision history ve influence boundaries tenant/universe isolation'ı korur | ACCEPTED |
+| UXD-001..130 | Önceki kanonik UI/UX, living-universe, social, settlement, culture ve governance decisions | ACCEPTED |
+| UXD-131 | World truth, actor knowledge, belief, rumor ve secret aynı şey değildir; ayrı state/provenance taşırlar | ACCEPTED |
+| UXD-132 | Knowledge transfer provenance/source/confidence ile izlenir; bir actor bilgiyi yalnız gözlem, anlatım, belge, harita, memory veya authorized reveal yoluyla öğrenir | ACCEPTED |
+| UXD-133 | Rumor yayılırken distortion yaşayabilir fakat hiçbir rumor canonical world truth'u overwrite edemez | ACCEPTED |
+| UXD-134 | Secrets bilinen fakat paylaşımı context/relationship/promise/fear/uncertainty nedeniyle kısıtlanabilen information state'idir; stat threshold unlock olarak modellenmez | ACCEPTED |
+| UXD-135 | Child öğrendiği confidential information'ı paylaşabilir veya saklayabilir; consequence relationship/memory/world üzerinden doğal anlatılır, quest penalty olarak gösterilmez | ACCEPTED |
+| UXD-136 | Mystery bir quest log değildir; clues, memories, items, maps, observations ve conflicting claims üzerinden kademeli knowledge construction'dır | ACCEPTED |
+| UXD-137 | Bazı mysteries başlangıçta hidden canonical truth taşır; emergent mysteries constraints + unresolved slots ile başlayabilir, resolve anında canon'a bağlanır ve geçmiş clues ile çelişemez | ACCEPTED |
+| UXD-138 | Misbelief/mistaken witness red herring olarak kullanılabilir fakat sistem sürekli deceptive fake clues üretmemeli; yanlış kişi inancı ile world truth ayrımı korunur | ACCEPTED |
+| UXD-139 | Map states UNKNOWN/RUMORED/REVEALED/DISCOVERED Information System tarafından beslenir; rumor UI marker'ı real domain knowledge state'e dayanır | ACCEPTED |
+| UXD-140 | Information propagation automatic broadcast değildir; recipient personality, relationship, promise, importance ve social context aktarımı etkileyebilir | ACCEPTED |
+| UXD-141 | Önemsiz rumor/claims zamanla retrieval priority kaybedebilir; mystery-critical clues deep memory/archive üzerinden gerektiğinde geri çağrılabilir | ACCEPTED |
+| UXD-142 | Conflicting claims coexist edebilir; sistem bunları evidence olmadan tek canonical fact'e merge etmez | ACCEPTED |
+| UXD-143 | Child-safety nedeniyle tehlikeli/uygunsuz 'trusted adult/parent'tan sakla' secrecy pattern'i hard invariant ile engellenir | ACCEPTED |
+| UXD-144 | Information state child-facing UI'da technical graph olarak değil story dialogue, map fog/rumor, memories ve discoveries üzerinden anlatılır | ACCEPTED |
+| UXD-145 | Final truth yalnız authorized actorlarca doğru zamanda bilinmelidir; backend'in gerçeği bilmesi NPC/child'ın da bildiği anlamına gelmez | ACCEPTED |
 
 ## Change control
 
