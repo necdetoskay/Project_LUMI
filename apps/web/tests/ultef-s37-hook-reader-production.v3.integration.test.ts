@@ -89,13 +89,13 @@ run("ULTEF S37 generated hook reader production", () => {
     const h2 = crypto.randomUUID();
     const c1 = crypto.randomUUID();
     const c2 = crypto.randomUUID();
+    const character = crypto.randomUUID();
+    const firstOriginPackage = crypto.randomUUID();
     const world = crypto.randomUUID();
-    const world2 = crypto.randomUUID();
     const def = crypto.randomUUID();
     const version = crypto.randomUUID();
     const initialScene = crypto.randomUUID();
     const session = crypto.randomUUID();
-    const session2 = crypto.randomUUID();
     const hook = crypto.randomUUID();
     const failingHook = crypto.randomUUID();
     const foreignHook = crypto.randomUUID();
@@ -128,6 +128,25 @@ run("ULTEF S37 generated hook reader production", () => {
           (id,household_id,display_name,age_band,locale)
          VALUES($1,$3,'Lumi','6-8','tr-TR'),($2,$4,'Mira','6-8','tr-TR')`,
         [c1, c2, h1, h2],
+      );
+      await pool.query(
+        `INSERT INTO profile.lumi_characters
+          (id,child_profile_id,household_id,name,broad_kind,character_type,subtype,
+           origin_mode,first_origin_package_id,origin_concept,starting_region_archetype,
+           starting_location,home_archetype,nearby_npc_seed,first_mystery_seed,
+           universe_seed,safety_bounds)
+         VALUES($1,$2,$3,'Lumi','human','explorer','gezgin','manual',$4,
+           'Nazik bir kâşif','forest','safe-path','tree-home','owl-seed',
+           'light-seed','s37-universe','{}'::jsonb)`,
+        [character, c1, h1, firstOriginPackage],
+      );
+      await pool.query(
+        `INSERT INTO profile.worlds
+          (id,household_id,child_profile_id,character_id,universe_seed,origin_seed,
+           accepted_candidate_seed,generator_version,vector_version,lifecycle_status,metadata)
+         VALUES($1,$2,$3,$4,'s37-universe','s37-origin','s37-candidate',
+           'ultef-s37','v1','active','{}'::jsonb)`,
+        [world, h1, c1, character],
       );
       await pool.query(
         `INSERT INTO profile.parental_settings
@@ -169,10 +188,8 @@ run("ULTEF S37 generated hook reader production", () => {
       await pool.query(
         `INSERT INTO story.story_sessions
           (id,household_id,child_profile_id,world_id,story_definition_id,story_version_id,current_scene_id,session_status,playback_mode,started_at,last_interacted_at,context_snapshot,version)
-         VALUES
-          ($1,$2,$3,$4,$5,$6,$7,'active','reading',now(),now(),'{}'::jsonb,1),
-          ($8,$9,$10,$11,$5,$6,$7,'active','reading',now(),now(),'{}'::jsonb,1)`,
-        [session, h1, c1, world, def, version, initialScene, session2, h2, c2, world2],
+         VALUES($1,$2,$3,$4,$5,$6,$7,'active','reading',now(),now(),'{}'::jsonb,1)`,
+        [session, h1, c1, world, def, version, initialScene],
       );
       await pool.query(
         `INSERT INTO story.story_hooks
@@ -180,7 +197,7 @@ run("ULTEF S37 generated hook reader production", () => {
          VALUES
           ($1,$4,$5,$6,$7,$8,'warning',$9,$10::jsonb,'{}'::jsonb,'narrative','pending',1),
           ($2,$4,$5,$6,$7,$11,'warning',$9,$12::jsonb,'{}'::jsonb,'narrative','pending',1),
-          ($3,$13,$14,$15,$16,$17,'warning',$9,$18::jsonb,'{}'::jsonb,'narrative','pending',1)`,
+          ($3,$13,$14,$6,$7,$15,'warning',$9,$16::jsonb,'{}'::jsonb,'narrative','pending',1)`,
         [
           hook,
           failingHook,
@@ -196,8 +213,6 @@ run("ULTEF S37 generated hook reader production", () => {
           JSON.stringify({ claim: "Bu çağrı ayarsız kalmalı." }),
           h2,
           c2,
-          session2,
-          world2,
           `s37-foreign-${foreignHook}`,
           JSON.stringify({ claim: "Yabancı tenant hook'u." }),
         ],
@@ -223,11 +238,16 @@ run("ULTEF S37 generated hook reader production", () => {
         firstState.currentScene?.narrativeText.includes("Bilge Baykuş") === true &&
         Number(generatedCountResult.rows[0]?.count ?? 0) === 1 &&
         providerCalls === 1;
-      scenario.assert("generated scene reached canonical reader state", firstOk, true, {
-        sceneId: first.sceneId,
-        version: firstState.session.version,
-        providerCalls,
-      });
+      scenario.assert(
+        "generated scene reached canonical reader state",
+        firstOk,
+        true,
+        {
+          sceneId: first.sceneId,
+          version: firstState.session.version,
+          providerCalls,
+        },
+      );
 
       const replay = await generateHookReaderTurn({
         userId: user,
@@ -284,10 +304,12 @@ run("ULTEF S37 generated hook reader production", () => {
         afterFailure.currentScene?.id === beforeFailure.currentScene?.id &&
         Number(failureSceneCount.rows[0]?.count ?? 0) === 0 &&
         providerCalls === 1;
-      scenario.assert("settings failure left session unchanged", failureOk, true, {
-        failedClosed,
-        providerCalls,
-      });
+      scenario.assert(
+        "settings failure left session unchanged",
+        failureOk,
+        true,
+        { failedClosed, providerCalls },
+      );
 
       let tenantRejected = false;
       try {
@@ -309,16 +331,22 @@ run("ULTEF S37 generated hook reader production", () => {
         tenantRejected,
       );
 
-      const consumed = await pool.query<{ status: string; consumed_at: Date | null }>(
-        `SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`,
-        [hook],
-      );
+      const consumed = await pool.query<{
+        status: string;
+        consumed_at: Date | null;
+      }>(`SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`, [hook]);
       const consumedOk =
         consumed.rows[0]?.status === "consumed" &&
         consumed.rows[0]?.consumed_at instanceof Date;
-      scenario.assert("committed hook marked consumed", consumedOk, true, consumed.rows[0]);
+      scenario.assert(
+        "committed hook marked consumed",
+        consumedOk,
+        true,
+        consumed.rows[0],
+      );
 
-      const pass = firstOk && replayOk && failureOk && tenantRejected && consumedOk;
+      const pass =
+        firstOk && replayOk && failureOk && tenantRejected && consumedOk;
       const report = scenario.finish({
         result: pass ? "PASS" : "FAIL",
         reason: pass
@@ -330,21 +358,60 @@ run("ULTEF S37 generated hook reader production", () => {
       });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_idempotency_ledger WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM story.story_event_store WHERE actor_household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM story.story_session_checkpoints WHERE story_session_id IN($1,$2)`, [session, session2]);
-      await pool.query(`DELETE FROM story.story_session_scene_visits WHERE story_session_id IN($1,$2)`, [session, session2]);
-      await pool.query(`DELETE FROM story.story_hooks WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM story.story_sessions WHERE id IN($1,$2)`, [session, session2]);
-      await pool.query(`DELETE FROM story.story_scenes WHERE story_version_id=$1`, [version]);
+      await pool.query(
+        `DELETE FROM story.story_idempotency_ledger WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM story.story_event_store WHERE actor_household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM story.story_session_checkpoints WHERE story_session_id=$1`,
+        [session],
+      );
+      await pool.query(
+        `DELETE FROM story.story_session_scene_visits WHERE story_session_id=$1`,
+        [session],
+      );
+      await pool.query(
+        `DELETE FROM story.story_hooks WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(`DELETE FROM story.story_sessions WHERE id=$1`, [session]);
+      await pool.query(`DELETE FROM story.story_scenes WHERE story_version_id=$1`, [
+        version,
+      ]);
       await pool.query(`DELETE FROM story.story_versions WHERE id=$1`, [version]);
       await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [def]);
-      await pool.query(`DELETE FROM profile.llm_task_model_settings WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM profile.llm_provider_settings WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM profile.parental_settings WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM profile.child_profiles WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM profile.household_members WHERE household_id IN($1,$2)`, [h1, h2]);
-      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`, [h1, h2]);
+      await pool.query(`DELETE FROM profile.worlds WHERE id=$1`, [world]);
+      await pool.query(`DELETE FROM profile.lumi_characters WHERE id=$1`, [
+        character,
+      ]);
+      await pool.query(
+        `DELETE FROM profile.llm_task_model_settings WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.llm_provider_settings WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.parental_settings WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.child_profiles WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.household_members WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`, [
+        h1,
+        h2,
+      ]);
     }
   });
 });
