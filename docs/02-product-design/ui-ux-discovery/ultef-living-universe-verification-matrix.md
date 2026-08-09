@@ -3,58 +3,63 @@
 Status: CANONICAL TEST BACKLOG
 Date: 2026-08-09
 
-> Önceki kanonik test aileleri korunur. Bu güncelleme Rumors, Secrets, Mysteries & Information Flow doğrulama ailesini ekler.
+> Önceki kanonik test aileleri korunur. Bu güncelleme Story Hook & Narrative Opportunity Selection doğrulama ailesini ekler.
 
-## Information flow, rumors, secrets & mysteries family
+## Story hook & narrative opportunity family
 
-- INFO-TRUTH-001: world truth, actor knowledge, belief, rumor ve secret state'leri birbirine collapse olmaz.
-- INFO-PROVENANCE-001: öğrenilen bilgi source/type/confidence/provenance ile trace edilebilir.
-- INFO-PROPAGATE-001: information yalnız gerçek observation/report/reveal/transfer olduğunda recipient knowledge'a geçer.
-- INFO-NO-BROADCAST-001: private/limited information magical broadcast ile tüm NPC/child knowledge'a yayılmaz.
-- INFO-RUMOR-DRIFT-001: rumor propagation sırasında distortion olabilir fakat canonical truth overwrite edilmez.
-- INFO-RUMOR-SOURCE-001: rumor'un kimden/kimin aracılığıyla geldiği gerektiğinde trace edilebilir.
-- INFO-SECRET-001: NPC secret reveal basit numeric trust threshold yerine relationship/context/promise/fear/uncertainty reasoning'ine bağlıdır.
-- INFO-PROMISE-001: confidential promise memory ve sonraki disclosure decision'ında doğru aktör/context ile etkili olur.
-- INFO-CONFLICT-001: conflicting claims evidence olmadan tek fact'e yanlış merge edilmez.
-- INFO-MYSTERY-001: mystery answer ilgili clue/authorized reveal/discovery öncesinde child/NPC dialogue'a sızmaz.
-- INFO-MYSTERY-CANON-001: emergent mystery resolution önceki canonical clues, topology, timeline ve world facts ile çelişmeden commit edilir.
-- INFO-RED-HERRING-001: mistaken belief/observation kullanılabilir fakat false claim world truth'a terfi etmez; sistem deceptive noise spam üretmez.
-- INFO-MAP-001: UNKNOWN/RUMORED/REVEALED/DISCOVERED map state gerçek character knowledge state ile eşleşir.
-- INFO-MEMORY-001: eski mystery-critical clue gerektiğinde deep memory/archive üzerinden geri çağrılabilir.
-- INFO-DECAY-001: düşük-importance rumor/claim retrieval priority kaybedebilir fakat protected critical clue yanlışlıkla kaybolmaz.
-- INFO-SAFETY-SECRET-001: child safety açısından uygunsuz 'ebeveynden/trusted adult'tan sakla' secrecy scenario üretilemez veya commit edilemez.
-- INFO-AUTHORIZED-TRUTH-001: backend/system truth yalnız authorized actors'a doğru zamanda context builder üzerinden açılır.
-- INFO-TENANT-001: knowledge graph, rumor, secret, mystery truth ve provenance başka tenant/universe/child boundary'sine sızmaz.
+- HOOK-ELIGIBILITY-001: prerequisite eksik candidate child-facing opportunity pool'a alınmaz.
+- HOOK-KNOWLEDGE-001: child/NPC'nin bilmediği clue/mystery hook olarak erken sızmaz.
+- HOOK-LOCATION-001: absent NPC veya invalid location/world state ile contradiction taşıyan hook üretilmez.
+- HOOK-TIME-001: time/season/offline-protection koşulları hook eligibility ile tutarlıdır.
+- HOOK-ENV-001: environment/weather conditions candidate feasibility ve opportunity context'ine doğru yansır.
+- HOOK-CAPABILITY-001: item/experience/NPC support capability prerequisite veya possibility olarak doğru değerlendirilir; olmayan capability uydurulmaz.
+- HOOK-URGENCY-001: urgency canonical world/NPC state'e dayanır; Story Director yapay emergency uydurmaz.
+- HOOK-DIVERSITY-001: recent-story similarity ve type history tekrarlayan motif/structure seçimlerini baskılar.
+- HOOK-SAGA-BALANCE-001: main Saga yüksek relevance taşısa bile her story'yi domine etmez; pacing diversity korunur.
+- HOOK-EVERYDAY-001: low-stakes/everyday opportunity yüksek-stakes candidates yanında da uygun zamanda seçilebilir.
+- HOOK-RELATIONSHIP-001: relationship/memory callback hook'ları canonical shared history'ye dayanır.
+- HOOK-CHILD-INTEREST-001: child interests selection'a bias verir fakat world canon ve diversity'yi override etmez.
+- HOOK-DEVELOPMENT-GOAL-001: parent development goal opportunity selection'a hafif/controlled bias verir; didactic overuse oluşturmaz.
+- HOOK-CHILD-INTENT-001: free intent canonical feasibility, actor/location availability, time, environment ve safety checks sonrası valid opportunity'ye dönüşebilir.
+- HOOK-CHILD-INTENT-REJECT-001: infeasible/free intent sessizce canon dışı gerçekleştirilmez; narrative-safe alternative/reconciliation gerekir.
+- HOOK-SURPRISE-001: 'Beni şaşırt' eligible opportunity pool'dan meaningful candidate seçer; random disconnected story üretmez.
+- HOOK-LIFECYCLE-001: persistent/transient/child-presence-protected hook lifecycle doğru yaşlanır.
+- HOOK-AUTONOMY-001: seçilmeyen hook gerektiğinde NPC/world autonomy ile ilerleyebilir, zayıflayabilir veya sona erebilir; failed-quest semantics oluşmaz.
+- HOOK-STALE-001: artık invalid/stale candidate sonraki selection cycle'da yeniden sunulmaz.
+- HOOK-CONTRACT-001: seçilen opportunity doğru Narrative Contract'a dönüştürülür ve source world state trace'i korunur.
+- HOOK-CONTRACT-KNOWLEDGE-001: Narrative Contract forbidden/authorized knowledge boundaries'i açıkça taşır.
+- HOOK-CONTRACT-CONSEQUENCE-001: Narrative Contract consequence boundaries authoritative world-state invariants ile uyumludur.
+- HOOK-AGENCY-001: selection system child choice/free intent'i görünmez biçimde overwrite etmez.
+- HOOK-TENANT-001: opportunity pool, hook lifecycle ve contract state başka universe/tenant/child'a sızmaz.
 
-## Cross-system information tests
+## Cross-system hook tests
 
-- MEM-INFO-001: memory recall actor knowledge authorization'ını bypass etmez.
-- NPC-INFO-001: NPC decisions/dialogue yalnız actor knowledge + beliefs + memories üzerinden yapılır; hidden system truth kullanılmaz.
-- REL-SECRET-001: secret disclosure relationship evidence üretebilir fakat hard-coded friendship gate'e dönüşmez.
-- MAP-INFO-001: rumor öğrenme/silme/doğrulama map fog/marker state'ine doğru yansır.
-- ITEM-INFO-001: item inscription/property yalnız discover edilen/authorized knowledge kadar reveal edilir.
-- CULTURE-INFO-001: cultural belief/legend canonical fact yerine geçmez; aynı claim farklı cultures'ta farklı interpretation taşıyabilir.
-- GOV-INFO-001: governance reasoning incomplete/rumored knowledge ile çalışabilir fakat fact certainty uydurmaz.
-- NARRATIVE-INFO-001: Story Generator hidden mystery truth'u exposition/spoiler yoluyla sızdırmaz.
-- NARRATIVE-CONFLICT-001: conflicting accounts story opportunity olarak korunabilir; evaluator tek görüşü evidence olmadan doğrulamaz.
+- NARRATIVE-HOOK-001: Story Planner yalnız selected Narrative Contract içindeki canonical participants/location/state'i başlangıç kabul eder.
+- MEM-HOOK-001: retrieved memories candidate relevance'i etkileyebilir fakat unrelated high-salience memory yanlış hook doğurmaz.
+- SAGA-HOOK-001: Saga candidate pacing/eligibility kurallarını bypass edemez.
+- NPC-HOOK-001: NPC initiative hook'u actor's current goal/location/knowledge ile uyumludur.
+- INFO-HOOK-001: rumor/mystery candidate yalnız character knowledge düzeyinde ifade edilir; hidden truth leak olmaz.
+- ITEM-HOOK-001: item-driven hook item ownership/location/known-properties ile uyumludur.
+- WORLD-HOOK-001: world/environment-driven hook current canonical state'e dayanır; stale world mutation üzerinden candidate oluşmaz.
+- FEEDBACK-HOOK-001: learned preferences opportunity weighting'i etkileyebilir fakat safety/canon/diversity constraints'i override etmez.
 
-## L9-MYSTERY-INFORMATION-JOURNEY
+## L9-NARRATIVE-OPPORTUNITY-100
 
-50-100 story/world-time boyunca şu journey çalıştırılır:
+100+ story boyunca aynı universe içinde eşzamanlı çok sayıda candidate source üretilir: Saga, NPC goals, relationships, promises, rumors, mysteries, weather/environment events, settlement/culture/governance changes, item interactions, memory callbacks, exploration ve everyday life.
 
-hidden world truth -> witness observation -> private knowledge -> report -> rumor -> multi-hop propagation -> distortion -> conflicting account -> map rumor marker -> item/map clue discovery -> NPC-held secret -> promise/confidentiality -> investigation -> old clue recall -> additional evidence -> truth discovery -> authoritative resolution -> collective knowledge propagation.
+Her checkpoint'te ölçülür:
 
-Final assertions:
+- story-type diversity ve repeated motif rate,
+- Saga pacing ve over-selection oranı,
+- prerequisite/knowledge leak violations,
+- stale hook oranı,
+- relationship/everyday/environment-driven story coverage,
+- child-interest fit ile overfitting dengesi,
+- development-goal overuse/didactic leakage,
+- free-intent feasibility/reconciliation doğruluğu,
+- 'Beni şaşırt' seçimlerinin canon relevance'i,
+- hook lifecycle/autonomous resolution davranışı,
+- Narrative Contract completeness ve forbidden-knowledge boundaries,
+- tenant isolation ve context/cost growth.
 
-- final truth yalnız doğru aktörler tarafından doğru zamanda bilinmeli,
-- rumor distortion canonical truth'u değiştirmemeli,
-- knowledge provenance korunmalı,
-- conflicting claims evidence olmadan collapse olmamalı,
-- map fog/rumor/discovery states actor knowledge ile eşleşmeli,
-- mystery answer early leak olmamalı,
-- old critical clue retrievable olmalı,
-- secret/promise logic relationship/context ile doğal çalışmalı,
-- unsafe secrecy hard invariant ile engellenmeli,
-- tenant isolation, chronology, replay/idempotency ve context-cost sınırları korunmalı.
-
-Master acceptance principle: sistemin bir gerçeği bilmesi, karakterlerin de onu bildiği anlamına gelmez; information flow yaşayan dünyanın canonical parçasıdır.
+Master acceptance principle: Narrative Director en yüksek tek skoru körlemesine seçmemeli; dünyanın geçmişi, mevcut state'i, child agency'si ve narrative rhythm birlikte korunarak anlatılmaya değer doğru opportunity seçilmelidir.
