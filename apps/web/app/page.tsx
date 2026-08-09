@@ -81,8 +81,8 @@ export default function HomePage() {
           </div>
           <h2>Oyun değil, yaşayan anlatı</h2>
           <p>
-            XP, level veya görev listeleri yerine ilerleme; karakterlerin,
-            anıların ve dünyanın davranışlarında hissedilir.
+            Puan tabloları ve oyun ilerleme göstergeleri yerine değişim;
+            karakterlerin, anıların ve dünyanın davranışlarında hissedilir.
           </p>
         </article>
       </div>
