@@ -14,6 +14,7 @@ import type { EvidenceValidator } from "../domain/outcome/evidence-validator";
 import type { StoryContextSnapshot } from "../domain/outcome/story-context-snapshot";
 import { hashObject } from "./hash";
 import type { StoryEventType } from "../domain/story-types";
+import { commitCanonicalMemories } from "./committed-memory-projection.service";
 
 let testDb: Database | undefined;
 
@@ -53,6 +54,8 @@ export interface CompensateCommitInput {
 export interface CommitOutcomeWithTxInput extends CommitManifestInput {
   /** Caller-provided transaction (e.g. the story session advance tx). */
   tx: QueryExecutor;
+  /** Profile scope when the commit originates from an active child session. */
+  childProfileId?: string | null;
 }
 
 const COMMIT_EVENT_TYPE: StoryEventType = "STORY_WORLD_COMMIT_APPLIED";
@@ -267,6 +270,7 @@ export async function commitOutcomeWithTx(
   });
 
   const commitId = crypto.randomUUID();
+  const committedAt = new Date();
   await repo.recordCommit(tx, {
     id: commitId,
     manifestId: manifest.id,
@@ -279,7 +283,7 @@ export async function commitOutcomeWithTx(
     changes,
     idempotencyKey,
     status: "committed",
-    createdAt: new Date(),
+    createdAt: committedAt,
   });
   await repo.upsertWorldVersion(tx, {
     householdId: manifest.householdId,
@@ -287,7 +291,7 @@ export async function commitOutcomeWithTx(
     currentVersion: String(after),
     worldStateHash,
     lastManifestId: manifest.id,
-    updatedAt: new Date(),
+    updatedAt: committedAt,
   });
   for (const event of events) {
     await repo.recordEvent(tx, {
@@ -297,7 +301,7 @@ export async function commitOutcomeWithTx(
       eventVersion: 1,
       aggregateVersion: after,
       actorHouseholdId: manifest.householdId,
-      childProfileId: null,
+      childProfileId: input.childProfileId ?? null,
       payload: {
         commitId,
         worldVersion: after,
@@ -307,7 +311,7 @@ export async function commitOutcomeWithTx(
         detail: event.detail,
         evidenceRef: event.evidenceRef,
       },
-      createdAt: new Date(),
+      createdAt: committedAt,
     });
   }
   for (const intent of indirectIntents) {
@@ -324,9 +328,21 @@ export async function commitOutcomeWithTx(
       attemptCount: "0",
       lastError: null,
       appliedAt: null,
-      createdAt: new Date(),
+      createdAt: committedAt,
     });
   }
+
+  await commitCanonicalMemories({
+    tx,
+    householdId: manifest.householdId,
+    worldId: manifest.worldId,
+    childProfileId: input.childProfileId ?? null,
+    storySessionId: manifest.storySessionId,
+    outcomeId: manifest.id,
+    commitId,
+    changes,
+    createdAt: committedAt,
+  });
 
   return {
     commitId,
