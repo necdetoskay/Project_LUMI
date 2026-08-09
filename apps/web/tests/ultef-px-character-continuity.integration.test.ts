@@ -56,8 +56,8 @@ function makeHook(input: {
     storySessionId: crypto.randomUUID(),
     worldId: input.worldId,
     opportunityId: crypto.randomUUID(),
-    hookType: "discovery",
-    sourceNpcId: null,
+    hookType: "quest_seed",
+    sourceNpcId: crypto.randomUUID(),
     targetNpcId: null,
     payload: { prompt: "Arin yeni bir patikaya cikiyor." },
     constraints: {},
@@ -215,11 +215,18 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
         version: reloaded.rows[0].version,
         courage: reloaded.rows[0].courage,
       });
-      scenario.event("later_story", "Generated later scene with production continuity", {
-        narrative: result.scene.narrative,
-      });
+      scenario.event(
+        "later_story",
+        "Generated later scene with production continuity",
+        { narrative: result.scene.narrative },
+      );
       scenario.delta("character.version", 1, 2, "persisted character mutation");
-      scenario.delta("character.traits.courage", 0.4, 0.82, "bounded trait update");
+      scenario.delta(
+        "character.traits.courage",
+        0.4,
+        0.82,
+        "bounded trait update",
+      );
       scenario.assert(
         "persisted character mutation appears in later story context",
         prompts[0].includes("kalıcı karakter sürümü 2") &&
