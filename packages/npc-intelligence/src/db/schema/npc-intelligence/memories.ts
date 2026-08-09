@@ -29,7 +29,7 @@ export const canonicalMemories = npcIntelligenceSchema.table(
     sourceType: varchar("source_type", { length: 32 }).notNull(),
     sourceId: varchar("source_id", { length: 180 }).notNull(),
     storySessionId: uuid("story_session_id"),
-    outcomeId: uuid("outcome_id"),
+    outcomeId: varchar("outcome_id", { length: 180 }),
     effectKey: varchar("effect_key", { length: 240 }).notNull(),
     provenance: jsonb("provenance").$type<string[]>().notNull().default([]),
     lifecycle: varchar("lifecycle", { length: 20 }).notNull().default("durable"),
