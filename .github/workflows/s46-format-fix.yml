@@ -33,6 +33,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # One-shot formatting commit; this workflow will be removed afterwards.
           if ! git diff --quiet; then
             git add apps/web/lib/story/canonical-memory-usage.service.ts \
               apps/web/tests/ultef-s46-memory-story-production.v3.integration.test.ts \
