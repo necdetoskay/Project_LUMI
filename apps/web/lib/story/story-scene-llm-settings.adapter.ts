@@ -80,7 +80,6 @@ export class WebStorySceneLlmSettingsAdapter
       contentBoundary: policy.contentBoundary,
       ageBand: child.ageBand,
       locale: child.locale ?? "tr-TR",
-      enabled: true,
     };
   }
 }
