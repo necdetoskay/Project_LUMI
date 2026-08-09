@@ -7,21 +7,23 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 
 | ID | Decision | Status |
 |---|---|---|
-| UXD-001..100 | Önceki kanonik UI/UX, living-universe, relationships, autonomous NPC ve settlement/community decisions | ACCEPTED |
-| UXD-101 | Culture bir settlement/location için dekor değil; shared norms, traditions, stories, symbols ve meaning-making katmanıdır | ACCEPTED |
-| UXD-102 | Cultural detail progressive olabilir; world bootstrap'ta yalnız temel cultural anchors gerekir, geri kalanı hikâyelerle derinleşebilir | ACCEPTED |
-| UXD-103 | Recurring traditions/festivals world-time ile geri gelir fakat her tekrar birebir aynı story değildir; geçmiş yılların memories/state'i yeni versiyonu etkiler | ACCEPTED |
-| UXD-104 | Collective/cultural memory ile historical world truth ayrı tutulur; toplum aynı olayı zamanla farklı anlatabilir | ACCEPTED |
-| UXD-105 | Legend, belief ve cultural interpretation canonical fact değildir; provenance/knowledge boundary korunur | ACCEPTED |
-| UXD-106 | Culture shared tendency/norm üretir fakat bütün NPC'leri aynı kişilik/karar kalıbına dönüştürmez | ACCEPTED |
-| UXD-107 | Cultural identity yavaş/evidence-based değişir; migration, generation, world events ve repeated practice dönüşüm sebebi olabilir | ACCEPTED |
-| UXD-108 | Child küçük ve anlamlı cultural contribution bırakabilir fakat tek eylem tüm topluluk kültürünü aniden dönüştürmez | ACCEPTED |
-| UXD-109 | Farklı regions/settlements ayırt edilebilir cultural identities taşır; komşu bölgeler bazı ortak anchors paylaşabilir | ACCEPTED |
-| UXD-110 | Aynı canonical item/event farklı cultures tarafından farklı yorumlanabilir; interpretation object/world truth'u değiştirmez | ACCEPTED |
-| UXD-111 | Character origin hangi cultural knowledge/traditions'ın başlangıçta bilindiğini etkiler; yabancı kültür otomatik bilinmez | ACCEPTED |
-| UXD-112 | Cultural voice/dialogue küçük hitap, deyim, sözcük ve davranış farklılıklarıyla aktarılır; okunabilirliği bozan yapay lehçe kullanılmaz | ACCEPTED |
-| UXD-113 | Cultural symbols, food, music, architecture, clothing ve local stories narrative/visual identity'yi destekleyebilir fakat checklist olarak her sahneye zorlanmaz | ACCEPTED |
-| UXD-114 | Cultural conflict/generational difference yaşa uygun biçimde story source olabilir; culture stat/score veya faction game mechanic olarak sunulmaz | ACCEPTED |
+| UXD-001..114 | Önceki kanonik UI/UX, living-universe, social, settlement ve culture decisions | ACCEPTED |
+| UXD-115 | Governance çocuk için devlet/politika simülatörü değil; community decisions, responsibility, disagreement ve consequences katmanıdır | ACCEPTED |
+| UXD-116 | Farklı communities farklı canonical decision norms/structures taşıyabilir; governance culture ve history ile uyumlu olmalıdır | ACCEPTED |
+| UXD-117 | Formal authority, social influence, popularity, expertise ve issue-specific influence aynı kavram değildir; internal state çok boyutlu olabilir | ACCEPTED |
+| UXD-118 | Community decisions ilgili actors'ın goals, roles, authorized knowledge, relationships, expertise ve cultural norms'undan açıklanabilir biçimde doğar | ACCEPTED |
+| UXD-119 | Child community decision'ı etkileyebilir, öneri/kanıt sunabilir ve destek oluşturabilir; fakat settlement child seçimine otomatik itaat etmez | ACCEPTED |
+| UXD-120 | Yaşa uygun disagreement/dissent antagonist gerektirmeden mümkündür; farklı makul öncelikler aynı community içinde bulunabilir | ACCEPTED |
+| UXD-121 | Accepted community decision gerçek consequence üretecekse Approved Community Action -> authoritative World Commit zincirinden geçer | ACCEPTED |
+| UXD-122 | Story Generator tek başına governance decision veya world mutation commit edemez | ACCEPTED |
+| UXD-123 | Community/governance memory geçmiş kararları, sonuçlarını ve güvenilir evidence'i sonraki karar context'ine taşıyabilir | ACCEPTED |
+| UXD-124 | Leadership/responsibility roles değişebilir fakat değişim canonical cause/history gerektirir; random reassignment yapılamaz | ACCEPTED |
+| UXD-125 | Governance norms communities arasında farklılaşabilir; sistem bunları çocuk için üstün/aşağı siyasi model olarak sıralamaz | ACCEPTED |
+| UXD-126 | Governance disagreement/story hooks Saga veya everyday story doğurabilir fakat child tek başına tüm political/social structure'ı yeniden yazamaz | ACCEPTED |
+| UXD-127 | Ağır güç/yozlaşma temaları age-appropriateness ve child-safety sınırlarına tabidir; küçük yaşta basit fairness/favoritism/promise düzeyinde kalır | ACCEPTED |
+| UXD-128 | Child-facing governance technical graph/authority/reputation/faction score olarak değil narrative community life ve consequences olarak ifade edilir | ACCEPTED |
+| UXD-129 | Decision actor bilmediği fact'i kullanamaz; rumor/belief/partial knowledge world truth yerine geçmez | ACCEPTED |
+| UXD-130 | Governance state, decision history ve influence boundaries tenant/universe isolation'ı korur | ACCEPTED |
 
 ## Change control
 
