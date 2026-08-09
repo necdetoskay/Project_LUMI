@@ -72,6 +72,18 @@ export {
 } from "./character-domain.service";
 export type { CharacterDomainSummary } from "./character-domain.service";
 
+export {
+  EMOTION_RULE_VERSION,
+  evaluateEmotionEvent,
+  applyEmotionEvent,
+} from "./emotion-event.service";
+export type {
+  EmotionEventKind,
+  EmotionEventInput,
+  ResolvedEmotionDelta,
+  EmotionEventApplicationResult,
+} from "./emotion-event.service";
+
 export { getCharacterContinuitySnapshot } from "./character-continuity.service";
 export type { CharacterContinuitySnapshot } from "./character-continuity.service";
 
