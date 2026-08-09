@@ -235,7 +235,8 @@ run("ULTEF S37 generated hook reader production", () => {
         first.generated === true &&
         firstState.session.version === 2 &&
         firstState.currentScene?.id === first.sceneId &&
-        firstState.currentScene?.narrativeText.includes("Bilge Baykuş") === true &&
+        firstState.currentScene?.narrativeText.includes("Bilge Baykuş") ===
+          true &&
         Number(generatedCountResult.rows[0]?.count ?? 0) === 1 &&
         providerCalls === 1;
       scenario.assert(
@@ -334,7 +335,9 @@ run("ULTEF S37 generated hook reader production", () => {
       const consumed = await pool.query<{
         status: string;
         consumed_at: Date | null;
-      }>(`SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`, [hook]);
+      }>(`SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`, [
+        hook,
+      ]);
       const consumedOk =
         consumed.rows[0]?.status === "consumed" &&
         consumed.rows[0]?.consumed_at instanceof Date;
@@ -378,12 +381,19 @@ run("ULTEF S37 generated hook reader production", () => {
         `DELETE FROM story.story_hooks WHERE household_id IN($1,$2)`,
         [h1, h2],
       );
-      await pool.query(`DELETE FROM story.story_sessions WHERE id=$1`, [session]);
-      await pool.query(`DELETE FROM story.story_scenes WHERE story_version_id=$1`, [
+      await pool.query(`DELETE FROM story.story_sessions WHERE id=$1`, [
+        session,
+      ]);
+      await pool.query(
+        `DELETE FROM story.story_scenes WHERE story_version_id=$1`,
+        [version],
+      );
+      await pool.query(`DELETE FROM story.story_versions WHERE id=$1`, [
         version,
       ]);
-      await pool.query(`DELETE FROM story.story_versions WHERE id=$1`, [version]);
-      await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [def]);
+      await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [
+        def,
+      ]);
       await pool.query(`DELETE FROM profile.worlds WHERE id=$1`, [world]);
       await pool.query(`DELETE FROM profile.lumi_characters WHERE id=$1`, [
         character,
