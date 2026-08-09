@@ -7,23 +7,27 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 
 | ID | Decision | Status |
 |---|---|---|
-| UXD-001..145 | Önceki kanonik UI/UX, living-universe, social, settlement, culture, governance ve information-flow decisions | ACCEPTED |
-| UXD-146 | Story Hook bir quest değildir; world state içinden doğan narrative opportunity'dir | ACCEPTED |
-| UXD-147 | Hook sources Saga, NPC goal, relationship, promise, rumor/mystery, environment, weather, settlement, culture, governance, item, growth, memory, exploration ve everyday life olabilir | ACCEPTED |
-| UXD-148 | Narrative Director candidate'ları tek skor yerine relevance, urgency, novelty, emotional fit, saga value, relationship value, world consequence, child-interest fit, development-goal fit, recency/similarity penalties ve prerequisites gibi çok boyutlu sinyallerle değerlendirir | ACCEPTED |
-| UXD-149 | Recent story similarity ve story-type history tekrar motiflerini/aynı macera kalıbını baskılar; diversity sistemsel kuraldır | ACCEPTED |
-| UXD-150 | Main Saga her story'yi domine etmez; pacing gerektiğinde everyday, relationship, exploration veya environment-driven story'lere alan açar | ACCEPTED |
-| UXD-151 | Urgency yalnız canonical world/NPC state'ten gelebilir; story başlatmak için yapay aciliyet üretilemez | ACCEPTED |
-| UXD-152 | Hook eligibility prerequisite, authorized knowledge, actor/location availability, time, environment ve capability koşullarından geçer; eksik prerequisite olan hook child'a sunulmaz | ACCEPTED |
-| UXD-153 | Child-facing hook technical quest card olarak değil current-world observations ('Mino kapıda', 'pusula parlıyor', 'meydandan müzik geliyor') şeklinde ifade edilir | ACCEPTED |
-| UXD-154 | 'Beni şaşırt' random canon-dışı story üretmez; eligible opportunity pool içinden uygun candidate seçer | ACCEPTED |
-| UXD-155 | Free intent canonical feasibility, actor/location availability, time, environment ve world constraints ile reconcile edilerek yeni opportunity oluşturabilir | ACCEPTED |
-| UXD-156 | Hooks persistent, transient veya child-presence-protected lifecycle taşıyabilir; seçilmeyen hook otomatik failed quest olmaz | ACCEPTED |
-| UXD-157 | Seçilmeyen opportunity world/NPC autonomy nedeniyle ilerleyebilir, zayıflayabilir, tekrar doğabilir veya doğal olarak sona erebilir | ACCEPTED |
-| UXD-158 | Seçilen opportunity doğrudan LLM'e prose prompt olarak gitmez; önce canonical Narrative Contract'a dönüştürülür | ACCEPTED |
-| UXD-159 | Narrative Contract participants, location, starting world state, known facts, allowed mysteries, continuity requirements, capabilities, forbidden knowledge, tone, child interests, optional development goals, story length ve consequence boundaries taşır | ACCEPTED |
-| UXD-160 | Narrative Opportunity Selection child agency'yi korur; system önerir/bağlar fakat child intent ve seçimlerini görünmez biçimde overwrite etmez | ACCEPTED |
-| UXD-161 | Opportunity pool ve hook lifecycle tenant/universe/child isolation'ı korur | ACCEPTED |
+| UXD-001..161 | Önceki kanonik UI/UX, living-universe, social, world, information-flow ve narrative-opportunity decisions | ACCEPTED |
+| UXD-162 | Selected Opportunity doğrudan prose üretimine gitmez; Narrative Contract -> Story Planner -> Story Generator -> Validation -> Session -> Outcome zinciri kullanılır | ACCEPTED |
+| UXD-163 | Narrative Contract canonical participants, location, starting state, actor knowledge boundaries, inventory/capabilities, memories, Saga constraints, tone, age, preferences, story length ve consequence boundaries taşır | ACCEPTED |
+| UXD-164 | Story Planner prose yazmaz; opening, beats, decision points, callbacks, clue opportunities, NPC beats ve valid ending ranges gibi yapısal plan üretir | ACCEPTED |
+| UXD-165 | Aynı contract birden fazla valid plan üretebilir; diversity kabul edilir fakat bütün planlar canon/safety/quality sınırında kalır | ACCEPTED |
+| UXD-166 | Story structures tek problem-combat-reward kalıbına sıkışmaz; exploration, everyday, relationship, mystery, journey, preparation, festival ve Saga gibi farklı arc tendencies desteklenir | ACCEPTED |
+| UXD-167 | Choices canonical state'ten doğar; olmayan item, absent NPC, undiscovered route veya unauthorized knowledge seçenek olarak sunulamaz | ACCEPTED |
+| UXD-168 | Choices hidden correct-answer pedagogy'ye indirgenmez; parent development goals agency'yi ve meaningful alternatives'i bozmaz | ACCEPTED |
+| UXD-169 | Free-text child choice/intent mevcut contract ve canonical feasibility ile reconcile edilerek ilerletilebilir; infeasible intent canon dışı gerçekleştirilemez | ACCEPTED |
+| UXD-170 | Story Generator'ın authority'si prose, dialogue, sensory detail ve pacing ile sınırlıdır; core item creation, topology mutation, hidden truth rewrite, relationship/world commit gibi authoritative değişiklikleri yapamaz | ACCEPTED |
+| UXD-171 | Generated content Ephemeral Narrative Detail ile Canonical Claim/Proposed Mutation olarak ayrılır; her dekoratif ayrıntı canon'a yazılmaz | ACCEPTED |
+| UXD-172 | Generation sonrası deterministic validators item/location/knowledge/timeline/forbidden mutation gibi machine-checkable violations'ı LLM evaluator'dan önce kontrol eder | ACCEPTED |
+| UXD-173 | Narrative evaluator coherence, age fit, repetition, childishness/maturity fit, emotional tone, dialogue, choice quality, gamification leakage ve forced moralizing gibi semantik kaliteyi değerlendirir | ACCEPTED |
+| UXD-174 | Validation failure'da targeted repair tercih edilebilir; structural/canonical hata büyükse full regeneration uygulanabilir; repair yeni canon violation üretemez | ACCEPTED |
+| UXD-175 | Feedback Intelligence ham review'u doğrudan prompt'a yığmaz; structured story-quality preferences Contract/Planner/Generator'a kontrollü bias verir | ACCEPTED |
+| UXD-176 | Generated story contract/planner/prompt/model/provider/evaluator/seed/config/repair provenance metadata ile versionlanır ve geriye dönük kalite analizi yapılabilir | ACCEPTED |
+| UXD-177 | Story tamamlanmadan authoritative world outcome commit edilmez; active session state ile committed world state ayrıdır | ACCEPTED |
+| UXD-178 | Yarım bırakılan story resumable'dır; child doğru session position/state'ten devam eder | ACCEPTED |
+| UXD-179 | Active Story Session kullandığı kritik actors/state için bounded reservation/consistency protection taşır; background simulation aynı actor/state'i contradiction'a sürükleyemez | ACCEPTED |
+| UXD-180 | Story completion sonrası Outcome Extraction -> Validation -> Authoritative Commit zinciri çalışır; generator prose tek başına world truth değiştirmez | ACCEPTED |
+| UXD-181 | Narrative generation pipeline tenant/universe/child isolation, replay/idempotency ve traceability sınırlarını korur | ACCEPTED |
 
 ## Change control
 
