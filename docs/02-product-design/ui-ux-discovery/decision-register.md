@@ -7,22 +7,23 @@ Bu register, UI/UX Discovery başlangıcından itibaren kabul edilen kararların
 
 | ID | Decision | Status |
 |---|---|---|
-| UXD-001..130 | Önceki kanonik UI/UX, living-universe, social, settlement, culture ve governance decisions | ACCEPTED |
-| UXD-131 | World truth, actor knowledge, belief, rumor ve secret aynı şey değildir; ayrı state/provenance taşırlar | ACCEPTED |
-| UXD-132 | Knowledge transfer provenance/source/confidence ile izlenir; bir actor bilgiyi yalnız gözlem, anlatım, belge, harita, memory veya authorized reveal yoluyla öğrenir | ACCEPTED |
-| UXD-133 | Rumor yayılırken distortion yaşayabilir fakat hiçbir rumor canonical world truth'u overwrite edemez | ACCEPTED |
-| UXD-134 | Secrets bilinen fakat paylaşımı context/relationship/promise/fear/uncertainty nedeniyle kısıtlanabilen information state'idir; stat threshold unlock olarak modellenmez | ACCEPTED |
-| UXD-135 | Child öğrendiği confidential information'ı paylaşabilir veya saklayabilir; consequence relationship/memory/world üzerinden doğal anlatılır, quest penalty olarak gösterilmez | ACCEPTED |
-| UXD-136 | Mystery bir quest log değildir; clues, memories, items, maps, observations ve conflicting claims üzerinden kademeli knowledge construction'dır | ACCEPTED |
-| UXD-137 | Bazı mysteries başlangıçta hidden canonical truth taşır; emergent mysteries constraints + unresolved slots ile başlayabilir, resolve anında canon'a bağlanır ve geçmiş clues ile çelişemez | ACCEPTED |
-| UXD-138 | Misbelief/mistaken witness red herring olarak kullanılabilir fakat sistem sürekli deceptive fake clues üretmemeli; yanlış kişi inancı ile world truth ayrımı korunur | ACCEPTED |
-| UXD-139 | Map states UNKNOWN/RUMORED/REVEALED/DISCOVERED Information System tarafından beslenir; rumor UI marker'ı real domain knowledge state'e dayanır | ACCEPTED |
-| UXD-140 | Information propagation automatic broadcast değildir; recipient personality, relationship, promise, importance ve social context aktarımı etkileyebilir | ACCEPTED |
-| UXD-141 | Önemsiz rumor/claims zamanla retrieval priority kaybedebilir; mystery-critical clues deep memory/archive üzerinden gerektiğinde geri çağrılabilir | ACCEPTED |
-| UXD-142 | Conflicting claims coexist edebilir; sistem bunları evidence olmadan tek canonical fact'e merge etmez | ACCEPTED |
-| UXD-143 | Child-safety nedeniyle tehlikeli/uygunsuz 'trusted adult/parent'tan sakla' secrecy pattern'i hard invariant ile engellenir | ACCEPTED |
-| UXD-144 | Information state child-facing UI'da technical graph olarak değil story dialogue, map fog/rumor, memories ve discoveries üzerinden anlatılır | ACCEPTED |
-| UXD-145 | Final truth yalnız authorized actorlarca doğru zamanda bilinmelidir; backend'in gerçeği bilmesi NPC/child'ın da bildiği anlamına gelmez | ACCEPTED |
+| UXD-001..145 | Önceki kanonik UI/UX, living-universe, social, settlement, culture, governance ve information-flow decisions | ACCEPTED |
+| UXD-146 | Story Hook bir quest değildir; world state içinden doğan narrative opportunity'dir | ACCEPTED |
+| UXD-147 | Hook sources Saga, NPC goal, relationship, promise, rumor/mystery, environment, weather, settlement, culture, governance, item, growth, memory, exploration ve everyday life olabilir | ACCEPTED |
+| UXD-148 | Narrative Director candidate'ları tek skor yerine relevance, urgency, novelty, emotional fit, saga value, relationship value, world consequence, child-interest fit, development-goal fit, recency/similarity penalties ve prerequisites gibi çok boyutlu sinyallerle değerlendirir | ACCEPTED |
+| UXD-149 | Recent story similarity ve story-type history tekrar motiflerini/aynı macera kalıbını baskılar; diversity sistemsel kuraldır | ACCEPTED |
+| UXD-150 | Main Saga her story'yi domine etmez; pacing gerektiğinde everyday, relationship, exploration veya environment-driven story'lere alan açar | ACCEPTED |
+| UXD-151 | Urgency yalnız canonical world/NPC state'ten gelebilir; story başlatmak için yapay aciliyet üretilemez | ACCEPTED |
+| UXD-152 | Hook eligibility prerequisite, authorized knowledge, actor/location availability, time, environment ve capability koşullarından geçer; eksik prerequisite olan hook child'a sunulmaz | ACCEPTED |
+| UXD-153 | Child-facing hook technical quest card olarak değil current-world observations ('Mino kapıda', 'pusula parlıyor', 'meydandan müzik geliyor') şeklinde ifade edilir | ACCEPTED |
+| UXD-154 | 'Beni şaşırt' random canon-dışı story üretmez; eligible opportunity pool içinden uygun candidate seçer | ACCEPTED |
+| UXD-155 | Free intent canonical feasibility, actor/location availability, time, environment ve world constraints ile reconcile edilerek yeni opportunity oluşturabilir | ACCEPTED |
+| UXD-156 | Hooks persistent, transient veya child-presence-protected lifecycle taşıyabilir; seçilmeyen hook otomatik failed quest olmaz | ACCEPTED |
+| UXD-157 | Seçilmeyen opportunity world/NPC autonomy nedeniyle ilerleyebilir, zayıflayabilir, tekrar doğabilir veya doğal olarak sona erebilir | ACCEPTED |
+| UXD-158 | Seçilen opportunity doğrudan LLM'e prose prompt olarak gitmez; önce canonical Narrative Contract'a dönüştürülür | ACCEPTED |
+| UXD-159 | Narrative Contract participants, location, starting world state, known facts, allowed mysteries, continuity requirements, capabilities, forbidden knowledge, tone, child interests, optional development goals, story length ve consequence boundaries taşır | ACCEPTED |
+| UXD-160 | Narrative Opportunity Selection child agency'yi korur; system önerir/bağlar fakat child intent ve seçimlerini görünmez biçimde overwrite etmez | ACCEPTED |
+| UXD-161 | Opportunity pool ve hook lifecycle tenant/universe/child isolation'ı korur | ACCEPTED |
 
 ## Change control
 
