@@ -27,80 +27,101 @@ function memoryChange(overrides: Partial<WorldChange> = {}): WorldChange {
   };
 }
 
-function makeTx() {
-  const execute = vi.fn().mockResolvedValue(undefined);
+function makeTx(results: unknown[] = [[], []]) {
+  const execute = vi.fn();
+  for (const result of results) execute.mockResolvedValueOnce(result);
   return {
     execute,
   } as unknown as QueryExecutor & { execute: typeof execute };
+}
+
+function input(tx: QueryExecutor, changes: WorldChange[]) {
+  return {
+    tx,
+    householdId: "22222222-2222-4222-8222-222222222222",
+    worldId: "33333333-3333-4333-8333-333333333333",
+    childProfileId: "44444444-4444-4444-8444-444444444444",
+    storySessionId: "55555555-5555-4555-8555-555555555555",
+    outcomeId: "outcome-memory-001",
+    commitId: "commit-memory-001",
+    changes,
+    createdAt: new Date("2026-08-09T18:00:00.000Z"),
+  };
 }
 
 describe("committed canonical memory projection", () => {
   it("writes committed npc memory changes through the caller transaction", async () => {
     const tx = makeTx();
 
-    await commitCanonicalMemories({
-      tx,
-      householdId: "22222222-2222-4222-8222-222222222222",
-      worldId: "33333333-3333-4333-8333-333333333333",
-      childProfileId: "44444444-4444-4444-8444-444444444444",
-      storySessionId: "55555555-5555-4555-8555-555555555555",
-      outcomeId: "outcome-memory-001",
-      commitId: "commit-memory-001",
-      changes: [memoryChange()],
-      createdAt: new Date("2026-08-09T18:00:00.000Z"),
-    });
+    await commitCanonicalMemories(input(tx, [memoryChange()]));
+
+    expect(tx.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it("absorbs replay before any supersession or duplicate insert", async () => {
+    const tx = makeTx([[{ id: "existing-memory" }]]);
+
+    await commitCanonicalMemories(input(tx, [memoryChange()]));
 
     expect(tx.execute).toHaveBeenCalledTimes(1);
   });
 
-  it("does not write non-memory changes", async () => {
-    const tx = makeTx();
-
-    await commitCanonicalMemories({
-      tx,
-      householdId: "22222222-2222-4222-8222-222222222222",
-      worldId: "33333333-3333-4333-8333-333333333333",
-      storySessionId: "55555555-5555-4555-8555-555555555555",
-      outcomeId: "outcome-memory-002",
-      commitId: "commit-memory-002",
-      changes: [memoryChange({ ruleId: "default-world-flag" })],
-      createdAt: new Date("2026-08-09T18:00:00.000Z"),
+  it("supersedes an active prior memory before writing its replacement", async () => {
+    const priorMemoryId = "66666666-6666-4666-8666-666666666666";
+    const tx = makeTx([[], [{ id: priorMemoryId }], []]);
+    const replacement = memoryChange({
+      value: {
+        summary: "Bora köprünün artık güvenli olduğunu öğrendi.",
+        supersedesMemoryId: priorMemoryId,
+      },
     });
+
+    await commitCanonicalMemories(input(tx, [replacement]));
+
+    expect(tx.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it("rejects supersession when prior memory is outside the exact active scope", async () => {
+    const tx = makeTx([[], []]);
+    const replacement = memoryChange({
+      value: {
+        summary: "Bora köprünün artık güvenli olduğunu öğrendi.",
+        supersedesMemoryId: "66666666-6666-4666-8666-666666666666",
+      },
+    });
+
+    await expect(
+      commitCanonicalMemories(input(tx, [replacement])),
+    ).rejects.toThrow("MEMORY_SUPERSESSION_SCOPE_MISMATCH");
+  });
+
+  it("does not write non-memory changes", async () => {
+    const tx = makeTx([]);
+
+    await commitCanonicalMemories(
+      input(tx, [memoryChange({ ruleId: "default-world-flag" })]),
+    );
 
     expect(tx.execute).not.toHaveBeenCalled();
   });
 
-  it("does not persist superseded memory changes", async () => {
-    const tx = makeTx();
+  it("does not persist superseded world-change candidates", async () => {
+    const tx = makeTx([]);
 
-    await commitCanonicalMemories({
-      tx,
-      householdId: "22222222-2222-4222-8222-222222222222",
-      worldId: "33333333-3333-4333-8333-333333333333",
-      storySessionId: "55555555-5555-4555-8555-555555555555",
-      outcomeId: "outcome-memory-003",
-      commitId: "commit-memory-003",
-      changes: [memoryChange({ status: "superseded" })],
-      createdAt: new Date("2026-08-09T18:00:00.000Z"),
-    });
+    await commitCanonicalMemories(
+      input(tx, [memoryChange({ status: "superseded" })]),
+    );
 
     expect(tx.execute).not.toHaveBeenCalled();
   });
 
   it("rejects malformed structured memory before any persistence", async () => {
-    const tx = makeTx();
+    const tx = makeTx([]);
 
     await expect(
-      commitCanonicalMemories({
-        tx,
-        householdId: "22222222-2222-4222-8222-222222222222",
-        worldId: "33333333-3333-4333-8333-333333333333",
-        storySessionId: "55555555-5555-4555-8555-555555555555",
-        outcomeId: "outcome-memory-004",
-        commitId: "commit-memory-004",
-        changes: [memoryChange({ value: { salience: 0.8 } })],
-        createdAt: new Date("2026-08-09T18:00:00.000Z"),
-      }),
+      commitCanonicalMemories(
+        input(tx, [memoryChange({ value: { salience: 0.8 } })]),
+      ),
     ).rejects.toThrow("MEMORY_PROJECTION_MISSING_SUMMARY");
 
     expect(tx.execute).not.toHaveBeenCalled();
