@@ -47,7 +47,7 @@ export interface OutcomeChange {
   outcomeType: OutcomeType;
   /** Entity this change applies to (NPC, inventory item, world, location…). */
   entityId: string;
-  /** Operation to perform against the target. */
+  /** Operation to perform against the target entity. */
   operation: OutcomeOperation;
   /** Field path within the target entity (e.g. "need.hunger"). */
   field: string;
@@ -231,7 +231,7 @@ export function assertKnownOutcomeManifestStatus(
 ): asserts value is OutcomeManifestStatus {
   if (!(OUTCOME_MANIFEST_STATUSES as readonly string[]).includes(value)) {
     throw new ValidationError(
-      "INVALID_MANIFEST_STATUS",
+      "INVALID_OUTCOME_MANIFEST_STATUS",
       `Invalid outcome manifest status: ${value}`,
     );
   }
