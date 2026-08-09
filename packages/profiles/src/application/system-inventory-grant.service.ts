@@ -44,14 +44,17 @@ function toDefinitionState(record: Record<string, unknown>): ItemDefinitionState
     rarity: record.rarity as ItemDefinitionState["rarity"],
     stackMode: record.stackMode as ItemDefinitionState["stackMode"],
     maxStackSize: (record.maxStackSize as number) ?? null,
-    durabilityMode: record.durabilityMode as ItemDefinitionState["durabilityMode"],
+    durabilityMode:
+      record.durabilityMode as ItemDefinitionState["durabilityMode"],
     defaultDurability: (record.defaultDurability as number) ?? null,
     isTransferable: record.isTransferable as boolean,
     isEquippable: record.isEquippable as boolean,
     isConsumable: record.isConsumable as boolean,
     isStorySelectable: record.isStorySelectable as boolean,
-    allowedOwnerTypes: record.allowedOwnerTypes as ItemDefinitionState["allowedOwnerTypes"],
-    lifecycleStatus: record.lifecycleStatus as ItemDefinitionState["lifecycleStatus"],
+    allowedOwnerTypes:
+      record.allowedOwnerTypes as ItemDefinitionState["allowedOwnerTypes"],
+    lifecycleStatus:
+      record.lifecycleStatus as ItemDefinitionState["lifecycleStatus"],
     metadata: (record.metadata as Record<string, unknown>) ?? {},
   };
 }
@@ -61,8 +64,10 @@ function toInstanceState(record: Record<string, unknown>): ItemInstanceState {
     id: record.id as string,
     itemDefinitionId: record.itemDefinitionId as string,
     instanceName: (record.instanceName as string) ?? null,
-    lifecycleStatus: record.lifecycleStatus as ItemInstanceState["lifecycleStatus"],
-    conditionStatus: record.conditionStatus as ItemInstanceState["conditionStatus"],
+    lifecycleStatus:
+      record.lifecycleStatus as ItemInstanceState["lifecycleStatus"],
+    conditionStatus:
+      record.conditionStatus as ItemInstanceState["conditionStatus"],
     durabilityCurrent: (record.durabilityCurrent as number) ?? null,
     durabilityMax: (record.durabilityMax as number) ?? null,
     quantity: record.quantity as number,
@@ -101,7 +106,10 @@ export async function grantStoryRewardAsSystem(
   const childRepo = new DrizzleChildProfileRepository(db);
   const inventoryRepo = new DrizzleInventoryRepository(db);
 
-  const child = await childRepo.findById(input.childProfileId, input.householdId);
+  const child = await childRepo.findById(
+    input.childProfileId,
+    input.householdId,
+  );
   if (!child) {
     throw new AuthorizationError(
       "Child profile is not active in the requested household",
@@ -194,12 +202,18 @@ export async function grantStoryRewardAsSystem(
       id: inventory.id,
       ownerType: "child_profile",
       ownerId: input.childProfileId,
-      inventoryType: (inventory.inventoryType as InventoryState["inventoryType"]) ?? "personal",
+      inventoryType:
+        (inventory.inventoryType as InventoryState["inventoryType"]) ??
+        "personal",
       displayName: inventory.displayName,
-      capacityMode: (inventory.capacityMode as InventoryState["capacityMode"]) ?? "unlimited",
+      capacityMode:
+        (inventory.capacityMode as InventoryState["capacityMode"]) ??
+        "unlimited",
       capacityValue: inventory.capacityValue,
       isLocked: inventory.isLocked,
-      lifecycleStatus: (inventory.lifecycleStatus as InventoryState["lifecycleStatus"]) ?? "active",
+      lifecycleStatus:
+        (inventory.lifecycleStatus as InventoryState["lifecycleStatus"]) ??
+        "active",
       metadata: (inventory.metadata as Record<string, unknown>) ?? {},
     };
 
