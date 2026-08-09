@@ -1,0 +1,33 @@
+name: ULTEF S41 Parent Home Profile Contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parent-home-profile-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+      - name: Web lint
+        run: pnpm --filter @lumi/web lint
+      - name: Run S41 ULTEF parent home/profile contract
+        run: pnpm --filter @lumi/web ultef:s41-parent-home
