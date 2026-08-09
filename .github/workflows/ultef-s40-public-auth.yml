@@ -1,0 +1,45 @@
+name: ULTEF S40 Public Auth Visual Contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-auth-visual-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+      - name: Web lint
+        run: pnpm --filter @lumi/web lint
+      - name: Run S40 ULTEF public/auth visual contract
+        run: pnpm --filter @lumi/web ultef:s40-public-auth
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-s40-public-auth-evidence
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: warn
+          retention-days: 14
