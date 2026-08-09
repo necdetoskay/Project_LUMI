@@ -11,13 +11,18 @@ Status: IN PROGRESS
 - Decaying memories use a seven-day half-life.
 - Reinforcement timestamp resets the decay anchor.
 - Expired/superseded/archived memories have zero active retrieval weight or are excluded before ranking.
-- Retrieval now applies lifecycle-aware final ranking while retaining a hard-bounded DB candidate window.
-- Domain tests added for durable, decay, reinforcement and expiry behavior.
+- Retrieval applies lifecycle-aware final ranking while retaining a hard-bounded DB candidate window.
+- Canonical memory port now exposes fully scoped `reinforce` and `archive` mutations.
+- PostgreSQL repository mutations require exact household/world/profile/owner/memory scope.
+- Reinforcement rejects archived, superseded and expired memories.
+- Archive removes active memories from retrieval without deleting historical evidence.
+- Domain tests cover durable, decay, reinforcement, expiry and deterministic ordering behavior.
+- DB-backed L9 ULTEF scenario added for cross-profile mutation rejection, reinforcement ranking and archive exclusion.
+- Dedicated `ULTEF S45 Memory Lifecycle` GitHub Actions gate added.
 
 ## Next
 
-1. Add scoped reinforcement/archive mutation contract to the canonical memory port.
-2. Add DB-backed tests proving reinforcement and lifecycle mutation cannot cross tenant/profile/owner scope.
-3. Add long-horizon L9 scenario spanning many sessions/days.
-4. Wire dedicated S45 ULTEF workflow.
-5. Run CI, Integration, Security and PX regressions before merge.
+1. Run S45 DB-backed gate and fix any production/test regressions it exposes.
+2. Run CI, Integration, Security and PX regressions.
+3. Extend evidence if required for multi-session/day long-horizon stability.
+4. Complete Sprint 45 closeout documentation and merge only after all required gates are green.
