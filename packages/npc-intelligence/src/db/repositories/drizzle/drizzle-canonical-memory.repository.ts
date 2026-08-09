@@ -2,13 +2,19 @@ import { and, desc, eq, gt, isNull, notInArray, or } from "drizzle-orm";
 
 import type { CanonicalMemory } from "../../../domain/memory";
 import { validateCanonicalMemory } from "../../../domain/memory";
+import { compareMemoriesForRetrieval } from "../../../domain/memory-lifecycle";
 import type {
   CanonicalMemoryPort,
   CanonicalMemoryQuery,
 } from "../../../ports/canonical-memory.port";
-import { normalizeMemoryRetrievalLimit } from "../../../ports/canonical-memory.port";
+import {
+  MAX_MEMORY_RETRIEVAL_LIMIT,
+  normalizeMemoryRetrievalLimit,
+} from "../../../ports/canonical-memory.port";
 import { getNpcDb, type Database } from "../../client";
 import { canonicalMemories } from "../../schema/npc-intelligence/memories";
+
+const MAX_MEMORY_RETRIEVAL_CANDIDATES = MAX_MEMORY_RETRIEVAL_LIMIT * 4;
 
 function mapRow(row: typeof canonicalMemories.$inferSelect): CanonicalMemory {
   return {
@@ -80,6 +86,10 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
 
   async listRelevant(query: CanonicalMemoryQuery): Promise<CanonicalMemory[]> {
     const limit = normalizeMemoryRetrievalLimit(query.limit);
+    const candidateLimit = Math.min(
+      Math.max(limit * 4, limit),
+      MAX_MEMORY_RETRIEVAL_CANDIDATES,
+    );
     const profileScope =
       query.childProfileId == null
         ? isNull(canonicalMemories.childProfileId)
@@ -105,10 +115,16 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
       .orderBy(
         desc(canonicalMemories.salience),
         desc(canonicalMemories.confidence),
+        desc(canonicalMemories.lastReinforcedAt),
         desc(canonicalMemories.createdAt),
       )
-      .limit(limit);
+      .limit(candidateLimit);
 
-    return rows.map(mapRow);
+    return rows
+      .map(mapRow)
+      .sort((left, right) =>
+        compareMemoriesForRetrieval(left, right, query.now),
+      )
+      .slice(0, limit);
   }
 }
