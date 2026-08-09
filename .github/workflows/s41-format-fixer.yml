@@ -1,0 +1,40 @@
+name: S41 Format Fixer
+
+on:
+  push:
+    branches: [s41/parent-home-profiles]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: s41/parent-home-profiles
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format S41 files
+        run: >-
+          pnpm exec prettier --write
+          apps/web/app/app/page.tsx
+          apps/web/app/app/profiles/profiles-client-page.tsx
+          apps/web/tests/ultef-s41-parent-home-profile.contract.test.ts
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/page.tsx apps/web/app/app/profiles/profiles-client-page.tsx apps/web/tests/ultef-s41-parent-home-profile.contract.test.ts
+          git commit -m "style(s41): apply prettier formatting"
+          git push origin HEAD:s41/parent-home-profiles
