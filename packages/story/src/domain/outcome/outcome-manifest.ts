@@ -47,7 +47,7 @@ export interface OutcomeChange {
   outcomeType: OutcomeType;
   /** Entity this change applies to (NPC, inventory item, world, location…). */
   entityId: string;
-  /** Operation to perform against the target. */
+  /** Operation to perform against the target entity. */
   operation: OutcomeOperation;
   /** Field path within the target entity (e.g. "need.hunger"). */
   field: string;
@@ -60,6 +60,11 @@ export interface OutcomeChange {
 }
 
 export interface CreateOutcomeManifestInput {
+  /**
+   * Optional stable identity for production handoffs that already own an
+   * idempotency root (for example a persisted committed choice).
+   */
+  id?: string;
   storySessionId: string;
   householdId: string;
   worldId: string;
@@ -103,6 +108,12 @@ export class OutcomeManifest {
         "Outcome manifest requires storySessionId, householdId and worldId",
       );
     }
+    if (input.id !== undefined && input.id.trim().length === 0) {
+      throw new ValidationError(
+        "MANIFEST_INVALID_ID",
+        "Outcome manifest id must be non-empty when provided",
+      );
+    }
     if (!input.changes.length) {
       throw new ValidationError(
         "MANIFEST_EMPTY_CHANGES",
@@ -135,7 +146,7 @@ export class OutcomeManifest {
     }
 
     return new OutcomeManifest({
-      id: crypto.randomUUID(),
+      id: input.id ?? crypto.randomUUID(),
       schemaVersion: OUTCOME_MANIFEST_SCHEMA_VERSION,
       storySessionId: input.storySessionId,
       householdId: input.householdId,
