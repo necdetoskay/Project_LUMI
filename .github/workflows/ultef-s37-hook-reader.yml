@@ -51,6 +51,8 @@ jobs:
         run: pnpm --filter @lumi/world world:migrate
       - name: Prepare story schema
         run: pnpm --filter @lumi/story story:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Run S37 DB-backed hook reader evidence
         run: pnpm --filter @lumi/web ultef:s37-hook-reader
       - name: Print S37 evidence
