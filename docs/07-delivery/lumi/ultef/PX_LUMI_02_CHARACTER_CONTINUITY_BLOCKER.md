@@ -1,6 +1,6 @@
-# PX-LUMI-02 Character Continuity — Production Context Blocker
+# PX-LUMI-02 Character Continuity — Closure Record
 
-Status: **BLOCKED**  
+Status: **EXECUTED PASS — BLOCKER CLOSED**  
 Date: 2026-08-09
 
 ## Gate requirement
@@ -9,55 +9,68 @@ Date: 2026-08-09
 
 1. character identity remains stable;
 2. state changes are bounded and explainable;
-3. inventory/relationship/trait mutations persist after reload;
+3. durable character mutations persist after reload;
 4. later scenes receive the correct updated character context.
 
-The required narrative must show character identity, pre-state, action/mutation timeline, and post-reload state.
+The required narrative must show character identity, pre-state, mutation timeline, post-reload state, and causal use by later story generation.
 
-## What exists today
+## Production implementation
 
-### Stable identity/session participation
+The production continuity composition now includes a bounded profile-backed character read model.
 
-The L6 Golden Journey uses the same child, world and character identity across the initial and later story session. This is strong continuity evidence, but the current Golden assertions focus on child/world continuity and persisted NPC belief continuity rather than a mutated character-domain state.
+`getCharacterContinuitySnapshot()`:
 
-### Character-domain mutation and persistence primitives
+- scopes lookup by `householdId` + `childProfileId` + `characterId`;
+- loads the persisted character record;
+- exposes bounded trait, relationship and inventory state only;
+- keeps ORM records and arbitrary metadata out of the story prompt boundary;
+- returns no character context when scope does not match.
 
-`@lumi/profiles` exposes character-domain services for traits, emotions, needs, goals, influence and relationships, with transactional persistence and optimistic versioning. Inventory also has its own persisted service boundary.
+`NpcBeliefStoryContinuityContextAdapter` now composes this character snapshot with the existing household/world-scoped NPC belief continuity and supplies the result through the existing `StoryContinuityContextPort` used by `StorySceneGenerationService`.
 
-These primitives can support the first three PX-LUMI-02 assertions with a dedicated DB-backed scenario.
+Malformed optional character identifiers are rejected from the character lookup path and safely fall back to the existing NPC/world continuity behavior. This preserves legacy callers while valid UUID character IDs use the new production character-continuity path.
 
-### Story generation accepts character scope
+## Closure scenario
 
-`StorySceneGenerationService.generateSceneFromHook()` accepts an optional `characterId` and passes it to the injected `StoryContinuityContextPort`.
-
-## Missing production link
-
-The current production `NpcBeliefStoryContinuityContextAdapter` ignores `characterId` and builds continuity context only from household/world-scoped NPC beliefs. It does not load the active character's traits, inventory, relationships, emotions, goals or other character-domain state.
-
-Therefore a test can prove that character mutations persist, and another test can prove that a later story is generated, but the repository cannot currently prove the required causal boundary:
-
-`persisted character mutation -> production continuity context -> later scene prompt/output`
-
-Passing a hand-built character summary directly to a fake continuity port would not satisfy the PX gate.
-
-## Why the gate is BLOCKED
-
-The missing behavior is a production composition boundary, not a unit-test gap. Marking PX-LUMI-02 PASS from the current L6 Golden journey would overclaim what the later scene actually consumes.
-
-## Required implementation before PASS
-
-A minimal closure path should add a bounded profile-backed character continuity adapter (or extend the current continuity composition) that:
-
-1. loads the active character by `householdId` + `childProfileId` + `characterId`;
-2. exposes only prompt-safe, relevant character state;
-3. includes durable trait/relationship/inventory changes needed by the next scene;
-4. remains household/child scoped;
-5. is consumed by `StorySceneGenerationService` through the existing continuity port without direct ORM coupling.
-
-## Closure scenario target
-
-Proposed stable ID:
+Stable ID:
 
 `PX-LUMI-02-CHARACTER-RELOAD-STORY-001`
 
-The future scenario should mutate a bounded character dimension or inventory/relationship state, reload it from PostgreSQL, start/generate a later scene, and prove that the exact persisted mutation appears in the production continuity context and influences the generated scene.
+The DB-backed closure scenario:
+
+1. creates a synthetic household, child profile and character in disposable PostgreSQL;
+2. persists an initial `courage=0.40` trait with character version `1`;
+3. applies a bounded persisted mutation to `courage=0.82` and character version `2`;
+4. reloads the character state directly from PostgreSQL;
+5. generates a later scene through the production `NpcBeliefStoryContinuityContextAdapter` and `StorySceneGenerationService`;
+6. proves the generated prompt contains the same character identity, persisted version `2`, and `courage=0.82`;
+7. proves the later generated narrative changes in response to the persisted mutation;
+8. writes ULTEF evidence through the standard scenario artifact lifecycle.
+
+This closes the previously missing causal boundary:
+
+`persisted character mutation -> production continuity context -> later scene prompt/output`
+
+## Validation evidence
+
+- Workflow: `ULTEF PX-02 Character Continuity #8`
+- Result: **PASS**
+- Head: `37588e8eafe0e23773b29dea0166009cb7b45d40`
+- Scenario: `PX-LUMI-02-CHARACTER-RELOAD-STORY-001`
+- Evidence artifact: `ultef-px02-character-continuity-evidence`
+- Artifact digest: `sha256:8aea7a641e5536cb241cd6ea9dcbe2450a8628f7602350327e6ce229b88922c1`
+- Provider cost: `0` (deterministic provider double)
+
+Regression evidence on the same head:
+
+- `ULTEF PX-LUMI #31`: **PASS**
+- `ULTEF Integration #393`: **PASS**
+- legacy `L5-CONTEXT-DIVERGENCE-001`: **PASS** after malformed optional character-ID fallback hardening
+- `Security Scan #572`: **PASS**
+- CI validate chain: format, lint, typecheck, tests, load gate and production build all **PASS**
+
+## Gate decision
+
+**PX-LUMI-02 is evidence-closed / EXECUTED PASS.**
+
+The previous production character-context blocker is resolved. Future changes to the character continuity read model, prompt composition, character scoping, or story-generation continuity port must keep `PX-LUMI-02-CHARACTER-RELOAD-STORY-001` green.
