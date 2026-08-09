@@ -161,6 +161,7 @@ export async function persistGeneratedSceneAndAdvance(
           characters: input.scene.characters,
           moment: input.scene.moment,
           nextPrompt: input.scene.nextPrompt,
+          usedContinuityKeys: input.scene.usedContinuityKeys ?? [],
         },
       });
     });
