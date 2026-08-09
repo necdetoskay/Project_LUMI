@@ -36,14 +36,19 @@ async function state(id: string) {
     status: string;
     attempt_count: string;
     last_error: string | null;
-  }>(`SELECT status,attempt_count,last_error FROM story.story_outbox WHERE id=$1`, [id]);
+  }>(
+    `SELECT status,attempt_count,last_error FROM story.story_outbox WHERE id=$1`,
+    [id],
+  );
   return r.rows[0];
 }
 
 run("ULTEF S36 quest reward production", () => {
   beforeAll(() => {
     const db = new URL(url!).pathname.replace(/^\//, "");
-    if (!db.includes("test") && !db.includes("review")) throw new Error(`Unsafe DB: ${db}`);
+    if (!db.includes("test") && !db.includes("review")) {
+      throw new Error(`Unsafe DB: ${db}`);
+    }
     pool = new pg.Pool({ connectionString: url!, max: 4 });
   });
   afterAll(async () => pool?.end());
@@ -60,65 +65,200 @@ run("ULTEF S36 quest reward production", () => {
     const key = `s36-${defId}`;
     const good = crypto.randomUUID();
     const bad = crypto.randomUUID();
-    const scenario = createScenario({ id: ID, title: "Quest reward production wiring", level: "L9", projectGate: "PX-LUMI-S36", seed: "runtime-uuid" });
+    const scenario = createScenario({
+      id: ID,
+      title: "Quest reward production wiring",
+      level: "L9",
+      projectGate: "PX-LUMI-S36",
+      seed: "runtime-uuid",
+    });
 
     try {
-      await pool.query(`INSERT INTO profile.households(id,name,slug) VALUES($1,'A',$3),($2,'B',$4)`, [h1,h2,`s36-a-${h1}`,`s36-b-${h2}`]);
-      await pool.query(`INSERT INTO profile.child_profiles(id,household_id,display_name,age_band,locale) VALUES($1,$3,'A','6-8','tr-TR'),($2,$4,'B','6-8','tr-TR')`, [c1,c2,h1,h2]);
+      await pool.query(
+        `INSERT INTO profile.households(id,name,slug)
+         VALUES($1,'A',$3),($2,'B',$4)`,
+        [h1, h2, `s36-a-${h1}`, `s36-b-${h2}`],
+      );
+      await pool.query(
+        `INSERT INTO profile.child_profiles
+          (id,household_id,display_name,age_band,locale)
+         VALUES($1,$3,'A','6-8','tr-TR'),($2,$4,'B','6-8','tr-TR')`,
+        [c1, c2, h1, h2],
+      );
       await pool.query(
         `INSERT INTO profile.inventory_item_definitions
           (id,definition_key,display_name,category,item_type,rarity,stack_mode,max_stack_size,durability_mode,is_transferable,is_equippable,is_consumable,is_story_selectable,allowed_owner_types,lifecycle_status,metadata)
-         VALUES($1,$2,'Reward','story','collectible','common','stackable',99,'none',true,false,false,true,'["child_profile"]'::jsonb,'active','{}'::jsonb)`,
-        [defId,key],
+         VALUES($1,$2,'Reward','collectible','story','common','stackable',99,'none',true,false,false,true,'["child_profile"]'::jsonb,'active','{}'::jsonb)`,
+        [defId, key],
       );
       await pool.query(
-        `INSERT INTO story.story_outbox(id,household_id,world_id,commit_id,idempotency_key,intent_type,payload,evidence_ref,status,attempt_count,created_at)
+        `INSERT INTO story.story_outbox
+          (id,household_id,world_id,commit_id,idempotency_key,intent_type,payload,evidence_ref,status,attempt_count,created_at)
          VALUES
-         ($1,$3,$4,$5,$6,'quest_reward_grant',$7::jsonb,'ultef://s36/good','pending','0',now()),
-         ($2,$3,$4,$8,$9,'quest_reward_grant',$10::jsonb,'ultef://s36/cross','pending','0',now()+interval '1 ms')`,
-        [good,bad,h1,world,crypto.randomUUID(),`quest-reward:${q1}`,JSON.stringify({questId:q1,householdId:h1,worldId:world,childProfileId:c1,reward:{itemDefinitionKey:key,quantity:2}}),crypto.randomUUID(),`quest-reward:${q2}`,JSON.stringify({questId:q2,householdId:h1,worldId:world,childProfileId:c2,reward:{itemDefinitionKey:key,quantity:1}})],
+          ($1,$3,$4,$5,$6,'quest_reward_grant',$7::jsonb,'ultef://s36/good','pending','0',now()),
+          ($2,$3,$4,$8,$9,'quest_reward_grant',$10::jsonb,'ultef://s36/cross','pending','0',now()+interval '1 ms')`,
+        [
+          good,
+          bad,
+          h1,
+          world,
+          crypto.randomUUID(),
+          `quest-reward:${q1}`,
+          JSON.stringify({
+            questId: q1,
+            householdId: h1,
+            worldId: world,
+            childProfileId: c1,
+            reward: { itemDefinitionKey: key, quantity: 2 },
+          }),
+          crypto.randomUUID(),
+          `quest-reward:${q2}`,
+          JSON.stringify({
+            questId: q2,
+            householdId: h1,
+            worldId: world,
+            childProfileId: c2,
+            reward: { itemDefinitionKey: key, quantity: 1 },
+          }),
+        ],
       );
 
-      const first = await new OutboxJobRunner(createLogger({ level: "error" }),25,100).run();
+      const first = await new OutboxJobRunner(
+        createLogger({ level: "error" }),
+        25,
+        100,
+      ).run();
       const goodState = await state(good);
       const badState = await state(bad);
-      const goodCount = await countReward(h1,c1,key);
-      const crossCount = await countReward(h1,c2,key);
-      const grantOk = first.applied===1 && goodState?.status==="applied" && goodCount===1;
-      const isolated = first.failed===1 && badState?.status==="pending" && crossCount===0 && badState.last_error?.includes("Child profile is not active")===true;
-      scenario.assert("reward outbox granted inventory", grantOk, true, {first,goodState,goodCount});
-      scenario.assert("tenant isolation rejected foreign child", isolated, true, {badState,crossCount});
+      const goodCount = await countReward(h1, c1, key);
+      const crossCount = await countReward(h1, c2, key);
+      const grantOk =
+        first.applied === 1 &&
+        goodState?.status === "applied" &&
+        goodCount === 1;
+      const isolated =
+        first.failed === 1 &&
+        badState?.status === "pending" &&
+        crossCount === 0 &&
+        badState.last_error?.includes("Child profile is not active") === true;
+      scenario.assert("reward outbox granted inventory", grantOk, true, {
+        first,
+        goodState,
+        goodCount,
+      });
+      scenario.assert(
+        "tenant isolation rejected foreign child",
+        isolated,
+        true,
+        { badState, crossCount },
+      );
 
-      await pool.query(`UPDATE story.story_outbox SET status='pending',applied_at=NULL WHERE id=$1`,[good]);
-      await new OutboxJobRunner(createLogger({ level: "error" }),25,100).run();
-      const replayCount = await countReward(h1,c1,key);
-      const replayOk = replayCount===1;
+      await pool.query(
+        `UPDATE story.story_outbox
+            SET status='pending',applied_at=NULL
+          WHERE id=$1`,
+        [good],
+      );
+      await new OutboxJobRunner(
+        createLogger({ level: "error" }),
+        25,
+        100,
+      ).run();
+      const replayCount = await countReward(h1, c1, key);
+      const replayOk = replayCount === 1;
       scenario.assert("replay created no duplicate", replayOk, 1, replayCount);
 
-      let unauthorized=false;
+      let unauthorized = false;
       try {
-        await grantStoryRewardAsSystem({authority:"invalid",householdId:h1,childProfileId:c1,itemDefinitionKey:key,quantity:1,idempotencyKey:`quest-reward:${crypto.randomUUID()}`,sourceQuestId:crypto.randomUUID()});
+        await grantStoryRewardAsSystem({
+          authority: "invalid",
+          householdId: h1,
+          childProfileId: c1,
+          itemDefinitionKey: key,
+          quantity: 1,
+          idempotencyKey: `quest-reward:${crypto.randomUUID()}`,
+          sourceQuestId: crypto.randomUUID(),
+        });
       } catch (e) {
-        unauthorized=e instanceof Error && e.message.includes("authority is not allowed");
+        unauthorized =
+          e instanceof Error && e.message.includes("authority is not allowed");
       }
-      scenario.assert("unauthorized service authority rejected", unauthorized, true, unauthorized);
+      scenario.assert(
+        "unauthorized service authority rejected",
+        unauthorized,
+        true,
+        unauthorized,
+      );
 
-      const pass=grantOk&&isolated&&replayOk&&unauthorized;
-      const report=scenario.finish({result:pass?"PASS":"FAIL",reason:pass?"Reward wiring, replay, tenant isolation and authority rejection verified.":"S36 invariant failed."});
-      await writeScenarioArtifacts(report,{environment:"disposable-postgres-s36-quest-reward"});
+      const pass = grantOk && isolated && replayOk && unauthorized;
+      const report = scenario.finish({
+        result: pass ? "PASS" : "FAIL",
+        reason: pass
+          ? "Reward wiring, replay, tenant isolation and authority rejection verified."
+          : "S36 invariant failed.",
+      });
+      await writeScenarioArtifacts(report, {
+        environment: "disposable-postgres-s36-quest-reward",
+      });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_outbox WHERE household_id=$1`,[h1]);
-      await pool.query(`DELETE FROM profile.inventory_idempotency_ledger WHERE actor_household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_domain_events WHERE actor_household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_ownership_history WHERE actor_household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_entries WHERE inventory_id IN(SELECT id FROM profile.inventory_inventories WHERE household_id IN($1,$2))`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_ownerships WHERE item_instance_id IN(SELECT id FROM profile.inventory_item_instances WHERE household_id IN($1,$2))`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_item_instances WHERE household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_inventories WHERE household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.child_profiles WHERE household_id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`,[h1,h2]);
-      await pool.query(`DELETE FROM profile.inventory_item_definitions WHERE id=$1`,[defId]);
+      await pool.query(
+        `DELETE FROM story.story_outbox WHERE household_id=$1`,
+        [h1],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_idempotency_ledger
+          WHERE actor_household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_domain_events
+          WHERE actor_household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_ownership_history
+          WHERE actor_household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_entries
+          WHERE inventory_id IN(
+            SELECT id FROM profile.inventory_inventories
+             WHERE household_id IN($1,$2)
+          )`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_ownerships
+          WHERE item_instance_id IN(
+            SELECT id FROM profile.inventory_item_instances
+             WHERE household_id IN($1,$2)
+          )`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_item_instances
+          WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.inventory_inventories
+          WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(
+        `DELETE FROM profile.child_profiles WHERE household_id IN($1,$2)`,
+        [h1, h2],
+      );
+      await pool.query(`DELETE FROM profile.households WHERE id IN($1,$2)`, [
+        h1,
+        h2,
+      ]);
+      await pool.query(
+        `DELETE FROM profile.inventory_item_definitions WHERE id=$1`,
+        [defId],
+      );
     }
   });
 });
