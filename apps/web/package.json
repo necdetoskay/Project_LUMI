@@ -16,6 +16,7 @@
     "ultef:s41-parent-home": "vitest run tests/ultef-s41-parent-home-profile.contract.test.ts",
     "ultef:s44-memory-production": "vitest run tests/ultef-s44-memory-production.v3.integration.test.ts",
     "ultef:s45-memory-lifecycle": "vitest run tests/ultef-s45-memory-lifecycle.v3.integration.test.ts",
+    "ultef:s46-memory-story": "vitest run tests/ultef-s46-memory-story-production.v3.integration.test.ts",
     "auth:migrate": "node scripts/auth-migrate.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

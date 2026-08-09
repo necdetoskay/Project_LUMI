@@ -1,4 +1,5 @@
 export const SCENE_NARRATIVE_MAX = 4000;
+export const SCENE_USED_CONTINUITY_KEYS_MAX = 12;
 
 export interface GeneratedScene {
   sceneId: string;
@@ -7,6 +8,7 @@ export interface GeneratedScene {
   narrative: string;
   moment: string;
   nextPrompt: string | null;
+  usedContinuityKeys?: string[];
 }
 
 export interface SceneOutputParseResult {
@@ -30,6 +32,36 @@ function asString(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function parseUsedContinuityKeys(value: unknown, errors: string[]): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) {
+    errors.push("usedContinuityKeys: must be an array when provided");
+    return [];
+  }
+
+  const keys: string[] = [];
+  for (const entry of value) {
+    const key = asString(entry);
+    if (!key) {
+      errors.push("usedContinuityKeys: entries must be non-empty strings");
+      continue;
+    }
+    if (key.length > 120) {
+      errors.push("usedContinuityKeys: entries must be at most 120 characters");
+      continue;
+    }
+    if (!keys.includes(key)) keys.push(key);
+  }
+
+  if (keys.length > SCENE_USED_CONTINUITY_KEYS_MAX) {
+    errors.push(
+      `usedContinuityKeys: exceeds ${SCENE_USED_CONTINUITY_KEYS_MAX} entries`,
+    );
+  }
+
+  return keys.slice(0, SCENE_USED_CONTINUITY_KEYS_MAX);
 }
 
 /**
@@ -67,6 +99,10 @@ export function parseAndValidateSceneOutput(
   const narrative = asString(parsed["narrative"]);
   const moment = asString(parsed["moment"]);
   const nextPrompt = asString(parsed["nextPrompt"]);
+  const usedContinuityKeys = parseUsedContinuityKeys(
+    parsed["usedContinuityKeys"],
+    errors,
+  );
 
   if (!sceneId) errors.push("sceneId: missing or not a string");
   if (!setting) errors.push("setting: missing or not a string");
@@ -94,6 +130,7 @@ export function parseAndValidateSceneOutput(
       narrative: narrative!,
       moment: moment!,
       nextPrompt,
+      usedContinuityKeys,
     },
     errors: [],
   };

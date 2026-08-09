@@ -21,10 +21,19 @@ export interface CanonicalMemoryMutation extends CanonicalMemoryScope {
   at: Date;
 }
 
+export interface CanonicalMemoryUsageMutation extends CanonicalMemoryMutation {
+  sceneId: string;
+}
+
+export type CanonicalMemoryUsageResult = "applied" | "duplicate" | "rejected";
+
 export interface CanonicalMemoryPort {
   save(memory: CanonicalMemory): Promise<void>;
   listRelevant(query: CanonicalMemoryQuery): Promise<CanonicalMemory[]>;
   reinforce(input: CanonicalMemoryMutation): Promise<boolean>;
+  reinforceForScene(
+    input: CanonicalMemoryUsageMutation,
+  ): Promise<CanonicalMemoryUsageResult>;
   archive(input: CanonicalMemoryMutation): Promise<boolean>;
 }
 

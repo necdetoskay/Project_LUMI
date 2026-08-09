@@ -1,6 +1,9 @@
 import { buildHookSceneBrief } from "../domain/hook-scene-brief";
 import type { StoryHookState } from "../domain/story-types";
-import type { StoryContinuityContextPort } from "./story-continuity-context";
+import {
+  normalizeStoryContinuityContext,
+  type StoryContinuityContextPort,
+} from "./story-continuity-context";
 import { buildStoryScenePrompt } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
@@ -76,14 +79,19 @@ export class StorySceneGenerationService {
       input.hook.targetNpcId,
     ].filter((value): value is string => Boolean(value));
     const continuityContext = input.continuityPort
-      ? await input.continuityPort.resolveContext({
-          householdId: input.hook.householdId,
-          worldId: input.hook.worldId,
-          childProfileId: input.childProfileId ?? input.hook.childProfileId,
-          characterId: input.characterId ?? null,
-          npcIds: [...new Set(relevantNpcIds)],
-        })
+      ? normalizeStoryContinuityContext(
+          await input.continuityPort.resolveContext({
+            householdId: input.hook.householdId,
+            worldId: input.hook.worldId,
+            childProfileId: input.childProfileId ?? input.hook.childProfileId,
+            characterId: input.characterId ?? null,
+            npcIds: [...new Set(relevantNpcIds)],
+          }),
+        )
       : null;
+    const allowedContinuityKeys = new Set(
+      continuityContext?.facts.map((fact) => fact.key) ?? [],
+    );
 
     let lastError: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -120,11 +128,22 @@ export class StorySceneGenerationService {
 
       const parsed = parseAndValidateSceneOutput(response.content);
       if (parsed.scene) {
-        return {
-          scene: parsed.scene,
-          modelId: response.model || null,
-          attempt,
-        };
+        const usedContinuityKeys = parsed.scene.usedContinuityKeys ?? [];
+        const invalidContinuityKeys = usedContinuityKeys.filter(
+          (key) => !allowedContinuityKeys.has(key),
+        );
+        if (invalidContinuityKeys.length === 0) {
+          return {
+            scene: parsed.scene,
+            modelId: response.model || null,
+            attempt,
+          };
+        }
+
+        lastError = new LlmGenerationError(
+          `Story scene continuity usage validation failed: unknown keys ${invalidContinuityKeys.join(", ")}`,
+        );
+        continue;
       }
 
       lastError = new LlmGenerationError(

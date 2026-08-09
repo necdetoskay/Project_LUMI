@@ -24,6 +24,14 @@ function isCanonicalMemoryOwnerId(value: string): boolean {
   return UUID_PATTERN.test(value);
 }
 
+export function canonicalMemoryContinuityKey(input: {
+  ownerType: "character" | "npc";
+  ownerId: string;
+  memoryId: string;
+}): string {
+  return `memory:${input.ownerType}:${input.ownerId}:${input.memoryId}`;
+}
+
 /**
  * Web composition-root adapter that turns persisted character state, committed
  * choice/world consequences, bounded canonical memories and NPC beliefs into
@@ -112,7 +120,11 @@ export class NpcBeliefStoryContinuityContextAdapter
 
         for (const memory of characterMemories) {
           facts.push({
-            key: `memory:character:${memory.id}`,
+            key: canonicalMemoryContinuityKey({
+              ownerType: "character",
+              ownerId: characterMemoryOwnerId,
+              memoryId: memory.id,
+            }),
             summary: memory.summary,
             source: "canonical_memory",
           });
@@ -166,7 +178,11 @@ export class NpcBeliefStoryContinuityContextAdapter
 
       for (const memory of npcMemories) {
         facts.push({
-          key: `memory:npc:${memory.id}`,
+          key: canonicalMemoryContinuityKey({
+            ownerType: "npc",
+            ownerId: npcId,
+            memoryId: memory.id,
+          }),
           summary: memory.summary,
           source: "canonical_memory",
         });

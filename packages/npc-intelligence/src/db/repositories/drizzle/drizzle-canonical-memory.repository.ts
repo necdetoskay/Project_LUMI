@@ -7,15 +7,22 @@ import type {
   CanonicalMemoryMutation,
   CanonicalMemoryPort,
   CanonicalMemoryQuery,
+  CanonicalMemoryUsageMutation,
+  CanonicalMemoryUsageResult,
 } from "../../../ports/canonical-memory.port";
 import {
   MAX_MEMORY_RETRIEVAL_LIMIT,
   normalizeMemoryRetrievalLimit,
 } from "../../../ports/canonical-memory.port";
 import { getNpcDb, type Database } from "../../client";
-import { canonicalMemories } from "../../schema/npc-intelligence/memories";
+import {
+  canonicalMemories,
+  canonicalMemoryUsages,
+} from "../../schema/npc-intelligence/memories";
 
 const MAX_MEMORY_RETRIEVAL_CANDIDATES = MAX_MEMORY_RETRIEVAL_LIMIT * 4;
+
+class MemoryUsageRejectedError extends Error {}
 
 function mapRow(row: typeof canonicalMemories.$inferSelect): CanonicalMemory {
   return {
@@ -159,6 +166,66 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
       .returning({ id: canonicalMemories.id });
 
     return rows.length === 1;
+  }
+
+  async reinforceForScene(
+    input: CanonicalMemoryUsageMutation,
+  ): Promise<CanonicalMemoryUsageResult> {
+    try {
+      return await this.db.transaction(async (tx) => {
+        const usageRows = await tx
+          .insert(canonicalMemoryUsages)
+          .values({
+            id: crypto.randomUUID(),
+            householdId: input.householdId,
+            worldId: input.worldId,
+            childProfileId: input.childProfileId ?? null,
+            ownerType: input.ownerType,
+            ownerId: input.ownerId,
+            memoryId: input.memoryId,
+            sceneId: input.sceneId,
+            usedAt: input.at,
+          })
+          .onConflictDoNothing({
+            target: [
+              canonicalMemoryUsages.householdId,
+              canonicalMemoryUsages.worldId,
+              canonicalMemoryUsages.sceneId,
+              canonicalMemoryUsages.memoryId,
+            ],
+          })
+          .returning({ id: canonicalMemoryUsages.id });
+
+        if (usageRows.length === 0) return "duplicate";
+
+        const memoryRows = await tx
+          .update(canonicalMemories)
+          .set({ lastReinforcedAt: input.at })
+          .where(
+            and(
+              mutationScope(input),
+              notInArray(canonicalMemories.lifecycle, [
+                "archived",
+                "superseded",
+              ]),
+              or(
+                isNull(canonicalMemories.expiresAt),
+                gt(canonicalMemories.expiresAt, input.at),
+              ),
+            ),
+          )
+          .returning({ id: canonicalMemories.id });
+
+        if (memoryRows.length !== 1) {
+          throw new MemoryUsageRejectedError();
+        }
+
+        return "applied";
+      });
+    } catch (error) {
+      if (error instanceof MemoryUsageRejectedError) return "rejected";
+      throw error;
+    }
   }
 
   async archive(input: CanonicalMemoryMutation): Promise<boolean> {

@@ -1,4 +1,7 @@
-import { callOpenRouter } from "@lumi/profiles/application";
+import {
+  callOpenRouter,
+  getCharacterBootstrapStatus,
+} from "@lumi/profiles/application";
 import {
   advanceSession,
   findGeneratedSceneForHook,
@@ -9,6 +12,11 @@ import {
   StorySceneGenerationService,
 } from "@lumi/story/application";
 import { ValidationError } from "@lumi/story/domain";
+import { NpcBeliefStoryContinuityContextAdapter } from "../story-continuity-context-runtime";
+import {
+  readUsedContinuityKeysFromSceneMetadata,
+  reinforceSceneMemoryUsage,
+} from "./canonical-memory-usage.service";
 import { WebStorySceneLlmSettingsAdapter } from "./story-scene-llm-settings.adapter";
 
 export interface GenerateHookReaderTurnInput {
@@ -54,6 +62,16 @@ export async function generateHookReaderTurn(
       });
     }
 
+    await reinforceSceneMemoryUsage({
+      householdId: input.householdId,
+      worldId: hook.worldId,
+      childProfileId: session.childProfileId,
+      sceneId: existingScene.id,
+      usedContinuityKeys: readUsedContinuityKeysFromSceneMetadata(
+        existingScene.metadata,
+      ),
+    });
+
     await markStoryHookConsumed(scope);
     return {
       generated: false,
@@ -70,17 +88,30 @@ export async function generateHookReaderTurn(
     );
   }
 
+  // Resolve the canonical child character server-side. The client never gets to
+  // choose a character id for continuity retrieval, which keeps the prompt
+  // inside the authenticated household/profile boundary.
+  const bootstrap = await getCharacterBootstrapStatus(
+    input.userId,
+    input.householdId,
+    session.childProfileId,
+  );
+  const characterId = bootstrap.character?.id ?? null;
+
   const settingsPort = new WebStorySceneLlmSettingsAdapter({
     userId: input.userId,
     householdId: input.householdId,
     childProfileId: session.childProfileId,
   });
+  const continuityPort = new NpcBeliefStoryContinuityContextAdapter();
   const generation =
     await new StorySceneGenerationService().generateSceneFromHook({
       hook,
       settingsPort,
+      continuityPort,
       callOpenRouter,
       childProfileId: session.childProfileId,
+      characterId,
     });
 
   const persisted = await persistGeneratedSceneAndAdvance({
@@ -91,6 +122,14 @@ export async function generateHookReaderTurn(
     modelId: generation.modelId,
     sourceHookId: hook.id,
     idempotencyKey: `generated-hook-reader:${hook.id}`,
+  });
+
+  await reinforceSceneMemoryUsage({
+    householdId: input.householdId,
+    worldId: hook.worldId,
+    childProfileId: session.childProfileId,
+    sceneId: persisted.generatedSceneId,
+    usedContinuityKeys: generation.scene.usedContinuityKeys ?? [],
   });
 
   await markStoryHookConsumed(scope);
