@@ -22,6 +22,8 @@ export type {
 } from "./candidate-generator.service";
 export { SAFETY_COMPONENT } from "./safety-components";
 export { UtilityEvaluator } from "./utility-evaluator.service";
+export { MemoryAwareUtilityService } from "./memory-aware-utility.service";
+export type { MemoryAdjustedUtilityScore } from "./memory-aware-utility.service";
 export {
   DecisionSelector,
   PERSONALITY_BOUNDARY,
