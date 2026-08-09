@@ -47,7 +47,9 @@ describe(SCENARIO_ID, () => {
     const advance = clock.advance(60);
     const clockAfter = advance.state;
 
-    expect(clockAfter.currentDay).toBeGreaterThanOrEqual(clockBefore.currentDay);
+    expect(clockAfter.currentDay).toBeGreaterThanOrEqual(
+      clockBefore.currentDay,
+    );
     expect(clockAfter.version).toBeGreaterThan(clockBefore.version);
 
     const normalPolicy = computeAbsencePolicy({
@@ -141,7 +143,9 @@ describe(SCENARIO_ID, () => {
           observed: {
             policy: normalPolicy,
             totalBudget: normalPlan.totalBudget,
-            consideredNpcIds: normalPlan.allocations.map((entry) => entry.npcId),
+            consideredNpcIds: normalPlan.allocations.map(
+              (entry) => entry.npcId,
+            ),
             ignoredNpcIds: [IRRELEVANT_NPC_ID],
             runHash: normalPlan.runHash,
           },
@@ -153,7 +157,9 @@ describe(SCENARIO_ID, () => {
           observed: {
             policy: limitedPolicy,
             totalBudget: limitedPlan.totalBudget,
-            consideredNpcIds: limitedPlan.allocations.map((entry) => entry.npcId),
+            consideredNpcIds: limitedPlan.allocations.map(
+              (entry) => entry.npcId,
+            ),
           },
         },
         {
@@ -163,7 +169,9 @@ describe(SCENARIO_ID, () => {
           observed: {
             policy: frozenPolicy,
             totalBudget: frozenPlan.totalBudget,
-            consideredNpcIds: frozenPlan.allocations.map((entry) => entry.npcId),
+            consideredNpcIds: frozenPlan.allocations.map(
+              (entry) => entry.npcId,
+            ),
           },
         },
       ],
