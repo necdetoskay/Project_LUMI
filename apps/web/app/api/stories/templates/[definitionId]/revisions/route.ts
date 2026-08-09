@@ -122,12 +122,40 @@ export const POST = observeHandler(
           { status: 400 },
         );
       }
+
+      const body = parsedBody.data;
+      const scenes = body.scenes?.map((scene) => ({
+        sceneKey: scene.sceneKey,
+        sequenceNumber: scene.sequenceNumber,
+        sceneType: scene.sceneType,
+        narrativeText: scene.narrativeText,
+        ...(scene.title !== undefined ? { title: scene.title } : {}),
+        ...(scene.isEntryScene !== undefined
+          ? { isEntryScene: scene.isEntryScene }
+          : {}),
+        ...(scene.isTerminalScene !== undefined
+          ? { isTerminalScene: scene.isTerminalScene }
+          : {}),
+      }));
+      const transitions = body.transitions?.map((transition) => ({
+        fromSceneKey: transition.fromSceneKey,
+        toSceneKey: transition.toSceneKey,
+        transitionType: transition.transitionType,
+        ...(transition.priority !== undefined
+          ? { priority: transition.priority }
+          : {}),
+      }));
+
       try {
         return NextResponse.json(
           await createStoryTemplateRevision({
             householdId: owned.householdId,
             storyDefinitionId: parsedParams.data.definitionId,
-            ...parsedBody.data,
+            sourceVersionId: body.sourceVersionId,
+            title: body.title,
+            storyMode: body.storyMode,
+            scenes,
+            transitions,
           }),
           { status: 201 },
         );
