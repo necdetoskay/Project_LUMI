@@ -3,19 +3,29 @@ import type { CanonicalMemory, MemoryOwnerType } from "../domain/memory";
 export const DEFAULT_MEMORY_RETRIEVAL_LIMIT = 12;
 export const MAX_MEMORY_RETRIEVAL_LIMIT = 24;
 
-export interface CanonicalMemoryQuery {
+export interface CanonicalMemoryScope {
   householdId: string;
   worldId: string;
   ownerType: MemoryOwnerType;
   ownerId: string;
   childProfileId?: string | null;
+}
+
+export interface CanonicalMemoryQuery extends CanonicalMemoryScope {
   now: Date;
   limit?: number;
+}
+
+export interface CanonicalMemoryMutation extends CanonicalMemoryScope {
+  memoryId: string;
+  at: Date;
 }
 
 export interface CanonicalMemoryPort {
   save(memory: CanonicalMemory): Promise<void>;
   listRelevant(query: CanonicalMemoryQuery): Promise<CanonicalMemory[]>;
+  reinforce(input: CanonicalMemoryMutation): Promise<boolean>;
+  archive(input: CanonicalMemoryMutation): Promise<boolean>;
 }
 
 export function normalizeMemoryRetrievalLimit(limit?: number): number {
