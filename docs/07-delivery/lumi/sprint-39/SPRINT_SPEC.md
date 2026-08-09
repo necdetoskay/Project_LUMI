@@ -1,55 +1,45 @@
 # Sprint 39 — Canonical Recovery & Discovery Consolidation
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
 
 UI/UX Discovery başlangıcından Interactive Story Session tasarımına kadar alınan tüm kabul edilmiş kararları, ULTEF test ailelerini ve gelecekteki implementation sprint eşlemelerini tek ve güvenilir repository source-of-truth yapısında konsolide etmek.
 
-## Problem
+## Problem resolved
 
-Discovery kayıtları repo ve commit history içinde bulunuyor; ancak `decision-register.md` ve `ultef-living-universe-verification-matrix.md` dosyalarının bazı ardışık güncellemeleri append yerine full replace yapıldığı için önceki ayrıntılı satırların bir bölümü current branch görünümünden düşmüştür. Commit history recovery source olarak kullanılacaktır.
+Discovery kayıtları repo ve commit history içinde bulunuyordu; ancak `decision-register.md` ve `ultef-living-universe-verification-matrix.md` dosyalarının bazı ardışık güncellemeleri append yerine full replace yaptığı için önceki ayrıntılı satırların bir bölümü current branch görünümünden düşmüştü. Commit history recovery source olarak kullanıldı ve yeni append-safe master yapı oluşturuldu.
 
-## Scope
+## Delivered
 
-- UXD-001..181 kararlarını eksiksiz recover et ve güncel master register'a taşı.
-- Interactive Story Session / Choice Resolution kararlarını UXD-182+ olarak kanonikleştir.
-- ULTEF ailelerini monolitik overwrite-risk dosya yerine family catalog yapısına ayır.
-- Master ULTEF index oluştur; her family ve L9 senaryosunu izlenebilir yap.
-- UI/UX discovery ana README kapsamını bugünkü son discovery noktasına yükselt.
-- Decision -> ULTEF -> implementation sprint traceability oluştur.
-- Sprint 40..59 implementation roadmap'ini repository içine kaydet.
-- Coverage audit: missing decision/test family = 0 hedefi.
+- `docs/02-product-design/ui-ux-discovery/CANONICAL_DECISION_REGISTER_V2.md`
+  - UXD-001..198 contiguous canonical decision index.
+  - Interactive Story Session decisions UXD-182..198 olarak ilk kez source-of-truth'a eklendi.
+- `docs/02-product-design/ui-ux-discovery/ULTEF_MASTER_CATALOG.md`
+  - 18 discovery test family alanı.
+  - domain L9 journeys + master 10/25/50/100+ long-horizon programı.
+- `docs/02-product-design/ui-ux-discovery/DISCOVERY_IMPLEMENTATION_ROADMAP.md`
+  - S40..S59 implementation + ULTEF mapping.
+- `docs/07-delivery/lumi/sprint-39/COVERAGE_AUDIT.md`
+  - decision/test/roadmap coverage PASS.
 
-## Non-goals
+## Acceptance criteria result
 
-- Production feature implementation yok.
-- Yeni UI kodu yok.
-- ULTEF senaryolarını bu sprintte production test koduna dönüştürmek yok; burada canonical recovery/backlog/traceability yapılır.
+1. UXD-001'den UXD-198'e ID gap yok — PASS.
+2. Tüm discovery domainleri canonical index'te görünür — PASS.
+3. Her domain ULTEF family ile eşlenmiş — PASS.
+4. L9 long-horizon programları master catalog'da korunmuş — PASS.
+5. Interactive Story Session karar/testleri repository source-of-truth'a girdi — PASS.
+6. S40..S59 roadmap ve sprint-domain mapping kaydedildi — PASS.
+7. Historical monolithic overwrite riski versioned master register/catalog + append-only rule ile giderildi — PASS.
+8. Recovery source/history audit dokümante edildi — PASS.
+9. Coverage audit missing indexed decision/test family = 0 — PASS.
 
-## Acceptance criteria
+## Important qualification
 
-1. UXD-001'den son kabul edilmiş decision ID'ye kadar ID gap yok.
-2. Her discovery domain'i canonical index'te görünür.
-3. Her domain için en az bir ULTEF family veya açık test mapping'i vardır.
-4. L9 long-horizon programları master catalog'da kaybolmadan listelenir.
-5. Interactive Story Session karar/testleri ilk kez repository source-of-truth'a girer.
-6. S40..S59 roadmap ve sprint-domain mapping kaydedilir.
-7. Monolitik dosyaların gelecekte replace edilmesi geçmiş family kayıtlarını silemez: split-catalog yapısı canonical kabul edilir.
-8. Recovery kaynak commitleri belgelenir.
-9. Final S39 closeout dokümanı COMPLETE ve audit sonucu içerir.
+Bu sprint bir canonical recovery/documentation sprintidir. ULTEF scenario IDs'nin master catalog'da bulunması production test implementasyonlarının şimdiden PASS olduğu anlamına gelmez. Her ilgili implementation sprinti kendi testlerini gerçek production boundaries üzerinde hayata geçirip evidence üretmek zorundadır.
 
-## Recovery sources
+## Next sprint
 
-- `df759c1e4f77b956a0319c8fda8aac1b775efbff` — initial UI/UX discovery + ULTEF baseline.
-- Relationships, autonomous NPC, settlement, culture, governance, information-flow, opportunity-selection ve narrative-generation commits on 2026-08-09.
-
-## Delivery sequence
-
-1. Recover canonical decisions.
-2. Split/recover ULTEF family catalog.
-3. Add Interactive Session decisions/tests.
-4. Add roadmap + traceability.
-5. Run document coverage audit.
-6. Mark Sprint 39 COMPLETE.
+Sprint 40 — Visual UX Foundation & Auth/Public Experience.
