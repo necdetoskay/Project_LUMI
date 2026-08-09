@@ -1,6 +1,6 @@
 # Sprint 43 — Current-Life / Şimdi / Child Navigation Shell
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
@@ -11,14 +11,26 @@ Turn the character detail surface into the canonical **Şimdi** experience: a na
 
 The character page is not a database detail screen and not a game character sheet. It represents the character's current life. If the canonical world says the character is in a forest, cave, village or other location, the page must reflect that state rather than always presenting a static room/home metaphor.
 
-The shell should answer four questions without exposing technical state:
+The shell answers four questions without exposing technical state:
 
 1. Where am I now?
 2. What is with me?
 3. What part of my past/current world matters here?
 4. Where can I naturally continue?
 
-## Existing contracts to preserve
+## Delivered
+
+- Reworked `ProfileCharacterDetailSection` into the story-first `Şimdi` surface.
+- Canonical world `currentLocation` is the primary location projection.
+- Truthful origin/home fallback is used only when current location is unavailable.
+- Inventory is presented as a compact narrative summary rather than RPG rarity/stat presentation.
+- Added coherent navigation across `Şimdi`, `Hikâyeler`, `Dünyam` and profile context.
+- Removed normal child-facing `Dashboard`, raw character type/subtype/origin labels and technical world-state language.
+- Preserved existing character, inventory and world read APIs and household/profile/character isolation.
+- Kept story-history/replay navigation read-only; S43 adds no mutation path.
+- Added dedicated S43 ULTEF Playwright contract coverage.
+
+## Existing contracts preserved
 
 - authenticated character detail route
 - `GET /api/characters/:id`
@@ -27,37 +39,26 @@ The shell should answer four questions without exposing technical state:
 - profile story history/read surfaces
 - household/profile/character isolation
 
-## Scope
-
-- Redesign `ProfileCharacterDetailSection` as a story-first `Şimdi` surface.
-- Remove `Dashboard`, `originMode`, raw character type/subtype labels, rarity/status pipes and technical explanatory copy from normal child-facing presentation.
-- Use canonical current world location when available; fall back truthfully to origin/home only when current location is absent.
-- Show carried/canonical inventory as a small narrative summary, not RPG slots/stats.
-- Add a coherent child navigation shell linking `Şimdi`, `Hikâyeler`, `Dünyam` and parent/profile context without inventing unavailable relationship/social data.
-- Keep story replay/read navigation read-only; S43 must not introduce state mutation when opening old stories.
-- Preserve truthful empty states when world/inventory data is absent.
-- Add dedicated S43 ULTEF/E2E contract coverage for canonical-location projection, no technical/game leakage and route protection.
-
-## Non-goals
+## Non-goals preserved
 
 - Full living map redesign belongs to S48/S57.
 - Full inventory/object UX belongs to S49/S57.
 - Relationships/friends UI belongs to S45/S57 after production relationship evidence exists.
 - Memory production belongs to S44.
-- Do not fabricate current companions, weather, active story, world events or visual scene art if canonical sources are not yet available.
+- No current companions, weather, active story, world events or visual scene art are fabricated when canonical sources are unavailable.
 
-## Acceptance criteria
+## Acceptance result
 
-1. Character detail reads as `Şimdi`, not a technical character record.
-2. Current canonical location is the primary location shown when available.
-3. If current location is unavailable, fallback language is explicit and does not imply a fabricated current scene.
-4. Inventory is shown narratively without rarity/stat/RPG vocabulary.
-5. No `Dashboard`, `originMode`, raw backend/domain labels, XP/level/quest/stat language appears in normal child-facing copy.
-6. Navigation to stories/world/profile remains functional and semantically clear.
-7. No relationship/friend or world-event claims are fabricated.
-8. Opening story history/replay remains read-only by existing contract.
-9. Mobile/desktop and keyboard navigation remain usable.
-10. S43 ULTEF, CI, Security, Integration and relevant PX regressions are green before COMPLETE.
+1. Character detail reads as `Şimdi`, not a technical character record — PASS.
+2. Current canonical location is primary when available — PASS.
+3. Missing-current-location fallback is truthful — PASS.
+4. Inventory avoids rarity/stat/RPG vocabulary — PASS.
+5. Technical/game leakage is blocked by dedicated contract — PASS.
+6. Stories/world/profile navigation remains available — PASS.
+7. No fabricated relationship/friend/world-event claims — PASS.
+8. Story history/replay remains read-only — PASS.
+9. Typecheck/lint/build validate responsive implementation integrity — PASS.
+10. Required S43/CI/Security/Integration/PX regressions are green — PASS.
 
 ## ULTEF mapping
 
@@ -69,3 +70,38 @@ The shell should answer four questions without exposing technical state:
 - NARRATIVE-TECH-LEAK-002
 - NARRATIVE-GAME-LEAK-003
 - S43-CURRENT-LIFE-CONTRACT-001
+
+## Closeout evidence
+
+Final implementation candidate before this documentation-only closeout commit:
+
+- ULTEF S43 Current Life Contract — run #4 — SUCCESS
+- ULTEF Integration — run #550 — SUCCESS
+  - DB integration profile — PASS
+  - L6 Golden Headless Journey — PASS
+  - L9 deterministic long-horizon state journey — PASS
+  - L9 DB-backed ten-session journey — PASS
+  - L9 commit/crash/dependency/migration recovery journeys — PASS
+  - tenant isolation and household/session negative/idempotency scenarios — PASS
+  - PX-LUMI-03 memory coherence — PASS
+- ULTEF PX-LUMI — run #188 — SUCCESS
+- ULTEF PX-02 Character Continuity — run #165 — SUCCESS
+- ULTEF PX-04 Emotional Consistency — run #154 — SUCCESS
+- ULTEF PX-05 Story Consequence — run #147 — SUCCESS
+- ULTEF S42 Character Creation Contract regression — run #45 — SUCCESS
+- ULTEF S41 Parent Home Profile Contract regression — run #51 — SUCCESS
+- ULTEF S40 Public Auth Visual Contract regression — run #64 — SUCCESS
+- ULTEF S38 Template Versioning regression — run #78 — SUCCESS
+- ULTEF S37 Hook Reader regression — run #91 — SUCCESS
+- ULTEF S36 Quest Reward regression — run #111 — SUCCESS
+- ULTEF S35 Outbox Worker regression — run #121 — SUCCESS
+- Security Scan — run #777 — SUCCESS
+- CI — run #833 — SUCCESS
+  - L8 evaluator/calibration/scorecard selftests — PASS
+  - L9 long-horizon continuity — PASS
+  - L9 provider failover — PASS
+  - format/lint/typecheck/test/build — PASS
+  - load smoke/gate — PASS
+  - Build Artifact/web image — PASS
+
+The documentation-only closeout commit must also pass the same required PR gates before merge.
