@@ -38,51 +38,104 @@ const bodySchema = z.object({
 async function resolveOwnedHousehold(parentId: string, request: Request) {
   const householdId = new URL(request.url).searchParams.get("householdId");
   if (!householdId) {
-    return { response: NextResponse.json({ error: "VALIDATION_ERROR", message: "householdId query parameter is required" }, { status: 400 }) };
+    return {
+      response: NextResponse.json(
+        {
+          error: "VALIDATION_ERROR",
+          message: "householdId query parameter is required",
+        },
+        { status: 400 },
+      ),
+    };
   }
   const household = await getOwnedHousehold(parentId);
   if (!household || household.id !== householdId) {
-    return { response: NextResponse.json({ error: "FORBIDDEN", message: "User does not have access to this household" }, { status: 403 }) };
+    return {
+      response: NextResponse.json(
+        {
+          error: "FORBIDDEN",
+          message: "User does not have access to this household",
+        },
+        { status: 403 },
+      ),
+    };
   }
   return { householdId };
 }
 
 export const GET = observeHandler(
-  async (request: Request, { params }: { params: Promise<{ definitionId: string }> }) =>
+  async (
+    request: Request,
+    { params }: { params: Promise<{ definitionId: string }> },
+  ) =>
     withParent(async (parent) => {
       const owned = await resolveOwnedHousehold(parent.id, request);
       if ("response" in owned) return owned.response;
       const parsedParams = paramsSchema.safeParse(await params);
       if (!parsedParams.success) {
-        return NextResponse.json({ error: "VALIDATION_ERROR", message: parsedParams.error.message }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: "VALIDATION_ERROR",
+            message: parsedParams.error.message,
+          },
+          { status: 400 },
+        );
       }
       try {
-        return NextResponse.json(await listStoryTemplateVersions({ householdId: owned.householdId, storyDefinitionId: parsedParams.data.definitionId }));
+        return NextResponse.json(
+          await listStoryTemplateVersions({
+            householdId: owned.householdId,
+            storyDefinitionId: parsedParams.data.definitionId,
+          }),
+        );
       } catch (error) {
-        return handleStoryError(error, "Failed to list story template revisions");
+        return handleStoryError(
+          error,
+          "Failed to list story template revisions",
+        );
       }
     }),
   "/api/stories/templates/{definitionId}/revisions",
 );
 
 export const POST = observeHandler(
-  async (request: Request, { params }: { params: Promise<{ definitionId: string }> }) =>
+  async (
+    request: Request,
+    { params }: { params: Promise<{ definitionId: string }> },
+  ) =>
     withParent(async (parent) => {
       const owned = await resolveOwnedHousehold(parent.id, request);
       if ("response" in owned) return owned.response;
       const parsedParams = paramsSchema.safeParse(await params);
       const parsedBody = bodySchema.safeParse(await readRequestBody(request));
       if (!parsedParams.success || !parsedBody.success) {
-        return NextResponse.json({ error: "VALIDATION_ERROR", message: [parsedParams.success ? "" : parsedParams.error.message, parsedBody.success ? "" : parsedBody.error.message].filter(Boolean).join("; ") }, { status: 400 });
+        return NextResponse.json(
+          {
+            error: "VALIDATION_ERROR",
+            message: [
+              parsedParams.success ? "" : parsedParams.error.message,
+              parsedBody.success ? "" : parsedBody.error.message,
+            ]
+              .filter(Boolean)
+              .join("; "),
+          },
+          { status: 400 },
+        );
       }
       try {
-        return NextResponse.json(await createStoryTemplateRevision({
-          householdId: owned.householdId,
-          storyDefinitionId: parsedParams.data.definitionId,
-          ...parsedBody.data,
-        }), { status: 201 });
+        return NextResponse.json(
+          await createStoryTemplateRevision({
+            householdId: owned.householdId,
+            storyDefinitionId: parsedParams.data.definitionId,
+            ...parsedBody.data,
+          }),
+          { status: 201 },
+        );
       } catch (error) {
-        return handleStoryError(error, "Failed to create story template revision");
+        return handleStoryError(
+          error,
+          "Failed to create story template revision",
+        );
       }
     }),
   "/api/stories/templates/{definitionId}/revisions",
