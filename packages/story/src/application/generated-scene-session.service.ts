@@ -1,5 +1,6 @@
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
 import type { Database } from "../db/client";
+import type { SceneType } from "../domain/story-types";
 import { NotFoundError, ValidationError } from "../domain/errors";
 import type { GeneratedScene } from "./story-scene-output";
 import { getStoryDb } from "./db";
@@ -23,6 +24,7 @@ export interface PersistGeneratedSceneAndAdvanceInput {
   sessionId: string;
   expectedVersion: number;
   scene: GeneratedScene;
+  sceneType?: SceneType;
   modelId?: string | null;
   sourceHookId?: string | null;
   actorUserId?: string | undefined;
@@ -37,19 +39,44 @@ export interface PersistGeneratedSceneAndAdvanceResult {
   playbackState: Awaited<ReturnType<typeof advanceSession>>;
 }
 
+export function generatedSceneKeyForSource(input: {
+  sessionId: string;
+  sourceHookId?: string | null;
+  fallbackFingerprint: string;
+}): string {
+  if (input.sourceHookId) {
+    return `generated:hook:${input.sourceHookId}`;
+  }
+  return `generated:${input.sessionId}:${input.fallbackFingerprint}`;
+}
+
+export async function findGeneratedSceneForHook(input: {
+  sessionId: string;
+  sourceHookId: string;
+}) {
+  const db = getDb();
+  const repo = new DrizzleStoryRepository();
+  const session = await repo.findSessionById(db, input.sessionId);
+  if (!session) {
+    throw new NotFoundError("StorySession", input.sessionId);
+  }
+  const scenes = await repo.findScenesByVersion(db, session.storyVersionId);
+  const sceneKey = generatedSceneKeyForSource({
+    sessionId: input.sessionId,
+    sourceHookId: input.sourceHookId,
+    fallbackFingerprint: "unused",
+  });
+  return scenes.find((scene) => scene.sceneKey === sceneKey);
+}
+
 /**
  * Production bridge between StorySceneGenerationService and the existing
  * session reader/progression path.
  *
- * The generated prose is first materialized as a normal story_scenes record,
- * then handed to the canonical advanceSession flow. A deterministic scene key
- * makes retries safe: if persistence succeeded but the later advance failed,
- * the next attempt reuses the already-written generated scene rather than
- * creating duplicate prose rows.
- *
- * Session advancement itself remains owned by advanceSession, preserving its
- * optimistic-version check, scene visit, checkpoint, event and optional world
- * outcome semantics.
+ * Hook-backed scenes use the stable source hook id as their persistence key,
+ * so retries cannot create different prose rows even when generation uses a
+ * fresh nonce. A replay after a successful advance returns the current reader
+ * state without requiring the caller to know the newly incremented version.
  */
 export async function persistGeneratedSceneAndAdvance(
   input: PersistGeneratedSceneAndAdvanceInput,
@@ -61,12 +88,6 @@ export async function persistGeneratedSceneAndAdvance(
   if (!session) {
     throw new NotFoundError("StorySession", input.sessionId);
   }
-  if (session.version !== input.expectedVersion) {
-    throw new ValidationError(
-      "VERSION_CONFLICT",
-      "Session version conflict; generated scene was not persisted",
-    );
-  }
 
   const sourceFingerprint = await hashObject({
     sessionId: input.sessionId,
@@ -74,7 +95,13 @@ export async function persistGeneratedSceneAndAdvance(
     sourceHookId: input.sourceHookId ?? null,
     narrative: input.scene.narrative,
   });
-  const generatedSceneKey = `generated:${input.sessionId}:${sourceFingerprint}`;
+  const generatedSceneKey = generatedSceneKeyForSource({
+    sessionId: input.sessionId,
+    ...(input.sourceHookId !== undefined
+      ? { sourceHookId: input.sourceHookId }
+      : {}),
+    fallbackFingerprint: sourceFingerprint,
+  });
 
   const existingScenes = await repo.findScenesByVersion(
     db,
@@ -83,6 +110,22 @@ export async function persistGeneratedSceneAndAdvance(
   const existing = existingScenes.find(
     (scene) => scene.sceneKey === generatedSceneKey,
   );
+
+  if (existing && session.currentSceneId === existing.id) {
+    return {
+      generatedSceneId: existing.id,
+      generatedSceneKey,
+      reusedPersistedScene: true,
+      playbackState: await getSessionPlaybackState(input.sessionId),
+    };
+  }
+
+  if (session.version !== input.expectedVersion) {
+    throw new ValidationError(
+      "VERSION_CONFLICT",
+      "Session version conflict; generated scene was not persisted",
+    );
+  }
 
   let generatedSceneId: string;
   let reusedPersistedScene = false;
@@ -103,7 +146,7 @@ export async function persistGeneratedSceneAndAdvance(
         storyVersionId: session.storyVersionId,
         sceneKey: generatedSceneKey,
         sequenceNumber: maxSequence + 1,
-        sceneType: "narrative",
+        sceneType: input.sceneType ?? "narrative",
         title: input.scene.setting.slice(0, 300),
         narrativeText: input.scene.narrative,
         isEntryScene: false,
@@ -133,11 +176,6 @@ export async function persistGeneratedSceneAndAdvance(
     contextSnapshot: input.contextSnapshot,
   });
 
-  // advanceSession historically returned its playback snapshot from a separate
-  // connection while the transaction was still open, which could expose the
-  // pre-commit session version even though persistence succeeded. Always read
-  // once more after the transaction completes so callers receive the same
-  // state that a reader/reload observes.
   const playbackState = await getSessionPlaybackState(input.sessionId);
 
   return {
