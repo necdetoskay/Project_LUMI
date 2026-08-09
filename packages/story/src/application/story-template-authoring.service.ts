@@ -27,7 +27,10 @@ function getDb(): Database {
   return testDb ?? getStoryDb();
 }
 
-async function getOwnedDefinition(householdId: string, storyDefinitionId: string) {
+async function getOwnedDefinition(
+  householdId: string,
+  storyDefinitionId: string,
+) {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
   const definition = await repo.findDefinitionById(db, storyDefinitionId);
@@ -53,7 +56,10 @@ export async function listStoryTemplateVersions(input: {
     input.householdId,
     input.storyDefinitionId,
   );
-  const versions = await repo.findVersionsByDefinition(db, input.storyDefinitionId);
+  const versions = await repo.findVersionsByDefinition(
+    db,
+    input.storyDefinitionId,
+  );
   return { definition, versions };
 }
 
@@ -95,11 +101,14 @@ export async function createStoryTemplateRevision(
 
   const sourceVersionId =
     input.sourceVersionId ?? definition.currentPublishedVersionId ?? undefined;
-  let sourceVersion = sourceVersionId
+  const sourceVersion = sourceVersionId
     ? await repo.findVersionById(db, sourceVersionId)
     : undefined;
 
-  if (sourceVersion && sourceVersion.storyDefinitionId !== input.storyDefinitionId) {
+  if (
+    sourceVersion &&
+    sourceVersion.storyDefinitionId !== input.storyDefinitionId
+  ) {
     throw new ValidationError(
       "STORY_VERSION_SCOPE_MISMATCH",
       "Source version does not belong to the requested story definition",
