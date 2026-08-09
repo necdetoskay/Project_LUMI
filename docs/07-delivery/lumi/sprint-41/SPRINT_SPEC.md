@@ -1,6 +1,6 @@
 # Sprint 41 — Parent Home & Child Profile Experience
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
@@ -11,36 +11,36 @@ Transform the authenticated parent entry experience from an implementation/statu
 
 The parent home must not expose sprint numbers, backend implementation status, technical state labels, XP, levels, quests, or analytics-dashboard language. It should answer three human questions immediately: **Which child? What is happening in their world? What can we do next?**
 
-## Scope
+## Delivered
 
-- Redesign `/app` as the parent family-story home.
-- Make child profiles the primary visual objects rather than system status cards.
-- Preserve household/profile onboarding and character-onboarding routes and contracts.
-- Provide graceful empty states when household or profiles do not yet exist.
-- Introduce the first structural `Dünyalardan Haberler` surface without inventing simulation events that are not available from canonical state yet.
-- Redesign `/app/profiles` into a child-centered profile library using the same visual language.
-- Remove corporate/dashboard and implementation/sprint terminology from parent-facing surfaces.
-- Preserve accessibility, responsive behavior and reduced-motion friendliness.
-- Add S41 ULTEF/E2E UX contract coverage.
+- `/app` is now a family story home rather than a technical status dashboard.
+- Child profiles are the primary visual objects, with direct continuation and profile-detail actions.
+- Household/profile empty states lead naturally to onboarding.
+- `Dünyalardan Haberler` is introduced as a truthful structural surface; because a canonical world-event feed does not yet exist, it explicitly avoids inventing NPC/world events.
+- `/app/profiles` is redesigned as a child-centered profile library and removes `Dashboard` framing.
+- Parent-facing copy no longer exposes sprint/backend/implementation terminology or XP/level/quest framing.
+- Existing onboarding, child-profile API, profile-detail and character-onboarding routes remain intact.
+- Responsive storybook surfaces reuse the S40 visual foundation.
+- Dedicated S41 ULTEF contract and CI workflow were added.
 
-## Non-goals
+## Deferred / non-goals
 
 - Character creation redesign belongs to S42.
-- Full child profile detail editing and richer interest/development-goal persistence require their canonical domain contracts and are not fabricated in S41.
-- `Dünyalardan Haberler` does not invent NPC/world events; until a canonical feed exists it communicates readiness/continuity from real onboarding/profile state only.
-- No auth or household isolation rules change.
+- Rich child interest/development-goal editing will be implemented when its canonical domain contracts are wired; S41 does not fabricate persistence fields.
+- Real `Dünyalardan Haberler` world/NPC event data waits for a canonical feed.
+- Auth, household isolation and profile backend behavior were not changed.
 
-## Acceptance criteria
+## Acceptance criteria result
 
-1. `/app` presents a narrative parent home, not a technical dashboard.
-2. Existing child profiles appear prominently with name and age band and direct continuation actions.
-3. No-profile and no-household states lead clearly to onboarding.
-4. Parent-facing copy contains no sprint/implementation/backend terminology and no XP/level/quest/stat gamification language.
-5. `Dünyalardan Haberler` exists as a calm narrative surface and never fabricates world events.
-6. `/app/profiles` uses the same child-centered visual language and removes `Dashboard` terminology.
-7. Existing onboarding, profile detail, settings, logout and character-onboarding contracts remain reachable.
-8. Mobile and desktop layouts remain usable with semantic headings, focus-visible controls and readable contrast.
-9. S41 ULTEF UX contract is green before COMPLETE.
+1. `/app` narrative parent home — PASS.
+2. Child profiles prominent with name/age/direct actions — PASS.
+3. Household/profile empty-state guidance — PASS.
+4. No sprint/backend/implementation or gamification leakage — PASS via S41 ULTEF.
+5. Truthful `Dünyalardan Haberler` without fabricated events — PASS via S41 ULTEF.
+6. `/app/profiles` child-centered and no `Dashboard` terminology — PASS.
+7. Existing route/API contracts retained — PASS via contract checks and regression suite.
+8. Responsive semantic storybook structure retained — PASS.
+9. Dedicated S41 ULTEF green — PASS.
 
 ## ULTEF mapping
 
@@ -52,13 +52,23 @@ The parent home must not expose sprint numbers, backend implementation status, t
 - NARRATIVE-GAME-LEAK-002
 - S41-PARENT-HOME-PROFILE-CONTRACT-001
 
-## Delivery sequence
+## Evidence
 
-1. Inspect current parent home/profile surfaces and canonical onboarding data.
-2. Establish authenticated story-home visual primitives.
-3. Redesign `/app` around children and living-world continuity.
-4. Redesign `/app/profiles` without changing API contracts.
-5. Add truthful empty/news states.
-6. Add S41 ULTEF/E2E contract coverage.
-7. Run format/lint/typecheck/build/tests/ULTEF and repository regression gates.
-8. Record evidence and mark COMPLETE only after green CI.
+PR validation head before closeout docs: `92261077a150cd0b1037a760b9b8783b78bbcda4`.
+
+Green evidence recorded on that implementation head:
+
+- ULTEF S41 Parent Home Profile Contract — success.
+- CI validate — format, lint, typecheck, tests, load smoke and build success.
+- CI Build Artifact — success.
+- Security Scan — audit, gitleaks, image build and Trivy success.
+- ULTEF Integration — DB-backed and long-horizon integration success.
+- ULTEF PX-LUMI — success.
+- ULTEF PX-02 Character Continuity — success.
+- ULTEF PX-04 Emotional Consistency — success.
+- ULTEF PX-05 Story Consequence — success.
+- S35 Outbox Worker, S36 Quest Reward, S37 Hook Reader, S38 Template Versioning and S40 Public Auth regressions — success.
+
+## Completion note
+
+S41 closes only the parent-home/profile presentation layer and its UX truthfulness contract. It deliberately does not claim that interest/development-goal editing or a live world-news feed exists before their production domain wiring is implemented.
