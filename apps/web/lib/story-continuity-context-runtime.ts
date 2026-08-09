@@ -1,16 +1,16 @@
 import { getCharacterContinuitySnapshot } from "@lumi/profiles/application";
-import type {
-  ResolveStoryContinuityContextInput,
-  StoryContinuityContext,
-  StoryContinuityContextPort,
+import {
+  getLatestChoiceWorldContinuityFacts,
+  type ResolveStoryContinuityContextInput,
+  type StoryContinuityContext,
+  type StoryContinuityContextPort,
 } from "@lumi/story/application";
 import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
 
 /**
- * Web composition-root adapter that turns persisted character state and NPC
- * beliefs into bounded, prompt-safe story continuity facts. Character reads
- * require the exact household + child + character scope; NPC reads remain
- * household + world + explicit-NPC scoped.
+ * Web composition-root adapter that turns persisted character state, committed
+ * choice/world consequences, and NPC beliefs into bounded, prompt-safe story
+ * continuity facts. Every read stays inside the exact household/world scope.
  */
 export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
@@ -70,6 +70,13 @@ export class NpcBeliefStoryContinuityContextAdapter
         }
       }
     }
+
+    facts.push(
+      ...(await getLatestChoiceWorldContinuityFacts(
+        input.householdId,
+        input.worldId,
+      )),
+    );
 
     const npcIds = [...new Set(input.npcIds ?? [])].filter(Boolean);
     const now = new Date();
