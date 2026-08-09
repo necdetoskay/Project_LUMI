@@ -467,6 +467,9 @@ importers:
       '@lumi/simulation':
         specifier: workspace:*
         version: link:../../packages/simulation
+      '@lumi/story':
+        specifier: workspace:*
+        version: link:../../packages/story
       '@lumi/world':
         specifier: workspace:*
         version: link:../../packages/world
