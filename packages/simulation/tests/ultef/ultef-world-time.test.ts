@@ -13,6 +13,7 @@ const HOUSEHOLD_ID = "household-px07-synthetic";
 const WORLD_ID = "world-px07-synthetic";
 const RELEVANT_NPC_ID = "npc-px07-relevant";
 const IRRELEVANT_NPC_ID = "npc-px07-irrelevant";
+const BASE_SIMULATION_BUDGET = 200;
 
 function npc(overrides: Partial<NpcSnapshot>): NpcSnapshot {
   return {
@@ -58,13 +59,14 @@ describe(SCENARIO_ID, () => {
       WORLD_ID,
       HOUSEHOLD_ID,
       normalPolicy.phase,
-      normalPolicy.budgetTokens,
+      BASE_SIMULATION_BUDGET,
       npcs,
       new Date("2026-08-09T08:00:00.000Z"),
     );
 
     expect(normalPolicy.phase).toBe("normal");
     expect(normalPolicy.frozen).toBe(false);
+    expect(normalPlan.totalBudget).toBe(normalPolicy.budgetTokens);
     expect(
       normalPlan.allocations.some((entry) => entry.npcId === RELEVANT_NPC_ID),
     ).toBe(true);
@@ -81,14 +83,14 @@ describe(SCENARIO_ID, () => {
       WORLD_ID,
       HOUSEHOLD_ID,
       limitedPolicy.phase,
-      limitedPolicy.budgetTokens,
+      BASE_SIMULATION_BUDGET,
       npcs,
       new Date("2026-08-09T08:00:00.000Z"),
     );
 
     expect(limitedPolicy.phase).toBe("limited");
     expect(limitedPolicy.segment.allowNpcDecisions).toBe(false);
-    expect(limitedPlan.totalBudget).toBe(40);
+    expect(limitedPlan.totalBudget).toBe(limitedPolicy.budgetTokens);
 
     const frozenPolicy = computeAbsencePolicy({
       childLastSeenAt: new Date("2026-07-30T08:00:00.000Z"),
@@ -99,7 +101,7 @@ describe(SCENARIO_ID, () => {
       WORLD_ID,
       HOUSEHOLD_ID,
       frozenPolicy.phase,
-      frozenPolicy.budgetTokens,
+      BASE_SIMULATION_BUDGET,
       npcs,
       new Date("2026-08-09T08:00:00.000Z"),
     );
@@ -138,6 +140,7 @@ describe(SCENARIO_ID, () => {
             "relevant NPC is considered while stale low-relevance NPC is ignored",
           observed: {
             policy: normalPolicy,
+            totalBudget: normalPlan.totalBudget,
             consideredNpcIds: normalPlan.allocations.map((entry) => entry.npcId),
             ignoredNpcIds: [IRRELEVANT_NPC_ID],
             runHash: normalPlan.runHash,
