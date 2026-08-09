@@ -13,7 +13,9 @@ export const DEFAULT_MEMORY_LIFECYCLE_POLICY: MemoryLifecyclePolicy = {
 
 function assertLifecyclePolicy(policy: MemoryLifecyclePolicy): void {
   if (!Number.isFinite(policy.decayHalfLifeMs) || policy.decayHalfLifeMs <= 0) {
-    throw new Error("memory decay half-life must be a positive finite duration");
+    throw new Error(
+      "memory decay half-life must be a positive finite duration",
+    );
   }
 }
 
@@ -31,7 +33,10 @@ export function effectiveMemorySalience(
   if (!isRetrievableMemory(memory, now)) return 0;
   if (memory.lifecycle !== "decaying") return memory.salience;
 
-  const elapsedMs = Math.max(0, now.getTime() - memoryDecayAnchor(memory).getTime());
+  const elapsedMs = Math.max(
+    0,
+    now.getTime() - memoryDecayAnchor(memory).getTime(),
+  );
   const halfLives = elapsedMs / policy.decayHalfLifeMs;
   return memory.salience * Math.pow(0.5, halfLives);
 }

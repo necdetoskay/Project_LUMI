@@ -21,7 +21,9 @@ let pool: pg.Pool;
 function assertSafeDisposableDatabase(url: string) {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`S45 lifecycle test requires a disposable DB; got '${name}'.`);
+    throw new Error(
+      `S45 lifecycle test requires a disposable DB; got '${name}'.`,
+    );
   }
 }
 

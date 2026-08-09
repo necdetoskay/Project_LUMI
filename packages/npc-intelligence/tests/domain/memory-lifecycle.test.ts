@@ -87,8 +87,10 @@ describe("memory lifecycle scoring", () => {
       lastReinforcedAt: new Date("2026-08-14T00:00:00.000Z"),
     });
 
-    expect([stale, reinforced].sort((left, right) =>
-      compareMemoriesForRetrieval(left, right, now),
-    )[0]?.id).toBe(reinforced.id);
+    expect(
+      [stale, reinforced].sort((left, right) =>
+        compareMemoriesForRetrieval(left, right, now),
+      )[0]?.id,
+    ).toBe(reinforced.id);
   });
 });
