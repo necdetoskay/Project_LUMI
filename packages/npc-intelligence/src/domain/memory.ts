@@ -123,7 +123,10 @@ export function validateCanonicalMemory(memory: CanonicalMemory): void {
     );
   }
   if (memory.supersedesMemoryId != null) {
-    assertNonEmptyString(memory.supersedesMemoryId, "memory.supersedesMemoryId");
+    assertNonEmptyString(
+      memory.supersedesMemoryId,
+      "memory.supersedesMemoryId",
+    );
     if (memory.supersedesMemoryId === memory.id) {
       throw new Error("memory cannot supersede itself");
     }
