@@ -1,9 +1,19 @@
-import { and, desc, eq, gt, isNull, notInArray, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  isNull,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import type { CanonicalMemory } from "../../../domain/memory";
 import { validateCanonicalMemory } from "../../../domain/memory";
 import { compareMemoriesForRetrieval } from "../../../domain/memory-lifecycle";
 import type {
+  CanonicalMemoryMutation,
   CanonicalMemoryPort,
   CanonicalMemoryQuery,
 } from "../../../ports/canonical-memory.port";
@@ -41,6 +51,23 @@ function mapRow(row: typeof canonicalMemories.$inferSelect): CanonicalMemory {
     expiresAt: row.expiresAt,
     archivedAt: row.archivedAt,
   };
+}
+
+function profileScope(input: { childProfileId?: string | null }) {
+  return input.childProfileId == null
+    ? isNull(canonicalMemories.childProfileId)
+    : eq(canonicalMemories.childProfileId, input.childProfileId);
+}
+
+function mutationScope(input: CanonicalMemoryMutation) {
+  return and(
+    eq(canonicalMemories.id, input.memoryId),
+    eq(canonicalMemories.householdId, input.householdId),
+    eq(canonicalMemories.worldId, input.worldId),
+    eq(canonicalMemories.ownerType, input.ownerType),
+    eq(canonicalMemories.ownerId, input.ownerId),
+    profileScope(input),
+  );
 }
 
 export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
@@ -90,10 +117,6 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
       Math.max(limit * 4, limit),
       MAX_MEMORY_RETRIEVAL_CANDIDATES,
     );
-    const profileScope =
-      query.childProfileId == null
-        ? isNull(canonicalMemories.childProfileId)
-        : eq(canonicalMemories.childProfileId, query.childProfileId);
 
     const rows = await this.db
       .select()
@@ -104,7 +127,7 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
           eq(canonicalMemories.worldId, query.worldId),
           eq(canonicalMemories.ownerType, query.ownerType),
           eq(canonicalMemories.ownerId, query.ownerId),
-          profileScope,
+          profileScope(query),
           notInArray(canonicalMemories.lifecycle, ["archived", "superseded"]),
           or(
             isNull(canonicalMemories.expiresAt),
@@ -126,5 +149,43 @@ export class DrizzleCanonicalMemoryRepository implements CanonicalMemoryPort {
         compareMemoriesForRetrieval(left, right, query.now),
       )
       .slice(0, limit);
+  }
+
+  async reinforce(input: CanonicalMemoryMutation): Promise<boolean> {
+    const rows = await this.db
+      .update(canonicalMemories)
+      .set({ lastReinforcedAt: input.at })
+      .where(
+        and(
+          mutationScope(input),
+          notInArray(canonicalMemories.lifecycle, ["archived", "superseded"]),
+          or(
+            isNull(canonicalMemories.expiresAt),
+            gt(canonicalMemories.expiresAt, input.at),
+          ),
+        ),
+      )
+      .returning({ id: canonicalMemories.id });
+
+    return rows.length === 1;
+  }
+
+  async archive(input: CanonicalMemoryMutation): Promise<boolean> {
+    const rows = await this.db
+      .update(canonicalMemories)
+      .set({
+        lifecycle: "archived",
+        archivedAt: input.at,
+      })
+      .where(
+        and(
+          mutationScope(input),
+          sql`${canonicalMemories.lifecycle} <> 'archived'`,
+          sql`${canonicalMemories.lifecycle} <> 'superseded'`,
+        ),
+      )
+      .returning({ id: canonicalMemories.id });
+
+    return rows.length === 1;
   }
 }
