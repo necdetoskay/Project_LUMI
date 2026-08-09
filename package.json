@@ -29,6 +29,7 @@
     "ultef:l9-migration-recovery": "ULTEF_SCENARIO=L9-MIGRATION-RECOVERY-001 pnpm --filter @lumi/story exec vitest run --config vitest.integration.config.ts tests/integration/ultef-l9-migration-recovery.integration.test.ts",
     "ultef:px02-character-continuity": "ULTEF_SCENARIO=PX-LUMI-02-CHARACTER-RELOAD-STORY-001 pnpm --filter @lumi/web exec vitest run tests/ultef-px-character-continuity.integration.test.ts",
     "ultef:px04-emotional-consistency": "ULTEF_SCENARIO=PX-LUMI-04-EMOTION-DECISION-001 pnpm --filter @lumi/web exec vitest run tests/ultef-px-emotional-consistency.integration.test.ts",
+    "ultef:px05-story-consequence": "ULTEF_SCENARIO=PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001 pnpm --filter @lumi/web exec vitest run tests/ultef-px-story-consequence.integration.test.ts",
     "ultef:live-semantic-calibration": "pnpm --filter @lumi/web exec vitest run tests/ultef-live-semantic-calibration.integration.test.ts",
     "ultef:l8-annotate-calibration": "node tooling/ultef/src/l8-scorecard-calibration-annotator.mjs",
     "ultef:profile": "node tooling/ultef/src/cli.mjs L1-PROFILE-001",
