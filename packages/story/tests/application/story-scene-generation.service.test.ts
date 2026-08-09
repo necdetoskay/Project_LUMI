@@ -59,7 +59,7 @@ function fakePort(
   };
 }
 
-function validSceneJson(): string {
+function validSceneJson(usedContinuityKeys: string[] = []): string {
   return JSON.stringify({
     sceneId: "scene-1",
     setting: "orman kenari",
@@ -67,6 +67,7 @@ function validSceneJson(): string {
     narrative: "Lumi parlayan bir isik gordu ve yanina gitti.",
     moment: "merak anı",
     nextPrompt: null,
+    usedContinuityKeys,
   });
 }
 
@@ -86,6 +87,7 @@ describe("StorySceneGenerationService", () => {
 
     expect(result.scene.narrative).toContain("isik");
     expect(result.scene.characters).toEqual(["Lumi"]);
+    expect(result.scene.usedContinuityKeys).toEqual([]);
     expect(result.attempt).toBe(1);
     expect(caller).toHaveBeenCalledTimes(1);
     const call = caller.mock.calls[0] as unknown as [
@@ -109,12 +111,12 @@ describe("StorySceneGenerationService", () => {
     });
     const continuityPort: StoryContinuityContextPort = { resolveContext };
     const caller = vi.fn().mockResolvedValue({
-      content: validSceneJson(),
+      content: validSceneJson(["bridge-lights-before-storm"]),
       model: "test-model",
     });
     const service = new StorySceneGenerationService();
 
-    await service.generateSceneFromHook({
+    const result = await service.generateSceneFromHook({
       hook: makeHook("rumor", { claim: "another hook" }),
       settingsPort: fakePort(),
       continuityPort,
@@ -137,6 +139,63 @@ describe("StorySceneGenerationService", () => {
       "Bora, kopru isiklari soylentisini Mira'dan duydu.",
     );
     expect(call[1].messages[1]?.content).toContain("kaynak: Mira");
+    expect(result.scene.usedContinuityKeys).toEqual([
+      "bridge-lights-before-storm",
+    ]);
+  });
+
+  it("rejects continuity usage keys that were not present in the prompt", async () => {
+    const continuityPort: StoryContinuityContextPort = {
+      resolveContext: vi.fn().mockResolvedValue({
+        facts: [
+          {
+            key: "allowed-memory-key",
+            summary: "Allowed memory summary",
+            source: "canonical_memory",
+          },
+        ],
+      }),
+    };
+    const caller = vi.fn().mockResolvedValue({
+      content: validSceneJson(["invented-memory-key"]),
+      model: "test-model",
+    });
+
+    await expect(
+      new StorySceneGenerationService().generateSceneFromHook({
+        hook: makeHook("rumor", { claim: "another hook" }),
+        settingsPort: fakePort(),
+        continuityPort,
+        callOpenRouter: caller,
+        maxAttempts: 1,
+      }),
+    ).rejects.toThrow(/usedContinuityKeys/i);
+
+    expect(caller).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepts only a strict subset of the bounded continuity keys", async () => {
+    const continuityPort: StoryContinuityContextPort = {
+      resolveContext: vi.fn().mockResolvedValue({
+        facts: [
+          { key: "memory-a", summary: "A", source: "canonical_memory" },
+          { key: "memory-b", summary: "B", source: "canonical_memory" },
+        ],
+      }),
+    };
+    const caller = vi.fn().mockResolvedValue({
+      content: validSceneJson(["memory-b"]),
+      model: "test-model",
+    });
+
+    const result = await new StorySceneGenerationService().generateSceneFromHook({
+      hook: makeHook("rumor", { claim: "another hook" }),
+      settingsPort: fakePort(),
+      continuityPort,
+      callOpenRouter: caller,
+    });
+
+    expect(result.scene.usedContinuityKeys).toEqual(["memory-b"]);
   });
 
   it("retries with a fresh nonce when output is invalid, then fails", async () => {
