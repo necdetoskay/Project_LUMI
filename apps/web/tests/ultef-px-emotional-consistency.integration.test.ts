@@ -78,7 +78,8 @@ ultefDescribe("PX-LUMI-04-EMOTION-DECISION-001", () => {
     const characterId = crypto.randomUUID();
     const scenario = createScenario({
       id: "PX-LUMI-04-EMOTION-DECISION-001",
-      title: "Event-driven persisted emotion reaches downstream decision utility",
+      title:
+        "Event-driven persisted emotion reaches downstream decision utility",
       level: "PX-LUMI",
       projectGate: "PX-LUMI-04",
       seed: "px-lumi-04-emotion-decision-001",
