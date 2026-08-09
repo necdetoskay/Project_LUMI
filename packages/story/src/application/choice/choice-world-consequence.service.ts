@@ -160,9 +160,7 @@ export async function commitPersistedChoiceConsequence(
     session.householdId,
     session.worldId,
   );
-  const currentVersion = worldVersion
-    ? Number(worldVersion.currentVersion)
-    : 1;
+  const currentVersion = worldVersion ? Number(worldVersion.currentVersion) : 1;
   const worldStateHash =
     worldVersion?.worldStateHash ??
     (await hashObject({
@@ -232,7 +230,10 @@ export async function getLatestChoiceWorldContinuityFacts(
   const worldVersion = await repo.getWorldVersion(db, householdId, worldId);
   if (!worldVersion?.lastManifestId) return [];
 
-  const commit = await repo.findCommitByManifest(db, worldVersion.lastManifestId);
+  const commit = await repo.findCommitByManifest(
+    db,
+    worldVersion.lastManifestId,
+  );
   if (
     !commit ||
     commit.householdId !== householdId ||
