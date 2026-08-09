@@ -20,6 +20,14 @@ export type {
 } from "./story-definition.service";
 
 export {
+  listStoryTemplateVersions,
+  createStoryTemplateRevision,
+  publishStoryTemplateRevision,
+  __setTestTemplateAuthoringDb,
+} from "./story-template-authoring.service";
+export type { CreateStoryTemplateRevisionInput } from "./story-template-authoring.service";
+
+export {
   startSession,
   pauseSession,
   resumeSession,
