@@ -112,10 +112,11 @@ async function supersedePriorMemory(
   ownerId: string,
   priorMemoryId: string,
 ): Promise<void> {
+  const archivedAt = input.createdAt.toISOString();
   const result = await input.tx.execute(sql`
     UPDATE npc_intelligence.memories
        SET lifecycle = 'superseded',
-           archived_at = ${input.createdAt}
+           archived_at = ${archivedAt}
      WHERE id = ${priorMemoryId}::uuid
        AND household_id = ${input.householdId}::uuid
        AND world_id = ${input.worldId}::uuid
@@ -149,6 +150,7 @@ export async function commitCanonicalMemories(
     (change) =>
       change.ruleId === "default-npc-memory" && change.status === "committed",
   );
+  const createdAt = input.createdAt.toISOString();
 
   for (const change of memoryChanges) {
     const memory = parseMemoryValue(change.value, change.evidenceRef);
@@ -213,8 +215,8 @@ export async function commitCanonicalMemories(
         ${JSON.stringify(memory.provenance)}::jsonb,
         ${memory.lifecycle},
         ${memory.supersedesMemoryId}::uuid,
-        ${input.createdAt},
-        ${memory.lifecycle === "archived" ? input.createdAt : null}
+        ${createdAt},
+        ${memory.lifecycle === "archived" ? createdAt : null}
       )
       ON CONFLICT (household_id, world_id, effect_key) DO NOTHING
     `);
