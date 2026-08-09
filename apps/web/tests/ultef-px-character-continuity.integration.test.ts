@@ -204,13 +204,17 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
       expect(prompts[0]).toContain("courage=0.82");
       expect(result.scene.narrative).toContain("cesaretini hatirlayip");
 
-      scenario.event("character_mutation", "Persisted bounded courage mutation", {
-        characterId,
-        from: 0.4,
-        to: 0.82,
-        versionFrom: 1,
-        versionTo: 2,
-      });
+      scenario.event(
+        "character_mutation",
+        "Persisted bounded courage mutation",
+        {
+          characterId,
+          from: 0.4,
+          to: 0.82,
+          versionFrom: 1,
+          versionTo: 2,
+        },
+      );
       scenario.event("character_reload", "Reloaded persisted character state", {
         version: reloaded.rows[0].version,
         courage: reloaded.rows[0].courage,
