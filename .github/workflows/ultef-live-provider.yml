@@ -1,0 +1,186 @@
+name: ULTEF Live Provider Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: Comma-separated OpenRouter model ids (max 3 models)
+        required: true
+        default: openai/gpt-4.1-mini
+      repeats:
+        description: Repeats per model, 1-5. Each repeat runs 6 live story scenarios.
+        required: true
+        default: "3"
+      enable_semantic_judge:
+        description: Set true to add one advisory semantic-judge call per model repeat.
+        required: true
+        default: "false"
+      run_calibration:
+        description: Set true to run the selected semantic calibration dataset.
+        required: true
+        default: "false"
+      calibration_set:
+        description: Calibration dataset selection.
+        required: true
+        default: human-reviewed-boundary-v1
+        type: choice
+        options:
+          - seed
+          - hard-boundary
+          - human-reviewed-boundary-v1
+      calibration_repeats:
+        description: Calibration judge repeats, 1-5. Use 3 for stability evidence.
+        required: true
+        default: "3"
+      judge_model:
+        description: OpenRouter model id used for advisory judging and optional calibration.
+        required: true
+        default: openai/gpt-4.1-mini
+      confirm_cost:
+        description: Type RUN_LIVE_PROVIDER to acknowledge external API cost.
+        required: true
+        default: ""
+
+jobs:
+  live-provider-scorecard:
+    if: ${{ inputs.confirm_cost == 'RUN_LIVE_PROVIDER' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      ULTEF_REAL_PROVIDER_ENABLED: "true"
+      ULTEF_L8_MODELS: ${{ inputs.models }}
+      ULTEF_L8_REPEATS: ${{ inputs.repeats }}
+      ULTEF_L8_SEMANTIC_JUDGE_ENABLED: ${{ inputs.enable_semantic_judge }}
+      ULTEF_L8_SEMANTIC_CALIBRATION_ENABLED: ${{ inputs.run_calibration }}
+      ULTEF_L8_CALIBRATION_SET: ${{ inputs.calibration_set }}
+      ULTEF_L8_CALIBRATION_REPEATS: ${{ inputs.calibration_repeats }}
+      ULTEF_L8_JUDGE_MODEL: ${{ inputs.judge_model }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Verify live-provider secret and budget inputs
+        shell: bash
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "OPENROUTER_API_KEY repository secret is required."
+            exit 1
+          fi
+          case "${{ inputs.repeats }}" in
+            1|2|3|4|5) ;;
+            *) echo "repeats must be an integer from 1 to 5"; exit 1 ;;
+          esac
+          case "${{ inputs.calibration_repeats }}" in
+            1|2|3|4|5) ;;
+            *) echo "calibration_repeats must be an integer from 1 to 5"; exit 1 ;;
+          esac
+          case "${{ inputs.enable_semantic_judge }}" in
+            true|false) ;;
+            *) echo "enable_semantic_judge must be true or false"; exit 1 ;;
+          esac
+          case "${{ inputs.run_calibration }}" in
+            true|false) ;;
+            *) echo "run_calibration must be true or false"; exit 1 ;;
+          esac
+          case "${{ inputs.calibration_set }}" in
+            seed|hard-boundary|human-reviewed-boundary-v1) ;;
+            *) echo "unsupported calibration_set"; exit 1 ;;
+          esac
+          MODEL_COUNT=$(printf '%s' "${{ inputs.models }}" | awk -F',' '{print NF}')
+          if [ "$MODEL_COUNT" -gt 3 ]; then
+            echo "At most 3 models are allowed."
+            exit 1
+          fi
+          STORY_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }} * 6))
+          JUDGE_CALLS=0
+          if [ "${{ inputs.enable_semantic_judge }}" = "true" ]; then
+            JUDGE_CALLS=$((MODEL_COUNT * ${{ inputs.repeats }}))
+          fi
+          CALIBRATION_CALLS=0
+          if [ "${{ inputs.run_calibration }}" = "true" ]; then
+            CALIBRATION_CALLS=${{ inputs.calibration_repeats }}
+          fi
+          TOTAL_CALLS=$((STORY_CALLS + JUDGE_CALLS + CALIBRATION_CALLS))
+          echo "Selected calibration set: ${{ inputs.calibration_set }}"
+          echo "Calibration repeats: ${{ inputs.calibration_repeats }}"
+          echo "Planned paid story calls: $STORY_CALLS"
+          echo "Planned paid semantic-judge calls: $JUDGE_CALLS"
+          echo "Planned paid calibration calls: $CALIBRATION_CALLS"
+          echo "Planned total paid provider calls: $TOTAL_CALLS"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare profile schema
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Verify L8 evaluators without provider cost
+        run: |
+          pnpm ultef:l8-scenario-selftest
+          pnpm ultef:l8-semantic-selftest
+          pnpm ultef:l8-semantic-calibration-selftest
+          pnpm ultef:l8-semantic-stability-selftest
+      - name: Run optional repeated live semantic judge calibration
+        if: ${{ inputs.run_calibration == 'true' }}
+        run: pnpm ultef:live-semantic-calibration
+      - name: Run repeated L8 live six-scenario model scorecard
+        run: pnpm ultef:live-model-scorecard
+      - name: Annotate scorecard with semantic calibration trust
+        if: always()
+        run: pnpm ultef:l8-annotate-calibration
+      - name: Print L8 scorecard
+        if: always()
+        shell: bash
+        run: |
+          FILE=$(find artifacts/ultef/scorecards -name '*-L8-MODEL-SCORECARD-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$FILE" ]; then
+            cat "$FILE"
+          else
+            echo "L8 model scorecard was not produced."
+          fi
+      - name: Print L8 live evidence
+        if: always()
+        shell: bash
+        run: |
+          find artifacts/ultef/runs \( -name 'L8-LIVE-SCENARIO-PACK-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-BOUNDARY-001.md' -o -name 'L8-SEMANTIC-CALIBRATION-HUMAN-BOUNDARY-001.md' \) -type f 2>/dev/null | sort | while read -r FILE; do
+            echo
+            echo "===== L8 LIVE EVIDENCE ====="
+            cat "$FILE"
+          done
+      - name: Upload live-provider evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-live-provider-scorecard-evidence
+          path: artifacts/ultef/
+          if-no-files-found: warn
+          retention-days: 14

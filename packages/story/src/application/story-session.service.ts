@@ -695,7 +695,7 @@ export async function advanceSession(input: AdvanceSessionInput) {
       });
     }
 
-    return getSessionPlaybackStateFromRecord(input.sessionId);
+    return readSessionPlaybackState(tx, input.sessionId);
   });
 }
 

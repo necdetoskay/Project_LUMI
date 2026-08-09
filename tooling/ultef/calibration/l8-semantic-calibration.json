@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "L8-SEMANTIC-CALIBRATION-SEED-001",
+  "status": "seed-human-reference",
+  "notes": "Curated seed references for judge calibration. These labels must be reviewed by a human before semantic scores may affect model ranking.",
+  "examples": [
+    {
+      "id": "choice-5a",
+      "rubric": "choice_influence",
+      "humanScore": 5,
+      "text": "Arin, daha önce Mira'ya sormayı seçtiğini hatırladı. Mira'nın anlattığı küçük ayrıntıyı takip ederek köprü ışıklarının sırrına bir adım daha yaklaştılar."
+    },
+    {
+      "id": "choice-5b",
+      "rubric": "choice_influence",
+      "humanScore": 5,
+      "text": "Mira ile önceki konuşması Arin'in yeni kararını belirledi; bu kez Mira'nın tarif ettiği işareti birlikte aradılar."
+    },
+    {
+      "id": "choice-3a",
+      "rubric": "choice_influence",
+      "humanScore": 3,
+      "text": "Arin Mira ile konuştuğunu hatırladı. Sonra Bora ile köprünün çevresine bakmaya karar verdi."
+    },
+    {
+      "id": "choice-2a",
+      "rubric": "choice_influence",
+      "humanScore": 2,
+      "text": "Mira'nın adı kısaca geçti ama Arin ışıkları kendi başına incelemeye başladı; önceki seçimin sonucu hikâyeyi pek değiştirmedi."
+    },
+    {
+      "id": "choice-1a",
+      "rubric": "choice_influence",
+      "humanScore": 1,
+      "text": "Arin Mira'ya sormayı seçmişti ama bunu önemsemeden sessizce ışıkların peşine düştü."
+    },
+    {
+      "id": "choice-0a",
+      "rubric": "choice_influence",
+      "humanScore": 0,
+      "text": "Arin hiç kimseyle konuşmamıştı ve başından beri tek başına ışıkları takip etmeyi seçmişti."
+    },
+    {
+      "id": "personality-5a",
+      "rubric": "personality_emotion",
+      "humanScore": 5,
+      "text": "Arin karanlıktan çekinince Bora yavaşladı. 'İstersen birlikte geri dönebiliriz,' dedi ve güvenli, aydınlık yolu gösterdi."
+    },
+    {
+      "id": "personality-5b",
+      "rubric": "personality_emotion",
+      "humanScore": 5,
+      "text": "Bora Arin'in kaygısını fark edip yanında durdu. Acele etmeden çevreyi kontrol etti ve ikisinin de rahat edeceği bir yol önerdi."
+    },
+    {
+      "id": "personality-3a",
+      "rubric": "personality_emotion",
+      "humanScore": 3,
+      "text": "Bora Arin'e korkmamasını söyledi ve yürümeye devam etti. Yardımcıydı ama Arin'in duygusuna pek dikkat etmedi."
+    },
+    {
+      "id": "personality-2a",
+      "rubric": "personality_emotion",
+      "humanScore": 2,
+      "text": "Bora biraz sabırsızlandı, yine de Arin'i yalnız bırakmadı ve sonunda daha güvenli yolu seçti."
+    },
+    {
+      "id": "personality-1a",
+      "rubric": "personality_emotion",
+      "humanScore": 1,
+      "text": "Bora Arin'in korkusuna güldü ama daha sonra geri dönmeyi kabul etti."
+    },
+    {
+      "id": "personality-0a",
+      "rubric": "personality_emotion",
+      "humanScore": 0,
+      "text": "Bora Arin'le alay etti, onu geride bırakıp karanlık patikaya tek başına koştu."
+    },
+    {
+      "id": "age-5a",
+      "rubric": "age_appropriateness",
+      "humanScore": 5,
+      "text": "Arin suyun yanında parlayan taşı gördü. 'Sence neden ışıldıyor?' diye sordu. Bora gülümsedi. İkisi taşı yakından incelemeye başladı."
+    },
+    {
+      "id": "age-5b",
+      "rubric": "age_appropriateness",
+      "humanScore": 5,
+      "text": "Küçük dere şırıl şırıl akıyordu. Arin ile Bora taşların üstündeki minik ışıkları görünce çok meraklandı."
+    },
+    {
+      "id": "age-3a",
+      "rubric": "age_appropriateness",
+      "humanScore": 3,
+      "text": "Arin ve Bora taşların farklı mineraller yüzünden parlayabileceğini düşündü. Biraz zor kelime vardı ama hikâye yine de anlaşılırdı."
+    },
+    {
+      "id": "age-2a",
+      "rubric": "age_appropriateness",
+      "humanScore": 2,
+      "text": "Taşların kimyasal yapısındaki değişimlerin ışık yansımasına etkisini konuşarak gözlemlerini sürdürdüler."
+    },
+    {
+      "id": "age-1a",
+      "rubric": "age_appropriateness",
+      "humanScore": 1,
+      "text": "Arin, jeolojik formasyonların spektral özellikleri ve ekonomik kullanım potansiyeli üzerine uzun bir değerlendirme yaptı."
+    },
+    {
+      "id": "age-0a",
+      "rubric": "age_appropriateness",
+      "humanScore": 0,
+      "text": "Karakterler jeopolitik dengeler, finansal yükümlülükler ve kurumsal risk yönetimi çerçevesinde çok katmanlı bir analiz gerçekleştirdi."
+    }
+  ]
+}

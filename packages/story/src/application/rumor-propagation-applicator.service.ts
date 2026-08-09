@@ -3,19 +3,26 @@ import type { IndirectEffectApplicator } from "./indirect-effect-propagator.serv
 
 export const RUMOR_SPREAD_INTENT_TYPE = "npc_rumor_spread";
 
-/**
- * Applies `npc_rumor_spread` outbox intents by writing hearsay beliefs.
- *
- * This is a placeholder applicator that validates the intent type and
- * returns a success count. The concrete belief-writing implementation
- * is provided by the worker or a higher-level service that wires the
- * NPC intelligence package's belief service into the outbox loop.
- */
+export interface RumorBeliefWriterPort {
+  writeHearsay(input: {
+    householdId: string;
+    worldId?: string;
+    sourceNpcId: string;
+    targetNpcId: string;
+    factId: string;
+    claim: string;
+    confidence: number;
+    provenance: string[];
+    hops: number;
+  }): Promise<{ writes: number }>;
+}
+
+/** Applies rumor outbox intents through a composition-root supplied writer. */
 export class RumorSpreadApplicator implements IndirectEffectApplicator {
+  constructor(private readonly writer?: RumorBeliefWriterPort) {}
+
   async apply(intent: StoryOutboxRecord): Promise<{ writes: number }> {
-    if (intent.intentType !== RUMOR_SPREAD_INTENT_TYPE) {
-      return { writes: 0 };
-    }
+    if (intent.intentType !== RUMOR_SPREAD_INTENT_TYPE) return { writes: 0 };
 
     const payload = intent.payload as {
       sourceNpcId: string;
@@ -26,11 +33,22 @@ export class RumorSpreadApplicator implements IndirectEffectApplicator {
       provenance: string[];
       hops: number;
     };
-
-    if (!payload.targetNpcId || !payload.factId) {
+    if (!payload.targetNpcId || !payload.factId || !payload.claim)
       return { writes: 0 };
+    if (!this.writer) {
+      throw new Error("RUMOR_BELIEF_WRITER_NOT_CONFIGURED");
     }
 
-    return { writes: 1 };
+    return this.writer.writeHearsay({
+      householdId: intent.householdId,
+      worldId: intent.worldId,
+      sourceNpcId: payload.sourceNpcId,
+      targetNpcId: payload.targetNpcId,
+      factId: payload.factId,
+      claim: payload.claim,
+      confidence: payload.confidence,
+      provenance: payload.provenance,
+      hops: payload.hops,
+    });
   }
 }

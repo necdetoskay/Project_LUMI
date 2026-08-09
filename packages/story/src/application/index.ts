@@ -118,6 +118,18 @@ export type { EnqueueQuestRewardInput } from "./quest-reward-outbox.service";
 export { buildHookSceneBrief } from "../domain/hook-scene-brief";
 export type { HookSceneBrief } from "../domain/hook-scene-brief";
 
+export {
+  normalizeStoryContinuityContext,
+  STORY_CONTINUITY_FACT_MAX,
+  STORY_CONTINUITY_MAX_FACTS,
+} from "./story-continuity-context";
+export type {
+  StoryContinuityFact,
+  StoryContinuityContext,
+  ResolveStoryContinuityContextInput,
+  StoryContinuityContextPort,
+} from "./story-continuity-context";
+
 export { buildStoryScenePrompt } from "./story-scene-prompt";
 export type { StoryScenePromptInput } from "./story-scene-prompt";
 
@@ -145,3 +157,12 @@ export type {
   OpenRouterCallResult,
   OpenRouterMessage,
 } from "./story-scene-generation.service";
+
+export {
+  persistGeneratedSceneAndAdvance,
+  __setTestGeneratedSceneDb,
+} from "./generated-scene-session.service";
+export type {
+  PersistGeneratedSceneAndAdvanceInput,
+  PersistGeneratedSceneAndAdvanceResult,
+} from "./generated-scene-session.service";

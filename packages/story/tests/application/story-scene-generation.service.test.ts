@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { StoryContinuityContextPort } from "../../src/application/story-continuity-context";
 import { StorySceneGenerationService } from "../../src/application/story-scene-generation.service";
 import type { StorySceneLlmSettingsPort } from "../../src/application/story-scene-llm-settings";
 import {
@@ -94,6 +95,48 @@ describe("StorySceneGenerationService", () => {
     expect(call[0]).toBe("sk-test");
     expect(call[1].model).toBe("test-model");
     expect(call[1].messages[1]?.content).toContain("moon is made of cheese");
+  });
+
+  it("loads household/world-scoped continuity and injects it into the prompt", async () => {
+    const resolveContext = vi.fn().mockResolvedValue({
+      facts: [
+        {
+          key: "bridge-lights-before-storm",
+          summary: "Bora, kopru isiklari soylentisini Mira'dan duydu.",
+          source: "Mira",
+        },
+      ],
+    });
+    const continuityPort: StoryContinuityContextPort = { resolveContext };
+    const caller = vi.fn().mockResolvedValue({
+      content: validSceneJson(),
+      model: "test-model",
+    });
+    const service = new StorySceneGenerationService();
+
+    await service.generateSceneFromHook({
+      hook: makeHook("rumor", { claim: "another hook" }),
+      settingsPort: fakePort(),
+      continuityPort,
+      characterId: "arin",
+      callOpenRouter: caller,
+    });
+
+    expect(resolveContext).toHaveBeenCalledWith({
+      householdId: "h",
+      worldId: "w",
+      childProfileId: "c",
+      characterId: "arin",
+      npcIds: ["npc-1"],
+    });
+    const call = caller.mock.calls[0] as unknown as [
+      string,
+      { messages: { content: string }[] },
+    ];
+    expect(call[1].messages[1]?.content).toContain(
+      "Bora, kopru isiklari soylentisini Mira'dan duydu.",
+    );
+    expect(call[1].messages[1]?.content).toContain("kaynak: Mira");
   });
 
   it("retries with a fresh nonce when output is invalid, then fails", async () => {

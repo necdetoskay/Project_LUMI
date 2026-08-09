@@ -3,6 +3,8 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 
+import { applyStoryMigration } from "./story-migration-runner.mjs";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function loadEnvFile(envPath) {
@@ -42,59 +44,28 @@ const DATABASE_URL =
 
 const MIGRATION_DIR = resolve(__dirname, "..", "migrations");
 
-async function ensureLedger(pool) {
-  await pool.query("CREATE SCHEMA IF NOT EXISTS story;");
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS story._story_migration_ledger (
-      id SERIAL PRIMARY KEY,
-      filename VARCHAR(255) NOT NULL UNIQUE,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `);
-}
-
-async function getAppliedFiles(pool) {
-  try {
-    const result = await pool.query(
-      "SELECT filename FROM story._story_migration_ledger ORDER BY id",
-    );
-    return new Set(result.rows.map((r) => r.filename));
-  } catch {
-    return new Set();
-  }
-}
-
 async function main() {
   const files = readdirSync(MIGRATION_DIR)
-    .filter((f) => f.endsWith(".sql"))
+    .filter((file) => file.endsWith(".sql"))
     .sort();
-
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
 
   try {
-    await ensureLedger(pool);
-    const applied = await getAppliedFiles(pool);
-
     for (const file of files) {
-      if (applied.has(file)) {
-        console.warn(`Skipping already-applied migration: ${file}`);
-        continue;
-      }
-
       const filePath = join(MIGRATION_DIR, file);
       const sql = readFileSync(filePath, "utf-8");
-      console.warn(`Applying migration: ${file}`);
-      await pool.query(sql);
-      await pool.query(
-        "INSERT INTO story._story_migration_ledger (filename) VALUES ($1)",
-        [file],
-      );
-      console.warn(`Migration ${file} applied successfully`);
+      const result = await applyStoryMigration(pool, { filename: file, sql });
+
+      if (result.status === "skipped") {
+        console.warn(`Skipping already-applied migration: ${file}`);
+      } else {
+        console.warn(`Migration ${file} applied successfully`);
+      }
     }
     console.warn(`All ${files.length} story migrations applied successfully`);
   } catch (error) {
     console.error("Migration failed:", error);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
     await pool.end();
   }

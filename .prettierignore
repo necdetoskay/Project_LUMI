@@ -5,6 +5,7 @@ dist
 node_modules
 pnpm-lock.yaml
 docs
+artifacts/ultef/runs
 **/*.docx
 LUMI_*
 Story Outcome & World State Commit Engine.txt

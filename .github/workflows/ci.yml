@@ -23,19 +23,27 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Validate ULTEF L8 scenario evaluators
+        run: pnpm ultef:l8-scenario-selftest
+      - name: Validate ULTEF L8 semantic rubric parser
+        run: pnpm ultef:l8-semantic-selftest
+      - name: Validate ULTEF L8 semantic calibration metrics
+        run: pnpm ultef:l8-semantic-calibration-selftest
+      - name: Validate ULTEF L8 semantic calibration stability
+        run: pnpm ultef:l8-semantic-stability-selftest
+      - name: Validate ULTEF L8 scorecard performance scoring
+        run: pnpm ultef:l8-scorecard-scoring-selftest
+      - name: Run ULTEF L9 long-horizon continuity journey
+        run: pnpm ultef:l9-long-horizon
+      - name: Run ULTEF L9 provider failover routing contract
+        run: pnpm ultef:l9-provider-failover
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      # Performance/load gate (S21-T02): non-blocking smoke. S21-T01 harness
-      # records latency/isolation to coverage/load/s21-t01-report.json.
       - name: Run load smoke (non-blocking)
         continue-on-error: true
         run: pnpm --filter @lumi/web test:load
-
-      # S21-T05: performance regression gate (soft-failure). Reads the harness
-      # report; if thresholds are breached, annotates the PR but does not
-      # fail the build (release gate is human-approved per S20-T06).
       - name: Load gate check (soft-failure)
         continue-on-error: true
         shell: bash
@@ -69,30 +77,22 @@ jobs:
     needs: validate
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11.7.0
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      # Produce a version+sha tagged web image with embedded build metadata.
-      # Tags only (no push): reproducibility gate; the release pipeline
-      # (S20-T05 runbooks) performs the authenticated push to the registry.
       - name: Set version
         id: version
         run: |
           v="$(node -p "require('./package.json').version")"
           echo "version=$v" >> $GITHUB_OUTPUT
-
       - name: Extract metadata (tags, labels)
         id: docker-metadata
         uses: docker/metadata-action@v5
@@ -107,7 +107,6 @@ jobs:
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ steps.docker-metadata.outputs.created }}
-
       - name: Build web image
         uses: docker/build-push-action@v6
         with:

@@ -6,6 +6,7 @@ Aktif ve tamamlanmış sprint, görev, release ve uygulama planlarını içerir.
 - [`lumi/sprint-master-plan/AGENT_READY_SPRINT_INDEX.md`](lumi/sprint-master-plan/AGENT_READY_SPRINT_INDEX.md) — Sprint 02–20 agent-ready planı
 - [`lumi/persistence/`](lumi/persistence/) — veri katmanı uygulama planları ve şemalar
 - [`lumi/releases/`](lumi/releases/) — release kayıtları
+- [`lumi/releases/l9-production-readiness-closure.md`](lumi/releases/l9-production-readiness-closure.md) — L9 Production Readiness kapanış kaydı
 - [`releases/reference-packages/`](releases/reference-packages/) — kabul ve bakım kaynak paketleri
 
 Delivery belgeleri ürün veya mimari otoritenin üzerine çıkamaz.
