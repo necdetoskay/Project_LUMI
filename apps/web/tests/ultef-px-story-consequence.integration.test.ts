@@ -278,7 +278,9 @@ ultefDescribe("PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001", () => {
         actorUserId: userId,
       });
       if (!("committedChoice" in committed)) {
-        throw new Error("PX-LUMI-05 expected the first choice commit to be new");
+        throw new Error(
+          "PX-LUMI-05 expected the first choice commit to be new",
+        );
       }
 
       scenario.setup("ChoicePreState", {
