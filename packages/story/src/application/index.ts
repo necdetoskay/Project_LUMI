@@ -119,6 +119,11 @@ export { StoryHookDeliveryApplicator } from "./story-hook-delivery-applicator.se
 
 export { StoryHookService } from "./story-hook.service";
 export type { StoryHookResult } from "./story-hook.service";
+export {
+  getStoryHookForConsumption,
+  markStoryHookConsumed,
+} from "./story-hook-consumption.service";
+export type { StoryHookConsumptionScope } from "./story-hook-consumption.service";
 
 export {
   enqueueQuestRewardIntent,
