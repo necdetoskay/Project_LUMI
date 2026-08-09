@@ -1,0 +1,45 @@
+name: S44 Final Format
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/s44-final-format.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format-s44-final:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 's44/memory-production-model'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: s44/memory-production-model
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format final S44 files
+        run: >-
+          pnpm exec prettier --write
+          apps/web/lib/story-continuity-context-runtime.ts
+          apps/web/tests/ultef-s44-memory-production.v3.integration.test.ts
+      - name: Commit formatting
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No formatting changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/web/lib/story-continuity-context-runtime.ts \
+            apps/web/tests/ultef-s44-memory-production.v3.integration.test.ts
+          git commit -m 'style(s44): format final memory production files'
+          git push origin HEAD:s44/memory-production-model
