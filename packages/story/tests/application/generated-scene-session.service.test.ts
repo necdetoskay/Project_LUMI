@@ -138,7 +138,9 @@ describe("persistGeneratedSceneAndAdvance", () => {
       }),
     ).rejects.toMatchObject({ code: "VERSION_CONFLICT" });
 
-    expect(mockRepo.findScenesByVersion).not.toHaveBeenCalled();
+    // S37 replay safety performs a read-only scene lookup before rejecting a
+    // stale non-replay request. No canonical mutation may occur.
+    expect(mockRepo.findScenesByVersion).toHaveBeenCalledTimes(1);
     expect(mockRepo.createScene).not.toHaveBeenCalled();
     expect(advanceSession).not.toHaveBeenCalled();
   });
