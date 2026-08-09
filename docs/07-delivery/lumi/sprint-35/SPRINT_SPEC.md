@@ -1,6 +1,6 @@
 # Sprint 35 — Production Outbox Worker & Applicator Dispatch
 
-Status: ACTIVE
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
@@ -60,18 +60,31 @@ Required evidence:
 5. worker overlapping ticks remain suppressed;
 6. CI format/lint/typecheck/test/build and Security Scan remain green.
 
-Proposed stable scenario ID:
+Stable scenario ID:
 
 `PX-LUMI-S35-OUTBOX-WORKER-001`
 
+## Completion evidence
+
+Final green head before closeout documentation: `623b55eccf671483b924f2cd72cbfe27e5070e73`.
+
+- `ULTEF S35 Outbox Worker` — PASS. DB-backed evidence proved persisted quest seed -> worker dispatch -> exactly one quest, unknown-intent failure isolation, replay idempotency, three-attempt terminal failure, and exclusion of terminal work from normal discovery.
+- `ULTEF Integration` — PASS, including the complete DB-backed regression profile and PX-LUMI-03 memory coherence.
+- `ULTEF PX-LUMI` — PASS.
+- `ULTEF PX-02 Character Continuity` — PASS.
+- `ULTEF PX-04 Emotional Consistency` — PASS.
+- `ULTEF PX-05 Story Consequence` — PASS.
+- `Security Scan` — PASS.
+- `CI` — PASS: format, lint, typecheck, unit/integration tests, load smoke/gate, and build all green.
+
 ## Exit criteria
 
-- Production worker consumes story outbox without manual per-row invocation.
-- At least `quest_seed_automation` has a real end-to-end production dispatch path.
-- Dispatch is allowlisted and fail-closed.
-- Retry/idempotency semantics remain those of `IndirectEffectPropagator` and downstream applicators.
-- Worker is deployable from repository infrastructure.
-- DB-backed evidence and standard regression gates pass.
+- [x] Production worker consumes story outbox without manual per-row invocation.
+- [x] `quest_seed_automation` has a real end-to-end production dispatch path.
+- [x] Dispatch is allowlisted and fail-closed.
+- [x] Retry/idempotency semantics remain those of `IndirectEffectPropagator` and downstream applicators.
+- [x] Worker is deployable from repository infrastructure.
+- [x] DB-backed evidence and standard regression gates pass.
 
 ## Explicit follow-up backlog
 
