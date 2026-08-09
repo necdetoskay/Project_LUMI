@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+import {
+  StorybookBackdrop,
+  StorybookCard,
+  StorybookScene,
+} from "@/components/public/storybook-shell";
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function getValue(value: string | string[] | undefined) {
@@ -31,55 +37,75 @@ export default async function ForgotPasswordPage({
   const success = getValue(params.success) === "reset_requested";
 
   return (
-    <section className="container auth-page">
-      <div>
-        <p className="eyebrow">PROJECT LUMI</p>
-        <h1>Şifremi unuttum</h1>
-        <p className="lead">
-          Hesabına bağlı e-posta adresini gir. Parola yenileme akışını
-          başlatalım.
-        </p>
-      </div>
-      {error ? (
-        <p className="auth-message auth-message-error">{error}</p>
-      ) : null}
-      {success ? (
-        <div className="auth-message auth-message-success">
-          <p>
-            Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda dev
-            önizleme kullanıyoruz.
-          </p>
-          {previewToken ? (
-            <p>
-              Dev önizleme:{" "}
-              <Link
-                href={`/reset-password?token=${encodeURIComponent(previewToken)}`}
-              >
-                parolayı yenile
-              </Link>
-            </p>
+    <section className="storybook-page">
+      <StorybookBackdrop />
+      <div className="storybook-grid storybook-grid-auth">
+        <StorybookScene
+          kicker="Yolunu kaybetmedin"
+          title="Hikâyene giden yolu yeniden bul"
+          text="Şifreni unutmak dünyanı silmez. Hesabına bağlı e-posta adresini kullanarak giriş yolunu yeniden açabilirsin."
+          icon="🕯️"
+        />
+
+        <StorybookCard
+          eyebrow="Güvenli dönüş"
+          title="Şifremi unuttum"
+          description="Hesabına bağlı e-posta adresini gir. Parola yenileme akışını başlatalım."
+          note={
+            <Link className="storybook-inline-link" href="/login">
+              Giriş ekranına dön
+            </Link>
+          }
+        >
+          {error ? (
+            <div className="storybook-message storybook-message-error" role="alert">
+              {error}
+            </div>
           ) : null}
-        </div>
-      ) : null}
-      <form
-        action="/api/auth/forgot-password"
-        method="post"
-        className="auth-form"
-      >
-        <label>
-          E-posta
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            defaultValue={email}
-          />
-        </label>
-        <button type="submit">Yenileme bağlantısı hazırla</button>
-      </form>
-      <div className="auth-links">
-        <Link href="/login">Giriş ekranına dön</Link>
+          {success ? (
+            <div className="storybook-message storybook-message-success" role="status">
+              <p>
+                Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda
+                geliştirme önizlemesi kullanılıyor.
+              </p>
+              {previewToken ? (
+                <p>
+                  <Link
+                    className="storybook-inline-link"
+                    href={`/reset-password?token=${encodeURIComponent(previewToken)}`}
+                  >
+                    Parolayı yenile
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <form
+            action="/api/auth/forgot-password"
+            method="post"
+            className="storybook-form"
+          >
+            <div className="storybook-field">
+              <label htmlFor="email">E-posta</label>
+              <input
+                className="storybook-input"
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                defaultValue={email}
+                placeholder="e-posta@adresiniz.com"
+              />
+            </div>
+            <button className="storybook-button" type="submit">
+              Yenileme yolunu aç
+              <span className="material-symbols-outlined" aria-hidden="true">
+                key
+              </span>
+            </button>
+          </form>
+        </StorybookCard>
       </div>
     </section>
   );
