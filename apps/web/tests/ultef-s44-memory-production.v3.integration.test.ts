@@ -95,7 +95,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
         key: "bridge-promise",
         ownerId: ownerA,
         summary: COMMITTED_SUMMARY,
-        salience: 0.95,
+        salience: 1,
       });
 
       await storyDb.transaction(async (tx) => {
