@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Profile = {
@@ -18,21 +19,24 @@ export default function ProfilesClientPage() {
 
   useEffect(() => {
     fetch("/api/onboarding")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data) => {
-        const s = data.onboarding as {
+        const onboarding = data.onboarding as {
           hasHousehold: boolean;
           householdId: string | null;
         };
-        if (!s.hasHousehold || !s.householdId) {
-          setError("No household found. Complete onboarding first.");
+
+        if (!onboarding.hasHousehold || !onboarding.householdId) {
+          setError("Aile evreni henüz oluşturulmamış.");
           setLoading(false);
-          return;
+          return undefined;
         }
 
-        return fetch(`/api/child-profiles?householdId=${s.householdId}`);
+        return fetch(
+          `/api/child-profiles?householdId=${encodeURIComponent(onboarding.householdId)}`,
+        );
       })
-      .then((r) => r?.json())
+      .then((response) => response?.json())
       .then((data) => {
         if (data) {
           setProfiles(data.profiles);
@@ -40,7 +44,7 @@ export default function ProfilesClientPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError("Failed to load profiles");
+        setError("Profiller şu anda yüklenemedi. Biraz sonra tekrar deneyin.");
         setLoading(false);
       });
   }, []);
@@ -49,169 +53,179 @@ export default function ProfilesClientPage() {
   if (error) return <ErrorDisplay message={error} />;
 
   return (
-    <main className="mx-auto flex w-full max-w-[1180px] flex-col px-6 py-10">
-      <header className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <nav className="mb-3 flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-            <a className="transition-colors hover:text-primary" href="/app">
-              Dashboard
-            </a>
-            <span className="material-symbols-outlined text-sm">
-              chevron_right
-            </span>
-            <span className="text-primary">Profiller</span>
-          </nav>
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
-            Çocuk Profilleri
-          </h1>
-          <p className="mt-3 max-w-[42rem] text-base leading-7 text-on-surface-variant md:text-lg">
-            Aileniz için oluşturulan profilleri görüntüleyin ve yönetin.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf]"
-            href="/app/onboarding"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            Yeni Profil
-          </a>
-        </div>
-      </header>
-
-      {profiles.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-outline-variant bg-white px-8 py-20 text-center"
-          id="empty-state"
-        >
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-[36px]">
+    <section className="storybook-page min-h-full">
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-8 px-5 py-8 md:px-6 md:py-10">
+        <header className="flex flex-col gap-6 rounded-[2rem] border border-outline-variant/70 bg-white/80 p-7 shadow-sm md:p-9 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <Link
+              className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant transition-colors hover:text-primary"
+              href="/app"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                arrow_back
+              </span>
+              Aile hikâye evine dön
+            </Link>
+            <p className="mt-6 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+              Çocuklarım
+            </p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
+              Her profil başka bir hikâye dünyasının kapısı
+            </h1>
+            <p className="mt-3 max-w-[44rem] text-base leading-7 text-on-surface-variant md:text-lg">
+              Çocukların temel bilgilerini burada görebilir, profillerine geçebilir
+              veya yeni bir çocuk için güvenli bir başlangıç oluşturabilirsiniz.
+            </p>
+          </div>
+          <Link className="storybook-button" href="/app/onboarding">
+            <span className="material-symbols-outlined" aria-hidden="true">
               person_add
             </span>
-          </div>
-          <h2 className="mb-2 text-2xl font-bold text-on-surface">
-            Henüz profil eklenmemiş
-          </h2>
-          <p className="mb-8 max-w-[34rem] text-base leading-7 text-on-surface-variant">
-            İlk profili oluşturduğunuzda yaş grubu ve temel bilgilerle aile
-            alanınızı kullanmaya başlayabilirsiniz.
-          </p>
-          <a
-            className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
-            href="/app/onboarding"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              rocket_launch
-            </span>
-            Kuruluma git
-          </a>
-        </div>
-      ) : (
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+            Yeni çocuk profili
+          </Link>
+        </header>
+
+        {profiles.length === 0 ? (
           <div
-            className="grid grid-cols-1 gap-5 lg:grid-cols-2"
-            id="profile-container"
+            className="rounded-[2rem] border border-dashed border-outline-variant bg-white/75 px-7 py-16 text-center"
+            id="empty-state"
           >
-            {profiles.map((p) => (
-              <article
-                key={p.id}
-                className="profile-card-hover overflow-hidden rounded-2xl border border-outline-variant bg-white p-6"
-              >
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
-                      <span className="material-symbols-outlined text-[28px]">
-                        face
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-on-surface">
-                        {p.displayName}
-                      </h3>
-                      <p className="mt-1 text-sm text-on-surface-variant">
-                        Yaş grubu: {p.ageBand}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success">
-                    Aktif
-                  </span>
-                </div>
-
-                <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-surface-container-low px-4 py-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                      Oluşturma
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-on-surface">
-                      {new Date(p.createdAt).toLocaleDateString("tr-TR")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                      Dil
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-on-surface">
-                      {p.locale}
-                    </p>
-                  </div>
-                </div>
-
-                <a
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf]"
-                  href={`/app/profiles/${encodeURIComponent(p.id)}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    open_in_new
-                  </span>
-                  Profili Aç
-                </a>
-              </article>
-            ))}
-          </div>
-
-          <aside className="rounded-2xl border border-outline-variant bg-white p-6 xl:sticky xl:top-24 xl:h-fit">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-              Özet
-            </p>
-            <h2 className="mt-2 text-2xl font-bold text-on-surface">
-              {profiles.length} profil
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary-fixed text-primary">
+              <span className="material-symbols-outlined text-[30px]" aria-hidden="true">
+                person_add
+              </span>
+            </div>
+            <h2 className="mt-5 text-2xl font-extrabold text-on-surface">
+              Henüz bir çocuk profili yok
             </h2>
-            <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-              Bu alandan profilleri görüntüleyebilir ve yönetebilirsiniz.
+            <p className="mx-auto mt-3 max-w-[36rem] text-base leading-7 text-on-surface-variant">
+              İlk profil, çocuğun yaşına ve ileride kişiselleştirilecek ilgi alanlarına
+              göre kendi hikâye dünyasını kurabilmemiz için başlangıç noktasıdır.
             </p>
+            <Link className="storybook-button mt-6" href="/app/onboarding">
+              İlk profili oluştur
+            </Link>
+          </div>
+        ) : (
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">
+            <div
+              className="grid grid-cols-1 gap-5 md:grid-cols-2"
+              id="profile-container"
+            >
+              {profiles.map((profile, index) => (
+                <article
+                  key={profile.id}
+                  className="group overflow-hidden rounded-[1.8rem] border border-outline-variant/70 bg-white/85 shadow-sm transition-transform hover:-translate-y-1"
+                >
+                  <div
+                    className="relative min-h-[190px] overflow-hidden p-6"
+                    style={{
+                      background:
+                        index % 3 === 0
+                          ? "linear-gradient(145deg,#e4f3e8,#f8e7c8)"
+                          : index % 3 === 1
+                            ? "linear-gradient(145deg,#e9e0f8,#f4efd8)"
+                            : "linear-gradient(145deg,#dcecf7,#e9f1d8)",
+                    }}
+                  >
+                    <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/55" />
+                    <div className="absolute bottom-0 left-0 right-0 h-16 rounded-t-[50%] bg-white/25" />
+                    <div className="relative z-10 flex min-h-[142px] flex-col justify-between">
+                      <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
+                        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+                          face_6
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
+                          Yaş grubu {profile.ageBand}
+                        </p>
+                        <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
+                          {profile.displayName}
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="mt-6 space-y-3">
-              <div className="rounded-xl bg-surface-container-low px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                  <div className="p-5">
+                    <div className="grid grid-cols-2 gap-3 rounded-[1.2rem] bg-surface-container-low/75 p-4">
+                      <div>
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">
+                          Başlangıç
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-on-surface">
+                          {new Date(profile.createdAt).toLocaleDateString("tr-TR")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">
+                          Dil
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-on-surface">
+                          {profile.locale}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                      <Link
+                        className="storybook-button flex-1 justify-center"
+                        href={`/app/character-onboarding?childProfileId=${encodeURIComponent(profile.id)}`}
+                      >
+                        Hikâyeye hazırlan
+                      </Link>
+                      <Link
+                        className="storybook-button-secondary flex-1 justify-center"
+                        href={`/app/profiles/${encodeURIComponent(profile.id)}`}
+                      >
+                        Profili aç
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <aside className="rounded-[2rem] border border-outline-variant/70 bg-[#27352b] p-7 text-white shadow-sm xl:sticky xl:top-24 xl:h-fit">
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-white/60">
+                Aile özeti
+              </p>
+              <h2 className="mt-2 text-2xl font-extrabold">
+                {profiles.length} çocuk profili
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-white/75">
+                Her profil kendi karakterini, anılarını ve dünya sürekliliğini ayrı
+                tutacak şekilde ele alınır.
+              </p>
+              <div className="mt-6 rounded-[1.25rem] bg-white/10 p-4">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/55">
                   Son eklenen
                 </p>
-                <p className="mt-2 text-base font-semibold text-on-surface">
-                  {profiles[profiles.length - 1]?.displayName ?? "-"}
+                <p className="mt-2 text-lg font-bold">
+                  {profiles[profiles.length - 1]?.displayName ?? "—"}
                 </p>
               </div>
-              <div className="rounded-xl bg-surface-container-low px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Sonraki adım
-                </p>
-                <p className="mt-2 text-sm leading-6 text-on-surface">
-                  Profil detayına gitmek için bir profil kartında &quot;Profili
-                  Aç&quot;a tıklayın.
-                </p>
-              </div>
-            </div>
-          </aside>
-        </section>
-      )}
-    </main>
+              <Link
+                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-5 text-sm font-extrabold text-[#27352b]"
+                href="/app/onboarding"
+              >
+                Yeni profil ekle
+              </Link>
+            </aside>
+          </section>
+        )}
+      </div>
+    </section>
   );
 }
 
 function LoadingDisplay() {
   return (
-    <section className="mx-auto w-full max-w-[1180px] px-6 py-10">
-      <div className="rounded-2xl border border-outline-variant bg-white px-6 py-8 text-on-surface-variant">
-        Yükleniyor...
+    <section className="storybook-page min-h-full">
+      <div className="mx-auto w-full max-w-[1180px] px-5 py-10 md:px-6">
+        <div className="rounded-[2rem] border border-outline-variant/70 bg-white/80 px-7 py-10 text-on-surface-variant shadow-sm">
+          Çocukların dünyaları hazırlanıyor…
+        </div>
       </div>
     </section>
   );
@@ -219,9 +233,14 @@ function LoadingDisplay() {
 
 function ErrorDisplay({ message }: { message: string }) {
   return (
-    <section className="mx-auto w-full max-w-[1180px] px-6 py-10">
-      <div className="rounded-2xl border border-error-container bg-white px-6 py-8 text-error">
-        {message}
+    <section className="storybook-page min-h-full">
+      <div className="mx-auto w-full max-w-[1180px] px-5 py-10 md:px-6">
+        <div className="rounded-[2rem] border border-error-container bg-white/85 px-7 py-10 text-error shadow-sm">
+          <p>{message}</p>
+          <Link className="mt-5 inline-flex font-bold underline" href="/app/onboarding">
+            Kuruluma git
+          </Link>
+        </div>
       </div>
     </section>
   );
