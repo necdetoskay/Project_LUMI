@@ -47,11 +47,9 @@ export class OutboxJobRunner {
       summary.skipped += result.skipped;
     }
 
-    this.logger.info(
-      "worker.outbox.run",
-      "story outbox batch completed",
-      summary,
-    );
+    this.logger.info("worker.outbox.run", "story outbox batch completed", {
+      ...summary,
+    });
     return summary;
   }
 }
