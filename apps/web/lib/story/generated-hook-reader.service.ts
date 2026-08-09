@@ -75,12 +75,13 @@ export async function generateHookReaderTurn(
     householdId: input.householdId,
     childProfileId: session.childProfileId,
   });
-  const generation = await new StorySceneGenerationService().generateSceneFromHook({
-    hook,
-    settingsPort,
-    callOpenRouter,
-    childProfileId: session.childProfileId,
-  });
+  const generation =
+    await new StorySceneGenerationService().generateSceneFromHook({
+      hook,
+      settingsPort,
+      callOpenRouter,
+      childProfileId: session.childProfileId,
+    });
 
   const persisted = await persistGeneratedSceneAndAdvance({
     sessionId: input.sessionId,
