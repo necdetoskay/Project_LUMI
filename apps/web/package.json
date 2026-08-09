@@ -13,6 +13,7 @@
     "ultef:s37-hook-reader": "vitest run tests/ultef-s37-hook-reader-production.v3.integration.test.ts",
     "ultef:s38-template-versioning": "vitest run tests/ultef-s38-template-versioning.v3.integration.test.ts",
     "ultef:s40-public-auth": "playwright test tests/e2e/s40-public-auth.spec.ts",
+    "ultef:s41-parent-home": "vitest run tests/ultef-s41-parent-home-profile.contract.test.ts",
     "auth:migrate": "node scripts/auth-migrate.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
