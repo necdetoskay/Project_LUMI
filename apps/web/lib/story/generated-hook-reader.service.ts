@@ -13,6 +13,10 @@ import {
 } from "@lumi/story/application";
 import { ValidationError } from "@lumi/story/domain";
 import { NpcBeliefStoryContinuityContextAdapter } from "../story-continuity-context-runtime";
+import {
+  readUsedContinuityKeysFromSceneMetadata,
+  reinforceSceneMemoryUsage,
+} from "./canonical-memory-usage.service";
 import { WebStorySceneLlmSettingsAdapter } from "./story-scene-llm-settings.adapter";
 
 export interface GenerateHookReaderTurnInput {
@@ -57,6 +61,16 @@ export async function generateHookReaderTurn(
         idempotencyKey: `generated-hook-reader:${input.hookId}`,
       });
     }
+
+    await reinforceSceneMemoryUsage({
+      householdId: input.householdId,
+      worldId: hook.worldId,
+      childProfileId: session.childProfileId,
+      sceneId: existingScene.id,
+      usedContinuityKeys: readUsedContinuityKeysFromSceneMetadata(
+        existingScene.metadata,
+      ),
+    });
 
     await markStoryHookConsumed(scope);
     return {
@@ -108,6 +122,14 @@ export async function generateHookReaderTurn(
     modelId: generation.modelId,
     sourceHookId: hook.id,
     idempotencyKey: `generated-hook-reader:${hook.id}`,
+  });
+
+  await reinforceSceneMemoryUsage({
+    householdId: input.householdId,
+    worldId: hook.worldId,
+    childProfileId: session.childProfileId,
+    sceneId: persisted.generatedSceneId,
+    usedContinuityKeys: generation.scene.usedContinuityKeys ?? [],
   });
 
   await markStoryHookConsumed(scope);
