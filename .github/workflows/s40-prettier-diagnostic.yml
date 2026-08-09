@@ -1,0 +1,42 @@
+name: S40 Prettier Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  prettier-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format S40 files and print exact diff
+        shell: bash
+        run: |
+          pnpm exec prettier --write \
+            apps/web/app/forgot-password/page.tsx \
+            apps/web/app/login/page.tsx \
+            apps/web/app/page.tsx \
+            apps/web/app/register/page.tsx \
+            apps/web/app/storybook.css \
+            apps/web/components/layout/app-footer.tsx \
+            apps/web/tests/e2e/s40-public-auth.spec.ts
+          git diff -- \
+            apps/web/app/forgot-password/page.tsx \
+            apps/web/app/login/page.tsx \
+            apps/web/app/page.tsx \
+            apps/web/app/register/page.tsx \
+            apps/web/app/storybook.css \
+            apps/web/components/layout/app-footer.tsx \
+            apps/web/tests/e2e/s40-public-auth.spec.ts
