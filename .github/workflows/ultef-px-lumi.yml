@@ -36,7 +36,11 @@ jobs:
         if: always()
         shell: bash
         run: |
-          PX07_FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-07-WORLD-TIME-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ ! -d artifacts/ultef/runs ]; then
+            echo "PX-LUMI evidence directory was not produced."
+            exit 0
+          fi
+          PX07_FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-07-WORLD-TIME-001.md' -type f 2>/dev/null | sort | tail -n 1 || true)
           if [ -n "$PX07_FILE" ]; then
             echo "===== PX-LUMI-07 WORLD TIME PROGRESSION ====="
             cat "$PX07_FILE"
