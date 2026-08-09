@@ -74,9 +74,7 @@ export async function getCharacterContinuitySnapshot(
       affinity: row.affinity,
       familiarity: row.familiarity,
     }))
-    .sort((a, b) =>
-      a.targetCharacterId.localeCompare(b.targetCharacterId),
-    )
+    .sort((a, b) => a.targetCharacterId.localeCompare(b.targetCharacterId))
     .slice(0, MAX_RELATIONSHIPS);
 
   const inventory: CharacterContinuitySnapshot["inventory"] = [];
