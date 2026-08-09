@@ -1,7 +1,8 @@
 name: S46 Temporary Format Fix
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [s46/memory-to-story-production-wiring]
 
 permissions:
   contents: write
