@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type ArchetypeSuggestion = {
+type CharacterIdea = {
   id: string;
   canonicalType: string;
   title: string;
@@ -12,7 +13,7 @@ type ArchetypeSuggestion = {
   themeTags: string[];
 };
 
-type OriginPackage = {
+type BeginningOption = {
   id: string;
   broadKind: string;
   characterType: string;
@@ -30,37 +31,15 @@ type OriginPackage = {
   generationBatchId?: string;
   generationSource?: string;
   modelId?: string;
-  accepted?: boolean;
-  payload?: {
-    originConcept: string;
-    startingRegionArchetype: string;
-    startingLocation: string;
-    homeArchetype: string;
-    nearbyNpcSeed: string;
-    firstMysterySeed: string;
-    toneVector: string[];
-    noveltyMarkers: string[];
-  };
 };
 
 type Step = 1 | 2 | 3;
 
-type GenerationSourceInfo = {
-  generationSource: "llm" | "llm_config_error" | "llm_error";
-  modelId: string | null;
-  fallbackReason: string | null;
-};
-
 type BootstrapStatusResponse = {
   status?: {
-    latestHandoff: {
-      id: string;
-    } | null;
+    latestHandoff: { id: string } | null;
     handoffConsumed: boolean;
-    character: {
-      id: string;
-      name: string;
-    } | null;
+    character: { id: string; name: string } | null;
     originPackageCount: number;
   };
   message?: string;
@@ -72,60 +51,42 @@ export default function CharacterOnboardingClientPage() {
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [handoffId, setHandoffId] = useState<string | null>(null);
   const [originMode, setOriginMode] = useState<"auto" | "manual">("auto");
-
-  const [archetypes, setArchetypes] = useState<ArchetypeSuggestion[]>([]);
-  const [archetypeModelId, setArchetypeModelId] = useState<string | null>(null);
-  const [archetypeBatchId, setArchetypeBatchId] = useState<string | null>(null);
-  const [selectedArchetype, setSelectedArchetype] =
-    useState<ArchetypeSuggestion | null>(null);
-  const [archetypesLoading, setArchetypesLoading] = useState<boolean>(false);
-  const [archetypesError, setArchetypesError] = useState<string | null>(null);
-
-  const [packages, setPackages] = useState<OriginPackage[]>([]);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+  const [ideas, setIdeas] = useState<CharacterIdea[]>([]);
+  const [selectedIdea, setSelectedIdea] = useState<CharacterIdea | null>(null);
+  const [ideaBatchId, setIdeaBatchId] = useState<string | null>(null);
+  const [ideasLoading, setIdeasLoading] = useState(false);
+  const [ideasError, setIdeasError] = useState<string | null>(null);
+  const [beginnings, setBeginnings] = useState<BeginningOption[]>([]);
+  const [selectedBeginningId, setSelectedBeginningId] = useState<string | null>(
     null,
   );
-  const [nameOverride, setNameOverride] = useState<string>("");
-  const [subtypeOverride, setSubtypeOverride] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [nameOverride, setNameOverride] = useState("");
+  const [subtypeOverride, setSubtypeOverride] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bootstrapDone, setBootstrapDone] = useState<boolean>(false);
-  const [createdCharacter, setCreatedCharacter] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
   const [existingCharacter, setExistingCharacter] = useState<{
     id: string;
     name: string;
   } | null>(null);
-  const [genSource, setGenSource] = useState<GenerationSourceInfo | null>(null);
+
+  const selectedBeginning = useMemo(
+    () => beginnings.find((item) => item.id === selectedBeginningId) ?? null,
+    [beginnings, selectedBeginningId],
+  );
 
   const loadBootstrapStatus = useCallback(
     async (nextHouseholdId: string, nextChildProfileId: string) => {
       try {
-        const res = await fetch(
+        const response = await fetch(
           `/api/character-bootstrap/status?householdId=${encodeURIComponent(nextHouseholdId)}&childProfileId=${encodeURIComponent(nextChildProfileId)}`,
         );
-        const data = (await res.json()) as BootstrapStatusResponse;
-        if (!res.ok) {
-          return null;
-        }
-
-        const status = data.status ?? null;
-        if (status?.latestHandoff?.id) {
-          setHandoffId(status.latestHandoff.id);
-        }
-        if (status?.character) {
-          setExistingCharacter({
-            id: status.character.id,
-            name: status.character.name,
-          });
-        } else {
-          setExistingCharacter(null);
-        }
-
-        return status;
+        const data = (await response.json()) as BootstrapStatusResponse;
+        if (!response.ok) return null;
+        if (data.status?.latestHandoff?.id)
+          setHandoffId(data.status.latestHandoff.id);
+        setExistingCharacter(data.status?.character ?? null);
+        return data.status ?? null;
       } catch {
         return null;
       }
@@ -135,286 +96,207 @@ export default function CharacterOnboardingClientPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const profile = params.get("childProfileId");
-    if (profile) {
-      setChildProfileId(profile);
-    } else {
-      setError("Onboarding baslatmak icin bir cocuk profili secin.");
-    }
+    const profileId = params.get("childProfileId");
+    if (!profileId)
+      setError("Karakter oluşturmak için önce bir çocuk profili seçin.");
+    else setChildProfileId(profileId);
 
     fetch("/api/onboarding")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then(async (data) => {
-        const s = data.onboarding as {
+        const onboarding = data.onboarding as {
           hasHousehold: boolean;
           householdId: string | null;
         };
-        if (!s.hasHousehold || !s.householdId) {
-          setError("Oncesinde kurulum akisina geri donun.");
+        if (!onboarding.hasHousehold || !onboarding.householdId) {
+          setError("Önce aile alanınızı ve çocuk profilini hazırlayın.");
           setLoading(false);
           return;
         }
-        setHouseholdId(s.householdId);
-        if (profile) {
-          await loadBootstrapStatus(s.householdId, profile);
-        }
+        setHouseholdId(onboarding.householdId);
+        if (profileId)
+          await loadBootstrapStatus(onboarding.householdId, profileId);
         setLoading(false);
       })
       .catch(() => {
-        setError("Hane bilgisi yuklenemedi");
+        setError("Aile bilgileri şu anda yüklenemedi.");
         setLoading(false);
       });
   }, [loadBootstrapStatus]);
 
-  const loadArchetypes = useCallback(async () => {
-    if (!householdId || !childProfileId || existingCharacter) return;
-    setArchetypesLoading(true);
-    setArchetypesError(null);
-    setSelectedArchetype(null);
-    try {
-      const res = await fetch("/api/character-bootstrap/generate-archetypes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          householdId,
-          childProfileId,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const msg =
-          data.fallbackReason ?? data.message ?? "Arketipler üretilemedi";
-        setArchetypesError(msg);
-        return;
+  const loadIdeas = useCallback(
+    async (excludeCurrent = false) => {
+      if (!householdId || !childProfileId || existingCharacter) return;
+      setIdeasLoading(true);
+      setIdeasError(null);
+      setSelectedIdea(null);
+      try {
+        const response = await fetch(
+          "/api/character-bootstrap/generate-archetypes",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              householdId,
+              childProfileId,
+              ...(excludeCurrent
+                ? {
+                    excludedConcepts: ideas.map((idea) => ({
+                      title: idea.title,
+                      description: idea.description,
+                      personalityHook: idea.personalityHook,
+                      storyPromise: idea.storyPromise,
+                    })),
+                  }
+                : {}),
+            }),
+          },
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          setIdeasError(
+            "Yeni karakter fikirleri hazırlanamadı. Biraz sonra tekrar deneyin.",
+          );
+          return;
+        }
+        setIdeas(data.archetypes as CharacterIdea[]);
+        setIdeaBatchId(data.batchId as string);
+      } catch {
+        setIdeasError("Yeni karakter fikirleri şu anda yüklenemedi.");
+      } finally {
+        setIdeasLoading(false);
       }
-      setArchetypes(data.archetypes as ArchetypeSuggestion[]);
-      setArchetypeModelId(data.modelId as string);
-      setArchetypeBatchId(data.batchId as string);
-    } catch {
-      setArchetypesError("Arketipler yüklenemedi");
-    } finally {
-      setArchetypesLoading(false);
-    }
-  }, [householdId, childProfileId, existingCharacter]);
-
-  const regenerateArchetypes = useCallback(async () => {
-    if (!householdId || !childProfileId || existingCharacter) return;
-    setArchetypesLoading(true);
-    setArchetypesError(null);
-    setSelectedArchetype(null);
-    try {
-      const excludedConcepts = archetypes.map((a) => ({
-        title: a.title,
-        description: a.description,
-        personalityHook: a.personalityHook,
-        storyPromise: a.storyPromise,
-      }));
-      const res = await fetch("/api/character-bootstrap/generate-archetypes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          householdId,
-          childProfileId,
-          excludedConcepts,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const msg =
-          data.fallbackReason ??
-          data.message ??
-          "Arketipler yeniden üretilemedi";
-        setArchetypesError(msg);
-        return;
-      }
-      setArchetypes(data.archetypes as ArchetypeSuggestion[]);
-      setArchetypeModelId(data.modelId as string);
-      setArchetypeBatchId(data.batchId as string);
-    } catch {
-      setArchetypesError("Arketipler yüklenemedi");
-    } finally {
-      setArchetypesLoading(false);
-    }
-  }, [householdId, childProfileId, archetypes, existingCharacter]);
+    },
+    [householdId, childProfileId, existingCharacter, ideas],
+  );
 
   useEffect(() => {
     if (
       step === 1 &&
       householdId &&
       childProfileId &&
-      archetypes.length === 0 &&
-      !archetypesLoading &&
-      !archetypesError
+      ideas.length === 0 &&
+      !ideasLoading &&
+      !ideasError
     ) {
-      loadArchetypes();
+      void loadIdeas(false);
     }
   }, [
     step,
     householdId,
     childProfileId,
-    archetypes.length,
-    archetypesLoading,
-    archetypesError,
-    loadArchetypes,
+    ideas.length,
+    ideasLoading,
+    ideasError,
+    loadIdeas,
   ]);
 
-  const createHandoff = useCallback(async () => {
-    if (
-      !householdId ||
-      !childProfileId ||
-      !selectedArchetype ||
-      !archetypeBatchId
-    )
+  const continueWithIdea = useCallback(async () => {
+    if (!householdId || !childProfileId || !selectedIdea || !ideaBatchId)
       return;
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/character-bootstrap/handoff", {
+      const response = await fetch("/api/character-bootstrap/handoff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           householdId,
           childProfileId,
-          characterType: selectedArchetype.canonicalType,
+          characterType: selectedIdea.canonicalType,
           originMode,
-          archetypeBatchId,
-          archetypeId: selectedArchetype.id,
+          archetypeBatchId: ideaBatchId,
+          archetypeId: selectedIdea.id,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (
-          res.status === 409 &&
-          (data.error === "HANDOFF_ALREADY_CONSUMED" ||
-            data.error === "CHARACTER_ALREADY_EXISTS")
-        ) {
+      const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 409)
           await loadBootstrapStatus(householdId, childProfileId);
-        }
         setError(
-          data.message ??
-            "Bu profil icin karakter akisi zaten tamamlanmis gorunuyor.",
+          "Bu profil için karakter yolculuğu daha önce başlamış olabilir.",
         );
         return;
       }
       setHandoffId(data.handoff.id);
       setStep(2);
     } catch {
-      setError("Handoff isteği başarısız oldu");
+      setError("Karakter fikrine devam edilemedi.");
     } finally {
       setSubmitting(false);
     }
   }, [
     householdId,
     childProfileId,
-    selectedArchetype,
-    archetypeBatchId,
+    selectedIdea,
+    ideaBatchId,
     originMode,
     loadBootstrapStatus,
   ]);
 
-  const selectedPkg = useMemo(
-    () => packages.find((p) => p.id === selectedPackageId) ?? null,
-    [packages, selectedPackageId],
-  );
-
-  const generatePackages = useCallback(async () => {
+  const generateBeginnings = useCallback(async () => {
     if (!householdId || !childProfileId || existingCharacter) return;
     setSubmitting(true);
     setError(null);
-    setGenSource(null);
-    setPackages([]);
+    setBeginnings([]);
     try {
-      const res = await fetch("/api/character-bootstrap/generate-packages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          householdId,
-          childProfileId,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (
-          data.generationSource === "llm_config_error" ||
-          data.generationSource === "llm_error"
-        ) {
-          setGenSource({
-            generationSource: data.generationSource as
-              | "llm_config_error"
-              | "llm_error",
-            modelId: null,
-            fallbackReason: data.fallbackReason ?? "Bilinmeyen hata",
-          });
-          return;
-        }
-        setError(data.message ?? "Öneriler üretilmedi");
+      const response = await fetch(
+        "/api/character-bootstrap/generate-packages",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ householdId, childProfileId }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setError(
+          "Başlangıç hikâyeleri hazırlanamadı. Biraz sonra tekrar deneyin.",
+        );
         return;
       }
-      setGenSource({
-        generationSource: data.generationSource as "llm",
-        modelId: data.modelId ?? null,
-        fallbackReason: null,
-      });
-      setPackages(data.packages as OriginPackage[]);
-      const pkgList = data.packages as OriginPackage[];
-      if (pkgList.length > 0) {
-        const first = pkgList[0];
-        if (first) setSelectedPackageId(first.id);
-      }
+      const options = data.packages as BeginningOption[];
+      setBeginnings(options);
+      setSelectedBeginningId(options[0]?.id ?? null);
     } catch {
-      setError("Öneriler oluşturulamadı");
+      setError("Başlangıç hikâyeleri şu anda oluşturulamadı.");
     } finally {
       setSubmitting(false);
     }
   }, [householdId, childProfileId, existingCharacter]);
 
-  const confirmSelection = useCallback(() => {
-    if (!selectedPkg) {
-      setError("Önce bir öneri seçin");
-      return;
-    }
-    setStep(3);
-  }, [selectedPkg]);
-
   const createCharacter = useCallback(async () => {
-    if (!householdId || !childProfileId || !handoffId || !selectedPackageId)
+    if (!householdId || !childProfileId || !handoffId || !selectedBeginningId)
       return;
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/character-bootstrap/consume", {
+      const response = await fetch("/api/character-bootstrap/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           householdId,
           childProfileId,
           handoffId,
-          originPackageId: selectedPackageId,
+          originPackageId: selectedBeginningId,
           manualOverrides: {
             name: nameOverride.trim() || undefined,
             subtype: subtypeOverride.trim() || undefined,
           },
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 409) {
+      const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 409)
           await loadBootstrapStatus(householdId, childProfileId);
-        }
         setError(
-          data.message ??
-            "Karakter olusturulamadi. Mevcut karakter acilabilir.",
+          "Karakter tamamlanamadı. Mevcut karakter varsa ona devam edebilirsiniz.",
         );
         return;
       }
-      setBootstrapDone(true);
-      setCreatedCharacter({
-        id: data.character.id,
-        name: data.character.name,
-      });
       window.location.href = `/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(data.character.id)}`;
     } catch {
-      setError("Karakter oluşturma başarısız oldu");
+      setError("Karakter şu anda tamamlanamadı.");
     } finally {
       setSubmitting(false);
     }
@@ -422,532 +304,461 @@ export default function CharacterOnboardingClientPage() {
     householdId,
     childProfileId,
     handoffId,
-    selectedPackageId,
+    selectedBeginningId,
     nameOverride,
     subtypeOverride,
     loadBootstrapStatus,
   ]);
 
-  if (loading) return <Shell>Yukleniyor...</Shell>;
+  if (loading)
+    return (
+      <StoryShell>
+        <p>Karakter fikirleri hazırlanıyor…</p>
+      </StoryShell>
+    );
+
   if (existingCharacter && childProfileId) {
     return (
-      <Shell>
-        <div className="rounded-2xl border border-outline-variant bg-white p-8">
-          <h1 className="text-2xl font-bold text-on-surface">
-            Bu profil icin karakter zaten olusturulmus
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-            Yeni karakter baslatmak yerine mevcut karaktere donuyoruz. Sorun
-            dunya tarafindaysa onu mevcut karakter uzerinden onaracagiz.
+      <StoryShell>
+        <section className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-7 shadow-sm md:p-10">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+            Kaldığınız yer
           </p>
-          {error ? (
-            <div className="mt-4 rounded-xl border border-error-container bg-white px-4 py-3 text-sm text-error">
-              {error}
-            </div>
-          ) : null}
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary hover:bg-[#4c29cf]"
+          <h1 className="mt-2 text-3xl font-extrabold text-on-surface">
+            {existingCharacter.name} sizi bekliyor
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-on-surface-variant">
+            Bu çocuk profili için bir karakter zaten var. Yeni bir karakter
+            oluşturmak yerine onun dünyasına ve hikâyelerine devam
+            edebilirsiniz.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              className="storybook-button"
               href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(existingCharacter.id)}`}
             >
-              Karakter detayini ac
-            </a>
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface hover:bg-surface-container-low"
+              Karakteri aç
+            </Link>
+            <Link
+              className="storybook-button-secondary"
               href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(existingCharacter.id)}`}
             >
-              Dunyayi kontrol et
-            </a>
+              Dünyasına git
+            </Link>
           </div>
-        </div>
-      </Shell>
-    );
-  }
-  if (!childProfileId || !householdId || error) {
-    return (
-      <Shell>
-        <div className="rounded-2xl border border-error-container bg-white px-6 py-8 text-error">
-          {error ?? "Eksik parametre"}
-          <div className="mt-4">
-            <a
-              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary hover:bg-[#4c29cf]"
-              href="/app/profiles"
-            >
-              Profillere don
-            </a>
-          </div>
-        </div>
-      </Shell>
+        </section>
+      </StoryShell>
     );
   }
 
-  if (bootstrapDone && createdCharacter) {
+  if (!childProfileId || !householdId || error) {
     return (
-      <Shell>
-        <header className="mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
-            Karakterin hazır!
-          </h1>
-          <p className="mt-3 text-on-surface-variant">
-            {createdCharacter.name} adlı karakteriniz için ilk maceralara
-            hazırsınız.
-          </p>
-        </header>
-        <div className="rounded-2xl border border-outline-variant bg-white p-8">
-          <p className="text-base text-on-surface">
-            Karakter başlangıcı başarıyla tamamlandı.
-          </p>
-          <div className="mt-6 flex gap-3">
-            <a
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm hover:bg-[#4c29cf]"
-              href="/app/profiles"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                arrow_back
-              </span>
-              Profillere don
-            </a>
-            <a
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-white px-5 text-sm font-semibold text-on-surface hover:bg-surface-container"
-              href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
-            >
-              Profile git
-            </a>
-          </div>
-        </div>
-      </Shell>
+      <StoryShell>
+        <section className="rounded-[2rem] border border-error-container bg-white/85 p-7 text-error shadow-sm">
+          <p>{error ?? "Eksik profil bilgisi."}</p>
+          <Link
+            className="mt-5 inline-flex font-bold underline"
+            href="/app/profiles"
+          >
+            Çocuk profillerine dön
+          </Link>
+        </section>
+      </StoryShell>
     );
   }
 
   return (
-    <Shell>
-      <header className="mb-8 flex flex-col gap-2">
-        <nav className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-          <a className="transition-colors hover:text-primary" href="/app">
-            Dashboard
-          </a>
-          <span className="material-symbols-outlined text-sm">
-            chevron_right
-          </span>
-          <a
-            className="transition-colors hover:text-primary"
-            href="/app/profiles"
-          >
-            Profiller
-          </a>
-          <span className="material-symbols-outlined text-sm">
-            chevron_right
-          </span>
-          <span className="text-primary">Karakter Başlangıcı</span>
-        </nav>
-        <h1 className="text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
-          Karakter Başlangıç Akışı
-        </h1>
-        <p className="mt-1 text-on-surface-variant">
-          Adım 1: arketip seç &mdash; Adım 2: önerileri incele &mdash; Adım 3:
-          onayla
+    <StoryShell>
+      <header className="mb-8 rounded-[2rem] border border-outline-variant/70 bg-white/80 p-7 shadow-sm md:p-9">
+        <Link
+          className="text-sm font-bold text-on-surface-variant hover:text-primary"
+          href="/app/profiles"
+        >
+          ← Çocuk profillerine dön
+        </Link>
+        <p className="mt-6 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+          Karakterinle tanış
         </p>
-        <div className="mt-4 flex items-center gap-2">
-          {([1, 2, 3] as const).map((n) => (
-            <div
-              key={n}
-              className={`h-2 flex-1 rounded-full ${
-                step >= n ? "bg-primary" : "bg-outline-variant"
-              }`}
-            />
-          ))}
-        </div>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+          Bir kahraman seçmiyoruz; birlikte yaşayacağınız bir karakter
+          keşfediyoruz.
+        </h1>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-on-surface-variant md:text-lg">
+          Birkaç anlamlı seçim yeterli. Karakterin kişiliği, nereden geldiği ve
+          ilk merakı zamanla hikâyelerinizin doğal bir parçasına dönüşecek.
+        </p>
+        <ol
+          className="mt-7 grid gap-3 sm:grid-cols-3"
+          aria-label="Karakter oluşturma adımları"
+        >
+          {["Karakter fikri", "İlk geçmişi", "Son dokunuşlar"].map(
+            (label, index) => {
+              const number = index + 1;
+              return (
+                <li
+                  key={label}
+                  className={`rounded-2xl border px-4 py-3 text-sm font-bold ${step >= number ? "border-primary/40 bg-primary-fixed/35 text-primary" : "border-outline-variant bg-white/60 text-on-surface-variant"}`}
+                >
+                  {number}. {label}
+                </li>
+              );
+            },
+          )}
+        </ol>
       </header>
 
-      {step === 1 && (
-        <section className="space-y-6">
-          <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant bg-white p-6 lg:flex-row lg:items-end lg:justify-between">
+      {step === 1 ? (
+        <section aria-labelledby="idea-heading">
+          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-on-surface">
-                Karakter arketipi seç
-              </h2>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Yapay zeka ile size özel 5 farklı karakter arketipi oluşturuldu.
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+                İlk kıvılcım
               </p>
-              {archetypeModelId && (
-                <p className="mt-1 text-xs font-semibold text-primary">
-                  AI önerileri: {archetypeModelId}
-                </p>
-              )}
+              <h2
+                id="idea-heading"
+                className="mt-2 text-3xl font-extrabold text-on-surface"
+              >
+                Hangisi size daha yakın geliyor?
+              </h2>
+              <p className="mt-2 max-w-2xl text-on-surface-variant">
+                Hepsini incelemek zorunda değilsiniz. Bir tanesi merak
+                uyandırdıysa onunla başlayın.
+              </p>
             </div>
             <button
               type="button"
-              onClick={regenerateArchetypes}
-              data-testid="regenerate-archetypes"
-              disabled={archetypesLoading}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
+              className="storybook-button-secondary"
+              disabled={ideasLoading}
+              onClick={() => void loadIdeas(true)}
             >
-              <span className="material-symbols-outlined text-[18px]">
-                refresh
-              </span>
-              {archetypesLoading ? "Oluşturuluyor" : "Yeniden üret"}
+              Başka fikirler göster
             </button>
           </div>
 
-          {archetypesLoading && (
-            <div className="rounded-2xl border border-dashed border-outline-variant bg-white px-8 py-16 text-center text-on-surface-variant">
-              AI arketipler oluşturuluyor...
-            </div>
-          )}
+          {ideasLoading ? (
+            <InfoCard>Yeni karakter fikirleri hazırlanıyor…</InfoCard>
+          ) : null}
+          {ideasError ? <InfoCard>{ideasError}</InfoCard> : null}
 
-          {archetypesError && (
-            <div className="rounded-2xl border border-error-container bg-error-fixed/10 px-5 py-4 text-sm text-error">
-              <span className="font-semibold">
-                AI arketip oluşturma başarısız oldu:
-              </span>{" "}
-              {archetypesError}
-              <div className="mt-2">
-                <button
-                  type="button"
-                  onClick={loadArchetypes}
-                  className="underline hover:no-underline"
-                >
-                  Tekrar dene
-                </button>
-                <span className="mx-2">veya</span>
-                <a
-                  href="/app/settings"
-                  className="underline hover:no-underline"
-                >
-                  Ayarlar üzerinden OpenRouter AI bağlantısını yapılandırın.
-                </a>
-              </div>
-            </div>
-          )}
-
-          {!archetypesLoading && !archetypesError && archetypes.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {archetypes.map((a) => (
+          {!ideasLoading && ideas.length > 0 ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {ideas.map((idea) => {
+                const selected = selectedIdea?.id === idea.id;
+                return (
                   <button
-                    key={a.canonicalType}
-                    data-testid="archetype-card"
+                    key={idea.id}
                     type="button"
-                    onClick={() => setSelectedArchetype(a)}
-                    className={`text-left rounded-2xl border p-5 transition-colors ${
-                      selectedArchetype?.canonicalType === a.canonicalType
-                        ? "border-primary bg-primary-fixed/40 ring-2 ring-primary/40"
-                        : "border-outline-variant bg-white hover:bg-surface-container-low"
-                    }`}
+                    data-testid="character-idea-card"
+                    aria-pressed={selected}
+                    onClick={() => setSelectedIdea(idea)}
+                    className={`group min-h-[250px] rounded-[1.8rem] border p-6 text-left shadow-sm transition ${selected ? "border-primary bg-primary-fixed/30 ring-2 ring-primary/30" : "border-outline-variant/70 bg-white/85 hover:-translate-y-1"}`}
                   >
-                    <span className="inline-flex items-center rounded-full bg-primary-fixed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                      {a.canonicalType}
-                    </span>
-                    <p className="mt-3 text-lg font-bold text-on-surface">
-                      {a.title}
+                    <div className="grid h-14 w-14 place-items-center rounded-full bg-[linear-gradient(145deg,#e4f3e8,#f8e7c8)] text-primary">
+                      <span
+                        className="material-symbols-outlined text-[28px]"
+                        aria-hidden="true"
+                      >
+                        face_6
+                      </span>
+                    </div>
+                    <h3 className="mt-5 text-2xl font-extrabold text-on-surface">
+                      {idea.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                      {idea.description}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                      {a.description}
+                    <p className="mt-4 text-sm font-semibold leading-6 text-primary">
+                      {idea.storyPromise}
                     </p>
-                    <p className="mt-2 text-xs italic text-on-surface-variant">
-                      {a.storyPromise}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {a.themeTags.map((tag) => (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {idea.themeTags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center rounded-full bg-surface-container-low px-2 py-0.5 text-xs text-on-surface-variant"
+                          className="rounded-full bg-surface-container-low px-3 py-1 text-xs font-bold text-on-surface-variant"
                         >
                           {tag}
                         </span>
                       ))}
                     </div>
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+          ) : null}
 
-              <div className="flex items-center gap-4 rounded-2xl border border-outline-variant bg-white p-6">
-                <div className="flex-1">
-                  <label className="text-sm font-semibold text-on-surface-variant">
-                    Oluşturma modu
-                  </label>
-                  <div className="mt-2 flex gap-3">
-                    {(["auto", "manual"] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setOriginMode(m)}
-                        className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                          originMode === m
-                            ? "border-primary bg-primary-fixed/50 text-primary"
-                            : "border-outline-variant text-on-surface hover:bg-surface-container-low"
-                        }`}
-                      >
-                        {m === "auto" ? "Otomatik (4 öneri)" : "Elle (1 öneri)"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={createHandoff}
-                  data-testid="use-archetype"
-                  disabled={!selectedArchetype || submitting}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    arrow_forward
-                  </span>
-                  {submitting ? "Devam ediliyor" : "Bu arketipi kullan"}
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-      )}
-
-      {step === 2 && (
-        <section className="space-y-6">
-          <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant bg-white p-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-on-surface">
-                Origin önerileri
-              </h2>
-              <p className="mt-1 text-sm text-on-surface-variant">
-                Seçilen arketip:{" "}
-                {selectedArchetype?.title ??
-                  selectedArchetype?.canonicalType ??
-                  "-"}
-                &mdash; Mod: {originMode}
-              </p>
-              {genSource?.generationSource === "llm" && genSource.modelId && (
-                <p className="mt-1 text-xs font-semibold text-primary">
-                  AI önerileri: {genSource.modelId}
-                </p>
-              )}
+          <div className="mt-6 rounded-[1.6rem] border border-outline-variant/70 bg-white/80 p-6">
+            <p className="text-sm font-bold text-on-surface">
+              Başlangıç çeşitliliği
+            </p>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+              İsterseniz bir sonraki adımda birkaç farklı geçmiş önerisi
+              görebilir ya da daha sade, tek bir başlangıç üzerinden
+              ilerleyebilirsiniz.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setOriginMode("auto")}
+                aria-pressed={originMode === "auto"}
+                className={`rounded-full border px-4 py-2 text-sm font-bold ${originMode === "auto" ? "border-primary bg-primary-fixed/40 text-primary" : "border-outline-variant bg-white"}`}
+              >
+                Birkaç başlangıç öner
+              </button>
+              <button
+                type="button"
+                onClick={() => setOriginMode("manual")}
+                aria-pressed={originMode === "manual"}
+                className={`rounded-full border px-4 py-2 text-sm font-bold ${originMode === "manual" ? "border-primary bg-primary-fixed/40 text-primary" : "border-outline-variant bg-white"}`}
+              >
+                Tek ve sade ilerle
+              </button>
             </div>
             <button
               type="button"
-              onClick={generatePackages}
-              data-testid="generate-origin-packages"
-              disabled={submitting}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
+              data-testid="continue-character-idea"
+              disabled={!selectedIdea || submitting}
+              onClick={() => void continueWithIdea()}
+              className="storybook-button mt-6 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                auto_awesome
-              </span>
-              {submitting
-                ? "Üretiliyor"
-                : packages.length > 0
-                  ? "Yeniden üret"
-                  : "Önerileri üret"}
+              Bu karakteri tanımaya devam et
             </button>
           </div>
+        </section>
+      ) : null}
 
-          {genSource?.generationSource === "llm_config_error" && (
-            <div className="rounded-2xl border border-outline-variant bg-surface-container-low px-5 py-4 text-sm text-on-surface-variant">
-              <span className="font-semibold">AI yapılandırma hatası:</span>{" "}
-              {genSource.fallbackReason ?? "Bilinmeyen neden"}
-              <div className="mt-1">
-                <a
-                  href="/app/settings"
-                  className="underline hover:no-underline"
+      {step === 2 ? (
+        <section aria-labelledby="origin-heading">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+            Geçmişinden bir sayfa
+          </p>
+          <h2
+            id="origin-heading"
+            className="mt-2 text-3xl font-extrabold text-on-surface"
+          >
+            Bugüne gelmeden önce neler yaşamış olabilir?
+          </h2>
+          <p className="mt-3 max-w-3xl text-on-surface-variant">
+            Bu seçim karakterin doğduğu yer, evi, ilk tanışacağı kişiler ve
+            gelecekte büyüyebilecek ilk gizemi için başlangıç canon’unu
+            oluşturur.
+          </p>
+
+          {beginnings.length === 0 ? (
+            <div className="mt-6 rounded-[2rem] border border-outline-variant/70 bg-white/85 p-7 text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary-fixed text-primary">
+                <span
+                  className="material-symbols-outlined text-[30px]"
+                  aria-hidden="true"
                 >
-                  Ayarlar üzerinden OpenRouter AI bağlantısını yapılandırın.
-                </a>
+                  menu_book
+                </span>
               </div>
+              <h3 className="mt-5 text-2xl font-extrabold text-on-surface">
+                Başlangıç sayfalarını hazırlayalım
+              </h3>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant">
+                Seçtiğiniz karakter fikrine uygun birkaç farklı geçmiş
+                oluşturulur. Bunlar karakter tamamlanana kadar yalnızca adaydır.
+              </p>
+              <button
+                type="button"
+                className="storybook-button mt-6"
+                disabled={submitting}
+                onClick={() => void generateBeginnings()}
+              >
+                {submitting ? "Hazırlanıyor…" : "Başlangıçları göster"}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              {beginnings.map((item) => {
+                const selected = item.id === selectedBeginningId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    data-testid="beginning-card"
+                    aria-pressed={selected}
+                    onClick={() => setSelectedBeginningId(item.id)}
+                    className={`rounded-[1.8rem] border p-6 text-left shadow-sm ${selected ? "border-primary bg-primary-fixed/25 ring-2 ring-primary/30" : "border-outline-variant/70 bg-white/85"}`}
+                  >
+                    <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">
+                      Bir başlangıç ihtimali
+                    </p>
+                    <h3 className="mt-3 text-xl font-extrabold text-on-surface">
+                      {item.originConcept}
+                    </h3>
+                    <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+                      <Detail label="İlk yer" value={item.startingLocation} />
+                      <Detail label="Evi" value={item.homeArchetype} />
+                      {item.nearbyNpcSeed ? (
+                        <Detail
+                          label="Yakınındaki biri"
+                          value={item.nearbyNpcSeed}
+                        />
+                      ) : null}
+                      {item.firstMysterySeed ? (
+                        <Detail
+                          label="İlk merakı"
+                          value={item.firstMysterySeed}
+                        />
+                      ) : null}
+                    </dl>
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {genSource?.generationSource === "llm_error" && (
-            <div
-              data-testid="origin-generation-error"
-              className="rounded-2xl border border-error-container bg-error-fixed/10 px-5 py-4 text-sm text-error"
-            >
-              <span className="font-semibold">AI önerisi başarısız oldu:</span>{" "}
-              {genSource.fallbackReason ?? "Bilinmeyen hata"}
+          {beginnings.length > 0 ? (
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="storybook-button-secondary"
+                onClick={() => setStep(1)}
+              >
+                Geri dön
+              </button>
+              <button
+                type="button"
+                className="storybook-button"
+                disabled={!selectedBeginning}
+                onClick={() => setStep(3)}
+              >
+                Bu geçmişle devam et
+              </button>
             </div>
-          )}
-
-          {packages.length === 0 &&
-          genSource?.generationSource !== "llm_config_error" &&
-          genSource?.generationSource !== "llm_error" ? (
-            <div className="rounded-2xl border border-dashed border-outline-variant bg-white px-8 py-16 text-center text-on-surface-variant">
-              Henüz öneri üretilmedi. Yukarıdaki butonu kullanarak ilk adımı
-              başlatın.
-            </div>
-          ) : packages.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                {packages.map((p) => {
-                  const concept =
-                    p.originConcept ?? p.payload?.originConcept ?? "";
-                  const home =
-                    p.homeArchetype ?? p.payload?.homeArchetype ?? "";
-                  const location =
-                    p.startingLocation ?? p.payload?.startingLocation ?? "";
-                  return (
-                    <button
-                      key={p.id}
-                      data-testid="origin-package-card"
-                      type="button"
-                      onClick={() => setSelectedPackageId(p.id)}
-                      className={`text-left rounded-2xl border p-5 transition-colors ${
-                        selectedPackageId === p.id
-                          ? "border-primary bg-primary-fixed/40 ring-2 ring-primary/40"
-                          : "border-outline-variant bg-white hover:bg-surface-container-low"
-                      }`}
-                    >
-                      <div className="mb-3 flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-primary-fixed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                          {p.broadKind}
-                        </span>
-                        <span className="text-xs font-semibold text-on-surface-variant">
-                          {p.originMode}
-                        </span>
-                      </div>
-                      <p className="text-lg font-bold text-on-surface">
-                        {p.subtype}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-on-surface-variant line-clamp-4">
-                        {concept}
-                      </p>
-                      <div className="mt-4 space-y-1 text-xs text-on-surface-variant">
-                        <p>
-                          Bolge: {p.payload?.startingRegionArchetype ?? "-"}
-                        </p>
-                        <p>Yer: {location}</p>
-                        <p>Ev: {home}</p>
-                      </div>
-                      {p.generationSource === "llm" && (
-                        <p className="mt-2 text-xs text-primary">
-                          AI üretimi{p.modelId ? ` (${p.modelId})` : ""}
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-white px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
-                >
-                  Geri
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmSelection}
-                  disabled={!selectedPackageId}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
-                >
-                  Seçimi onayla ve özelleştir
-                  <span className="material-symbols-outlined text-[18px]">
-                    arrow_forward
-                  </span>
-                </button>
-              </div>
-            </>
           ) : null}
         </section>
-      )}
+      ) : null}
 
-      {step === 3 && selectedPkg && (
-        <section className="space-y-6">
-          <div className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-xl font-bold text-on-surface">
-              Seçilen öneri: {selectedPkg.subtype}
-            </h2>
-            <p className="mt-1 text-sm text-on-surface-variant">
-              İsterseniz ad ve alt türü özelleştirebilir, geri kalan alanları
-              önerideki gibi bırakabilirsiniz.
+      {step === 3 && selectedBeginning ? (
+        <section
+          aria-labelledby="finish-heading"
+          className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+        >
+          <div className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-7 shadow-sm md:p-9">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+              Son dokunuşlar
             </p>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-semibold text-on-surface-variant">
-                  Karakter adı
-                </span>
+            <h2
+              id="finish-heading"
+              className="mt-2 text-3xl font-extrabold text-on-surface"
+            >
+              Karakter artık neredeyse hazır
+            </h2>
+            <p className="mt-3 text-on-surface-variant">
+              İsterseniz adını ve kısa tür tanımını kişiselleştirin. Boş
+              bırakırsanız seçtiğiniz başlangıç kendi önerisini kullanır.
+            </p>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <label className="text-sm font-bold text-on-surface">
+                Karakterin adı
                 <input
-                  type="text"
                   value={nameOverride}
-                  onChange={(e) => setNameOverride(e.target.value)}
-                  placeholder="Öneri otomatik atanır"
-                  maxLength={120}
-                  className="h-11 rounded-lg border border-outline-variant bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  onChange={(event) => setNameOverride(event.target.value)}
+                  className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-white px-4 font-normal outline-none focus:border-primary"
+                  placeholder="İsterseniz siz verin"
                 />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-semibold text-on-surface-variant">
-                  Alt tür (görünen karakter tarzı)
-                </span>
+              <label className="text-sm font-bold text-on-surface">
+                Kısa tanımı
                 <input
-                  type="text"
                   value={subtypeOverride}
-                  onChange={(e) => setSubtypeOverride(e.target.value)}
-                  placeholder={selectedPkg.subtype}
-                  maxLength={80}
-                  className="h-11 rounded-lg border border-outline-variant bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  onChange={(event) => setSubtypeOverride(event.target.value)}
+                  className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-white px-4 font-normal outline-none focus:border-primary"
+                  placeholder={selectedBeginning.subtype}
                 />
               </label>
             </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-3 rounded-xl bg-surface-container-low p-4 text-sm text-on-surface lg:grid-cols-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Konsept
-                </p>
-                <p className="mt-1 leading-6">
-                  {selectedPkg.originConcept ??
-                    selectedPkg.payload?.originConcept}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Ev
-                </p>
-                <p className="mt-1">
-                  {selectedPkg.homeArchetype ??
-                    selectedPkg.payload?.homeArchetype}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Universe seed
-                </p>
-                <p className="mt-1 break-all">{selectedPkg.universeSeed}</p>
-              </div>
+            <div className="mt-7 rounded-[1.5rem] bg-surface-container-low/80 p-5">
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
+                Seçtiğiniz geçmiş
+              </p>
+              <p className="mt-2 text-lg font-bold text-on-surface">
+                {selectedBeginning.originConcept}
+              </p>
+              <p className="mt-2 text-sm text-on-surface-variant">
+                {selectedBeginning.startingLocation} ·{" "}
+                {selectedBeginning.homeArchetype}
+              </p>
+            </div>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="storybook-button-secondary"
+                onClick={() => setStep(2)}
+              >
+                Geçmişi değiştir
+              </button>
+              <button
+                type="button"
+                data-testid="create-character"
+                className="storybook-button"
+                disabled={submitting}
+                onClick={() => void createCharacter()}
+              >
+                {submitting
+                  ? "Karakter tamamlanıyor…"
+                  : "Karakteri dünyaya getir"}
+              </button>
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-outline-variant bg-white px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
-            >
-              Geri
-            </button>
-            <button
-              type="button"
-              onClick={createCharacter}
-              disabled={submitting}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-[#4c29cf] disabled:opacity-60"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                check
-              </span>
-              {submitting
-                ? "Karakter kaydediliyor"
-                : "Karakteri oluştur ve handoff'u tüket"}
-            </button>
-          </div>
+          <aside className="rounded-[2rem] border border-outline-variant/70 bg-[#27352b] p-7 text-white shadow-sm">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-white/60">
+              Görsel kimlik
+            </p>
+            <h3 className="mt-2 text-2xl font-extrabold">
+              Dört görünümden birini seçme adımı hazırlanıyor
+            </h3>
+            <div className="mt-5 grid grid-cols-2 gap-3" aria-hidden="true">
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className="aspect-square rounded-[1.2rem] border border-dashed border-white/25 bg-white/5"
+                />
+              ))}
+            </div>
+            <p className="mt-5 text-sm leading-6 text-white/75">
+              Henüz gerçek görsel üretim ve kalıcı görsel dosya yolu
+              bağlanmadığı için bu kutular üretilmiş karakter resmi değildir.
+              Karakteriniz şimdi oluşturulabilir; gerçek dört aday hazır
+              olduğunda açıkça seçim yapacak ve seçilen görünüm sonraki resimler
+              için görsel canon olacaktır.
+            </p>
+          </aside>
         </section>
-      )}
-    </Shell>
+      ) : null}
+    </StoryShell>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function StoryShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex w-full max-w-[1180px] flex-col px-6 py-10 text-on-surface">
+    <section className="storybook-page min-h-full">
+      <div className="mx-auto w-full max-w-[1180px] px-5 py-8 md:px-6 md:py-10">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function InfoCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[1.5rem] border border-dashed border-outline-variant bg-white/80 px-6 py-10 text-center text-on-surface-variant">
       {children}
-    </main>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-surface-container-low/75 p-3">
+      <dt className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">
+        {label}
+      </dt>
+      <dd className="mt-1 font-semibold leading-5 text-on-surface">{value}</dd>
+    </div>
   );
 }

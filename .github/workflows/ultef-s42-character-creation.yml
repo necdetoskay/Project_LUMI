@@ -1,0 +1,35 @@
+name: ULTEF S42 Character Creation Contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  character-creation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+      - name: Web lint
+        run: pnpm --filter @lumi/web lint
+      - name: Run S42 ULTEF character creation contract
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/ultef-s42-character-creation.spec.ts --project=chromium
