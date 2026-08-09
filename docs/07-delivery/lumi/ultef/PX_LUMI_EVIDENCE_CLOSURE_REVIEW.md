@@ -1,84 +1,83 @@
 # PX-LUMI Evidence Closure Review
 
 Date: 2026-08-09  
-Status: **ACTIVE REVIEW — 8 PASS / 2 BLOCKED**
+Status: **ACTIVE IMPLEMENTATION CLOSURE — 9 PASS / 1 BLOCKED**
 
-This review closes Project LUMI-specific gates only when runtime evidence satisfies every catalog assertion. It deliberately avoids creating duplicate tests simply to obtain a gate-specific filename.
+This review closes Project LUMI-specific gates only when runtime evidence satisfies every catalog assertion. It avoids duplicate tests that add no new production evidence.
 
 ## PX-LUMI-01 — Universe Continuity
 
 Decision: **EXECUTED PASS**
 
-Evidence composition:
-
-- `L6-GOLDEN-001` starts a real disposable-PostgreSQL world/session, advances a generated scene, commits a world outcome, reloads persisted indirect state, completes the first session and starts a later session with the same `worldId`.
-- `L5-CONTEXT-DIVERGENCE-001` stores different persisted facts for the same NPC in two worlds and proves each later generation prompt receives only the matching world-scoped fact.
-- `L9-LONG-HORIZON-001` / DB-backed long-horizon execution repeatedly advances the same world across ten sessions without identity loss or uncontrolled cross-state mutation.
-
-No new PX-01 test is required.
+Evidence composition includes `L6-GOLDEN-001`, world-scoped continuity divergence and the DB-backed long-horizon journey. The same world identity survives session transitions/reloads while unrelated world state remains isolated.
 
 ## PX-LUMI-02 — Character Continuity
 
 Decision: **EXECUTED PASS**
 
-The original audit correctly identified a missing production boundary: story generation accepted `characterId`, but the production continuity adapter did not load persisted character-domain state.
+The original audit found that story generation accepted `characterId` but the production continuity adapter did not load persisted character-domain state. That boundary is now implemented with a bounded profile-backed continuity snapshot.
 
-That boundary is now implemented with a bounded profile-backed character continuity snapshot and composition through the existing `StoryContinuityContextPort`.
+Closure scenario: `PX-LUMI-02-CHARACTER-RELOAD-STORY-001`.
 
-Closure scenario:
-
-`PX-LUMI-02-CHARACTER-RELOAD-STORY-001`
-
-Runtime narrative:
-
-- a synthetic household, child and character are persisted in disposable PostgreSQL;
-- character `courage` begins at `0.40`, character version `1`;
-- a bounded mutation persists `courage=0.82` and version `2`;
-- the state is reloaded from PostgreSQL;
-- `StorySceneGenerationService` invokes the production `NpcBeliefStoryContinuityContextAdapter` with the real character UUID;
-- the later story prompt contains the persisted character identity, version `2` and `courage=0.82`;
-- deterministic generated prose changes in response to that persisted character state.
-
-Catalog mapping:
-
-- stable character identity: satisfied by scoped character reload and later generation using the same character UUID;
-- bounded/explainable mutation: satisfied by the explicit `courage 0.40 -> 0.82` delta and version `1 -> 2` evidence;
-- persistence after reload: satisfied directly from PostgreSQL;
-- later story consumes updated context: satisfied by the production continuity prompt and resulting scene narrative.
-
-Validation:
-
-- `ULTEF PX-02 Character Continuity #8`: **PASS**
-- Head: `37588e8eafe0e23773b29dea0166009cb7b45d40`
-- Artifact: `ultef-px02-character-continuity-evidence`
-- Digest: `sha256:8aea7a641e5536cb241cd6ea9dcbe2450a8628f7602350327e6ce229b88922c1`
-- `ULTEF Integration #393`: **PASS**, including legacy `L5-CONTEXT-DIVERGENCE-001`
-- `ULTEF PX-LUMI #31`: **PASS**
-- `Security Scan #572`: **PASS**
-- CI validate chain: format, lint, typecheck, tests, load gate and production build **PASS**
-
-The legacy L5 test exposed a compatibility edge case because it supplied the non-UUID placeholder `characterId: "Arin"`. The production boundary was hardened so malformed optional character identifiers do not reach the profile UUID query and instead preserve the existing NPC/world continuity path. The L5 regression then passed without weakening the valid UUID PX-02 path.
-
-PX-LUMI-02 is closed.
+A bounded `courage` mutation survives PostgreSQL reload, reaches the production continuity prompt and changes a later generated scene. Legacy malformed optional character IDs fall back safely without weakening the valid UUID path.
 
 ## PX-LUMI-03 — Memory Coherence
 
 Decision: **EXECUTED PASS**
 
-`PX-LUMI-03-MEMORY-COHERENCE-001` uses disposable PostgreSQL plus the production story-continuity adapter and deterministic story generation. It proves direct observation and hearsay remain source-distinct, hearsay retains provenance, both persisted facts reach later story context, and an absent memory is neither retrieved nor fabricated.
+`PX-LUMI-03-MEMORY-COHERENCE-001` proves direct observation and hearsay remain source-distinct, hearsay provenance survives reload, both reach later story context, and an absent memory is neither retrieved nor fabricated.
+
+## PX-LUMI-04 — Emotional Consistency
+
+Decision: **EXECUTED PASS**
+
+The original audit correctly identified two missing production boundaries:
+
+1. story/world event → directional bounded emotion delta;
+2. persisted profile emotion → production decision/utility context.
+
+Both boundaries are now implemented.
+
+Closure scenario: `PX-LUMI-04-EMOTION-DECISION-001`.
+
+Runtime narrative:
+
+- a scoped character begins with `joy=0.40`, `fear=0.60`, `trust=0.50` plus stable unrelated emotion dimensions;
+- production `emotion-rules-v1` evaluates a `reassuring_success` event and derives explicit evidence-bearing deltas;
+- bounded application persists `joy=0.58`, `fear=0.40`, `trust=0.60` through the existing profile transaction while leaving `sadness`, `anger`, and `surprise` unchanged;
+- PostgreSQL reload returns the persisted vector;
+- the production persisted-character decision adapter supplies that exact vector to `DecisionContextBuilder`;
+- the decision-context hash changes;
+- `UtilityEvaluator` consumes the new state and increases the same candidate's `emotionalComfort` and emotion-only utility score.
+
+Validation:
+
+- `ULTEF PX-04 Emotional Consistency #4`: **PASS**
+- Head: `525c34fb3ff22b5ba43b47fc56d9b9ab09cc5d41`
+- Artifact: `ultef-px04-emotional-consistency-evidence`
+- Digest: `sha256:4b75e0299dcc3beb3361eb5f41326ef314fc90d4291f3e3aae36ebbab680dcb5`
+- `ULTEF Integration #400`: **PASS**
+- `ULTEF PX-LUMI #38`: **PASS**
+- `ULTEF PX-02 Character Continuity #15`: **PASS**
+- `Security Scan #580`: **PASS**
+- CI validate chain: format, lint, typecheck, tests, load gate and production build **PASS**
+
+PX-LUMI-04 is closed without using the old in-memory emotional-state adapter as evidence.
 
 ## PX-LUMI-05 — Story Consequence
 
 Decision: **BLOCKED — production choice→world handoff**
 
-The repository has strong component/runtime evidence on both sides of the boundary:
+The repository has strong runtime evidence on both sides of the missing boundary:
 
 - `commitChoice()` validates option availability and persists the committed choice/consequence transactionally;
-- `L4-CHOICE-DIVERGENCE-001` proves distinct valid options persist into separate branch histories/consequences;
+- `L4-CHOICE-DIVERGENCE-001` proves distinct valid choices persist into different branch histories/consequences;
 - `L4-CHOICE-WORLD-DIVERGENCE-001` proves different outcome manifests create different durable world commits/hashes/outbox effects;
 - PX-LUMI-09/L6/L9 prove durable world commits and later continuity.
 
-However no production consumer yet turns the persisted committed choice/consequence into the canonical outcome/world-commit input. The catalog requires one causal chain from selected active-scene option through committed consequence to later observed world/story state.
+What is still missing is a production consumer that turns the persisted committed choice/consequence into the canonical outcome/world-commit input. The catalog requires one causal production chain from selected active-scene option through durable world consequence to later observed story/world context.
+
+Required closure scenario: `PX-LUMI-05-CHOICE-CONSEQUENCE-CONTINUITY-001`.
 
 See `PX_LUMI_05_STORY_CONSEQUENCE_BLOCKER.md`.
 
@@ -86,13 +85,31 @@ See `PX_LUMI_05_STORY_CONSEQUENCE_BLOCKER.md`.
 
 Decision: **EXECUTED PASS**
 
-Evidence covers foreign-household denial, persisted belief isolation, concurrent household/child/world pipelines, session/commit/idempotency separation and story-session IDOR regression. No new PX-06 test is required.
+Evidence covers foreign-household denial, persisted belief isolation, concurrent household/child/world pipelines, session/commit/idempotency separation and story-session IDOR regression.
+
+## PX-LUMI-07 — World Time Progression
+
+Decision: **EXECUTED PASS**
+
+Production `WorldClock`, absence policy and budget planning evidence proves forward-only time, relevance-aware simulation reduction and the ten-day freeze contract.
+
+## PX-LUMI-08 — NPC Background Life
+
+Decision: **EXECUTED PASS**
+
+Autonomous rumor propagation, opportunity→hook traceability and DB-backed duplicate-free rumor materialization jointly satisfy the gate.
 
 ## PX-LUMI-09 — Story Outcome & World State Commit
 
 Decision: **EXECUTED PASS**
 
-Evidence covers validated outcome manifests, transactional/idempotent commits, materialized indirect effects, reload, retry/crash recovery, backup/restore and later continuity. No new PX-09 test is required.
+Evidence covers validated outcome manifests, transactional/idempotent commits, materialized indirect effects, reload, retry/crash recovery, backup/restore and later continuity.
+
+## PX-LUMI-10 — Age Appropriateness
+
+Decision: **EXECUTED PASS**
+
+Fresh age-aware generation plus closed L8 human-review, calibration and live-provider evidence satisfy the age-appropriateness and child-safety assertions.
 
 ## Current phase result
 
@@ -101,15 +118,15 @@ Closed / PASS:
 - PX-LUMI-01
 - PX-LUMI-02
 - PX-LUMI-03
+- PX-LUMI-04
 - PX-LUMI-06
 - PX-LUMI-07
 - PX-LUMI-08
 - PX-LUMI-09
 - PX-LUMI-10
 
-Blocked by missing production boundaries:
+Blocked by one missing production boundary:
 
-- PX-LUMI-04 — event → bounded emotion delta → persisted emotion → decision context
 - PX-LUMI-05 — persisted choice consequence → canonical outcome/world commit → later context
 
-A blocker is not a test failure. It means ULTEF found a required Project LUMI behavior that cannot currently be proven through the production composition path without substituting a synthetic handoff.
+The next and final Project LUMI-specific implementation closure slice is PX-LUMI-05.
