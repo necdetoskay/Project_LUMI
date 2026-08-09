@@ -58,12 +58,18 @@ export default async function ForgotPasswordPage({
           }
         >
           {error ? (
-            <div className="storybook-message storybook-message-error" role="alert">
+            <div
+              className="storybook-message storybook-message-error"
+              role="alert"
+            >
               {error}
             </div>
           ) : null}
           {success ? (
-            <div className="storybook-message storybook-message-success" role="status">
+            <div
+              className="storybook-message storybook-message-success"
+              role="status"
+            >
               <p>
                 Bağlantın hazır. E-posta altyapısı bağlanana kadar bu ortamda
                 geliştirme önizlemesi kullanılıyor.

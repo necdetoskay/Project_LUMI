@@ -73,16 +73,26 @@ export default async function LoginPage({
           }
         >
           {error ? (
-            <div className="storybook-message storybook-message-error" role="alert">
+            <div
+              className="storybook-message storybook-message-error"
+              role="alert"
+            >
               {error}
             </div>
           ) : null}
           {success ? (
-            <div className="storybook-message storybook-message-success" role="status">
+            <div
+              className="storybook-message storybook-message-success"
+              role="status"
+            >
               {success}
             </div>
           ) : null}
-          <form className="storybook-form" action="/api/auth/login" method="post">
+          <form
+            className="storybook-form"
+            action="/api/auth/login"
+            method="post"
+          >
             <div className="storybook-field">
               <label htmlFor="email">E-posta adresi</label>
               <input

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const forbiddenGameLanguage = /\b(xp|level|quest|skill points?|görev puanı|seviye atla)\b/i;
+const forbiddenGameLanguage =
+  /\b(xp|level|quest|skill points?|görev puanı|seviye atla)\b/i;
 
 async function expectNoGamificationLeak(pageText: string) {
   expect(pageText).not.toMatch(forbiddenGameLanguage);

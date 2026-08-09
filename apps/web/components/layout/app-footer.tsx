@@ -6,7 +6,10 @@ export function AppFooter() {
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary-container text-primary">
-            <span className="material-symbols-outlined text-[19px]" aria-hidden="true">
+            <span
+              className="material-symbols-outlined text-[19px]"
+              aria-hidden="true"
+            >
               auto_stories
             </span>
           </span>
