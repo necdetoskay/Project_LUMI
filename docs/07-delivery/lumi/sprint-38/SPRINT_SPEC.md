@@ -1,6 +1,6 @@
 # Sprint 38 — Story Template Authoring & Versioning
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-09
 
 ## Goal
@@ -76,12 +76,12 @@ Required evidence:
 
 ## Exit criteria
 
-- [ ] Tenant-scoped authoring service exists.
-- [ ] Next-version numbering is canonical and automatic.
-- [ ] Existing graph can be cloned into a new frozen revision.
-- [ ] Replacement graph can be authored into a new frozen revision.
-- [ ] Publishing a revision retires the prior active published version atomically.
-- [ ] Parent-authenticated web endpoints exist.
-- [ ] `PX-LUMI-S38-TEMPLATE-VERSIONING-PROD-001` is PASS.
-- [ ] CI / Security / Integration / PX / S37 / S36 regressions are green.
-- [ ] Closeout evidence is committed and status becomes COMPLETE.
+- [x] Tenant-scoped authoring service exists.
+- [x] Next-version numbering is canonical and automatic.
+- [x] Existing graph can be cloned into a new frozen revision.
+- [x] Replacement graph can be authored into a new frozen revision.
+- [x] Publishing a revision retires the prior active published version atomically.
+- [x] Parent-authenticated web endpoints exist.
+- [x] `PX-LUMI-S38-TEMPLATE-VERSIONING-PROD-001` is PASS.
+- [x] CI / Security / Integration / PX / S37 / S36 regressions are green.
+- [x] Closeout evidence is committed and status becomes COMPLETE.
