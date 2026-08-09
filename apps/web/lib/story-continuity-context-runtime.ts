@@ -39,10 +39,8 @@ export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
   constructor(
-    private readonly beliefs: NpcBeliefSourcePort =
-      new DrizzleBeliefSourceRepository(),
-    private readonly memories: CanonicalMemoryPort =
-      new DrizzleCanonicalMemoryRepository(),
+    private readonly beliefs: NpcBeliefSourcePort = new DrizzleBeliefSourceRepository(),
+    private readonly memories: CanonicalMemoryPort = new DrizzleCanonicalMemoryRepository(),
   ) {}
 
   async resolveContext(
@@ -99,7 +97,8 @@ export class NpcBeliefStoryContinuityContextAdapter
         }
       }
 
-      const characterMemoryOwnerId = character?.characterId ?? input.characterId;
+      const characterMemoryOwnerId =
+        character?.characterId ?? input.characterId;
       if (isCanonicalMemoryOwnerId(characterMemoryOwnerId)) {
         const characterMemories = await this.memories.listRelevant({
           householdId: input.householdId,
