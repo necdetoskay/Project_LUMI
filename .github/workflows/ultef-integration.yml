@@ -103,6 +103,10 @@ jobs:
         run: pnpm ultef:continuity-divergence
       - name: Run Sprint 01 continuity context to generated story
         run: pnpm ultef:context-to-story
+      - name: Run PX-LUMI-03 memory coherence
+        env:
+          ULTEF_SCENARIO: PX-LUMI-03-MEMORY-COHERENCE-001
+        run: pnpm --filter @lumi/web exec vitest run tests/ultef-px-memory-coherence.integration.test.ts
       - name: Print human-readable ULTEF summary
         if: always()
         run: |
@@ -198,6 +202,14 @@ jobs:
             cat "$MIGRATION_FILE"
           else
             echo "L9 migration-recovery evidence was not produced."
+          fi
+          MEMORY_FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-03-MEMORY-COHERENCE-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$MEMORY_FILE" ]; then
+            echo
+            echo "===== PX-LUMI-03 MEMORY COHERENCE ====="
+            cat "$MEMORY_FILE"
+          else
+            echo "PX-LUMI-03 memory-coherence evidence was not produced."
           fi
       - name: Upload ULTEF evidence
         if: always()
