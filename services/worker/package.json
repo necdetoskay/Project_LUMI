@@ -18,6 +18,7 @@
   "dependencies": {
     "@lumi/logger": "workspace:*",
     "@lumi/simulation": "workspace:*",
+    "@lumi/story": "workspace:*",
     "@lumi/world": "workspace:*"
   },
   "devDependencies": {
