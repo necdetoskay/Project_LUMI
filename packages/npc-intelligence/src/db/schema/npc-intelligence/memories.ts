@@ -126,4 +126,5 @@ export const canonicalMemoryUsages = npcIntelligenceSchema.table(
 
 export type CanonicalMemoryRecord = typeof canonicalMemories.$inferSelect;
 export type NewCanonicalMemoryRecord = typeof canonicalMemories.$inferInsert;
-export type CanonicalMemoryUsageRecord = typeof canonicalMemoryUsages.$inferSelect;
+export type CanonicalMemoryUsageRecord =
+  typeof canonicalMemoryUsages.$inferSelect;

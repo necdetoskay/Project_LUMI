@@ -188,12 +188,13 @@ describe("StorySceneGenerationService", () => {
       model: "test-model",
     });
 
-    const result = await new StorySceneGenerationService().generateSceneFromHook({
-      hook: makeHook("rumor", { claim: "another hook" }),
-      settingsPort: fakePort(),
-      continuityPort,
-      callOpenRouter: caller,
-    });
+    const result =
+      await new StorySceneGenerationService().generateSceneFromHook({
+        hook: makeHook("rumor", { claim: "another hook" }),
+        settingsPort: fakePort(),
+        continuityPort,
+        callOpenRouter: caller,
+      });
 
     expect(result.scene.usedContinuityKeys).toEqual(["memory-b"]);
   });

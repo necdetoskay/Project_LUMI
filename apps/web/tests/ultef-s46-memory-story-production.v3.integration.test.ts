@@ -21,7 +21,9 @@ let pool: pg.Pool;
 function assertSafeDisposableDatabase(url: string) {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`S46 memory-story test requires a disposable DB; got '${name}'.`);
+    throw new Error(
+      `S46 memory-story test requires a disposable DB; got '${name}'.`,
+    );
   }
 }
 
@@ -41,7 +43,8 @@ function makeMemory(input: {
     ownerType: "character",
     ownerId: input.ownerId,
     kind: "experience",
-    summary: "The child and character solved the lantern bridge mystery together.",
+    summary:
+      "The child and character solved the lantern bridge mystery together.",
     salience: 0.8,
     confidence: 0.98,
     sourceType: "story_outcome",
