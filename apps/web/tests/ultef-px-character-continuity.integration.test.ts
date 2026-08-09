@@ -199,9 +199,13 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
       });
 
       expect(prompts).toHaveLength(1);
-      expect(prompts[0]).toContain("Aktif karakter Arin");
-      expect(prompts[0]).toContain("kalıcı karakter sürümü 2");
-      expect(prompts[0]).toContain("courage=0.82");
+      const generatedPrompt = prompts[0];
+      if (!generatedPrompt) {
+        throw new Error("PX-LUMI-02 expected one generated story prompt");
+      }
+      expect(generatedPrompt).toContain("Aktif karakter Arin");
+      expect(generatedPrompt).toContain("kalıcı karakter sürümü 2");
+      expect(generatedPrompt).toContain("courage=0.82");
       expect(result.scene.narrative).toContain("cesaretini hatirlayip");
 
       scenario.event(
@@ -233,10 +237,10 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
       );
       scenario.assert(
         "persisted character mutation appears in later story context",
-        prompts[0].includes("kalıcı karakter sürümü 2") &&
-          prompts[0].includes("courage=0.82"),
+        generatedPrompt.includes("kalıcı karakter sürümü 2") &&
+          generatedPrompt.includes("courage=0.82"),
         "version=2 and courage=0.82 in production continuity prompt",
-        prompts[0],
+        generatedPrompt,
       );
       scenario.assert(
         "later generated scene uses the persisted mutation",
