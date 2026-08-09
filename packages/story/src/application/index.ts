@@ -176,6 +176,8 @@ export type {
 
 export {
   persistGeneratedSceneAndAdvance,
+  findGeneratedSceneForHook,
+  generatedSceneKeyForSource,
   __setTestGeneratedSceneDb,
 } from "./generated-scene-session.service";
 export type {
