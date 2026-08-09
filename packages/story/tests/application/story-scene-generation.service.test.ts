@@ -169,7 +169,7 @@ describe("StorySceneGenerationService", () => {
         callOpenRouter: caller,
         maxAttempts: 1,
       }),
-    ).rejects.toThrow(/usedContinuityKeys/i);
+    ).rejects.toThrow(/continuity usage validation failed/i);
 
     expect(caller).toHaveBeenCalledTimes(1);
   });
