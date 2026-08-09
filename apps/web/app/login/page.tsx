@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+import {
+  StorybookBackdrop,
+  StorybookCard,
+  StorybookScene,
+} from "@/components/public/storybook-shell";
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function getValue(value: string | string[] | undefined) {
@@ -43,70 +49,60 @@ export default async function LoginPage({
   const success = getSuccessMessage(getValue(params.success));
 
   return (
-    <main className="flex-grow flex items-center justify-center pt-24 pb-section-block px-padding-inline relative overflow-hidden">
-      <div className="auth-container w-full max-w-[40rem] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-8 md:p-12 z-10">
-        <div className="mb-10 text-center">
-          <span className="font-eyebrow text-eyebrow text-primary mb-2 block tracking-widest">
-            PROJECT LUMI
-          </span>
-          <h1 className="font-headline-xl text-3xl md:text-[40px] text-on-background mb-4 leading-tight">
-            Giriş yap
-          </h1>
-          <p className="font-lead text-lead text-secondary max-w-md mx-auto">
-            LUMI evrenine geri dönmeye hazır mısın? Macera kaldığı yerden devam
-            ediyor.
-          </p>
-        </div>
-        {error ? (
-          <div className="mb-6 bg-destructive-soft text-on-error-container p-4 rounded-xl flex items-center gap-3 border border-outline-variant">
-            {error}
-          </div>
-        ) : null}
-        {success ? (
-          <div className="mb-6 bg-success-soft text-on-secondary-fixed-variant p-4 rounded-xl flex items-center gap-3 border border-outline-variant">
-            {success}
-          </div>
-        ) : null}
-        <form
-          className="flex flex-col gap-form-gap"
-          action="/api/auth/login"
-          method="post"
-        >
-          <div className="flex flex-col gap-2">
-            <label
-              className="font-label-bold text-label-bold text-on-surface"
-              htmlFor="email"
-            >
-              E-posta Adresi
-            </label>
-            <input
-              className="form-input font-body text-body text-on-background bg-surface border-outline-variant w-full"
-              id="email"
-              name="email"
-              placeholder="ornek@lumi.com"
-              required
-              autoComplete="email"
-              defaultValue={email}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <label
-                className="font-label-bold text-label-bold text-on-surface"
-                htmlFor="password"
-              >
-                Şifre
-              </label>
-              <Link
-                className="font-label-bold text-label-bold text-primary hover:underline"
-                href="/forgot-password"
-              >
-                Şifremi unuttum
+    <section className="storybook-page">
+      <StorybookBackdrop />
+      <div className="storybook-grid storybook-grid-auth">
+        <StorybookScene
+          kicker="Kaldığın yer seni bekliyor"
+          title="Dünyana geri dön"
+          text="Son hikâyenin izleri, tanıştığın kişiler ve keşfettiğin yerler burada. Giriş yaptığında LUMI seni yeni bir başlangıca değil, kendi geçmişinin devamına götürür."
+          icon="🧭"
+        />
+
+        <StorybookCard
+          eyebrow="Project LUMI"
+          title="Hikâyeme dön"
+          description="Ebeveyn hesabınla giriş yap; profillerin ve yaşayan evrenlerin kaldığı yerden devam etsin."
+          note={
+            <p>
+              Henüz bir evrenin yok mu?{" "}
+              <Link className="storybook-inline-link" href="/register">
+                Ebeveyn hesabı oluştur
               </Link>
+            </p>
+          }
+        >
+          {error ? (
+            <div className="storybook-message storybook-message-error" role="alert">
+              {error}
             </div>
-            <div className="relative">
+          ) : null}
+          {success ? (
+            <div className="storybook-message storybook-message-success" role="status">
+              {success}
+            </div>
+          ) : null}
+          <form className="storybook-form" action="/api/auth/login" method="post">
+            <div className="storybook-field">
+              <label htmlFor="email">E-posta adresi</label>
               <input
-                className="form-input font-body text-body text-on-background bg-surface border-outline-variant w-full pr-10"
+                className="storybook-input"
+                id="email"
+                name="email"
+                placeholder="ornek@lumi.com"
+                required
+                autoComplete="email"
+                type="email"
+                defaultValue={email}
+              />
+            </div>
+            <div className="storybook-field">
+              <div className="storybook-field-heading">
+                <label htmlFor="password">Şifre</label>
+                <Link href="/forgot-password">Şifremi unuttum</Link>
+              </div>
+              <input
+                className="storybook-input"
                 id="password"
                 name="password"
                 placeholder="••••••••"
@@ -114,49 +110,25 @@ export default async function LoginPage({
                 autoComplete="current-password"
                 type="password"
               />
-              <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-on-surface transition-colors"
-                type="button"
-                aria-label="Şifre görünürlüğü"
-              >
-                <span className="material-symbols-outlined">visibility</span>
-              </button>
             </div>
-          </div>
-          <div className="flex items-center gap-3 mt-1">
-            <input
-              className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary-container"
-              id="remember"
-              name="rememberMe"
-              type="checkbox"
-              defaultChecked
-            />
-            <label
-              className="font-body text-body text-secondary"
-              htmlFor="remember"
-            >
-              Beni hatırla
+            <label className="storybook-check" htmlFor="remember">
+              <input
+                id="remember"
+                name="rememberMe"
+                type="checkbox"
+                defaultChecked
+              />
+              Bu cihazda beni hatırla
             </label>
-          </div>
-          <button
-            className="mt-4 bg-primary text-on-primary py-[0.85rem] px-6 rounded-lg font-label-bold text-label-bold shadow-md hover:bg-[#4c29cf] active:scale-95 transition-all flex justify-center items-center gap-2"
-            type="submit"
-          >
-            Giriş yap
-          </button>
-        </form>
-        <div className="mt-6 text-center">
-          <p className="font-body text-body text-secondary">
-            Hesabın yok mu?{" "}
-            <Link
-              className="font-label-bold text-label-bold text-primary hover:underline"
-              href="/register"
-            >
-              Kayıt ol
-            </Link>
-          </p>
-        </div>
+            <button className="storybook-button" type="submit">
+              Dünyama dön
+              <span className="material-symbols-outlined" aria-hidden="true">
+                arrow_forward
+              </span>
+            </button>
+          </form>
+        </StorybookCard>
       </div>
-    </main>
+    </section>
   );
 }
