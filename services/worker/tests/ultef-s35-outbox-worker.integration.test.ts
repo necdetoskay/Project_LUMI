@@ -6,11 +6,12 @@ import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
 import { OutboxJobRunner } from "../src/outbox-runner";
 
-const enabled =
-  process.env.ULTEF_SCENARIO === "PX-LUMI-S35-OUTBOX-WORKER-001";
-const databaseUrl = process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const enabled = process.env.ULTEF_SCENARIO === "PX-LUMI-S35-OUTBOX-WORKER-001";
+const databaseUrl =
+  process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const describeDb = enabled && destructive && databaseUrl ? describe : describe.skip;
+const describeDb =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 let pool: pg.Pool | null = null;
 
@@ -62,7 +63,8 @@ describeDb("ULTEF S35 — production outbox worker", () => {
   });
 
   it("PX-LUMI-S35-OUTBOX-WORKER-001 dispatches, retries, isolates and replays safely", async () => {
-    if (!pool || !databaseUrl) throw new Error("STORY_TEST_DATABASE_URL_REQUIRED");
+    if (!pool || !databaseUrl)
+      throw new Error("STORY_TEST_DATABASE_URL_REQUIRED");
 
     const householdId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
@@ -112,7 +114,11 @@ describeDb("ULTEF S35 — production outbox worker", () => {
         ],
       );
 
-      const firstRunner = new OutboxJobRunner(createLogger({ level: "error" }), 25, 100);
+      const firstRunner = new OutboxJobRunner(
+        createLogger({ level: "error" }),
+        25,
+        100,
+      );
       const first = await firstRunner.run();
       const firstRows = await outboxState(householdId);
       const firstQuestCount = await questCount(householdId);
@@ -120,12 +126,15 @@ describeDb("ULTEF S35 — production outbox worker", () => {
       const invalidFirst = firstRows.find((row) => row.id === invalidOutboxId);
 
       const validApplied =
-        first.applied === 1 && validFirst?.status === "applied" && firstQuestCount === 1;
+        first.applied === 1 &&
+        validFirst?.status === "applied" &&
+        firstQuestCount === 1;
       const failureIsolated =
         first.failed === 1 &&
         invalidFirst?.status === "pending" &&
         invalidFirst.attempt_count === "1" &&
-        invalidFirst.last_error?.includes("OUTBOX_INTENT_NOT_CONFIGURED") === true;
+        invalidFirst.last_error?.includes("OUTBOX_INTENT_NOT_CONFIGURED") ===
+          true;
 
       scenario.assert(
         "Persisted quest seed was dispatched into exactly one quest",
@@ -167,7 +176,9 @@ describeDb("ULTEF S35 — production outbox worker", () => {
       // must discover no retryable household work from that failed row.
       await restartedRunner.run();
       const terminalRows = await outboxState(householdId);
-      const invalidTerminal = terminalRows.find((row) => row.id === invalidOutboxId);
+      const invalidTerminal = terminalRows.find(
+        (row) => row.id === invalidOutboxId,
+      );
       const afterTerminal = await new OutboxJobRunner(
         createLogger({ level: "error" }),
         25,
@@ -188,7 +199,8 @@ describeDb("ULTEF S35 — production outbox worker", () => {
         },
       );
 
-      const passed = validApplied && failureIsolated && replaySafe && terminalImmutable;
+      const passed =
+        validApplied && failureIsolated && replaySafe && terminalImmutable;
       const report = scenario.finish({
         result: passed ? "PASS" : "FAIL",
         reason: passed
@@ -205,12 +217,17 @@ describeDb("ULTEF S35 — production outbox worker", () => {
           WHERE quest_id IN (SELECT id FROM profile.quests WHERE household_id = $1)`,
         [householdId],
       );
-      await pool.query(`DELETE FROM profile.quests WHERE household_id = $1`, [householdId]);
+      await pool.query(`DELETE FROM profile.quests WHERE household_id = $1`, [
+        householdId,
+      ]);
       await pool.query(
         `DELETE FROM profile.world_idempotency_ledger WHERE household_id = $1`,
         [householdId],
       );
-      await pool.query(`DELETE FROM story.story_outbox WHERE household_id = $1`, [householdId]);
+      await pool.query(
+        `DELETE FROM story.story_outbox WHERE household_id = $1`,
+        [householdId],
+      );
     }
   });
 });
