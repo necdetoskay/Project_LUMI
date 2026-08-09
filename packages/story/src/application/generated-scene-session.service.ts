@@ -50,13 +50,33 @@ export function generatedSceneKeyForSource(input: {
   return `generated:${input.sessionId}:${input.fallbackFingerprint}`;
 }
 
+export async function findGeneratedSceneForHook(input: {
+  sessionId: string;
+  sourceHookId: string;
+}) {
+  const db = getDb();
+  const repo = new DrizzleStoryRepository();
+  const session = await repo.findSessionById(db, input.sessionId);
+  if (!session) {
+    throw new NotFoundError("StorySession", input.sessionId);
+  }
+  const scenes = await repo.findScenesByVersion(db, session.storyVersionId);
+  const sceneKey = generatedSceneKeyForSource({
+    sessionId: input.sessionId,
+    sourceHookId: input.sourceHookId,
+    fallbackFingerprint: "unused",
+  });
+  return scenes.find((scene) => scene.sceneKey === sceneKey);
+}
+
 /**
  * Production bridge between StorySceneGenerationService and the existing
  * session reader/progression path.
  *
  * Hook-backed scenes use the stable source hook id as their persistence key,
  * so retries cannot create different prose rows even when generation uses a
- * fresh nonce. Non-hook callers retain the original content fingerprint key.
+ * fresh nonce. A replay after a successful advance returns the current reader
+ * state without requiring the caller to know the newly incremented version.
  */
 export async function persistGeneratedSceneAndAdvance(
   input: PersistGeneratedSceneAndAdvanceInput,
@@ -67,12 +87,6 @@ export async function persistGeneratedSceneAndAdvance(
   const session = await repo.findSessionById(db, input.sessionId);
   if (!session) {
     throw new NotFoundError("StorySession", input.sessionId);
-  }
-  if (session.version !== input.expectedVersion) {
-    throw new ValidationError(
-      "VERSION_CONFLICT",
-      "Session version conflict; generated scene was not persisted",
-    );
   }
 
   const sourceFingerprint = await hashObject({
@@ -94,6 +108,22 @@ export async function persistGeneratedSceneAndAdvance(
   const existing = existingScenes.find(
     (scene) => scene.sceneKey === generatedSceneKey,
   );
+
+  if (existing && session.currentSceneId === existing.id) {
+    return {
+      generatedSceneId: existing.id,
+      generatedSceneKey,
+      reusedPersistedScene: true,
+      playbackState: await getSessionPlaybackState(input.sessionId),
+    };
+  }
+
+  if (session.version !== input.expectedVersion) {
+    throw new ValidationError(
+      "VERSION_CONFLICT",
+      "Session version conflict; generated scene was not persisted",
+    );
+  }
 
   let generatedSceneId: string;
   let reusedPersistedScene = false;
