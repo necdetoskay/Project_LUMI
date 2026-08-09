@@ -2,7 +2,7 @@
 
 Status: CANONICAL DISCOVERY BASELINE
 Date: 2026-08-09
-Scope: UI/UX Discovery konuşmasının başlangıcından Item & Object Life Cycle bölümüne kadar alınan ürün, deneyim, living-universe ve doğrulama kararları.
+Scope: UI/UX Discovery konuşmasının başlangıcından Relationships & Social Life bölümüne kadar alınan ürün, deneyim, living-universe ve doğrulama kararları.
 
 ## Source-of-truth rule
 
@@ -28,7 +28,7 @@ Görsel yön: 2D illustration + cartoon karışımı; zengin fakat sakin, çocuk
 8. Progressive world/map discovery
 9. Story Reader
 10. Story/image feedback
-11. Persistent memory, growth, world/NPC evolution, time/environment and item continuity
+11. Persistent memory, growth, world/NPC evolution, time/environment, item continuity and social-life continuity
 
 ## Auth experience
 
@@ -83,6 +83,14 @@ Growth doğrudan story generator'ın trait değiştirmesi değildir. Story -> me
 Dünya çocuğu bekleyen dekor değildir; çocuk yokken de kontrollü biçimde yaşar. NPC kimliği yavaş, hayat durumu orta, anlık state hızlı değişebilir. NPC hedefleri çocuk yardım etmese bile makul ölçüde ilerleyebilir. NPC-NPC ilişkileri ve background events mümkündür. Simulation relevance/influence çözünürlüğü kullanır: yakın/önemli aktörler detaylı, uzak/alakasız aktörler düşük çözünürlükte veya hiç simüle edilmez.
 
 Offline progression çocuğu cezalandırmaz. Kısa yokluk normal, orta yokluk attenuated, uzun yokluk narrative-safe/freeze davranışı kullanır. Child-presence-required kritik Saga finalleri veya geri dönülmez büyük olaylar çocuk yokken tamamlanmaz.
+
+## Relationships & social life
+
+Relationship tek friend/enemy puanı değildir; trust, affection, respect, comfort, resentment, dependence, shared history gibi çok boyutlu internal state taşıyabilir. Bu değerler child UI veya story içinde sayısal stat olarak görünmez. Çocuk ilişkiyi NPC'nin davranışından, hatırladığı ortak olaylardan, yakınlık/mesafe değişimlerinden ve doğal diyalogdan hisseder.
+
+Relationship değişikliği doğrudan Story Generator tarafından yazılmaz. Canonical zincir Story -> Outcome -> actor-specific/shared Memory -> Relationship Evidence -> küçük ve kontrollü state değişimidir. Aynı olay child ile NPC tarafından farklı yorumlanabilir; child intention NPC interpretation ile eşit kabul edilmez. Yanlış anlaşılma, kırgınlık, rekabet veya hayal kırıklığı yaşa uygun biçimde mümkün olmalıdır; ilişki her zaman monoton pozitif progression izlemez.
+
+NPC-NPC ilişkileri child dışında da yaşayabilir. Family actors daha zengin başlangıç shared-history/memory/routine context'i taşır. Promise, gift ve shared memories relationship evidence üretir fakat quest/reward puanına dönüşmez. 'Hayatımdakiler' gibi UI yüzeyleri social graph'ı CRM/stat ekranına çevirmeden kişiler, ortak geçmiş, son bilinen durum ve doğal bağlar üzerinden gösterir. Relationship state future NPC arc, story hook veya Saga seed üretebilir fakat child agency'yi zorlamaz.
 
 ## Time
 
