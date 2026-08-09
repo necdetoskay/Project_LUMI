@@ -13,16 +13,20 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "start": "node src/index.ts"
+    "start": "node src/index.ts",
+    "ultef:s35-outbox-worker": "ULTEF_SCENARIO=PX-LUMI-S35-OUTBOX-WORKER-001 vitest run tests/ultef-s35-outbox-worker.integration.test.ts"
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
     "@lumi/simulation": "workspace:*",
+    "@lumi/story": "workspace:*",
     "@lumi/world": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
+    "@types/pg": "^8.11.0",
     "eslint": "9.39.2",
+    "pg": "^8.22.0",
     "typescript": "5.9.3",
     "vitest": "4.0.14"
   }

@@ -113,6 +113,7 @@ export type {
   PropagateResult,
   IndirectEffectApplicator,
 } from "./indirect-effect-propagator.service";
+export { listRetryableOutboxHouseholdIds } from "./outbox-work-discovery.service";
 export { RumorSpreadApplicator } from "./rumor-propagation-applicator.service";
 export { StoryHookDeliveryApplicator } from "./story-hook-delivery-applicator.service";
 

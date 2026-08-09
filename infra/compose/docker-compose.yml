@@ -49,5 +49,34 @@ services:
     restart: unless-stopped
     init: true
 
+  worker:
+    build:
+      context: ../..
+      dockerfile: services/worker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
+      REDIS_URL: redis://redis:6379
+      WORKER_INTERVAL_MS: ${WORKER_INTERVAL_MS:-60000}
+      WORKER_BATCH_SIZE: ${WORKER_BATCH_SIZE:-10}
+      WORKER_MAX_CONCURRENT: ${WORKER_MAX_CONCURRENT:-2}
+      WORKER_OUTBOX_BATCH_SIZE: ${WORKER_OUTBOX_BATCH_SIZE:-25}
+      WORKER_OUTBOX_HOUSEHOLD_LIMIT: ${WORKER_OUTBOX_HOUSEHOLD_LIMIT:-100}
+      SIMULATION_SEED: ${SIMULATION_SEED:-lumi-sim-v1}
+      WORKER_WORLD_CANDIDATES_JSON: ${WORKER_WORLD_CANDIDATES_JSON:-[]}
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    init: true
+
 volumes:
   postgres-data:

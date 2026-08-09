@@ -5,6 +5,7 @@ import {
   SimulationStoreAdapter,
 } from "@lumi/simulation/db";
 import { BackgroundWorker, type WorkerConfig } from "./worker";
+import { OutboxJobRunner } from "./outbox-runner";
 import {
   EmptyNpcSourceAdapter,
   EmptyRelevanceSourceAdapter,
@@ -34,6 +35,11 @@ const discoverySource = new EnvWorldDiscoveryAdapter(
   process.env.WORKER_WORLD_CANDIDATES_JSON,
   logger,
 );
+const outboxRunner = new OutboxJobRunner(
+  logger,
+  Number(process.env.WORKER_OUTBOX_BATCH_SIZE ?? "25"),
+  Number(process.env.WORKER_OUTBOX_HOUSEHOLD_LIMIT ?? "100"),
+);
 
 const worker = new BackgroundWorker(
   workerConfig,
@@ -44,6 +50,7 @@ const worker = new BackgroundWorker(
   discoverySource,
   logger,
   seed,
+  outboxRunner,
 );
 
 worker.start();
