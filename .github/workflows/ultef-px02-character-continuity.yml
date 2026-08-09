@@ -1,0 +1,66 @@
+name: ULTEF PX-02 Character Continuity
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  character-continuity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_px02_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_px02_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_px02_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_px02_test
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare profile schema
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Run PX-LUMI-02 character reload to later story closure
+        run: pnpm ultef:px02-character-continuity
+      - name: Print PX-02 evidence
+        if: always()
+        run: |
+          FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-02-CHARACTER-RELOAD-STORY-001.md' -type f 2>/dev/null | sort | tail -n 1)
+          if [ -n "$FILE" ]; then
+            cat "$FILE"
+          else
+            echo "PX-LUMI-02 evidence was not produced."
+          fi
+      - name: Upload PX-02 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-px02-character-continuity-evidence
+          path: artifacts/ultef/
+          if-no-files-found: warn
+          retention-days: 14
