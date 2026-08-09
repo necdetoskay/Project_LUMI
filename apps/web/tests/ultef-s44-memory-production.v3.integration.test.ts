@@ -13,6 +13,7 @@ import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
 
 const SCENARIO_ID = "PX-LUMI-S44-MEMORY-PRODUCTION-001";
+const COMMITTED_SUMMARY = "Bora eski köprüde Arin'e verdiği sözü hatırlıyor.";
 const enabled = process.env.ULTEF_SCENARIO === SCENARIO_ID;
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
@@ -89,7 +90,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
       const committed = memoryChange({
         key: "bridge-promise",
         ownerId: ownerA,
-        summary: "Bora eski köprüde Arin'e verdiği sözü hatırlıyor.",
+        summary: COMMITTED_SUMMARY,
         salience: 0.95,
       });
 
@@ -258,8 +259,8 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
       );
       scenario.assert(
         "Highest-salience committed memory ranks first deterministically",
-        relevant[0]?.summary === committed.value.summary,
-        committed.value.summary,
+        relevant[0]?.summary === COMMITTED_SUMMARY,
+        COMMITTED_SUMMARY,
         relevant[0]?.summary ?? null,
       );
 
@@ -286,7 +287,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
             memory.worldId === worldA &&
             memory.childProfileId === profileA,
         ) &&
-        relevant[0]?.summary === committed.value.summary;
+        relevant[0]?.summary === COMMITTED_SUMMARY;
 
       const report = scenario.finish({
         result: passed ? "PASS" : "FAIL",
