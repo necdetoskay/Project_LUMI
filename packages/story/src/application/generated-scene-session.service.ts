@@ -97,7 +97,9 @@ export async function persistGeneratedSceneAndAdvance(
   });
   const generatedSceneKey = generatedSceneKeyForSource({
     sessionId: input.sessionId,
-    sourceHookId: input.sourceHookId,
+    ...(input.sourceHookId !== undefined
+      ? { sourceHookId: input.sourceHookId }
+      : {}),
     fallbackFingerprint: sourceFingerprint,
   });
 
