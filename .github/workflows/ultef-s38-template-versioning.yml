@@ -46,6 +46,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Prepare profile schema
         run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
       - name: Prepare story schema
         run: pnpm --filter @lumi/story story:migrate
       - name: Run S38 DB-backed template versioning evidence
