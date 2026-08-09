@@ -11,12 +11,7 @@ const MEMORY_KINDS = new Set([
   "discovery",
   "change",
 ]);
-const MEMORY_LIFECYCLES = new Set([
-  "durable",
-  "decaying",
-  "superseded",
-  "archived",
-]);
+const MEMORY_LIFECYCLES = new Set(["durable", "decaying", "archived"]);
 
 export interface CommitCanonicalMemoriesInput {
   tx: QueryExecutor;
@@ -94,8 +89,9 @@ function parseMemoryValue(
         )
         .slice(0, 19)
     : [];
-  if (evidenceRef && !provenance.includes(evidenceRef))
+  if (evidenceRef && !provenance.includes(evidenceRef)) {
     provenance.push(evidenceRef);
+  }
 
   return {
     summary: summary.slice(0, 500),
@@ -111,11 +107,40 @@ function parseMemoryValue(
   };
 }
 
+async function supersedePriorMemory(
+  input: CommitCanonicalMemoriesInput,
+  ownerId: string,
+  priorMemoryId: string,
+): Promise<void> {
+  const result = await input.tx.execute(sql`
+    UPDATE npc_intelligence.memories
+       SET lifecycle = 'superseded',
+           archived_at = ${input.createdAt}
+     WHERE id = ${priorMemoryId}::uuid
+       AND household_id = ${input.householdId}::uuid
+       AND world_id = ${input.worldId}::uuid
+       AND owner_type = 'npc'
+       AND owner_id = ${ownerId}::uuid
+       AND child_profile_id IS NOT DISTINCT FROM ${input.childProfileId ?? null}::uuid
+       AND lifecycle IN ('durable', 'decaying')
+    RETURNING id
+  `);
+
+  if (result.length !== 1) {
+    throw new Error(
+      "MEMORY_SUPERSESSION_SCOPE_MISMATCH: prior memory is missing, inactive or outside the exact household/world/profile/owner scope",
+    );
+  }
+}
+
 /**
  * Projects committed npc_memory_update changes into canonical memory evidence
  * using the caller's transaction. A failed story/world commit therefore leaves
  * no canonical-memory residue, and replay is absorbed by the deterministic
  * household/world/effect unique key.
+ *
+ * Replacement memories preserve history: the prior row remains stored but is
+ * marked superseded, while the new row points back through supersedes_memory_id.
  */
 export async function commitCanonicalMemories(
   input: CommitCanonicalMemoriesInput,
@@ -128,6 +153,24 @@ export async function commitCanonicalMemories(
   for (const change of memoryChanges) {
     const memory = parseMemoryValue(change.value, change.evidenceRef);
     const effectKey = `story-memory:${input.outcomeId}:${change.changeKey}`;
+
+    const existingEffect = await input.tx.execute(sql`
+      SELECT id
+        FROM npc_intelligence.memories
+       WHERE household_id = ${input.householdId}::uuid
+         AND world_id = ${input.worldId}::uuid
+         AND effect_key = ${effectKey}
+       LIMIT 1
+    `);
+    if (existingEffect.length > 0) continue;
+
+    if (memory.supersedesMemoryId) {
+      await supersedePriorMemory(
+        input,
+        change.entityId,
+        memory.supersedesMemoryId,
+      );
+    }
 
     await input.tx.execute(sql`
       INSERT INTO npc_intelligence.memories (
@@ -149,7 +192,8 @@ export async function commitCanonicalMemories(
         provenance,
         lifecycle,
         supersedes_memory_id,
-        created_at
+        created_at,
+        archived_at
       ) VALUES (
         ${crypto.randomUUID()}::uuid,
         ${input.householdId}::uuid,
@@ -169,7 +213,8 @@ export async function commitCanonicalMemories(
         ${JSON.stringify(memory.provenance)}::jsonb,
         ${memory.lifecycle},
         ${memory.supersedesMemoryId}::uuid,
-        ${input.createdAt}
+        ${input.createdAt},
+        ${memory.lifecycle === "archived" ? input.createdAt : null}
       )
       ON CONFLICT (household_id, world_id, effect_key) DO NOTHING
     `);
