@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type CharacterResponse = {
@@ -8,10 +9,6 @@ type CharacterResponse = {
     childProfileId: string;
     householdId: string;
     name: string;
-    broadKind: string;
-    characterType: string;
-    subtype: string;
-    originMode: string;
     originConcept: string | null;
     startingLocation: string | null;
     homeArchetype: string | null;
@@ -23,8 +20,6 @@ type CharacterResponse = {
 type InventoryItem = {
   id: string;
   displayName: string;
-  category: string;
-  rarity: string;
   quantity: number;
   conditionStatus: string;
 };
@@ -79,7 +74,7 @@ export function ProfileCharacterDetailSection({
       const householdId = onboardingData.onboarding?.householdId ?? null;
 
       if (!householdId) {
-        setError("Household bilgisi bulunamadi.");
+        setError("Aile bilgisi bulunamadı.");
         setCharacter(null);
         setInventory([]);
         setWorld(null);
@@ -92,7 +87,7 @@ export function ProfileCharacterDetailSection({
       const characterBody = (await characterRes.json()) as CharacterResponse;
 
       if (!characterRes.ok || !characterBody.character) {
-        setError(characterBody.message ?? "Karakter bilgisi yuklenemedi.");
+        setError(characterBody.message ?? "Karakter bilgisi yüklenemedi.");
         setCharacter(null);
         setInventory([]);
         setWorld(null);
@@ -126,7 +121,7 @@ export function ProfileCharacterDetailSection({
         setWorld(null);
       }
     } catch {
-      setError("Karakter detaylari yuklenirken bir hata olustu.");
+      setError("Karakterin dünyası şu anda yüklenemedi.");
       setCharacter(null);
       setInventory([]);
       setWorld(null);
@@ -139,10 +134,6 @@ export function ProfileCharacterDetailSection({
     void loadDetail();
   }, [loadDetail]);
 
-  const inventoryCount = useMemo(
-    () => inventory.reduce((sum, item) => sum + item.quantity, 0),
-    [inventory],
-  );
   const currentRegion = useMemo(
     () => world?.regions.find((region) => region.isCurrentRegion) ?? null,
     [world],
@@ -150,253 +141,381 @@ export function ProfileCharacterDetailSection({
 
   if (loading) {
     return (
-      <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <p className="text-sm text-on-surface-variant">
-          Karakter yukleniyor...
-        </p>
-      </section>
+      <StateSurface
+        icon="auto_awesome"
+        title="Şimdiye dönüyoruz…"
+        message="Karakterin son bilinen yeri ve yanında olanlar hazırlanıyor."
+      />
     );
   }
 
   if (error || !character) {
     return (
-      <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <div className="rounded-xl border border-error-container bg-white px-5 py-4 text-sm text-error">
-          {error ?? "Karakter bulunamadi."}
-        </div>
-      </section>
+      <StateSurface
+        icon="error"
+        title="Bu sayfa açılamadı"
+        message={error ?? "Karakter bulunamadı."}
+      />
     );
   }
 
-  return (
-    <main className="mx-auto flex w-full max-w-[1180px] flex-col px-6 py-10">
-      <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm font-semibold text-on-surface-variant">
-        <a className="transition-colors hover:text-primary" href="/app">
-          Dashboard
-        </a>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a
-          className="transition-colors hover:text-primary"
-          href="/app/profiles"
-        >
-          Profiller
-        </a>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <a
-          className="transition-colors hover:text-primary"
-          href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
-        >
-          Profil
-        </a>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <span className="text-primary">{character.name}</span>
-      </nav>
+  const currentLocation = world?.currentLocation?.displayName ?? null;
+  const fallbackLocation = character.startingLocation ?? character.homeArchetype;
+  const locationTitle = currentLocation ?? fallbackLocation ?? "Henüz bilinmiyor";
+  const hasCanonicalCurrentLocation = Boolean(currentLocation);
 
-      <header className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-              <span className="material-symbols-outlined text-[32px]">
-                sparkles
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                Karakter
+  return (
+    <main className="storybook-page min-h-full">
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 py-6 sm:px-6 md:py-9">
+        <nav
+          className="flex flex-wrap items-center gap-2 text-sm font-semibold text-on-surface-variant"
+          aria-label="Karakter yolu"
+        >
+          <Link href="/app" className="hover:text-primary">
+            Ailem
+          </Link>
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
+            chevron_right
+          </span>
+          <Link href="/app/profiles" className="hover:text-primary">
+            Çocuklar
+          </Link>
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
+            chevron_right
+          </span>
+          <Link
+            href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
+            className="hover:text-primary"
+          >
+            Profil
+          </Link>
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
+            chevron_right
+          </span>
+          <span className="text-on-surface">{character.name}</span>
+        </nav>
+
+        <section className="overflow-hidden rounded-[2.2rem] border border-outline-variant/70 bg-white/80 shadow-sm backdrop-blur">
+          <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
+            <div className="p-7 md:p-10">
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">
+                Şimdi
               </p>
-              <h1 className="mt-2 text-2xl font-extrabold text-on-surface md:text-3xl">
+              <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-on-surface md:text-6xl">
                 {character.name}
               </h1>
-              <div className="mt-3 flex flex-wrap gap-2 text-sm text-on-surface-variant">
-                <Badge text={character.characterType} />
-                <Badge text={character.subtype} />
-                <Badge text={character.originMode} />
-              </div>
-              <p className="mt-4 max-w-[42rem] text-sm leading-6 text-on-surface-variant">
-                Karakterin kimligini, su anki dunya baglamini ve hikaye
-                baslatmak icin kullanilabilecek temel durumu burada
-                gorebilirsiniz.
+              <p className="mt-4 max-w-[42rem] text-base leading-7 text-on-surface-variant md:text-lg">
+                {hasCanonicalCurrentLocation
+                  ? `${character.name} şu anda ${locationTitle} konumunda. Bu sayfa yalnızca dünyada gerçekten kayıtlı olan güncel durumu gösterir.`
+                  : `Şu anki konum henüz kaydedilmemiş. Bildiğimiz en son başlangıç/yuvaya ait yer ${locationTitle}. Yeni bir sahne olmuş gibi varsaymıyoruz.`}
               </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
-              href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                travel_explore
-              </span>
-              Haritayi ac
-            </a>
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
-              href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                arrow_back
-              </span>
-              Profile don
-            </a>
-          </div>
-        </div>
-      </header>
 
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-xl font-bold text-on-surface">
-              Karakter ozeti
-            </h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoTile label="Karakter tipi" value={character.characterType} />
-              <InfoTile label="Alt tur" value={character.subtype} />
-              <InfoTile
-                label="Baslangic"
-                value={character.startingLocation ?? "Belirlenmedi"}
-              />
-              <InfoTile
-                label="Yuva"
-                value={character.homeArchetype ?? "Belirlenmedi"}
-              />
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  className="storybook-button"
+                  href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">
+                    menu_book
+                  </span>
+                  Hikâyelere git
+                </Link>
+                <Link
+                  className="storybook-button-secondary"
+                  href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">
+                    map
+                  </span>
+                  Dünyamı aç
+                </Link>
+              </div>
             </div>
-            {character.originConcept ? (
-              <div className="mt-4 rounded-xl border border-outline-variant bg-surface-container-low p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                  Origin concept
-                </p>
-                <p className="mt-2 text-sm leading-6 text-on-surface">
+
+            <div className="relative min-h-[290px] overflow-hidden bg-[linear-gradient(155deg,#dff2e9_0%,#f5e8cd_54%,#e7def7_100%)] p-7 md:p-9">
+              <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/55" />
+              <div className="absolute bottom-0 left-0 right-0 h-28 rounded-t-[50%] bg-[#7aa98b]/25" />
+              <div className="relative z-10 flex h-full min-h-[220px] flex-col justify-between rounded-[1.7rem] border border-white/70 bg-white/55 p-5 backdrop-blur-sm">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">
+                    {hasCanonicalCurrentLocation ? "Bulunduğun yer" : "Son bildiğimiz yer"}
+                  </p>
+                  <h2 className="mt-2 text-3xl font-extrabold text-on-surface">
+                    {locationTitle}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                    {currentRegion?.displayName
+                      ? `${currentRegion.displayName} içinde görünüyor.`
+                      : "Bölge bilgisi henüz kesinleşmedi."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-on-surface">
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-white/80 text-primary">
+                    <span className="material-symbols-outlined" aria-hidden="true">
+                      location_on
+                    </span>
+                  </span>
+                  {hasCanonicalCurrentLocation
+                    ? "Kanonik dünya konumundan gösteriliyor"
+                    : "Yeni bir konum uydurulmadı"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <CurrentLifeNavigation
+          childProfileId={childProfileId}
+          characterId={characterId}
+        />
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
+          <div className="space-y-6">
+            <StoryPanel
+              eyebrow="Yanında"
+              title="Yolculukta seninle olanlar"
+              description="Burada yalnızca karaktere gerçekten bağlı görünen eşyaları gösteriyoruz."
+            >
+              {inventory.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {inventory.map((item) => (
+                    <article
+                      key={item.id}
+                      className="rounded-2xl border border-outline-variant/70 bg-surface-container-low/70 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-bold text-on-surface">
+                            {item.displayName}
+                          </p>
+                          <p className="mt-1 text-sm text-on-surface-variant">
+                            {conditionSentence(item.conditionStatus)}
+                          </p>
+                        </div>
+                        {item.quantity > 1 ? (
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant">
+                            {item.quantity} tane
+                          </span>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <TruthfulEmptyState message="Şu anda yanında kayıtlı bir eşya görünmüyor." />
+              )}
+            </StoryPanel>
+
+            <StoryPanel
+              eyebrow="Geçmişinden"
+              title="Buraya nasıl geldin?"
+              description="Karakterin ilk oluşumunda kanona giren başlangıç bilgileri burada sade bir hatırlatma olarak kalır."
+            >
+              {character.originConcept ? (
+                <p className="text-base leading-7 text-on-surface">
                   {character.originConcept}
                 </p>
+              ) : (
+                <TruthfulEmptyState message="Başlangıç hikâyesine ait bir özet henüz kayıtlı değil." />
+              )}
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <QuietFact
+                  label="İlk bilinen yer"
+                  value={character.startingLocation ?? "Henüz kayıtlı değil"}
+                />
+                <QuietFact
+                  label="Yuva"
+                  value={character.homeArchetype ?? "Henüz kayıtlı değil"}
+                />
               </div>
-            ) : null}
-          </section>
+            </StoryPanel>
+          </div>
 
-          <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-xl font-bold text-on-surface">Canta ozeti</h2>
-            {inventory.length > 0 ? (
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {inventory.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-outline-variant bg-surface-container-low p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-on-surface">
-                        {item.displayName}
-                      </p>
-                      <span className="text-xs text-on-surface-variant">
-                        x{item.quantity}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-on-surface-variant">
-                      {item.category} | {item.rarity} | {item.conditionStatus}
-                    </p>
-                  </div>
-                ))}
+          <aside className="space-y-6">
+            <StoryPanel
+              eyebrow="Devam et"
+              title="Bugün nereye bakalım?"
+              description="Bir geçmiş hikâyeyi açmak yalnızca okumadır; bu sayfa kendi başına dünya durumunu değiştirmez."
+            >
+              <div className="space-y-3">
+                <ContinuationLink
+                  href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
+                  icon="auto_stories"
+                  title="Hikâyelerim"
+                  description="Devam eden ve geçmiş hikâyeleri aç."
+                />
+                <ContinuationLink
+                  href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
+                  icon="travel_explore"
+                  title="Dünyam"
+                  description="Bilinen bölgeleri ve konumu incele."
+                />
+                <ContinuationLink
+                  href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
+                  icon="face"
+                  title="Profil"
+                  description="İlgi alanları ve ebeveyn ayarlarına dön."
+                />
               </div>
-            ) : (
-              <p className="mt-4 text-sm leading-6 text-on-surface-variant">
-                Karaktere bagli gorunen bir esya henuz kaydedilmedi.
-              </p>
-            )}
-          </section>
-        </div>
-
-        <aside className="space-y-6">
-          <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">Dunya durumu</h2>
-            <div className="mt-4 grid grid-cols-1 gap-3">
-              <InfoTile
-                label="Su anki konum"
-                value={world?.currentLocation?.displayName ?? "Bilinmiyor"}
-              />
-              <InfoTile
-                label="Bulundugu bolge"
-                value={currentRegion?.displayName ?? "Bilinmiyor"}
-              />
-              <InfoTile
-                label="Canta"
-                value={inventoryCount > 0 ? `${inventoryCount} esya` : "Bos"}
-              />
-              <InfoTile
-                label="Olusturma"
-                value={new Date(character.createdAt).toLocaleDateString(
-                  "tr-TR",
-                )}
-              />
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-outline-variant bg-white p-6">
-            <h2 className="text-lg font-bold text-on-surface">
-              Siradaki adimlar
-            </h2>
-            <div className="mt-4 space-y-3">
-              <ActionLink
-                href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
-                title="Hikayelere don"
-                description="Bu karakter icin devam eden oturumlari veya yeni hikaye akisini acin."
-                icon="menu_book"
-              />
-              <ActionLink
-                href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
-                title="Dunyayi incele"
-                description="Konum, gorunen bolgeler ve kesif durumunu kontrol edin."
-                icon="map"
-              />
-            </div>
-          </section>
-        </aside>
-      </section>
+            </StoryPanel>
+          </aside>
+        </section>
+      </div>
     </main>
   );
 }
 
-function InfoTile({ label, value }: { label: string; value: string }) {
+function CurrentLifeNavigation({
+  childProfileId,
+  characterId,
+}: {
+  childProfileId: string;
+  characterId: string;
+}) {
   return (
-    <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+    <nav
+      className="flex gap-2 overflow-x-auto rounded-2xl border border-outline-variant/60 bg-white/75 p-2 shadow-sm"
+      aria-label="Çocuk deneyimi"
+    >
+      <span className="shrink-0 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-on-primary">
+        Şimdi
+      </span>
+      <Link
+        className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+        href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
+      >
+        Hikâyeler
+      </Link>
+      <Link
+        className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+        href={`/app/profiles/${encodeURIComponent(childProfileId)}/world?characterId=${encodeURIComponent(characterId)}`}
+      >
+        Dünyam
+      </Link>
+      <Link
+        className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+        href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
+      >
+        Profil
+      </Link>
+    </nav>
+  );
+}
+
+function StoryPanel({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[1.8rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-7">
+      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+        {eyebrow}
+      </p>
+      <h2 className="mt-2 text-2xl font-extrabold text-on-surface">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+        {description}
+      </p>
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+function QuietFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-surface-container-low/70 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.1em] text-on-surface-variant">
         {label}
       </p>
-      <p className="mt-2 text-sm font-semibold text-on-surface">{value}</p>
+      <p className="mt-2 font-semibold leading-6 text-on-surface">{value}</p>
     </div>
   );
 }
 
-function Badge({ text }: { text: string }) {
+function ContinuationLink({
+  href,
+  icon,
+  title,
+  description,
+}: {
+  href: string;
+  icon: string;
+  title: string;
+  description: string;
+}) {
   return (
-    <span className="rounded-full bg-surface-container-low px-3 py-1 text-sm text-on-surface-variant">
-      {text}
-    </span>
+    <Link
+      href={href}
+      className="flex items-center gap-4 rounded-2xl border border-outline-variant/70 bg-surface-container-low/60 p-4 transition hover:-translate-y-0.5 hover:bg-surface-container-low"
+    >
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-primary">
+        <span className="material-symbols-outlined" aria-hidden="true">
+          {icon}
+        </span>
+      </span>
+      <span>
+        <span className="block font-bold text-on-surface">{title}</span>
+        <span className="mt-1 block text-sm leading-5 text-on-surface-variant">
+          {description}
+        </span>
+      </span>
+    </Link>
   );
 }
 
-function ActionLink({
-  href,
-  title,
-  description,
+function TruthfulEmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-outline-variant bg-surface-container-low/50 px-5 py-7 text-sm leading-6 text-on-surface-variant">
+      {message}
+    </div>
+  );
+}
+
+function StateSurface({
   icon,
+  title,
+  message,
 }: {
-  href: string;
-  title: string;
-  description: string;
   icon: string;
+  title: string;
+  message: string;
 }) {
   return (
-    <a
-      className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-4 transition-colors hover:border-primary/30 hover:bg-white"
-      href={href}
-    >
-      <span className="material-symbols-outlined text-[20px] text-primary">
-        {icon}
-      </span>
-      <div>
-        <p className="text-sm font-semibold text-on-surface">{title}</p>
-        <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-          {description}
-        </p>
+    <main className="storybook-page min-h-full">
+      <div className="mx-auto max-w-[900px] px-5 py-12">
+        <section className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-8 text-center shadow-sm">
+          <span className="material-symbols-outlined text-4xl text-primary" aria-hidden="true">
+            {icon}
+          </span>
+          <h1 className="mt-4 text-2xl font-extrabold text-on-surface">{title}</h1>
+          <p className="mx-auto mt-3 max-w-xl leading-7 text-on-surface-variant">
+            {message}
+          </p>
+        </section>
       </div>
-    </a>
+    </main>
   );
+}
+
+function conditionSentence(conditionStatus: string): string {
+  switch (conditionStatus.toLowerCase()) {
+    case "new":
+      return "Yeni gibi görünüyor.";
+    case "used":
+      return "Daha önce kullanılmış.";
+    case "damaged":
+      return "Biraz zarar görmüş.";
+    case "broken":
+      return "Şu anda kullanılamayacak durumda.";
+    case "repaired":
+      return "Onarılmış ve yeniden yanında.";
+    default:
+      return "Durumu dünyada kayıtlı.";
+  }
 }
