@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+import {
+  StorybookBackdrop,
+  StorybookCard,
+  StorybookScene,
+} from "@/components/public/storybook-shell";
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function getValue(value: string | string[] | undefined) {
@@ -33,49 +39,37 @@ export default async function RegisterPage({
   const error = getErrorMessage(getValue(params.error));
 
   return (
-    <main className="flex-grow flex items-center justify-center py-section-block px-padding-inline relative overflow-hidden">
-      <div className="w-full max-w-[40rem] z-10">
-        <div className="bg-surface border border-outline-variant rounded-xl p-8 md:p-12">
-          <div className="text-center mb-10">
-            <span className="font-eyebrow text-eyebrow text-primary tracking-widest uppercase mb-4 block">
-              PROJECT LUMI
-            </span>
-            <h1 className="font-headline-xl-mobile md:font-headline-xl text-[clamp(28px,6vw,40px)] md:leading-[48px] text-on-background mb-4">
-              Ebeveyn hesabı oluştur
-            </h1>
-            <p className="font-lead text-lead text-on-surface-variant">
-              Çocuğunuzun hayal dünyasını keşfetmesine yardımcı olacak güvenli
-              bir liman inşa edelim.
+    <section className="storybook-page">
+      <StorybookBackdrop />
+      <div className="storybook-grid storybook-grid-auth">
+        <StorybookCard
+          eyebrow="İlk sayfa"
+          title="Yeni bir evrenin kapısını aç"
+          description="Önce ebeveyn hesabını oluştur. Sonraki adımlarda çocuk profili, ilgi alanları, karakteri ve yaşayacağı dünya birlikte şekillenecek."
+          note={
+            <p>
+              Zaten hesabın var mı?{" "}
+              <Link className="storybook-inline-link" href="/login">
+                Hikâyene dön
+              </Link>
             </p>
-          </div>
+          }
+        >
           {error ? (
-            <div
-              className="hidden bg-destructive-soft border border-error rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 mb-6"
-              id="error-box"
-            >
-              <span className="material-symbols-outlined text-error">
-                error
-              </span>
-              <div className="font-body text-body text-on-error-container">
-                {error}
-              </div>
+            <div className="storybook-message storybook-message-error" role="alert">
+              {error}
             </div>
           ) : null}
           <form
-            className="space-y-form-gap"
+            className="storybook-form"
             action="/api/auth/register"
             method="post"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-form-gap">
-              <div className="flex flex-col gap-2">
-                <label
-                  className="font-label-bold text-label-bold text-on-surface"
-                  htmlFor="displayName"
-                >
-                  Ad
-                </label>
+            <div className="storybook-form-row">
+              <div className="storybook-field">
+                <label htmlFor="displayName">Ebeveyn adı</label>
                 <input
-                  className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body"
+                  className="storybook-input"
                   id="displayName"
                   name="displayName"
                   placeholder="Örn: Elif"
@@ -84,33 +78,24 @@ export default async function RegisterPage({
                   minLength={2}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <label
-                  className="font-label-bold text-label-bold text-on-surface"
-                  htmlFor="email"
-                >
-                  E-posta
-                </label>
+              <div className="storybook-field">
+                <label htmlFor="email">E-posta</label>
                 <input
-                  className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body"
+                  className="storybook-input"
                   id="email"
                   name="email"
                   placeholder="e-posta@adresiniz.com"
                   required
                   autoComplete="email"
+                  type="email"
                   defaultValue={email}
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <label
-                className="font-label-bold text-label-bold text-on-surface"
-                htmlFor="password"
-              >
-                Şifre
-              </label>
+            <div className="storybook-field">
+              <label htmlFor="password">Şifre</label>
               <input
-                className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body"
+                className="storybook-input"
                 id="password"
                 minLength={10}
                 name="password"
@@ -119,51 +104,39 @@ export default async function RegisterPage({
                 autoComplete="new-password"
                 type="password"
               />
-              <p className="text-[12px] text-muted mt-1">
-                Şifreniz güvenliğiniz için en az 10 karakterden oluşmalıdır.
+              <p className="storybook-field-help">
+                Hesabını korumak için en az 10 karakter kullan.
               </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <label
-                className="font-label-bold text-label-bold text-on-surface"
-                htmlFor="confirmPassword"
-              >
-                Şifre Tekrar
-              </label>
+            <div className="storybook-field">
+              <label htmlFor="confirmPassword">Şifreyi tekrar et</label>
               <input
-                className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all placeholder:text-outline-variant font-body text-body"
+                className="storybook-input"
                 id="confirmPassword"
                 name="confirmPassword"
-                placeholder="Şifrenizi tekrar girin"
+                placeholder="Şifreni tekrar gir"
                 required
                 autoComplete="new-password"
                 minLength={10}
                 type="password"
               />
             </div>
-            <div className="pt-4">
-              <button
-                className="w-full py-[0.85rem] bg-primary text-on-primary font-label-bold text-label-bold rounded-lg hover:bg-[#4c29cf] transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-                type="submit"
-              >
-                <span>Hesap Oluştur</span>
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
+            <button className="storybook-button" type="submit">
+              İlk adımı tamamla
+              <span className="material-symbols-outlined" aria-hidden="true">
+                auto_awesome
+              </span>
+            </button>
           </form>
-          <div className="mt-8 pt-8 border-t border-outline-variant text-center">
-            <p className="font-body text-body text-on-surface-variant">
-              Zaten bir hesabınız var mı?{" "}
-              <Link
-                className="text-primary font-label-bold hover:underline decoration-primary ml-1"
-                href="/login"
-              >
-                Giriş yap
-              </Link>
-            </p>
-          </div>
-        </div>
+        </StorybookCard>
+
+        <StorybookScene
+          kicker="Henüz hiçbir şey kesinleşmedi"
+          title="Dünya çocuğunla birlikte büyüyecek"
+          text="Bugün yalnızca hesabı açıyoruz. Karakter, aile, ilgi alanları, geçmiş ve keşfedilecek yerler sonraki adımlarda sade seçimlerle oluşacak; bütün hikâyeler baştan yazılmayacak."
+          icon="🌱"
+        />
       </div>
-    </main>
+    </section>
   );
 }
