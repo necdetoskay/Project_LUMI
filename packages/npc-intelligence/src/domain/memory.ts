@@ -51,10 +51,12 @@ export interface CanonicalMemory {
   effectKey: string;
   provenance: string[];
   lifecycle: MemoryLifecycle;
+  /** Points from the replacement memory to the historical memory it supersedes. */
   supersedesMemoryId?: string | null;
   createdAt: Date;
   lastReinforcedAt?: Date | null;
   expiresAt?: Date | null;
+  /** Set when this row itself leaves active retrieval (superseded or archived). */
   archivedAt?: Date | null;
 }
 
@@ -112,12 +114,18 @@ export function validateCanonicalMemory(memory: CanonicalMemory): void {
     assertNonEmptyString(entry, "memory.provenance[]");
   }
 
-  if (memory.lifecycle === "superseded" && !memory.supersedesMemoryId) {
+  if (
+    (memory.lifecycle === "superseded" || memory.lifecycle === "archived") &&
+    !memory.archivedAt
+  ) {
     throw new Error(
-      "superseded memory must retain supersedesMemoryId provenance",
+      `${memory.lifecycle} memory must include archivedAt to preserve lifecycle evidence`,
     );
   }
-  if (memory.lifecycle === "archived" && !memory.archivedAt) {
-    throw new Error("archived memory must include archivedAt");
+  if (memory.supersedesMemoryId != null) {
+    assertNonEmptyString(memory.supersedesMemoryId, "memory.supersedesMemoryId");
+    if (memory.supersedesMemoryId === memory.id) {
+      throw new Error("memory cannot supersede itself");
+    }
   }
 }
