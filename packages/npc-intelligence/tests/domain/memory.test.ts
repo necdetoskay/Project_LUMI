@@ -45,12 +45,30 @@ describe("canonical memory", () => {
     ).toThrow();
   });
 
-  it("requires supersession provenance for superseded memories", () => {
+  it("allows an active replacement memory to point to the historical memory it supersedes", () => {
     expect(() =>
       validateCanonicalMemory(
-        makeMemory({ lifecycle: "superseded", supersedesMemoryId: null }),
+        makeMemory({
+          id: "mem-2",
+          lifecycle: "durable",
+          supersedesMemoryId: "mem-1",
+        }),
       ),
-    ).toThrow(/supersedesMemoryId/);
+    ).not.toThrow();
+  });
+
+  it("requires lifecycle evidence when a row itself is superseded", () => {
+    expect(() =>
+      validateCanonicalMemory(
+        makeMemory({ lifecycle: "superseded", archivedAt: null }),
+      ),
+    ).toThrow(/archivedAt/);
+  });
+
+  it("prevents self-supersession", () => {
+    expect(() =>
+      validateCanonicalMemory(makeMemory({ supersedesMemoryId: "mem-1" })),
+    ).toThrow(/supersede itself/);
   });
 
   it("requires an archive timestamp for archived memories", () => {
@@ -69,7 +87,7 @@ describe("canonical memory", () => {
       isRetrievableMemory(
         makeMemory({
           lifecycle: "superseded",
-          supersedesMemoryId: "mem-0",
+          archivedAt: new Date("2026-08-09T18:00:00.000Z"),
         }),
         now,
       ),
