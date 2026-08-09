@@ -1,6 +1,6 @@
-# PX-LUMI-04 Emotional Consistency — Production Wiring Blocker
+# PX-LUMI-04 Emotional Consistency — Closure Record
 
-Status: **BLOCKED**  
+Status: **EXECUTED PASS**  
 Date: 2026-08-09
 
 ## Gate requirement
@@ -11,61 +11,74 @@ Date: 2026-08-09
 2. emotion values remain bounded;
 3. unrelated emotion dimensions do not drift unexpectedly;
 4. the updated emotion state reaches downstream decision/utility evaluation;
-5. the narrative evidence can explain event → emotion delta → downstream consequence.
+5. the evidence explains event → emotion delta → downstream consequence.
 
-## What exists today
+## Production implementation
 
-### Bounded emotion domain and persistence
+The original audit identified two missing production boundaries. Both are now implemented.
 
-`@lumi/profiles` validates every provided emotion dimension against the canonical emotion dimension catalog and range `0..1`. `LumiCharacter.updateEmotions()` validates and versions the new vector. `updateEmotions()` persists it transactionally and emits `CHARACTER_EMOTION_UPDATED`.
+### Event → bounded emotion delta
 
-This proves that explicit emotion state can be validated and stored. It does **not** prove that a world/story event derives the correct emotion delta.
+`@lumi/profiles` now exposes a versioned deterministic event-to-emotion rule path (`emotion-rules-v1`). The evaluator:
 
-### Downstream utility consumption
+- accepts a typed story/world emotion event;
+- derives explicit per-dimension deltas plus evidence;
+- applies intensity deterministically;
+- clamps resulting values to `0..1`;
+- preserves emotion dimensions not touched by the event;
+- persists the resulting full vector through the existing character-domain transaction and versioning path.
 
-`@lumi/npc-intelligence` `DecisionContextBuilder` accepts an emotion vector and includes it in the deterministic decision context. `UtilityEvaluator` calculates `emotionalComfort` from `joy`, `trust`, `fear`, `anger`, and `sadness`.
+### Persisted emotion → decision context
 
-This proves that supplied emotions can influence utility evaluation. It does **not** prove that the persisted profile emotion state is the value supplied in production.
+The production decision adapter reloads the scoped character domain from `@lumi/profiles`, passes the exact persisted emotion vector into `DecisionContextBuilder`, and then allows the existing `UtilityEvaluator` to consume that decision context.
 
-### Context adapter boundary
+`UtilityEvaluator` calculates `emotionalComfort` from the persisted `joy`, `trust`, `fear`, `anger`, and `sadness` dimensions, so the event-derived state now has a real downstream behavioral consequence.
 
-`@lumi/context` currently exports `InMemoryEmotionalStateAdapter`. There is no production adapter in the adapter index that loads persisted profile emotion state for context construction.
+## Closure scenario
 
-The Sprint 11 implementation report explicitly described these context adapters as in-memory test doubles and deferred production adapters.
-
-## Missing production links
-
-### Blocker A — event → directional emotion delta
-
-No production service was found that accepts a story/world/NPC event and deterministically derives a bounded, evidence-bearing emotion delta while preserving unrelated dimensions.
-
-The existing `updateEmotions()` API accepts a complete caller-supplied vector. Using that API directly in a PX test would only prove storage of a chosen answer, not emotional consistency.
-
-### Blocker B — persisted emotion → decision context
-
-No production adapter/wiring was found that loads the persisted character emotion vector from `@lumi/profiles` and feeds that exact state into the downstream decision/context path.
-
-Passing a hand-built emotion object directly into `DecisionContextBuilder` would be a component test, not a production integration proof.
-
-## Why the gate is BLOCKED instead of FAIL
-
-The existing bounded-domain, persistence, and utility components are individually present. The missing requirement is the production orchestration boundary between them. ULTEF therefore records the gate as **BLOCKED** until the wiring exists rather than pretending a test double proves the real system.
-
-## Required implementation before PASS
-
-A minimal production-safe path should provide:
-
-1. a versioned event-to-emotion rule/evaluator that returns explicit per-dimension deltas plus evidence;
-2. bounded/clamped application semantics that preserve dimensions not touched by the event;
-3. persisted update through the existing profile character-domain transaction;
-4. a production emotional-state adapter/read contract for the decision/context layer;
-5. an integration scenario that proves the persisted post-event vector is the exact vector consumed by decision/utility evaluation;
-6. runtime narrative evidence containing event, before vector, delta, after vector, unchanged dimensions, decision context hash and utility consequence.
-
-## Closure scenario target
-
-Proposed stable ID:
+Stable scenario ID:
 
 `PX-LUMI-04-EMOTION-DECISION-001`
 
-The scenario should remain blocked until both missing production links are implemented. A mock/in-memory handoff must not close the gate.
+The DB-backed scenario uses disposable PostgreSQL and proves the complete production chain:
+
+`story event → versioned emotion rule → bounded delta → profile persistence → PostgreSQL reload → production decision context → UtilityEvaluator`
+
+The scenario starts with:
+
+- `joy=0.40`
+- `fear=0.60`
+- `trust=0.50`
+- `sadness=0.20`
+- `anger=0.10`
+- `surprise=0.30`
+
+A `reassuring_success` event at intensity `1` produces and persists:
+
+- `joy=0.58`
+- `fear=0.40`
+- `trust=0.60`
+
+while `sadness`, `anger`, and `surprise` remain unchanged.
+
+After reload, the production decision adapter consumes the persisted vector. The decision-context hash changes and the same candidate receives a higher `emotionalComfort` component and higher emotion-only utility score.
+
+## Validation evidence
+
+- Workflow: `ULTEF PX-04 Emotional Consistency #4`
+- Result: **PASS**
+- Head: `525c34fb3ff22b5ba43b47fc56d9b9ab09cc5d41`
+- Evidence artifact: `ultef-px04-emotional-consistency-evidence`
+- Artifact digest: `sha256:4b75e0299dcc3beb3361eb5f41326ef314fc90d4291f3e3aae36ebbab680dcb5`
+- Provider cost: `0`
+- `ULTEF Integration #400`: **PASS**
+- `ULTEF PX-LUMI #38`: **PASS**
+- `ULTEF PX-02 Character Continuity #15`: **PASS**
+- `Security Scan #580`: **PASS**
+- CI validate chain: format, lint, typecheck, tests, load gate and production build **PASS**
+
+## Closure decision
+
+Both production boundaries identified by the original blocker are now present and exercised through the real persistence and decision paths. No in-memory emotional-state adapter or hand-built decision emotion vector is used to claim closure.
+
+`PX-LUMI-04` is therefore **EXECUTED PASS / CLOSED**.
