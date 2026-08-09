@@ -54,7 +54,9 @@ test.describe("S42 character creation contract", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("bootstrap endpoints remain authorization protected", async ({ request }) => {
+  test("bootstrap endpoints remain authorization protected", async ({
+    request,
+  }) => {
     const statusResponse = await request.get(
       "/api/character-bootstrap/status?householdId=test&childProfileId=test",
     );
