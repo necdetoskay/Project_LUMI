@@ -5,6 +5,7 @@ import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 
 import "./globals.css";
+import "./storybook.css";
 
 export const metadata: Metadata = {
   title: "Project LUMI",
