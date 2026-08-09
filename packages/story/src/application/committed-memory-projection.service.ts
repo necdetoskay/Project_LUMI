@@ -46,7 +46,10 @@ function clamp01(value: unknown, fallback: number): number {
     : fallback;
 }
 
-function parseMemoryValue(value: unknown, evidenceRef: string): ParsedMemoryValue {
+function parseMemoryValue(
+  value: unknown,
+  evidenceRef: string,
+): ParsedMemoryValue {
   if (typeof value === "string" && value.trim()) {
     return {
       summary: value.trim().slice(0, 500),
@@ -60,13 +63,18 @@ function parseMemoryValue(value: unknown, evidenceRef: string): ParsedMemoryValu
   }
 
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("MEMORY_PROJECTION_INVALID_VALUE: npc memory requires text or structured value");
+    throw new Error(
+      "MEMORY_PROJECTION_INVALID_VALUE: npc memory requires text or structured value",
+    );
   }
 
   const record = value as Record<string, unknown>;
-  const summary = typeof record.summary === "string" ? record.summary.trim() : "";
+  const summary =
+    typeof record.summary === "string" ? record.summary.trim() : "";
   if (!summary) {
-    throw new Error("MEMORY_PROJECTION_MISSING_SUMMARY: npc memory summary is required");
+    throw new Error(
+      "MEMORY_PROJECTION_MISSING_SUMMARY: npc memory summary is required",
+    );
   }
 
   const kind =
@@ -74,15 +82,20 @@ function parseMemoryValue(value: unknown, evidenceRef: string): ParsedMemoryValu
       ? record.kind
       : "knowledge";
   const lifecycle =
-    typeof record.lifecycle === "string" && MEMORY_LIFECYCLES.has(record.lifecycle)
+    typeof record.lifecycle === "string" &&
+    MEMORY_LIFECYCLES.has(record.lifecycle)
       ? record.lifecycle
       : "durable";
   const provenance = Array.isArray(record.provenance)
     ? record.provenance
-        .filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+        .filter(
+          (entry): entry is string =>
+            typeof entry === "string" && entry.trim().length > 0,
+        )
         .slice(0, 19)
     : [];
-  if (evidenceRef && !provenance.includes(evidenceRef)) provenance.push(evidenceRef);
+  if (evidenceRef && !provenance.includes(evidenceRef))
+    provenance.push(evidenceRef);
 
   return {
     summary: summary.slice(0, 500),

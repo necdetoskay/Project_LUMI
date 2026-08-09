@@ -1,12 +1,4 @@
-import {
-  and,
-  desc,
-  eq,
-  gt,
-  isNull,
-  notInArray,
-  or,
-} from "drizzle-orm";
+import { and, desc, eq, gt, isNull, notInArray, or } from "drizzle-orm";
 
 import type { CanonicalMemory } from "../../../domain/memory";
 import { validateCanonicalMemory } from "../../../domain/memory";

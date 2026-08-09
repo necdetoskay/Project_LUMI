@@ -8,7 +8,9 @@ import {
 
 describe("canonical memory retrieval limits", () => {
   it("uses the bounded default when limit is omitted", () => {
-    expect(normalizeMemoryRetrievalLimit()).toBe(DEFAULT_MEMORY_RETRIEVAL_LIMIT);
+    expect(normalizeMemoryRetrievalLimit()).toBe(
+      DEFAULT_MEMORY_RETRIEVAL_LIMIT,
+    );
   });
 
   it("accepts a smaller positive integer", () => {
@@ -16,9 +18,9 @@ describe("canonical memory retrieval limits", () => {
   });
 
   it("caps oversized requests at the hard maximum", () => {
-    expect(normalizeMemoryRetrievalLimit(MAX_MEMORY_RETRIEVAL_LIMIT + 100)).toBe(
-      MAX_MEMORY_RETRIEVAL_LIMIT,
-    );
+    expect(
+      normalizeMemoryRetrievalLimit(MAX_MEMORY_RETRIEVAL_LIMIT + 100),
+    ).toBe(MAX_MEMORY_RETRIEVAL_LIMIT);
   });
 
   it.each([0, -1, 1.5, Number.NaN])("rejects invalid limit %s", (value) => {

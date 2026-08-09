@@ -28,10 +28,8 @@ export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
   constructor(
-    private readonly beliefs: NpcBeliefSourcePort =
-      new DrizzleBeliefSourceRepository(),
-    private readonly memories: CanonicalMemoryPort =
-      new DrizzleCanonicalMemoryRepository(),
+    private readonly beliefs: NpcBeliefSourcePort = new DrizzleBeliefSourceRepository(),
+    private readonly memories: CanonicalMemoryPort = new DrizzleCanonicalMemoryRepository(),
   ) {}
 
   async resolveContext(

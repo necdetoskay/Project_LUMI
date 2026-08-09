@@ -3,9 +3,7 @@ import pg from "pg";
 
 import { commitCanonicalMemories } from "@lumi/story/application";
 import { createDatabase as createStoryDatabase } from "@lumi/story/db/client";
-import {
-  createDatabase as createNpcDatabase,
-} from "@lumi/npc-intelligence/db/client";
+import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence/db";
 import type { WorldChange } from "@lumi/story/domain";
 
@@ -15,16 +13,20 @@ import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs
 const SCENARIO_ID = "PX-LUMI-S44-MEMORY-PRODUCTION-001";
 const COMMITTED_SUMMARY = "Bora eski köprüde Arin'e verdiği sözü hatırlıyor.";
 const enabled = process.env.ULTEF_SCENARIO === SCENARIO_ID;
-const databaseUrl = process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 const destructive = process.env.STORY_TEST_ENABLE_DESTRUCTIVE === "true";
-const ultefDescribe = enabled && destructive && databaseUrl ? describe : describe.skip;
+const ultefDescribe =
+  enabled && destructive && databaseUrl ? describe : describe.skip;
 
 let pool: pg.Pool;
 
 function assertSafeDisposableDatabase(url: string) {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`S44 memory production requires a disposable DB; got '${name}'.`);
+    throw new Error(
+      `S44 memory production requires a disposable DB; got '${name}'.`,
+    );
   }
 }
 
@@ -77,7 +79,9 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     const sessionA = crypto.randomUUID();
     const sessionB = crypto.randomUUID();
     const storyDb = createStoryDatabase(databaseUrl!);
-    const memoryRepo = new DrizzleCanonicalMemoryRepository(createNpcDatabase(databaseUrl!));
+    const memoryRepo = new DrizzleCanonicalMemoryRepository(
+      createNpcDatabase(databaseUrl!),
+    );
     const scenario = createScenario({
       id: SCENARIO_ID,
       title: "Canonical memory production contract",
@@ -147,7 +151,10 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
           throw new Error("S44_FORCED_ROLLBACK");
         });
       } catch (error) {
-        if (!(error instanceof Error) || error.message !== "S44_FORCED_ROLLBACK") {
+        if (
+          !(error instanceof Error) ||
+          error.message !== "S44_FORCED_ROLLBACK"
+        ) {
           throw error;
         }
       }
