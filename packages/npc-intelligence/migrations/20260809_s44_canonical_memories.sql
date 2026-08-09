@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS npc_intelligence.memories (
   source_type VARCHAR(32) NOT NULL,
   source_id VARCHAR(180) NOT NULL,
   story_session_id UUID,
-  outcome_id UUID,
+  outcome_id VARCHAR(180),
   effect_key VARCHAR(240) NOT NULL,
   provenance JSONB NOT NULL DEFAULT '[]'::jsonb,
   lifecycle VARCHAR(20) NOT NULL DEFAULT 'durable',
