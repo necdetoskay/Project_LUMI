@@ -71,10 +71,9 @@ async function assertMembership(householdId: string, userId: string) {
 }
 
 function normalizeCustomInterests(values: string[]) {
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(
-    0,
-    12,
-  );
+  return [
+    ...new Set(values.map((value) => value.trim()).filter(Boolean)),
+  ].slice(0, 12);
 }
 
 function assertAllowedValues<T extends string>(
