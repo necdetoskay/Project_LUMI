@@ -9,8 +9,8 @@ import {
 import type { StoryHookState } from "@lumi/story/domain";
 
 import { NpcBeliefStoryContinuityContextAdapter } from "@/lib/story-continuity-context-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 
 const enabled =
   process.env.ULTEF_SCENARIO === "PX-LUMI-02-CHARACTER-RELOAD-STORY-001";
@@ -121,6 +121,7 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
       projectGate: "PX-LUMI-02",
       seed: "px-lumi-02-character-reload-story-001",
     });
+    let report: ReturnType<typeof scenario.finish> | null = null;
 
     try {
       await pool.query(
@@ -203,35 +204,44 @@ ultefDescribe("PX-LUMI-02-CHARACTER-RELOAD-STORY-001", () => {
       expect(prompts[0]).toContain("courage=0.82");
       expect(result.scene.narrative).toContain("cesaretini hatirlayip");
 
-      scenario.action("Persist bounded character mutation", {
+      scenario.event("character_mutation", "Persisted bounded courage mutation", {
         characterId,
-        trait: "courage",
         from: 0.4,
         to: 0.82,
         versionFrom: 1,
         versionTo: 2,
       });
-      scenario.observe("ReloadedCharacterState", reloaded.rows[0]);
-      scenario.observe("LaterStoryPrompt", {
-        containsIdentity: prompts[0].includes("Aktif karakter Arin"),
-        containsVersion: prompts[0].includes("kalıcı karakter sürümü 2"),
-        containsTrait: prompts[0].includes("courage=0.82"),
+      scenario.event("character_reload", "Reloaded persisted character state", {
+        version: reloaded.rows[0].version,
+        courage: reloaded.rows[0].courage,
       });
-      scenario.observe("LaterScene", {
+      scenario.event("later_story", "Generated later scene with production continuity", {
         narrative: result.scene.narrative,
       });
-      scenario.assert("persisted character mutation appears in later story context", true, {
-        expected: "version=2 and courage=0.82 in production continuity prompt",
-      });
-      scenario.assert("later generated scene uses the persisted mutation", true, {
-        expected: "scene narrative reflects persisted courage",
-      });
-      scenario.pass();
+      scenario.delta("character.version", 1, 2, "persisted character mutation");
+      scenario.delta("character.traits.courage", 0.4, 0.82, "bounded trait update");
+      scenario.assert(
+        "persisted character mutation appears in later story context",
+        prompts[0].includes("kalıcı karakter sürümü 2") &&
+          prompts[0].includes("courage=0.82"),
+        "version=2 and courage=0.82 in production continuity prompt",
+        prompts[0],
+      );
+      scenario.assert(
+        "later generated scene uses the persisted mutation",
+        result.scene.narrative.includes("cesaretini hatirlayip"),
+        "scene narrative reflects persisted courage",
+        result.scene.narrative,
+      );
+      report = scenario.finish({ result: "PASS" });
     } catch (error) {
-      scenario.fail(error);
+      report = scenario.finish({
+        result: "FAIL",
+        reason: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     } finally {
-      await writeScenarioArtifacts(scenario);
+      if (report) await writeScenarioArtifacts(report);
       await pool.query(`DELETE FROM profile.households WHERE id = $1`, [
         householdId,
       ]);
