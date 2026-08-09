@@ -17,19 +17,32 @@ import {
 const MAX_BELIEF_FACTS_PER_NPC = 12;
 const MAX_CHARACTER_MEMORY_FACTS = 12;
 const MAX_NPC_MEMORY_FACTS = 8;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isCanonicalMemoryOwnerId(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
 
 /**
  * Web composition-root adapter that turns persisted character state, committed
  * choice/world consequences, bounded canonical memories and NPC beliefs into
  * prompt-safe story continuity facts. Every read stays inside the exact
  * household/world/owner/profile scope.
+ *
+ * Legacy story fixtures can still identify characters/NPCs with semantic names
+ * such as "Arin". Canonical memory persistence is UUID-scoped, so memory reads
+ * are attempted only for canonical UUID owner identities; legacy continuity
+ * evidence continues through the existing character/belief paths unchanged.
  */
 export class NpcBeliefStoryContinuityContextAdapter
   implements StoryContinuityContextPort
 {
   constructor(
-    private readonly beliefs: NpcBeliefSourcePort = new DrizzleBeliefSourceRepository(),
-    private readonly memories: CanonicalMemoryPort = new DrizzleCanonicalMemoryRepository(),
+    private readonly beliefs: NpcBeliefSourcePort =
+      new DrizzleBeliefSourceRepository(),
+    private readonly memories: CanonicalMemoryPort =
+      new DrizzleCanonicalMemoryRepository(),
   ) {}
 
   async resolveContext(
@@ -86,22 +99,25 @@ export class NpcBeliefStoryContinuityContextAdapter
         }
       }
 
-      const characterMemories = await this.memories.listRelevant({
-        householdId: input.householdId,
-        worldId: input.worldId,
-        childProfileId: input.childProfileId,
-        ownerType: "character",
-        ownerId: input.characterId,
-        now,
-        limit: MAX_CHARACTER_MEMORY_FACTS,
-      });
-
-      for (const memory of characterMemories) {
-        facts.push({
-          key: `memory:character:${memory.id}`,
-          summary: memory.summary,
-          source: "canonical_memory",
+      const characterMemoryOwnerId = character?.characterId ?? input.characterId;
+      if (isCanonicalMemoryOwnerId(characterMemoryOwnerId)) {
+        const characterMemories = await this.memories.listRelevant({
+          householdId: input.householdId,
+          worldId: input.worldId,
+          childProfileId: input.childProfileId,
+          ownerType: "character",
+          ownerId: characterMemoryOwnerId,
+          now,
+          limit: MAX_CHARACTER_MEMORY_FACTS,
         });
+
+        for (const memory of characterMemories) {
+          facts.push({
+            key: `memory:character:${memory.id}`,
+            summary: memory.summary,
+            source: "canonical_memory",
+          });
+        }
       }
     }
 
@@ -115,17 +131,21 @@ export class NpcBeliefStoryContinuityContextAdapter
     const npcIds = [...new Set(input.npcIds ?? [])].filter(Boolean);
 
     for (const npcId of npcIds) {
+      const npcMemoryPromise = isCanonicalMemoryOwnerId(npcId)
+        ? this.memories.listRelevant({
+            householdId: input.householdId,
+            worldId: input.worldId,
+            childProfileId: input.childProfileId ?? null,
+            ownerType: "npc",
+            ownerId: npcId,
+            now,
+            limit: MAX_NPC_MEMORY_FACTS,
+          })
+        : Promise.resolve([]);
+
       const [beliefs, npcMemories] = await Promise.all([
         this.beliefs.getBeliefs(npcId, input.householdId, input.worldId),
-        this.memories.listRelevant({
-          householdId: input.householdId,
-          worldId: input.worldId,
-          childProfileId: input.childProfileId ?? null,
-          ownerType: "npc",
-          ownerId: npcId,
-          now,
-          limit: MAX_NPC_MEMORY_FACTS,
-        }),
+        npcMemoryPromise,
       ]);
 
       for (const belief of beliefs
