@@ -13,6 +13,8 @@ import {
 const MAX_TRAITS = 6;
 const MAX_RELATIONSHIPS = 4;
 const MAX_INVENTORY_ITEMS = 5;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface CharacterContinuitySnapshot {
   characterId: string;
@@ -42,12 +44,18 @@ export interface CharacterContinuitySnapshot {
  * scope identifiers and never widens beyond the supplied household/child.
  * The returned shape is bounded and prompt-safe; callers do not receive ORM
  * records or arbitrary metadata.
+ *
+ * Character continuity is optional at the story boundary. A malformed
+ * character id therefore degrades to "no character facts" instead of issuing
+ * an invalid UUID query or blocking otherwise valid world/NPC continuity.
  */
 export async function getCharacterContinuitySnapshot(
   householdId: string,
   childProfileId: string,
   characterId: string,
 ): Promise<CharacterContinuitySnapshot | null> {
+  if (!UUID_PATTERN.test(characterId)) return null;
+
   const db = getProfileDb();
   const characterRepo = new DrizzleCharacterRepository(db);
   const domainRepo = new DrizzleCharacterDomainRepository(db);
