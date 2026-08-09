@@ -1,4 +1,5 @@
 export * from "./belief-source.port";
+export * from "./canonical-memory.port";
 export * from "./character-source.port";
 export * from "./decision-store.port";
 export * from "./opportunity-inbox.port";

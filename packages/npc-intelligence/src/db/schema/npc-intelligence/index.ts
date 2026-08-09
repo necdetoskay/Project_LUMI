@@ -22,4 +22,10 @@ export type {
 export { npcBeliefs } from "./beliefs";
 export type { NpcBeliefRecord, NewNpcBeliefRecord } from "./beliefs";
 
+export { canonicalMemories } from "./memories";
+export type {
+  CanonicalMemoryRecord,
+  NewCanonicalMemoryRecord,
+} from "./memories";
+
 export * from "./relations";

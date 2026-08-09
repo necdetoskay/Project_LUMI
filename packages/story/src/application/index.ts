@@ -112,6 +112,9 @@ export type {
   CommitOutcomeWithTxInput,
 } from "./world-commit.service";
 
+export { commitCanonicalMemories } from "./committed-memory-projection.service";
+export type { CommitCanonicalMemoriesInput } from "./committed-memory-projection.service";
+
 export {
   IndirectEffectPropagator,
   __setTestPropagationDb,
