@@ -33,5 +33,6 @@ export type QueryExecutor = {
   insert: Database["insert"];
   update: Database["update"];
   delete: Database["delete"];
+  execute: Database["execute"];
   transaction: Database["transaction"];
 };
