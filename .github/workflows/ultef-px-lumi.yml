@@ -32,6 +32,20 @@ jobs:
           pnpm --filter @lumi/simulation exec vitest run
           tests/ultef/ultef-world-time.test.ts
 
+      - name: Run PX-LUMI-08 rumor autonomy evidence
+        env:
+          ULTEF_SCENARIO: L3-NPC-001
+        run: >-
+          pnpm --filter @lumi/npc-intelligence exec vitest run
+          tests/ultef/ultef-rumor.test.ts
+
+      - name: Run PX-LUMI-08 opportunity-to-hook trace
+        env:
+          ULTEF_SCENARIO: L4-OPPORTUNITY-HOOK-001
+        run: >-
+          pnpm --filter @lumi/web exec vitest run
+          tests/ultef-opportunity-to-hook.test.ts
+
       - name: Print PX-LUMI evidence
         if: always()
         shell: bash
@@ -40,13 +54,20 @@ jobs:
             echo "PX-LUMI evidence directory was not produced."
             exit 0
           fi
-          PX07_FILE=$(find artifacts/ultef/runs -name 'PX-LUMI-07-WORLD-TIME-001.md' -type f 2>/dev/null | sort | tail -n 1 || true)
-          if [ -n "$PX07_FILE" ]; then
-            echo "===== PX-LUMI-07 WORLD TIME PROGRESSION ====="
-            cat "$PX07_FILE"
-          else
-            echo "PX-LUMI-07 evidence was not produced."
-          fi
+
+          for SCENARIO in \
+            PX-LUMI-07-WORLD-TIME-001 \
+            L3-NPC-001 \
+            L4-OPPORTUNITY-HOOK-001
+          do
+            FILE=$(find artifacts/ultef/runs -name "$SCENARIO.md" -type f 2>/dev/null | sort | tail -n 1 || true)
+            if [ -n "$FILE" ]; then
+              echo "===== $SCENARIO ====="
+              cat "$FILE"
+            else
+              echo "$SCENARIO evidence was not produced."
+            fi
+          done
 
       - name: Upload PX-LUMI evidence
         if: always()
