@@ -13,4 +13,5 @@ export { DrizzleWorkerNpcDecisionRepository } from "./drizzle/drizzle-worker-npc
 export type {
   WorkerNpcDecisionCommit,
   WorkerNpcDecisionCommitResult,
+  WorkerNpcDecisionEvidence,
 } from "./drizzle/drizzle-worker-npc-decision.repository";
