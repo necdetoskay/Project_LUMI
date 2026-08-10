@@ -63,7 +63,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ARTIFACT_DATABASE_URL: postgresql://lumi:lumi_artifact_only@localhost:55432/lumi_s51_artifact_test
       ARTIFACT_INTERNAL_DATABASE_URL: postgresql://lumi:lumi_artifact_only@s51-artifact-postgres:5432/lumi_s51_artifact_test
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +75,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Create artifact runtime network and PostgreSQL
+      - name: Create blank artifact PostgreSQL
         run: |
           docker network create s51-artifact-runtime
           docker run -d --name s51-artifact-postgres --network s51-artifact-runtime \
@@ -92,13 +91,11 @@ jobs:
           docker logs s51-artifact-postgres
           exit 1
 
-      - name: Prepare artifact database schema without NPC migrations
+      - name: Assert application schema is initially absent
         run: |
-          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/web auth:migrate
-          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/profiles profile:migrate
-          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/world world:migrate
-          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/story story:migrate
-          test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('npc_intelligence.npc_snapshots') IS NULL")" = "t"
+          for relation in parent_accounts profile.households profile.quests npc_intelligence.npc_snapshots story.story_sessions; do
+            test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('$relation') IS NULL")" = "t"
+          done
 
       - name: Build the deployable web Docker image
         run: docker build --build-arg NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 -t lumi-web:s51-artifact .
@@ -118,7 +115,7 @@ jobs:
           docker logs s51-artifact-web
           exit 1
 
-      - name: Prepare demo and upgrade NPC schema through the real Docker artifact
+      - name: Prepare demo and upgrade the full schema through the real Docker artifact
         run: |
           headers=$(mktemp)
           curl --fail --silent --show-error -D "$headers" -o /dev/null \
@@ -128,7 +125,11 @@ jobs:
           location=$(awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0, 11)}' "$headers" | tail -1)
           echo "Redirect: $location"
           echo "$location" | grep -q 'result=success'
-          test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('npc_intelligence.npc_snapshots') IS NOT NULL")" = "t"
+
+          for relation in parent_accounts profile.households profile.child_profiles profile.worlds profile.quests npc_intelligence.npc_snapshots story.story_sessions; do
+            echo "Checking $relation"
+            test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('$relation') IS NOT NULL")" = "t"
+          done
 
       - name: Verify demo status through the real Docker artifact
         run: |
