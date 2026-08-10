@@ -14,7 +14,7 @@ function getDb(): Database {
   return testDb ?? getStoryDb();
 }
 
-export interface EnqueueNpcActionMoveInput {
+interface EnqueueNpcActionBaseInput {
   householdId: string;
   worldId: string;
   childProfileId: string;
@@ -23,7 +23,15 @@ export interface EnqueueNpcActionMoveInput {
   decisionEvidenceId: string;
   decisionKey: string;
   selectedCandidateId: string;
+}
+
+export interface EnqueueNpcActionMoveInput extends EnqueueNpcActionBaseInput {
   targetLocationId: string;
+}
+
+export interface EnqueueNpcActionRelationshipInput
+  extends EnqueueNpcActionBaseInput {
+  relationshipToCharacter: number;
 }
 
 export interface EnqueueNpcActionResult {
@@ -31,8 +39,10 @@ export interface EnqueueNpcActionResult {
   outboxId: string;
 }
 
-export async function enqueueNpcActionMoveIntent(
-  input: EnqueueNpcActionMoveInput,
+async function enqueueNpcActionIntent(
+  input: EnqueueNpcActionBaseInput,
+  intentType: "npc_action_move_character" | "npc_action_set_relationship",
+  effectPayload: Record<string, unknown>,
 ): Promise<EnqueueNpcActionResult> {
   const db = getDb();
   const repo = new DrizzleStoryRepository();
@@ -58,7 +68,7 @@ export async function enqueueNpcActionMoveIntent(
       storySessionId: null,
       commitId: input.decisionEvidenceId,
       idempotencyKey,
-      intentType: "npc_action_move_character",
+      intentType,
       payload: {
         householdId: input.householdId,
         worldId: input.worldId,
@@ -68,7 +78,7 @@ export async function enqueueNpcActionMoveIntent(
         decisionEvidenceId: input.decisionEvidenceId,
         decisionKey: input.decisionKey,
         selectedCandidateId: input.selectedCandidateId,
-        targetLocationId: input.targetLocationId,
+        ...effectPayload,
       },
       evidenceRef: `npc-decision://${input.decisionEvidenceId}`,
       status: "pending",
@@ -78,5 +88,28 @@ export async function enqueueNpcActionMoveIntent(
       createdAt: new Date(),
     });
     return { outcome: "enqueued" as const, outboxId: id };
+  });
+}
+
+export async function enqueueNpcActionMoveIntent(
+  input: EnqueueNpcActionMoveInput,
+): Promise<EnqueueNpcActionResult> {
+  return enqueueNpcActionIntent(input, "npc_action_move_character", {
+    targetLocationId: input.targetLocationId,
+  });
+}
+
+export async function enqueueNpcActionRelationshipIntent(
+  input: EnqueueNpcActionRelationshipInput,
+): Promise<EnqueueNpcActionResult> {
+  if (
+    !Number.isFinite(input.relationshipToCharacter) ||
+    input.relationshipToCharacter < -1 ||
+    input.relationshipToCharacter > 1
+  ) {
+    throw new Error("NPC_RELATIONSHIP_OUT_OF_RANGE");
+  }
+  return enqueueNpcActionIntent(input, "npc_action_set_relationship", {
+    relationshipToCharacter: input.relationshipToCharacter,
   });
 }

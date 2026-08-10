@@ -35,6 +35,11 @@ export type {
   MemoryAwareDecisionInput,
   MemoryAwareDecisionResult,
 } from "./memory-aware-decision.service";
+export { NpcRelationshipApplicator } from "./npc-relationship-applicator.service";
+export type {
+  NpcRelationshipPayload,
+  NpcRelationshipApplicatorResult,
+} from "./npc-relationship-applicator.service";
 export {
   DecisionSelector,
   PERSONALITY_BOUNDARY,

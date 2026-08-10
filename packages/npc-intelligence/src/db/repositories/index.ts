@@ -9,6 +9,7 @@ export type {
   CanonicalNpcSnapshot,
   UpsertCanonicalNpcSnapshotInput,
   NpcMoveCharacterEffectIntent,
+  NpcSetRelationshipEffectIntent,
   NpcWorldEffectIntent,
 } from "./drizzle/drizzle-npc-snapshot.repository";
 export { DrizzleWorkerNpcDecisionRepository } from "./drizzle/drizzle-worker-npc-decision.repository";

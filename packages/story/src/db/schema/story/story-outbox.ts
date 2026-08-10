@@ -29,6 +29,7 @@ export const OUTBOX_INTENT_TYPES = [
   "quest_seed_automation",
   "quest_reward_grant",
   "npc_action_move_character",
+  "npc_action_set_relationship",
 ] as const;
 export type OutboxIntentType = (typeof OUTBOX_INTENT_TYPES)[number];
 

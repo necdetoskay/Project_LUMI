@@ -144,10 +144,12 @@ export type { EnqueueQuestRewardInput } from "./quest-reward-outbox.service";
 
 export {
   enqueueNpcActionMoveIntent,
+  enqueueNpcActionRelationshipIntent,
   __setTestNpcActionOutboxDb,
 } from "./npc-action-outbox.service";
 export type {
   EnqueueNpcActionMoveInput,
+  EnqueueNpcActionRelationshipInput,
   EnqueueNpcActionResult,
 } from "./npc-action-outbox.service";
 
