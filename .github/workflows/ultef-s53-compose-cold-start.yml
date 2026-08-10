@@ -35,7 +35,9 @@ jobs:
       - name: Verify schema migration job completed successfully
         working-directory: infra/compose
         run: |
-          exit_code="$(docker inspect project-lumi-schema-migrate-1 --format '{{.State.ExitCode}}')"
+          container_id="$(docker compose ps -a -q schema-migrate)"
+          test -n "${container_id}"
+          exit_code="$(docker inspect "${container_id}" --format '{{.State.ExitCode}}')"
           echo "schema-migrate exit code: ${exit_code}"
           test "${exit_code}" = "0"
           docker compose logs --no-color schema-migrate
