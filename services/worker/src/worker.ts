@@ -13,6 +13,7 @@ import type {
   RelevanceSourcePort,
 } from "@lumi/simulation/ports";
 import type { OutboxJobRunner } from "./outbox-runner";
+import type { NpcDecisionJobPort } from "./npc-decision-runner";
 
 export class BackgroundWorker {
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -28,6 +29,7 @@ export class BackgroundWorker {
     private readonly logger: Logger,
     private readonly seed: string,
     private readonly outboxRunner?: Pick<OutboxJobRunner, "run">,
+    private readonly npcDecisionRunner?: NpcDecisionJobPort,
   ) {}
 
   start(): void {
@@ -65,6 +67,7 @@ export class BackgroundWorker {
         this.discoverySource,
         this.logger,
         this.seed,
+        this.npcDecisionRunner,
       );
       const result = await job.run();
       if (this.outboxRunner) {
