@@ -16,6 +16,7 @@ export * from "./character-goals";
 export * from "./character-influence";
 export * from "./character-relationships";
 export * from "./character-domain-events";
+export * from "./character-visual-assets";
 export * from "./inventory-item-definitions";
 export * from "./inventory-item-instances";
 export * from "./inventory-inventories";
