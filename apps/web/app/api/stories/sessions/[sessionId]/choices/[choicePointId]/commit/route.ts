@@ -5,6 +5,7 @@ import { readRequestBody } from "@/lib/http/request-body";
 import { getOwnedHousehold } from "@lumi/profiles/application";
 import {
   commitChoice,
+  commitPersistedChoiceConsequence,
   getStorySessionOrForbidden,
 } from "@lumi/story/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
@@ -19,6 +20,7 @@ const bodySchema = z.object({
   optionId: z.string().uuid(),
   evidenceSceneId: z.string().uuid(),
   idempotencyKey: z.string().min(1).optional(),
+  commitWorldConsequence: z.boolean().optional().default(false),
 });
 
 export const POST = observeHandler(
@@ -57,7 +59,12 @@ export const POST = observeHandler(
       }
 
       const { sessionId, choicePointId } = parsedParams.data;
-      const { optionId, evidenceSceneId, idempotencyKey } = parsedBody.data;
+      const {
+        optionId,
+        evidenceSceneId,
+        idempotencyKey,
+        commitWorldConsequence,
+      } = parsedBody.data;
 
       const household = await getOwnedHousehold(parent.id);
       if (!household || household.id !== householdId) {
@@ -71,7 +78,7 @@ export const POST = observeHandler(
       }
 
       try {
-        await getStorySessionOrForbidden(sessionId, householdId);
+        const session = await getStorySessionOrForbidden(sessionId, householdId);
         const result = await commitChoice({
           storySessionId: sessionId,
           choicePointId,
@@ -80,7 +87,27 @@ export const POST = observeHandler(
           idempotencyKey,
           actorUserId: parent.id,
         });
-        return NextResponse.json(result, { status: 201 });
+
+        const committedChoice =
+          "committedChoice" in result ? result.committedChoice : result;
+        const worldConsequence = commitWorldConsequence
+          ? await commitPersistedChoiceConsequence({
+              storySessionId: sessionId,
+              committedChoiceId: committedChoice.id,
+              householdId,
+              worldId: session.worldId,
+            })
+          : null;
+
+        return NextResponse.json(
+          {
+            ...("committedChoice" in result
+              ? result
+              : { committedChoice: result }),
+            worldConsequence,
+          },
+          { status: 201 },
+        );
       } catch (error) {
         return handleStoryError(error, "Failed to commit choice");
       }
