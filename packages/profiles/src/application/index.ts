@@ -131,6 +131,19 @@ export type {
 } from "./image-generation-platform";
 
 export {
+  generateManagedImageCandidates,
+  listImageGenerationCostEvents,
+  planManagedImageGenerationForTesting,
+} from "./image-generation.service";
+export type {
+  ImageGenerationBinaryStorageInput,
+  ImageGenerationBinaryStoragePort,
+  ImageGridSplitterPort,
+  GenerateManagedImageCandidatesInput,
+  ImageGenerationServiceDeps,
+} from "./image-generation.service";
+
+export {
   generateCharacterVisualCandidates,
   listCharacterVisualCandidates,
   getCharacterVisualCanon,
