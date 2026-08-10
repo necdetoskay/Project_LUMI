@@ -5,6 +5,7 @@ export { DrizzleBeliefSourceRepository } from "./drizzle/drizzle-belief-source.r
 export { DrizzleCanonicalMemoryRepository } from "./drizzle/drizzle-canonical-memory.repository";
 export { DrizzleNpcSnapshotRepository } from "./drizzle/drizzle-npc-snapshot.repository";
 export type {
+  CanonicalNpcDecisionPayload,
   CanonicalNpcSnapshot,
   UpsertCanonicalNpcSnapshotInput,
 } from "./drizzle/drizzle-npc-snapshot.repository";
