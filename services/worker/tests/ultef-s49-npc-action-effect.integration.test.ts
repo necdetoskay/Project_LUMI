@@ -17,7 +17,9 @@ let pool: pg.Pool | null = null;
 function assertSafeDisposableDatabase(url: string): void {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`S49 ULTEF requires disposable test/review DB; got '${name}'.`);
+    throw new Error(
+      `S49 ULTEF requires disposable test/review DB; got '${name}'.`,
+    );
   }
 }
 
@@ -282,12 +284,14 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
         `DELETE FROM profile.world_location_connections WHERE world_id = $1`,
         [worldId],
       );
-      await pool.query(`DELETE FROM profile.world_locations WHERE world_id = $1`, [
-        worldId,
-      ]);
-      await pool.query(`DELETE FROM profile.world_regions WHERE world_id = $1`, [
-        worldId,
-      ]);
+      await pool.query(
+        `DELETE FROM profile.world_locations WHERE world_id = $1`,
+        [worldId],
+      );
+      await pool.query(
+        `DELETE FROM profile.world_regions WHERE world_id = $1`,
+        [worldId],
+      );
       await pool.query(`DELETE FROM profile.worlds WHERE id = $1`, [worldId]);
       await pool.query(`DELETE FROM profile.lumi_characters WHERE id = $1`, [
         characterId,
