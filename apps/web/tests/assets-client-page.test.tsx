@@ -128,8 +128,10 @@ describe("AssetsClientPage", () => {
       within(canonPanel as HTMLElement).getByText(
         (_content, element) =>
           element?.tagName === "P" &&
-          (element.textContent?.replace(/\s+/g, " ").trim().startsWith("Canon v2") ??
-            false),
+          (element.textContent
+            ?.replace(/\s+/g, " ")
+            .trim()
+            .startsWith("Canon v2") ?? false),
       ),
     ).toBeTruthy();
     expect(screen.getByText("Aktif görünüm")).toBeTruthy();
