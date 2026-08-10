@@ -1,0 +1,49 @@
+name: ULTEF S50 NPC Action Effect Registry
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  npc-action-effect-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+      NODE_ENV: test
+      ULTEF_SCENARIO: PX-LUMI-S50-NPC-ACTION-EFFECT-REGISTRY-001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Run S50 DB-backed typed NPC effect registry evidence
+        run: pnpm --filter @lumi/worker ultef:s50-npc-action-effect-registry
