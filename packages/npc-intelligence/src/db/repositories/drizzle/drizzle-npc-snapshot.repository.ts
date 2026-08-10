@@ -4,6 +4,7 @@ import type {
   DecisionContextVector,
   UtilityWeightPolicy,
 } from "../../../domain";
+import { validateWeightPolicy } from "../../../domain/utility";
 import { getNpcDb, type Database } from "../../client";
 import { npcSnapshots } from "../../schema/npc-intelligence/npc-snapshots";
 
@@ -56,6 +57,31 @@ function persistDecisionPayload(
   return persisted as unknown as Record<string, unknown>;
 }
 
+function validCandidates(value: unknown): value is CandidateAction[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((candidate) => {
+      if (!candidate || typeof candidate !== "object") return false;
+      const item = candidate as Partial<CandidateAction>;
+      return (
+        typeof item.id === "string" &&
+        item.id.length > 0 &&
+        typeof item.kind === "string" &&
+        item.kind.length > 0 &&
+        typeof item.description === "string" &&
+        Array.isArray(item.requiredFactIds) &&
+        Array.isArray(item.needTypes) &&
+        typeof item.personalityFit === "number" &&
+        Number.isFinite(item.personalityFit) &&
+        (item.safety === "safe" ||
+          item.safety === "conditional" ||
+          item.safety === "blocked")
+      );
+    })
+  );
+}
+
 function restoreDecisionPayload(
   value: Record<string, unknown> | null,
 ): CanonicalNpcDecisionPayload | null {
@@ -66,7 +92,7 @@ function restoreDecisionPayload(
     raw.decisionKey.length === 0 ||
     typeof raw.seed !== "string" ||
     raw.seed.length === 0 ||
-    !Array.isArray(raw.candidates) ||
+    !validCandidates(raw.candidates) ||
     !raw.context ||
     typeof raw.context !== "object" ||
     !raw.policy ||
@@ -75,20 +101,40 @@ function restoreDecisionPayload(
   ) {
     return null;
   }
+
+  const context = raw.context as DecisionContextVector;
+  if (
+    typeof context.npcId !== "string" ||
+    typeof context.householdId !== "string" ||
+    !Array.isArray(context.relationships) ||
+    !Array.isArray(context.needs) ||
+    !Array.isArray(context.goals) ||
+    !context.influence ||
+    typeof context.influence !== "object"
+  ) {
+    return null;
+  }
+
   const updatedAt = new Date(raw.policy.updatedAt);
   if (Number.isNaN(updatedAt.getTime())) return null;
+  const policy = {
+    ...raw.policy,
+    weights: { ...raw.policy.weights },
+    updatedAt,
+  } as UtilityWeightPolicy;
+  try {
+    validateWeightPolicy(policy);
+  } catch {
+    return null;
+  }
 
   return {
     decisionKey: raw.decisionKey,
     candidates: raw.candidates.map((candidate) => ({ ...candidate })),
-    context: { ...raw.context },
-    policy: {
-      ...raw.policy,
-      weights: { ...raw.policy.weights },
-      updatedAt,
-    },
+    context: { ...context },
+    policy,
     seed: raw.seed,
-  } as CanonicalNpcDecisionPayload;
+  };
 }
 
 function mapSnapshot(
