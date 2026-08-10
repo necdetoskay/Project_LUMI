@@ -16,16 +16,6 @@ COPY packages/*/package.json packages/
 COPY tooling/*/package.json tooling/
 RUN pnpm install --frozen-lockfile
 
-# One-shot migration image used by Docker Compose. Unlike the slim Next.js
-# runner, this target intentionally retains the workspace dependency tree so
-# migration scripts can resolve runtime packages such as `pg`.
-FROM deps AS profile-migrator
-WORKDIR /app
-COPY packages/profiles/scripts ./packages/profiles/scripts
-COPY packages/profiles/migrations ./packages/profiles/migrations
-ENV NODE_ENV=production
-CMD ["node", "packages/profiles/scripts/profile-migrate.mjs"]
-
 FROM base AS builder
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
