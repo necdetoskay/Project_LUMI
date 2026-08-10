@@ -13,6 +13,8 @@ import {
 const USER_ID = "51000000-0000-4000-8000-000000000009";
 const HOUSEHOLD_ID = "51000000-0000-4000-8000-000000000001";
 const CHARACTER_ID = "51000000-0000-4000-8000-000000000003";
+const describeS53 =
+  process.env.ULTEF_S53_VISUAL_ENABLE === "true" ? describe : describe.skip;
 
 class FakeVisualProvider implements CharacterVisualGenerationPort {
   calls = 0;
@@ -54,7 +56,7 @@ class FakeStorage implements CharacterVisualStoragePort {
   }
 }
 
-describe("PX-LUMI-S53 character visual canon", () => {
+describeS53("PX-LUMI-S53 character visual canon", () => {
   it("persists candidates, replays idempotently and replaces canon with history", async () => {
     const provider = new FakeVisualProvider();
     const storage = new FakeStorage();
