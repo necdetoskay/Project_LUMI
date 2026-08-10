@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS npc_intelligence.npc_snapshots (
   location_id UUID,
   need_types JSONB NOT NULL DEFAULT '[]'::jsonb,
   relationship_to_character NUMERIC(6,5) NOT NULL DEFAULT 0,
+  decision_payload JSONB,
   last_interaction_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT npc_snapshots_relationship_check
