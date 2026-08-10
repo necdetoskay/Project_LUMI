@@ -1,0 +1,54 @@
+name: S48 Temporary Final Formatter
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: s48/canonical-npc-snapshot-worker-wiring
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format S48 files
+        run: |
+          pnpm exec prettier --write \
+            docs/07-delivery/lumi/sprint-48/SPRINT_SPEC.md \
+            docs/07-delivery/lumi/sprint-48/IMPLEMENTATION_STATUS.md \
+            packages/npc-intelligence/src/db/repositories/drizzle/drizzle-npc-snapshot.repository.ts \
+            packages/npc-intelligence/src/db/repositories/drizzle/drizzle-worker-npc-decision.repository.ts \
+            packages/npc-intelligence/src/db/repositories/index.ts \
+            packages/npc-intelligence/src/db/schema/npc-intelligence/index.ts \
+            packages/npc-intelligence/src/db/schema/npc-intelligence/npc-snapshots.ts \
+            packages/npc-intelligence/src/db/schema/npc-intelligence/worker-decisions.ts \
+            services/worker/src/adapters.ts \
+            services/worker/src/index.ts \
+            services/worker/src/job-runner.ts \
+            services/worker/src/npc-decision-runner.ts \
+            services/worker/src/worker.ts \
+            services/worker/tests/ultef-s48-npc-snapshot-worker.integration.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/07-delivery/lumi/sprint-48 packages/npc-intelligence services/worker
+          if git diff --cached --quiet; then
+            echo "No formatting changes"
+          else
+            git commit -m "style(s48): format final worker decision wiring"
+            git push origin HEAD:s48/canonical-npc-snapshot-worker-wiring
+          fi
