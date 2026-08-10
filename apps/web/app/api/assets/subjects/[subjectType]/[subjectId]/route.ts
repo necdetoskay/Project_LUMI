@@ -39,7 +39,10 @@ function numericEnv(name: string, fallback: number): number {
 }
 
 function budgetPolicyFromEnv(): ImageGenerationBudgetPolicy {
-  const gridSavings = numericEnv("IMAGE_GENERATION_MIN_GRID_SAVINGS_RATIO", 0.2);
+  const gridSavings = numericEnv(
+    "IMAGE_GENERATION_MIN_GRID_SAVINGS_RATIO",
+    0.2,
+  );
   return {
     runtimeMaxJobCostUsd: numericEnv("IMAGE_GENERATION_MAX_JOB_COST_USD", 0.1),
     liveTestMaxJobCostUsd: numericEnv(
@@ -111,7 +114,10 @@ export async function GET(
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "MANAGED_ASSET_ERROR";
-      return NextResponse.json({ error: message }, { status: errorStatus(message) });
+      return NextResponse.json(
+        { error: message },
+        { status: errorStatus(message) },
+      );
     }
   });
 }
@@ -176,7 +182,10 @@ export async function POST(
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "MANAGED_ASSET_ERROR";
-      return NextResponse.json({ error: message }, { status: errorStatus(message) });
+      return NextResponse.json(
+        { error: message },
+        { status: errorStatus(message) },
+      );
     }
   });
 }

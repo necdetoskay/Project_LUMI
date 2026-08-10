@@ -68,9 +68,7 @@ class FakeImageProvider implements ImageGenerationProviderPort {
 }
 
 class FakeManagedStorage implements ImageGenerationBinaryStoragePort {
-  async store(
-    input: Parameters<ImageGenerationBinaryStoragePort["store"]>[0],
-  ) {
+  async store(input: Parameters<ImageGenerationBinaryStoragePort["store"]>[0]) {
     return {
       storageRef: `fake://s56/${input.householdId}/${input.subjectType}/${input.subjectId}/${input.jobId}/${input.candidateIndex}.png`,
     };
