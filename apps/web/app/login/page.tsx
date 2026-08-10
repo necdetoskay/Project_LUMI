@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import {
   StorybookBackdrop,
@@ -12,62 +13,55 @@ function getValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function getErrorMessage(error: string | undefined) {
-  switch (error) {
-    case "invalid_credentials":
-      return "E-posta veya parola eslesmedi.";
-    case "invalid_login_input":
-      return "Lütfen e-posta ve parolayı yeniden kontrol et.";
-    case "rate_limited":
-      return "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.";
-    case "login_failed":
-      return "Giriş şu anda tamamlanamadı. Tekrar dene.";
-    default:
-      return null;
-  }
-}
-
-function getSuccessMessage(success: string | undefined) {
-  switch (success) {
-    case "signed_out":
-      return "Çıkış yaptın. Tekrar giriş yapabilirsin.";
-    case "password_reset":
-      return "Parolan yenilendi. Yeni şifrenle giriş yap.";
-    default:
-      return null;
-  }
-}
-
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
+  const t = await getTranslations("login");
   const params = await searchParams;
   const email = getValue(params.email) ?? "";
-  const error = getErrorMessage(getValue(params.error));
-  const success = getSuccessMessage(getValue(params.success));
+  const errorCode = getValue(params.error);
+  const successCode = getValue(params.success);
+
+  const error =
+    errorCode === "invalid_credentials"
+      ? t("errors.invalidCredentials")
+      : errorCode === "invalid_login_input"
+        ? t("errors.invalidInput")
+        : errorCode === "rate_limited"
+          ? t("errors.rateLimited")
+          : errorCode === "login_failed"
+            ? t("errors.failed")
+            : null;
+
+  const success =
+    successCode === "signed_out"
+      ? t("success.signedOut")
+      : successCode === "password_reset"
+        ? t("success.passwordReset")
+        : null;
 
   return (
     <section className="storybook-page">
       <StorybookBackdrop />
       <div className="storybook-grid storybook-grid-auth">
         <StorybookScene
-          kicker="Kaldığın yer seni bekliyor"
-          title="Dünyana geri dön"
-          text="Son hikâyenin izleri, tanıştığın kişiler ve keşfettiğin yerler burada. Giriş yaptığında LUMI seni yeni bir başlangıca değil, kendi geçmişinin devamına götürür."
+          kicker={t("sceneKicker")}
+          title={t("sceneTitle")}
+          text={t("sceneText")}
           icon="🧭"
         />
 
         <StorybookCard
           eyebrow="Project LUMI"
-          title="Hikâyeme dön"
-          description="Ebeveyn hesabınla giriş yap; profillerin ve yaşayan evrenlerin kaldığı yerden devam etsin."
+          title={t("cardTitle")}
+          description={t("cardDescription")}
           note={
             <p>
-              Henüz bir evrenin yok mu?{" "}
+              {t("noUniverse")} {" "}
               <Link className="storybook-inline-link" href="/register">
-                Ebeveyn hesabı oluştur
+                {t("createParentAccount")}
               </Link>
             </p>
           }
@@ -94,12 +88,12 @@ export default async function LoginPage({
             method="post"
           >
             <div className="storybook-field">
-              <label htmlFor="email">E-posta adresi</label>
+              <label htmlFor="email">{t("emailLabel")}</label>
               <input
                 className="storybook-input"
                 id="email"
                 name="email"
-                placeholder="ornek@lumi.com"
+                placeholder={t("emailPlaceholder")}
                 required
                 autoComplete="email"
                 type="email"
@@ -108,8 +102,8 @@ export default async function LoginPage({
             </div>
             <div className="storybook-field">
               <div className="storybook-field-heading">
-                <label htmlFor="password">Şifre</label>
-                <Link href="/forgot-password">Şifremi unuttum</Link>
+                <label htmlFor="password">{t("passwordLabel")}</label>
+                <Link href="/forgot-password">{t("forgotPassword")}</Link>
               </div>
               <input
                 className="storybook-input"
@@ -128,10 +122,10 @@ export default async function LoginPage({
                 type="checkbox"
                 defaultChecked
               />
-              Bu cihazda beni hatırla
+              {t("rememberMe")}
             </label>
             <button className="storybook-button" type="submit">
-              Dünyama dön
+              {t("submit")}
               <span className="material-symbols-outlined" aria-hidden="true">
                 arrow_forward
               </span>
