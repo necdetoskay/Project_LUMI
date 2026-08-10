@@ -13,9 +13,7 @@ const USER_ID = "51000000-0000-4000-8000-000000000009";
 const HOUSEHOLD_ID = "51000000-0000-4000-8000-000000000001";
 const CHARACTER_ID = "51000000-0000-4000-8000-000000000003";
 const describeLiveS53 =
-  process.env.ULTEF_S53_LIVE_IMAGE_ENABLE === "true"
-    ? describe
-    : describe.skip;
+  process.env.ULTEF_S53_LIVE_IMAGE_ENABLE === "true" ? describe : describe.skip;
 
 class ArtifactStorage implements CharacterVisualStoragePort {
   async store(input: Parameters<CharacterVisualStoragePort["store"]>[0]) {
