@@ -7,10 +7,8 @@ import type {
   DrizzleWorkerNpcDecisionRepository,
   WorkerNpcDecisionEvidence,
 } from "@lumi/npc-intelligence/db";
-import {
-  enqueueNpcActionMoveIntent,
-  type EnqueueNpcActionMoveInput,
-} from "@lumi/story/application";
+
+import { NpcActionEffectRegistry } from "./npc-action-effect-registry";
 
 export interface NpcDecisionWorldInput {
   householdId: string;
@@ -29,23 +27,23 @@ export interface NpcDecisionJobPort {
   runForWorld(input: NpcDecisionWorldInput): Promise<NpcDecisionRunSummary>;
 }
 
-export type NpcActionMoveEnqueuer = (
-  input: EnqueueNpcActionMoveInput,
-) => Promise<{ outcome: "enqueued" | "duplicate"; outboxId: string }>;
-
 function serializeResult(value: unknown): Record<string, unknown> {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
 }
 
 export class NpcDecisionJobRunner implements NpcDecisionJobPort {
+  private readonly effects: NpcActionEffectRegistry;
+
   constructor(
     private readonly snapshots: DrizzleNpcSnapshotRepository,
     private readonly decisions: MemoryAwareDecisionService,
     private readonly ledger: DrizzleWorkerNpcDecisionRepository,
     private readonly logger: Logger,
     private readonly limit = 64,
-    private readonly enqueueMove: NpcActionMoveEnqueuer = enqueueNpcActionMoveIntent,
-  ) {}
+    effects?: NpcActionEffectRegistry,
+  ) {
+    this.effects = effects ?? new NpcActionEffectRegistry(logger);
+  }
 
   private async enqueueSelectedEffect(
     snapshot: CanonicalNpcSnapshot,
@@ -57,33 +55,11 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
     const effect = payload.effectsByCandidateId?.[selectedCandidateId];
     if (!effect) return;
 
-    switch (effect.type) {
-      case "move_character": {
-        const enqueued = await this.enqueueMove({
-          householdId: snapshot.householdId,
-          worldId: snapshot.worldId,
-          childProfileId: snapshot.childProfileId,
-          npcId: snapshot.npcId,
-          characterId: snapshot.characterId,
-          decisionEvidenceId: evidence.id,
-          decisionKey: evidence.decisionKey,
-          selectedCandidateId,
-          targetLocationId: effect.targetLocationId,
-        });
-        this.logger.info(
-          "worker.npc_decision.effect_outbox",
-          "NPC decision effect outbox ensured",
-          {
-            worldId: snapshot.worldId,
-            npcId: snapshot.npcId,
-            decisionKey: evidence.decisionKey,
-            outboxId: enqueued.outboxId,
-            outcome: enqueued.outcome,
-          },
-        );
-        return;
-      }
-    }
+    await this.effects.ensureEffect(effect, {
+      snapshot,
+      evidence,
+      selectedCandidateId,
+    });
   }
 
   async runForWorld(
