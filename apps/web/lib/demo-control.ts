@@ -24,7 +24,11 @@ export function assertDemoControlToken(candidate: string): void {
   }
 }
 
-async function runNode(script: string, args: string[] = [], env: NodeJS.ProcessEnv = {}) {
+async function runNode(
+  script: string,
+  args: string[] = [],
+  env: NodeJS.ProcessEnv = {},
+) {
   const result = await execFileAsync(process.execPath, [script, ...args], {
     cwd: process.cwd(),
     env: { ...process.env, ...env },
@@ -61,17 +65,31 @@ function demoEnv(): NodeJS.ProcessEnv {
   };
 }
 
-export async function runDemoControl(action: DemoControlAction): Promise<string> {
+export async function runDemoControl(
+  action: DemoControlAction,
+): Promise<string> {
   if (!isDemoWebControlEnabled()) throw new Error("DEMO_CONTROL_DISABLED");
 
   if (action === "prepare") {
     await runMigrations();
-    return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["seed"], demoEnv());
+    return runNode(
+      "apps/web/scripts/lumi-demo-cli.mjs",
+      ["seed"],
+      demoEnv(),
+    );
   }
 
   if (action === "reset") {
-    return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["reset"], demoEnv());
+    return runNode(
+      "apps/web/scripts/lumi-demo-cli.mjs",
+      ["reset"],
+      demoEnv(),
+    );
   }
 
-  return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["status"], demoEnv());
+  return runNode(
+    "apps/web/scripts/lumi-demo-cli.mjs",
+    ["status"],
+    demoEnv(),
+  );
 }
