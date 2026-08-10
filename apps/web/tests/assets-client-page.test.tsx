@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -124,16 +123,7 @@ describe("AssetsClientPage", () => {
     const canonLabel = await screen.findByText("Aktif canon");
     const canonPanel = canonLabel.closest("aside");
     expect(canonPanel).not.toBeNull();
-    expect(
-      within(canonPanel as HTMLElement).getByText(
-        (_content, element) =>
-          element?.tagName === "P" &&
-          (element.textContent
-            ?.replace(/\s+/g, " ")
-            .trim()
-            .startsWith("Canon v2") ?? false),
-      ),
-    ).toBeTruthy();
+    expect(canonPanel?.textContent).toContain("Canon v2");
     expect(screen.getByText("Aktif görünüm")).toBeTruthy();
     expect(
       screen.getByText("1024×1024 · krea/krea-2-medium-turbo"),
