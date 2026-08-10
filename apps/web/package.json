@@ -18,6 +18,7 @@
     "ultef:s45-memory-lifecycle": "vitest run tests/ultef-s45-memory-lifecycle.v3.integration.test.ts",
     "ultef:s46-memory-story": "vitest run tests/ultef-s46-memory-story-production.v3.integration.test.ts",
     "auth:migrate": "node scripts/auth-migrate.mjs",
+    "db:compatibility-smoke": "node scripts/db-provider-compatibility-smoke.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "clean": "rimraf .next coverage"
