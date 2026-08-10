@@ -46,5 +46,7 @@ jobs:
         run: pnpm --filter @lumi/world world:migrate
       - name: Prepare NPC intelligence schema
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
-      - name: Run T03/T04 PostgreSQL demo evidence
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Run T03/T04/T05 PostgreSQL demo evidence
         run: pnpm --filter @lumi/web exec node scripts/lumi-demo-db.selftest.mjs
