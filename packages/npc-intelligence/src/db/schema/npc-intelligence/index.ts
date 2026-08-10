@@ -29,4 +29,10 @@ export type {
   CanonicalMemoryUsageRecord,
 } from "./memories";
 
+export { npcSnapshots } from "./npc-snapshots";
+export type { NpcSnapshotRecord, NewNpcSnapshotRecord } from "./npc-snapshots";
+
+export { workerNpcDecisions } from "./worker-decisions";
+export type { WorkerNpcDecisionRecord } from "./worker-decisions";
+
 export * from "./relations";

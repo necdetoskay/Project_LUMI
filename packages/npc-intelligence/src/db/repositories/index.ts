@@ -3,3 +3,15 @@ export { DrizzleNpcDecisionRepository } from "./drizzle/drizzle-npc-decision.rep
 export { DrizzleOpportunityInboxRepository } from "./drizzle/drizzle-opportunity-inbox.repository";
 export { DrizzleBeliefSourceRepository } from "./drizzle/drizzle-belief-source.repository";
 export { DrizzleCanonicalMemoryRepository } from "./drizzle/drizzle-canonical-memory.repository";
+export { DrizzleNpcSnapshotRepository } from "./drizzle/drizzle-npc-snapshot.repository";
+export type {
+  CanonicalNpcDecisionPayload,
+  CanonicalNpcSnapshot,
+  UpsertCanonicalNpcSnapshotInput,
+} from "./drizzle/drizzle-npc-snapshot.repository";
+export { DrizzleWorkerNpcDecisionRepository } from "./drizzle/drizzle-worker-npc-decision.repository";
+export type {
+  WorkerNpcDecisionCommit,
+  WorkerNpcDecisionCommitResult,
+  WorkerNpcDecisionEvidence,
+} from "./drizzle/drizzle-worker-npc-decision.repository";

@@ -1,4 +1,5 @@
 import type { Logger } from "@lumi/logger";
+import { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence/db";
 import type {
   EntityRelevance,
   RelevanceBubble,
@@ -51,7 +52,6 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
     now: Date,
   ): Promise<WorldCandidate[]> {
     if (!this.rawCandidates) return [];
-
     let parsed: unknown;
     try {
       parsed = JSON.parse(this.rawCandidates);
@@ -64,7 +64,6 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
       );
       return [];
     }
-
     if (!Array.isArray(parsed)) {
       this.logger.error(
         "worker.discovery.invalid_shape",
@@ -73,27 +72,12 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
       );
       return [];
     }
-
     const candidates: WorldCandidate[] = [];
     for (const item of parsed) {
       const record = parseCandidate(item);
-      if (!record) {
-        this.logger.warn(
-          "worker.discovery.skip",
-          "skipping invalid worker world candidate",
-          {},
-        );
-        continue;
-      }
+      if (!record) continue;
       const childLastSeenAt = new Date(record.childLastSeenAt);
-      if (Number.isNaN(childLastSeenAt.getTime())) {
-        this.logger.warn(
-          "worker.discovery.skip",
-          "skipping candidate with invalid childLastSeenAt",
-          { worldId: record.worldId },
-        );
-        continue;
-      }
+      if (Number.isNaN(childLastSeenAt.getTime())) continue;
       candidates.push({ ...record, childLastSeenAt, now });
       if (candidates.length >= limit) break;
     }
@@ -102,10 +86,7 @@ export class EnvWorldDiscoveryAdapter implements WorldDiscoveryPort {
 }
 
 function toClockSnapshot(state: WorldClockState): WorldClockSnapshot {
-  return {
-    ...state,
-    checkpointId: null,
-  };
+  return { ...state, checkpointId: null };
 }
 
 export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
@@ -126,11 +107,9 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
   async fetchNpcsForWorld(): Promise<NpcSnapshot[]> {
     return [];
   }
-
   async fetchChildLastSeen(): Promise<Date | null> {
     return null;
   }
-
   async fetchScheduledEvents(
     worldId: string,
     householdId: string,
@@ -142,11 +121,9 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
       unresolvedOnly,
     ) as Promise<SimulationScheduledEvent[]>;
   }
-
   async updateClock(state: WorldClockState): Promise<void> {
     await this.repo.upsertClock(state);
   }
-
   async recordWorldEvent(
     worldId: string,
     eventType: string,
@@ -158,7 +135,6 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
       payload,
     });
   }
-
   async freezeWorld(worldId: string): Promise<void> {
     this.logger.info("worker.world.freeze", "world frozen by absence policy", {
       worldId,
@@ -166,9 +142,30 @@ export class SimulationRepositoryWorldSourceAdapter implements WorldSourcePort {
   }
 }
 
-export class EmptyNpcSourceAdapter implements NpcSourcePort {
-  async fetchSnapshots(): Promise<NpcSnapshot[]> {
-    return [];
+export class RepositoryNpcSourceAdapter implements NpcSourcePort {
+  constructor(
+    private readonly snapshots = new DrizzleNpcSnapshotRepository(),
+    private readonly limit = 64,
+  ) {}
+
+  async fetchSnapshots(
+    worldId: string,
+    householdId: string,
+  ): Promise<NpcSnapshot[]> {
+    const rows = await this.snapshots.listForWorker(
+      householdId,
+      worldId,
+      this.limit,
+    );
+    return rows.map((row) => ({
+      npcId: row.npcId,
+      householdId: row.householdId,
+      characterId: row.characterId,
+      locationId: row.locationId,
+      needTypes: [...row.needTypes],
+      relationshipToCharacter: row.relationshipToCharacter,
+      lastInteractionAt: row.lastInteractionAt,
+    }));
   }
 }
 
@@ -177,14 +174,8 @@ export class EmptyRelevanceSourceAdapter implements RelevanceSourcePort {
     worldId: string,
     householdId: string,
   ): Promise<RelevanceBubble> {
-    return {
-      worldId,
-      householdId,
-      entities: [],
-      threshold: 0.25,
-    };
+    return { worldId, householdId, entities: [], threshold: 0.25 };
   }
-
   async fetchEntityRelevance(): Promise<EntityRelevance | null> {
     return null;
   }
