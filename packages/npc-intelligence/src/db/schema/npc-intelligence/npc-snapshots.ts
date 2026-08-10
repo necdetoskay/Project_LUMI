@@ -19,7 +19,10 @@ export const npcSnapshots = npcIntelligenceSchema.table(
     })
       .notNull()
       .default("0"),
-    decisionPayload: jsonb("decision_payload").$type<Record<string, unknown> | null>(),
+    decisionPayload: jsonb("decision_payload").$type<Record<
+      string,
+      unknown
+    > | null>(),
     lastInteractionAt: timestamp("last_interaction_at", {
       withTimezone: true,
       mode: "date",

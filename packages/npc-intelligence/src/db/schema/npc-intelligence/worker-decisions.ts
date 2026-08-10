@@ -1,4 +1,11 @@
-import { index, jsonb, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  jsonb,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { npcIntelligenceSchema } from "./schemas";
 import { primaryId } from "./common";
 
@@ -12,9 +19,15 @@ export const workerNpcDecisions = npcIntelligenceSchema.table(
     npcId: uuid("npc_id").notNull(),
     decisionKey: varchar("decision_key", { length: 128 }).notNull(),
     selectedCandidateId: varchar("selected_candidate_id", { length: 255 }),
-    usedMemoryIds: jsonb("used_memory_ids").$type<string[]>().notNull().default([]),
+    usedMemoryIds: jsonb("used_memory_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     resultJson: jsonb("result_json").$type<Record<string, unknown>>().notNull(),
-    decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }).notNull(),
+    decidedAt: timestamp("decided_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [
     uniqueIndex("worker_npc_decisions_scope_key_uidx").on(

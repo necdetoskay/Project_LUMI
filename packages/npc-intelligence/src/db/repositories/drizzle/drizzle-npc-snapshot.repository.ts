@@ -91,7 +91,9 @@ function restoreDecisionPayload(
   } as CanonicalNpcDecisionPayload;
 }
 
-function mapSnapshot(row: typeof npcSnapshots.$inferSelect): CanonicalNpcSnapshot {
+function mapSnapshot(
+  row: typeof npcSnapshots.$inferSelect,
+): CanonicalNpcSnapshot {
   return {
     npcId: row.npcId,
     householdId: row.householdId,

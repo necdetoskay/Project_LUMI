@@ -35,7 +35,9 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
     private readonly limit = 64,
   ) {}
 
-  async runForWorld(input: NpcDecisionWorldInput): Promise<NpcDecisionRunSummary> {
+  async runForWorld(
+    input: NpcDecisionWorldInput,
+  ): Promise<NpcDecisionRunSummary> {
     const summary: NpcDecisionRunSummary = {
       applied: 0,
       duplicates: 0,
