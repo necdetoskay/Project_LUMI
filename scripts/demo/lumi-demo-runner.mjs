@@ -22,7 +22,8 @@ export function assertDemoDatabaseSafety({
   confirmation = process.env.LUMI_DEMO_CONFIRM,
 }) {
   if (!databaseUrl) throw new Error("DEMO_DATABASE_URL_REQUIRED");
-  if (nodeEnv === "production") throw new Error("DEMO_PRODUCTION_ENV_FORBIDDEN");
+  if (nodeEnv === "production")
+    throw new Error("DEMO_PRODUCTION_ENV_FORBIDDEN");
 
   const name = databaseName(databaseUrl).toLowerCase();
   if (!SAFE_DATABASE_MARKERS.some((marker) => name.includes(marker))) {
@@ -60,7 +61,10 @@ function assertCanonicalIdentity(status, manifest) {
   }
 }
 
-export async function runDemoStatus({ adapter, manifest = LUMI_DEMO_MANIFEST }) {
+export async function runDemoStatus({
+  adapter,
+  manifest = LUMI_DEMO_MANIFEST,
+}) {
   assertAdapter(adapter);
   assertManifest(manifest);
   const status = await adapter.inspect(manifest);

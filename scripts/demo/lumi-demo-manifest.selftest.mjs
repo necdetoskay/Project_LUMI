@@ -28,8 +28,14 @@ broken.memories[0].npcKey = "missing-npc";
 
 const brokenResult = validateLumiDemoManifest(broken);
 assert.equal(brokenResult.ok, false);
-assert.ok(brokenResult.errors.some((error) => error.includes("missing-region")));
-assert.ok(brokenResult.errors.some((error) => error.includes("relationshipToCharacter")));
+assert.ok(
+  brokenResult.errors.some((error) => error.includes("missing-region")),
+);
+assert.ok(
+  brokenResult.errors.some((error) =>
+    error.includes("relationshipToCharacter"),
+  ),
+);
 assert.ok(brokenResult.errors.some((error) => error.includes("missing-npc")));
 
 console.log("LUMI Demo Universe manifest self-test: PASS");

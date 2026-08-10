@@ -138,13 +138,15 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       id: "51000000-0000-4000-8000-000000000040",
       key: "parlayan-pusula",
       displayName: "Parlayan Pusula",
-      description: "Yakındaki önemli yolları hafifçe ışıldayarak işaret eden küçük bir pusula.",
+      description:
+        "Yakındaki önemli yolları hafifçe ışıldayarak işaret eden küçük bir pusula.",
     },
     {
       id: "51000000-0000-4000-8000-000000000041",
       key: "mese-yapragi",
       displayName: "Meşe Yaprağı",
-      description: "Yaşlı Meşe'den kalmış, Lina için anlamı olan kuru bir yaprak.",
+      description:
+        "Yaşlı Meşe'den kalmış, Lina için anlamı olan kuru bir yaprak.",
     },
   ],
   memories: [
@@ -153,7 +155,8 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       key: "mira-lina-ilk-karsilasma",
       npcKey: "mira",
       kind: "direct_observation",
-      summary: "Mira, Lina'nın Fısıldayan Orman'a korkmadan ama dikkatle girdiğini hatırlıyor.",
+      summary:
+        "Mira, Lina'nın Fısıldayan Orman'a korkmadan ama dikkatle girdiğini hatırlıyor.",
       salience: 0.65,
       durable: true,
     },
@@ -162,7 +165,8 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       key: "tiko-parlayan-isiklar",
       npcKey: "tiko",
       kind: "direct_observation",
-      summary: "Tiko, Lina'nın ateşböceklerini görünce onları takip etmek yerine önce çevreyi incelediğini hatırlıyor.",
+      summary:
+        "Tiko, Lina'nın ateşböceklerini görünce onları takip etmek yerine önce çevreyi incelediğini hatırlıyor.",
       salience: 0.5,
       durable: false,
     },
@@ -187,7 +191,8 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
 
 export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   const errors = [];
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   if (manifest.manifestVersion !== LUMI_DEMO_MANIFEST_VERSION) {
     errors.push("manifestVersion must match LUMI_DEMO_MANIFEST_VERSION");
@@ -198,7 +203,8 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
 
   const ids = [];
   const collectId = (label, id) => {
-    if (!uuidPattern.test(id)) errors.push(`${label} has invalid stable UUID '${id}'`);
+    if (!uuidPattern.test(id))
+      errors.push(`${label} has invalid stable UUID '${id}'`);
     ids.push([label, id]);
   };
 
@@ -206,11 +212,15 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   collectId("childProfile", manifest.childProfile.id);
   collectId("character", manifest.character.id);
   collectId("world", manifest.world.id);
-  for (const region of manifest.regions) collectId(`region:${region.key}`, region.id);
-  for (const location of manifest.locations) collectId(`location:${location.key}`, location.id);
+  for (const region of manifest.regions)
+    collectId(`region:${region.key}`, region.id);
+  for (const location of manifest.locations)
+    collectId(`location:${location.key}`, location.id);
   for (const npc of manifest.npcs) collectId(`npc:${npc.key}`, npc.id);
-  for (const item of manifest.inventory) collectId(`inventory:${item.key}`, item.id);
-  for (const memory of manifest.memories) collectId(`memory:${memory.key}`, memory.id);
+  for (const item of manifest.inventory)
+    collectId(`inventory:${item.key}`, item.id);
+  for (const memory of manifest.memories)
+    collectId(`memory:${memory.key}`, memory.id);
   collectId("quest", manifest.quest.id);
   collectId("story.definition", manifest.story.definitionId);
   collectId("story.version", manifest.story.versionId);
@@ -218,41 +228,66 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
 
   const seenIds = new Map();
   for (const [label, id] of ids) {
-    if (seenIds.has(id)) errors.push(`${label} duplicates stable UUID used by ${seenIds.get(id)}`);
+    if (seenIds.has(id))
+      errors.push(`${label} duplicates stable UUID used by ${seenIds.get(id)}`);
     else seenIds.set(id, label);
   }
 
   const assertUniqueKeys = (label, values) => {
     const seen = new Set();
     for (const value of values) {
-      if (seen.has(value)) errors.push(`${label} contains duplicate key '${value}'`);
+      if (seen.has(value))
+        errors.push(`${label} contains duplicate key '${value}'`);
       seen.add(value);
     }
   };
 
-  assertUniqueKeys("regions", manifest.regions.map((entry) => entry.key));
-  assertUniqueKeys("locations", manifest.locations.map((entry) => entry.key));
-  assertUniqueKeys("npcs", manifest.npcs.map((entry) => entry.key));
-  assertUniqueKeys("inventory", manifest.inventory.map((entry) => entry.key));
-  assertUniqueKeys("memories", manifest.memories.map((entry) => entry.key));
+  assertUniqueKeys(
+    "regions",
+    manifest.regions.map((entry) => entry.key),
+  );
+  assertUniqueKeys(
+    "locations",
+    manifest.locations.map((entry) => entry.key),
+  );
+  assertUniqueKeys(
+    "npcs",
+    manifest.npcs.map((entry) => entry.key),
+  );
+  assertUniqueKeys(
+    "inventory",
+    manifest.inventory.map((entry) => entry.key),
+  );
+  assertUniqueKeys(
+    "memories",
+    manifest.memories.map((entry) => entry.key),
+  );
 
   const regionKeys = new Set(manifest.regions.map((entry) => entry.key));
   const locationKeys = new Set(manifest.locations.map((entry) => entry.key));
   const npcKeys = new Set(manifest.npcs.map((entry) => entry.key));
 
   if (!locationKeys.has(manifest.world.startLocationKey)) {
-    errors.push(`world.startLocationKey '${manifest.world.startLocationKey}' does not exist`);
+    errors.push(
+      `world.startLocationKey '${manifest.world.startLocationKey}' does not exist`,
+    );
   }
   if (!locationKeys.has(manifest.story.openingLocationKey)) {
-    errors.push(`story.openingLocationKey '${manifest.story.openingLocationKey}' does not exist`);
+    errors.push(
+      `story.openingLocationKey '${manifest.story.openingLocationKey}' does not exist`,
+    );
   }
   if (!npcKeys.has(manifest.story.openingNpcKey)) {
-    errors.push(`story.openingNpcKey '${manifest.story.openingNpcKey}' does not exist`);
+    errors.push(
+      `story.openingNpcKey '${manifest.story.openingNpcKey}' does not exist`,
+    );
   }
 
   for (const location of manifest.locations) {
     if (!regionKeys.has(location.regionKey)) {
-      errors.push(`location '${location.key}' references missing region '${location.regionKey}'`);
+      errors.push(
+        `location '${location.key}' references missing region '${location.regionKey}'`,
+      );
     }
   }
   for (const connection of manifest.connections) {
@@ -268,20 +303,29 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   }
   for (const npc of manifest.npcs) {
     if (!locationKeys.has(npc.locationKey)) {
-      errors.push(`npc '${npc.key}' references missing location '${npc.locationKey}'`);
+      errors.push(
+        `npc '${npc.key}' references missing location '${npc.locationKey}'`,
+      );
     }
     if (npc.relationshipToCharacter < -1 || npc.relationshipToCharacter > 1) {
-      errors.push(`npc '${npc.key}' relationshipToCharacter must be within [-1, 1]`);
+      errors.push(
+        `npc '${npc.key}' relationshipToCharacter must be within [-1, 1]`,
+      );
     }
   }
   for (const memory of manifest.memories) {
     if (!npcKeys.has(memory.npcKey)) {
-      errors.push(`memory '${memory.key}' references missing npc '${memory.npcKey}'`);
+      errors.push(
+        `memory '${memory.key}' references missing npc '${memory.npcKey}'`,
+      );
     }
     if (memory.salience < 0 || memory.salience > 1) {
       errors.push(`memory '${memory.key}' salience must be within [0, 1]`);
     }
   }
 
-  return Object.freeze({ ok: errors.length === 0, errors: Object.freeze(errors) });
+  return Object.freeze({
+    ok: errors.length === 0,
+    errors: Object.freeze(errors),
+  });
 }
