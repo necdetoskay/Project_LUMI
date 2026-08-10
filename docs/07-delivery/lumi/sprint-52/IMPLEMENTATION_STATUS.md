@@ -1,37 +1,42 @@
 # Sprint 52 — Implementation Status
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-10
 
-## Current objective
+## Result
 
-Close the real browser composition path from Story Reader choice to durable world consequence and persistent scene progression in the canonical Elif -> Lina -> Işık Vadisi demo universe.
+Sprint 52 closes the real browser composition path from Story Reader choice to durable world consequence, persistent scene progression and canonical `Şimdi` state in the Elif -> Lina -> Işık Vadisi reference universe.
+
+The verified product journey is now:
+
+`login -> Story Reader -> choice -> committed consequence -> next scene -> canonical world mutation -> reload -> Şimdi -> continue story`
 
 ## Workboard
 
-- [x] T01 Playable authored story graph — initial two-option slice committed
-- [x] T02 Reader choice -> durable world consequence wiring — production handoff committed
-- [x] T03 Choice -> scene progression verification path authored; dedicated browser execution pending
-- [x] T04 Visible `Şimdi` consequence wired through canonical world location; dedicated browser execution pending
-- [x] T05 Exit / reload / continue browser journey authored; dedicated browser execution pending
-- [x] T06 Dedicated S52 browser ULTEF workflow authored; green evidence pending
-- [ ] Final CI / Integration / Security / PX / S40-S51 regression matrix
+- [x] T01 Playable authored story graph
+- [x] T02 Reader choice -> durable world consequence wiring
+- [x] T03 Choice -> scene progression and reload persistence
+- [x] T04 Visible `Şimdi` consequence through canonical world location
+- [x] T05 Exit / reload / continue browser journey
+- [x] T06 Dedicated S52 browser ULTEF gate
+- [x] Final CI / Integration / Security / PX / S40-S51 regression matrix
 
-## Repository findings
+## Production findings closed by S52
 
-Sprint 51 already provides a real browser-visible seeded session. Story Reader already supports production choice rendering and calls `commitChoice` followed by `advanceSession` when an option resolves a target scene.
+Sprint 51 provided a real browser-visible seeded story session, and PX-05 already provided the canonical `commitPersistedChoiceConsequence` world-commit boundary. Two composition gaps remained in the live product path:
 
-The repository also already contains the PX-05 production service `commitPersistedChoiceConsequence`, which converts persisted choice metadata into canonical idempotent world commits. The missing browser composition boundary was that the live choice commit endpoint did not invoke that service.
+1. Story Reader choice projection exposed persistence-field names (`promptText`, `optionText`) while the client expected `prompt` and `label`, so persisted choices could exist without rendering correctly.
+2. The live choice endpoint committed the choice but did not compose the persisted consequence and authored scene location back into the canonical world state used by `Şimdi`.
 
-Sprint 43 `Şimdi` reads canonical current location from the world model and actual inventory state. The world package already provides `moveCharacterToLocation`, including household/world isolation, location accessibility, path validation, current-location persistence and domain-event recording. S52 therefore reuses that boundary instead of adding demo-only UI state.
+S52 closes both gaps without adding demo-only runtime state.
 
 ## Implemented slices
 
 ### T01 — playable authored graph
 
-`apps/web/scripts/lumi-demo-story-db.mjs` authors:
+`apps/web/scripts/lumi-demo-story-db.mjs` authors a deterministic two-path continuation for `Fısıldayan Ormandaki İlk Işık`:
 
-- entry choice point `ilk-isik-yolu`;
+- entry choice point `ilk-isik-yolu` with canonical type `single`;
 - option `isigi-takip-et`;
 - option `mira-ile-incele`;
 - next scene `atesbocekleri-izinde`;
@@ -41,43 +46,76 @@ Sprint 43 `Şimdi` reads canonical current location from the world model and act
 
 The grove scene carries canonical `locationKey: atesbocekleri-korusu`; the Mira scene carries `locationKey: fisildayan-orman`. All demo IDs remain stable and visual metadata remains truthful (`visualStatus: not_generated`).
 
-Readiness permits the persisted current scene to be any canonical playable S52 scene, so a legitimately progressed session is not misclassified as unready. Reset removes progressed choice/consequence/checkpoint/event/session data in dependency-safe order.
+Readiness permits the current session scene to be any canonical playable S52 scene, so a legitimately progressed universe remains ready. Reset removes progressed choice/consequence/checkpoint/event/session data in dependency-safe order.
 
-### T02 — production world handoff
+### T02 — persisted choice -> durable world consequence
 
-`POST /api/stories/sessions/{sessionId}/choices/{choicePointId}/commit`:
+`POST /api/stories/sessions/{sessionId}/choices/{choicePointId}/commit` now:
 
-1. keeps existing household/session authorization;
+1. preserves household/session authorization;
 2. loads the persisted selected option;
 3. detects supported durable world previews (`flag_set` / `flag_remove`);
 4. commits through the existing `commitChoice` service;
-5. invokes `commitPersistedChoiceConsequence` when a durable preview exists;
+5. invokes the existing PX-05 `commitPersistedChoiceConsequence` boundary when required;
 6. returns canonical world-consequence evidence with the committed choice.
 
 Non-world-changing choices remain backward compatible.
 
-### T03/T04 — target scene -> canonical current location
+### T03 — truthful Story Reader choice projection
 
-The same production endpoint now resolves the selected option's `scene_transition`, loads the persisted target scene, and treats `scene.metadata.locationKey` as authored canonical scene-location context.
+`GET /api/stories/sessions/{sessionId}/reader` now normalizes persisted choice records into the Reader contract:
 
-It then:
+- `promptText -> prompt`;
+- `optionText -> label`;
+- persisted consequence previews remain intact for next-scene resolution.
 
-1. resolves that location key inside the session's real world graph;
-2. resolves the session protagonist from persisted session participants;
-3. reads the protagonist's current world location;
-4. no-ops when already at the canonical target;
-5. otherwise calls `@lumi/world` `moveCharacterToLocation` with the authenticated household and session world scope.
+This is a general production projection fix, not a demo-specific exception.
 
-For the demo's `isigi-takip-et` option this means Lina moves through the real connected path from Fısıldayan Orman to Ateşböcekleri Korusu. `Şimdi` requires no special S52 rendering logic because it already reads the canonical current-location projection.
+### T04 — target scene -> canonical current location
 
-### T05/T06 — dedicated browser journey
+The live choice endpoint resolves the selected option's `scene_transition`, loads the persisted target scene and treats `scene.metadata.locationKey` as authored canonical scene-location context.
 
-`apps/web/tests/e2e/ultef-s52-playable-demo-journey.spec.ts` defines `PX-LUMI-S52-PLAY-RELOAD-001`:
+It then resolves the location inside the real session world, resolves the persisted protagonist, checks the current location and, when movement is required, calls `@lumi/world` `moveCharacterToLocation` with the authenticated household and session world scope.
 
-`login -> Reader entry scene -> choose follow-light -> grove scene -> browser reload -> grove scene still current -> Şimdi -> Ateşböcekleri Korusu -> stories -> continue -> grove scene`.
+For `isigi-takip-et`, Lina therefore moves through the real connected world path from Fısıldayan Orman to Ateşböcekleri Korusu. `Şimdi` requires no S52-specific display logic because Sprint 43 already reads canonical current location.
 
-`.github/workflows/ultef-s52-playable-demo.yml` provisions a disposable PostgreSQL database, applies the canonical auth/profile/world/NPC/story migration order, seeds the real demo universe, and runs the S52 Playwright scenario.
+### T05/T06 — persistent browser journey
 
-## Remaining blockers
+`apps/web/tests/e2e/ultef-s52-playable-demo-journey.spec.ts` defines:
 
-Sprint 52 is not complete until the newly authored S52 gate is green on the final head and the normal CI / Integration / Security / PX / relevant S40-S51 regression matrix is green. Any type/build/runtime failure must be fixed before this workboard may move to COMPLETE.
+- `PX-LUMI-S52-PLAY-RELOAD-001`
+
+and verifies:
+
+`login -> Reader entry scene -> choose follow-light -> Ateşböceklerinin İzinde -> browser reload -> same scene -> Şimdi -> Ateşböcekleri Korusu -> stories -> continue -> same scene`.
+
+`.github/workflows/ultef-s52-playable-demo.yml` provisions disposable PostgreSQL, applies canonical auth/profile/world/NPC/story migrations, seeds the real demo universe and executes the Playwright journey.
+
+## Final evidence
+
+Validated implementation head before this closeout-only documentation commit:
+
+`96522eade165c1d1bdc1671ea6298ebcd29b4fb8`
+
+Green evidence on that head:
+
+- CI #1079 — PASS, including format, lint, typecheck, unit tests, load gate, production build and Build Artifact;
+- ULTEF Integration #764 — PASS across DB integration, L6/L9 continuity/recovery/isolation and PX memory coverage;
+- Security Scan #1024 — PASS;
+- ULTEF S52 Playable Demo #6 — PASS;
+- ULTEF S51 Demo Browser #36 — PASS;
+- ULTEF S51 Demo Bootstrap #53 — PASS;
+- ULTEF S51 Demo Manifest #66 — PASS;
+- ULTEF PX-LUMI #402 — PASS;
+- ULTEF PX-02 Character Continuity #379 — PASS;
+- ULTEF PX-04 Emotional Consistency #368 — PASS;
+- ULTEF PX-05 Story Consequence #361 — PASS;
+- relevant S35-S50 regression workflows — PASS.
+
+The S52 gate initially exposed the Reader projection mismatch; after normalizing the persisted projection, the same real browser journey passed end-to-end.
+
+## Exit condition
+
+Sprint 52 is COMPLETE: a real Story Reader choice now creates persistent story progression and canonical world state that survives reload, is visible from `Şimdi`, and remains resumable through the production browser experience.
+
+Visual generation remains intentionally out of scope and begins with Sprint 53 — Character Visual Canon.
