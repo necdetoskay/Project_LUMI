@@ -3,6 +3,7 @@ import {
   runDemoSeed,
   runDemoStatus,
 } from "../../../scripts/demo/lumi-demo-runner.mjs";
+import { createLumiDemoAuthPostgresAdapter } from "./lumi-demo-auth-db.mjs";
 import { createLumiDemoPostgresAdapter } from "./lumi-demo-db.mjs";
 import { createLumiDemoStoryPostgresAdapter } from "./lumi-demo-story-db.mjs";
 
@@ -15,6 +16,7 @@ if (!databaseUrl) {
 }
 
 const adapter = createLumiDemoPostgresAdapter(databaseUrl);
+const authAdapter = createLumiDemoAuthPostgresAdapter(databaseUrl);
 const storyAdapter = createLumiDemoStoryPostgresAdapter(databaseUrl);
 
 try {
@@ -22,7 +24,8 @@ try {
   if (command === "status") {
     const core = await runDemoStatus({ adapter });
     const story = core.exists ? await storyAdapter.inspect() : { ready: false };
-    result = { ...core, story };
+    const auth = core.exists ? await authAdapter.inspect() : { ready: false };
+    result = { ...core, auth, story };
   } else if (command === "seed") {
     const core = await runDemoSeed({
       databaseUrl,
@@ -30,16 +33,21 @@ try {
       nodeEnv: process.env.NODE_ENV,
       confirmation: process.env.LUMI_DEMO_CONFIRM,
     });
+    const auth = await authAdapter.ensure({
+      password: process.env.LUMI_DEMO_PARENT_PASSWORD,
+    });
     const story = await storyAdapter.ensure();
-    result = { core, story };
+    result = { core, auth, story };
   } else if (command === "reset") {
     await storyAdapter.reset();
-    result = await runDemoReset({
+    const core = await runDemoReset({
       databaseUrl,
       adapter,
       nodeEnv: process.env.NODE_ENV,
       confirmation: process.env.LUMI_DEMO_CONFIRM,
     });
+    const auth = await authAdapter.reset();
+    result = { core, auth };
   } else {
     throw new Error("Usage: lumi-demo-cli.mjs <status|seed|reset>");
   }
@@ -47,5 +55,6 @@ try {
   console.log(JSON.stringify(result, null, 2));
 } finally {
   await storyAdapter.close();
+  await authAdapter.close();
   await adapter.close();
 }
