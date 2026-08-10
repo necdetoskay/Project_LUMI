@@ -27,7 +27,9 @@ export function assertDemoDatabaseSafety({
     throw new Error("DEMO_PRODUCTION_ENV_FORBIDDEN");
 
   const name = databaseName(databaseUrl).toLowerCase();
-  const markerSafe = SAFE_DATABASE_MARKERS.some((marker) => name.includes(marker));
+  const markerSafe = SAFE_DATABASE_MARKERS.some((marker) =>
+    name.includes(marker),
+  );
   const exactNameConfirmed =
     typeof allowedDatabaseName === "string" &&
     allowedDatabaseName.trim().toLowerCase() === name &&
