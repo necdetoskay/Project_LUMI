@@ -12,8 +12,8 @@ Implement the first production visual pipeline for LUMI: existing character data
 
 - Sprint 52 playable persistent demo is merged to `main`.
 - The canonical demo character Lina exists independently of media generation.
-- Story media truthfully remains `not_generated`.
-- Sprint 53 intentionally starts from domain/application contracts and persistence before visual polish.
+- Story media truthfully remains `not_generated` until a visual candidate is generated and explicitly selected.
+- OpenRouter's dedicated image endpoint and `krea/krea-2-medium-turbo` model contract are wired behind a provider-independent port.
 
 ## Workboard
 
@@ -22,12 +22,13 @@ Implement the first production visual pipeline for LUMI: existing character data
 - [x] T03 Migration for character visual persistence
 - [x] T04 Deterministic/versioned character visual brief + fingerprint
 - [x] T05 Unit coverage for brief determinism and identity-relevant change
-- [ ] T06 Repository/application services for generation jobs and candidate lifecycle
-- [ ] T07 Image-generation port + deterministic fake adapter
-- [ ] T08 Canon selection/replacement service and isolation tests
+- [x] T06 Application service for idempotent generation jobs and candidate persistence
+- [x] T07 Provider-independent generation/storage ports and prompt rendering
+- [x] T08 Explicit canon selection/replacement/rejection lifecycle
 - [ ] T09 Minimal parent/admin Asset Management workflow
-- [ ] T10 Configured real provider adapter behind explicit budget/live-generation boundary
-- [ ] T11 Dedicated S53 ULTEF + final regression matrix
+- [x] T10 OpenRouter/Krea Turbo adapter behind opt-in live-generation boundary
+- [x] T11 Dedicated DB-backed fake-provider S53 ULTEF authored
+- [ ] T12 Live Krea evidence and final CI/regression matrix
 
 ## Implemented foundation
 
@@ -37,11 +38,29 @@ Implement the first production visual pipeline for LUMI: existing character data
 
 `profile.character_visual_assets` stores durable managed candidates independently of provider URLs. It includes lifecycle state, generation provenance, candidate index and composite/grid lineage through `source_composite_asset_id` plus `crop_metadata`.
 
-`profile.character_visual_canons` stores the character-level canon pointer and visual identity contract separately from the generated assets. Selection is therefore explicit and generation does not silently replace canon.
+`profile.character_visual_canons` stores the character-level canon pointer and visual identity contract separately from generated assets. Selection is explicit and generation never silently replaces canon.
 
 ### Reproducible brief
 
 `CHARACTER_VISUAL_BRIEF_VERSION = lumi-character-visual-v1` builds a provider-independent brief from already-existing canonical character data. Stable object-key ordering plus SHA-256 produces an auditable fingerprint so unchanged canonical data yields the same brief identity.
+
+### Production lifecycle
+
+`generateCharacterVisualCandidates` performs authenticated character lookup, idempotent job creation, provider execution, storage handoff, managed candidate persistence, usage/cost provenance and explicit failed-job recording.
+
+`selectCharacterVisualCanon` makes one candidate canonical and archives the previous canon asset without deleting history. `rejectCharacterVisualCandidate` refuses to reject the active canon and retains rejected provenance.
+
+### Provider adapter
+
+`OpenRouterCharacterVisualGenerationAdapter` targets the official `/api/v1/images` endpoint through the generic generation port. The default S53 model is `krea/krea-2-medium-turbo`; multi-candidate logical jobs fan out at the adapter because Krea currently returns one image per request.
+
+### Test gates
+
+- required S53 CI uses a deterministic fake provider and disposable PostgreSQL;
+- live Krea execution is isolated in `ULTEF S53 Live Krea Image`;
+- the live workflow only executes automatically for a commit carrying `[live-image-test]` or by manual dispatch;
+- if `OPENROUTER_API_KEY` is absent, the workflow skips the paid request and uploads a skip-evidence artifact;
+- if present, exactly one 1K Lina candidate is generated, persisted in the disposable DB, selected as canon, and uploaded as a GitHub Actions artifact.
 
 ## Guardrails
 
@@ -51,8 +70,12 @@ Implement the first production visual pipeline for LUMI: existing character data
 - no live-provider dependency in required CI;
 - no cross-household asset visibility;
 - no claim that grid generation is production-ready until crop/split provenance is tested;
-- no image-generation spend without explicit configured provider/model and budget boundary.
+- no paid generation on ordinary pushes/PR runs;
+- the automatic live smoke is capped to one candidate.
 
-## Next implementation slice
+## Remaining blockers
 
-Build the application/repository service boundary for `request generation -> idempotent job -> fake provider -> multiple persisted candidates -> explicit canon selection`. This will become the first dedicated S53 ULTEF application/DB gate before any real provider spend is enabled.
+1. required S53 fake-provider gate and normal CI must pass on the production head;
+2. live Krea workflow must either produce the real visual artifact or explicitly prove the repository secret is unavailable;
+3. minimal parent/admin Asset Management surface must expose character candidates/canon without bypassing production services;
+4. final CI / Integration / Security / PX / S35-S52 regressions must be green before COMPLETE.
