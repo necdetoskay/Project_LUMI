@@ -13,8 +13,8 @@ Build and verify the canonical LUMI Demo Universe so product evaluation can move
 - [x] T02 Safe seed/reset runner
 - [x] T03 Profile/character/world bootstrap
 - [x] T04 Inventory/relationships/memory/NPC state
-- [ ] T05 Story bootstrap
-- [ ] T06 Browser-facing smoke journey
+- [x] T05 Story bootstrap
+- [x] T06 Browser-facing smoke journey
 - [ ] T07 Dedicated S51 DB-backed ULTEF
 - [ ] Final CI / Integration / Security / PX / S42-S50 regression matrix
 - [ ] Browser product review: "How does LUMI actually feel?"
@@ -100,6 +100,32 @@ The seeder does not repurpose unrelated fields to make authored content appear p
 The S51 disposable-PostgreSQL workflow now runs profile, world and NPC-intelligence migrations and verifies supporting-state counts, exact NPC/profile scope, Mira's authored relationship value, quest status, seed replay idempotency and scoped reset behavior. Reset removes canonical demo NPC/memory/quest/inventory state before deleting the core world/profile dependency chain.
 
 T04 DB-backed evidence is PASS.
+
+## T05 evidence — Story Reader bootstrap
+
+T05 adds an idempotent story phase on top of the canonical core seed. It creates the production story definition/version/session graph for `Fısıldayan Ormandaki İlk Işık`, including a real entry scene (`Ormandaki İlk Işık`), Lina as protagonist, an initial scene visit and the active quest bound to the seeded session.
+
+The seeded session is `active`, points at the real entry scene through `current_scene_id`, and stores only truthful demo context. Scene metadata explicitly records `visualStatus: not_generated`; no generated image is fabricated before the visual pipeline exists.
+
+If the core seed exists but the process previously stopped before the story phase, a later `pnpm demo:seed` repairs only the missing story phase. Once ready, replay returns `already_ready` without replacing session state. Story reset runs before core reset so FK order remains safe.
+
+`ULTEF S51 Demo Bootstrap` runs the real story migration and proves the definition/version/scene/session chain is Reader-ready, the quest points to the stable demo session, replay is idempotent and reset removes story state. T05 DB-backed evidence is PASS.
+
+## T06 evidence — real browser journey
+
+T06 adds a development/test-only demo parent identity without bypassing the production auth boundary. `LUMI Demo Ebeveyni` is created in `parent_accounts`; its password is supplied only through `LUMI_DEMO_PARENT_PASSWORD`, hashed with the same Argon2 parameters as normal registration, and linked to `LUMI Demo Ailesi` through an active `household_members` owner row. No demo password is stored in the repository manifest or database in plaintext.
+
+The dedicated `ULTEF S51 Demo Browser` Playwright gate starts from a disposable PostgreSQL database, runs auth/profile/world/NPC/story migrations, executes the real `pnpm demo:seed`, then uses the real login form and production pages. The PASS journey proves:
+
+1. demo parent login succeeds through `/api/auth/login` and lands on `/app`;
+2. parent home renders Elif from the seeded owner household;
+3. Lina's `Şimdi` surface renders canonical `Fısıldayan Orman`;
+4. Parlayan Pusula and Meşe Yaprağı are visible through the real inventory API/UI;
+5. the profile `Hikâyeler` tab lists `Fısıldayan Ormandaki İlk Işık` and its active current scene;
+6. `Devam et` opens `/app/stories/{sessionId}`;
+7. Story Reader renders the real seeded scene text and `Kayıp Işık İzini Bul` quest.
+
+T06 playable browser evidence is PASS.
 
 ## Merge rule
 
