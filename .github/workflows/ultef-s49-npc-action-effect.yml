@@ -41,6 +41,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Prepare profile schema
+        run: pnpm --filter @lumi/profiles profile:migrate
       - name: Prepare world schema
         run: pnpm --filter @lumi/world world:migrate
       - name: Prepare story schema
