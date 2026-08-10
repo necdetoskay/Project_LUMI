@@ -50,6 +50,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
+# Development/demo control assets. These are inert unless the web control is
+# explicitly enabled and token-protected at runtime. They let the standalone
+# web container prepare the internal PostgreSQL schema and canonical demo seed
+# without exposing PostgreSQL to the host or requiring pnpm inside the image.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/scripts ./apps/web/scripts
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/demo ./scripts/demo
+COPY --from=builder --chown=nextjs:nodejs /app/packages/profiles/scripts ./packages/profiles/scripts
+COPY --from=builder --chown=nextjs:nodejs /app/packages/profiles/migrations ./packages/profiles/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/packages/world/scripts ./packages/world/scripts
+COPY --from=builder --chown=nextjs:nodejs /app/packages/world/migrations ./packages/world/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/packages/npc-intelligence/scripts ./packages/npc-intelligence/scripts
+COPY --from=builder --chown=nextjs:nodejs /app/packages/npc-intelligence/migrations ./packages/npc-intelligence/migrations
+COPY --from=builder --chown=nextjs:nodejs /app/packages/story/scripts ./packages/story/scripts
+COPY --from=builder --chown=nextjs:nodejs /app/packages/story/migrations ./packages/story/migrations
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
