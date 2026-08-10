@@ -1,6 +1,27 @@
 import { and, asc, eq } from "drizzle-orm";
+import type {
+  CandidateAction,
+  DecisionContextVector,
+  UtilityWeightPolicy,
+} from "../../../domain";
 import { getNpcDb, type Database } from "../../client";
 import { npcSnapshots } from "../../schema/npc-intelligence/npc-snapshots";
+
+export interface CanonicalNpcDecisionPayload {
+  decisionKey: string;
+  candidates: CandidateAction[];
+  context: DecisionContextVector;
+  policy: UtilityWeightPolicy;
+  seed: string;
+}
+
+interface PersistedNpcDecisionPayload {
+  decisionKey: string;
+  candidates: CandidateAction[];
+  context: DecisionContextVector;
+  policy: Omit<UtilityWeightPolicy, "updatedAt"> & { updatedAt: string };
+  seed: string;
+}
 
 export interface CanonicalNpcSnapshot {
   npcId: string;
@@ -11,11 +32,64 @@ export interface CanonicalNpcSnapshot {
   locationId: string | null;
   needTypes: string[];
   relationshipToCharacter: number;
+  decisionPayload?: CanonicalNpcDecisionPayload | null;
   lastInteractionAt: Date;
   updatedAt: Date;
 }
 
 export type UpsertCanonicalNpcSnapshotInput = CanonicalNpcSnapshot;
+
+function persistDecisionPayload(
+  payload: CanonicalNpcDecisionPayload | null | undefined,
+): Record<string, unknown> | null {
+  if (!payload) return null;
+  const persisted: PersistedNpcDecisionPayload = {
+    ...payload,
+    candidates: payload.candidates.map((candidate) => ({ ...candidate })),
+    context: { ...payload.context },
+    policy: {
+      ...payload.policy,
+      weights: { ...payload.policy.weights },
+      updatedAt: payload.policy.updatedAt.toISOString(),
+    },
+  };
+  return persisted as unknown as Record<string, unknown>;
+}
+
+function restoreDecisionPayload(
+  value: Record<string, unknown> | null,
+): CanonicalNpcDecisionPayload | null {
+  if (!value) return null;
+  const raw = value as Partial<PersistedNpcDecisionPayload>;
+  if (
+    typeof raw.decisionKey !== "string" ||
+    raw.decisionKey.length === 0 ||
+    typeof raw.seed !== "string" ||
+    raw.seed.length === 0 ||
+    !Array.isArray(raw.candidates) ||
+    !raw.context ||
+    typeof raw.context !== "object" ||
+    !raw.policy ||
+    typeof raw.policy !== "object" ||
+    typeof raw.policy.updatedAt !== "string"
+  ) {
+    return null;
+  }
+  const updatedAt = new Date(raw.policy.updatedAt);
+  if (Number.isNaN(updatedAt.getTime())) return null;
+
+  return {
+    decisionKey: raw.decisionKey,
+    candidates: raw.candidates.map((candidate) => ({ ...candidate })),
+    context: { ...raw.context },
+    policy: {
+      ...raw.policy,
+      weights: { ...raw.policy.weights },
+      updatedAt,
+    },
+    seed: raw.seed,
+  } as CanonicalNpcDecisionPayload;
+}
 
 export class DrizzleNpcSnapshotRepository {
   constructor(private readonly db: Database = getNpcDb()) {}
@@ -33,6 +107,7 @@ export class DrizzleNpcSnapshotRepository {
         locationId: input.locationId,
         needTypes: [...input.needTypes],
         relationshipToCharacter: String(input.relationshipToCharacter),
+        decisionPayload: persistDecisionPayload(input.decisionPayload),
         lastInteractionAt: input.lastInteractionAt,
         updatedAt: input.updatedAt,
       })
@@ -48,6 +123,7 @@ export class DrizzleNpcSnapshotRepository {
           locationId: input.locationId,
           needTypes: [...input.needTypes],
           relationshipToCharacter: String(input.relationshipToCharacter),
+          decisionPayload: persistDecisionPayload(input.decisionPayload),
           lastInteractionAt: input.lastInteractionAt,
           updatedAt: input.updatedAt,
         },
@@ -81,6 +157,7 @@ export class DrizzleNpcSnapshotRepository {
       locationId: row.locationId,
       needTypes: row.needTypes ?? [],
       relationshipToCharacter: Number(row.relationshipToCharacter),
+      decisionPayload: restoreDecisionPayload(row.decisionPayload),
       lastInteractionAt: row.lastInteractionAt,
       updatedAt: row.updatedAt,
     }));
