@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AssetsClientPage } from "@/app/app/assets/assets-client-page";
@@ -21,12 +27,17 @@ afterEach(() => {
 
 describe("AssetsClientPage", () => {
   it("generates the selected candidate count and aspect ratio", async () => {
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      if (init?.method === "POST") {
-        return response({ job: { status: "succeeded" }, candidates: [] }, 201);
-      }
-      return response({ canon: null, candidates: [] });
-    });
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === "POST") {
+          return response(
+            { job: { status: "succeeded" }, candidates: [] },
+            201,
+          );
+        }
+        return response({ canon: null, candidates: [] });
+      },
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     render(
@@ -52,7 +63,9 @@ describe("AssetsClientPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "3 görsel üret" }));
 
     await waitFor(() => {
-      const postCall = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+      const postCall = fetchMock.mock.calls.find(
+        ([, init]) => init?.method === "POST",
+      );
       expect(postCall).toBeDefined();
       const payload = JSON.parse(String(postCall?.[1]?.body));
       expect(payload.action).toBe("generate");
@@ -60,7 +73,9 @@ describe("AssetsClientPage", () => {
       expect(payload.aspectRatio).toBe("4:5");
     });
 
-    expect(await screen.findByText("3 yeni görsel adayı oluşturuldu.")).toBeTruthy();
+    expect(
+      await screen.findByText("3 yeni görsel adayı oluşturuldu."),
+    ).toBeTruthy();
   });
 
   it("renders the selected canon separately from the candidate library", async () => {
@@ -107,6 +122,8 @@ describe("AssetsClientPage", () => {
 
     expect(await screen.findByText("Canon v2")).toBeTruthy();
     expect(screen.getByText("Aktif görünüm")).toBeTruthy();
-    expect(screen.getByText("1024×1024 · krea/krea-2-medium-turbo")).toBeTruthy();
+    expect(
+      screen.getByText("1024×1024 · krea/krea-2-medium-turbo"),
+    ).toBeTruthy();
   });
 });

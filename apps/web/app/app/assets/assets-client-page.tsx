@@ -114,7 +114,8 @@ export function AssetsClientPage({
     setMessage(null);
     setSuccessMessage(null);
     void refresh().catch((error: unknown) => {
-      const text = error instanceof Error ? error.message : "Görseller yüklenemedi.";
+      const text =
+        error instanceof Error ? error.message : "Görseller yüklenemedi.";
       setMessage(friendlyError(text));
     });
   }, [refresh]);
@@ -137,7 +138,8 @@ export function AssetsClientPage({
       await refresh();
       setSuccessMessage(successText);
     } catch (error) {
-      const text = error instanceof Error ? error.message : "İşlem tamamlanamadı.";
+      const text =
+        error instanceof Error ? error.message : "İşlem tamamlanamadı.";
       setMessage(friendlyError(text));
     } finally {
       setBusy(false);
@@ -206,8 +208,8 @@ export function AssetsClientPage({
               </h1>
               <p className="mt-3 max-w-[52rem] leading-7 text-on-surface-variant">
                 Mevcut karakter verilerinden yeni görseller üretin, adayları
-                karşılaştırın ve hikâyelerde kullanılacak kalıcı görünümü
-                seçin. Üretim karakter oluşturma işleminden bağımsızdır.
+                karşılaştırın ve hikâyelerde kullanılacak kalıcı görünümü seçin.
+                Üretim karakter oluşturma işleminden bağımsızdır.
               </p>
             </div>
             <Link className="storybook-button-secondary" href="/app">
@@ -287,7 +289,11 @@ export function AssetsClientPage({
                   <p className="text-sm font-extrabold text-on-surface">
                     Kaç aday üretelim?
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Aday sayısı">
+                  <div
+                    className="mt-2 flex flex-wrap gap-2"
+                    role="group"
+                    aria-label="Aday sayısı"
+                  >
                     {[1, 2, 3, 4].map((count) => (
                       <button
                         aria-pressed={candidateCount === count}
@@ -328,7 +334,9 @@ export function AssetsClientPage({
                     }
                     type="button"
                   >
-                    {busy ? "Görsel üretiliyor…" : `${candidateCount} görsel üret`}
+                    {busy
+                      ? "Görsel üretiliyor…"
+                      : `${candidateCount} görsel üret`}
                   </button>
                   <button
                     className="storybook-button-secondary"
@@ -389,7 +397,9 @@ export function AssetsClientPage({
                       </span>
                     </div>
                     <p className="mt-3 text-xs leading-5 text-on-surface-variant">
-                      {canonCandidate.model ?? canonCandidate.provider ?? "Görsel üretimi"}
+                      {canonCandidate.model ??
+                        canonCandidate.provider ??
+                        "Görsel üretimi"}
                     </p>
                   </>
                 ) : (
@@ -419,16 +429,23 @@ export function AssetsClientPage({
                     {selectedCharacter?.name ?? "Karakter"} kütüphanesi
                   </h2>
                   <p className="mt-2 text-sm text-on-surface-variant">
-                    {state.candidates.length} toplam asset · {visibleCandidates.length} gösteriliyor
+                    {state.candidates.length} toplam asset ·{" "}
+                    {visibleCandidates.length} gösteriliyor
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2" role="group" aria-label="Görsel filtresi">
-                  {([
-                    ["active", "Aktif adaylar"],
-                    ["all", "Tümü"],
-                    ["rejected", "Elenenler"],
-                    ["archived", "Geçmiş canon"],
-                  ] as const).map(([value, label]) => (
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-label="Görsel filtresi"
+                >
+                  {(
+                    [
+                      ["active", "Aktif adaylar"],
+                      ["all", "Tümü"],
+                      ["rejected", "Elenenler"],
+                      ["archived", "Geçmiş canon"],
+                    ] as const
+                  ).map(([value, label]) => (
                     <button
                       aria-pressed={filter === value}
                       className={
@@ -457,7 +474,8 @@ export function AssetsClientPage({
               ) : (
                 <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {visibleCandidates.map((candidate) => {
-                    const isCanon = state.canon?.selectedAssetId === candidate.id;
+                    const isCanon =
+                      state.canon?.selectedAssetId === candidate.id;
                     const contentUrl = `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(candidate.id)}?householdId=${encodeURIComponent(householdId)}`;
                     return (
                       <article
@@ -487,13 +505,18 @@ export function AssetsClientPage({
                             {candidate.width && candidate.height
                               ? `${candidate.width}×${candidate.height} · `
                               : ""}
-                            {candidate.model ?? candidate.provider ?? "Görsel üretimi"}
+                            {candidate.model ??
+                              candidate.provider ??
+                              "Görsel üretimi"}
                           </p>
                           <p className="mt-1 text-xs text-on-surface-variant">
-                            {new Date(candidate.createdAt).toLocaleString("tr-TR")}
+                            {new Date(candidate.createdAt).toLocaleString(
+                              "tr-TR",
+                            )}
                           </p>
                           <div className="mt-4 flex flex-wrap gap-2">
-                            {!isCanon && candidate.lifecycleState !== "rejected" ? (
+                            {!isCanon &&
+                            candidate.lifecycleState !== "rejected" ? (
                               <button
                                 className="storybook-button"
                                 disabled={busy}
@@ -508,7 +531,8 @@ export function AssetsClientPage({
                                 Canon yap
                               </button>
                             ) : null}
-                            {!isCanon && candidate.lifecycleState !== "rejected" ? (
+                            {!isCanon &&
+                            candidate.lifecycleState !== "rejected" ? (
                               <button
                                 className="storybook-button-secondary"
                                 disabled={busy}
