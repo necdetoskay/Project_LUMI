@@ -1,9 +1,9 @@
 import {
-  NpcActionMoveApplicator,
   QuestRewardApplicator,
   QuestSeedAutomationApplicator,
 } from "@lumi/world/application";
 
+import { NpcActionOutboxRegistry } from "./npc-action-outbox-registry";
 import { ProfileInventoryGrantAdapter } from "./profile-inventory-grant.adapter";
 
 export interface WorkerOutboxIntent {
@@ -16,9 +16,13 @@ export class WorkerOutboxDispatcher {
   private readonly questReward = new QuestRewardApplicator(
     new ProfileInventoryGrantAdapter(),
   );
-  private readonly npcActionMove = new NpcActionMoveApplicator();
+  private readonly npcActions = new NpcActionOutboxRegistry();
 
   async apply(intent: WorkerOutboxIntent): Promise<{ writes: number }> {
+    if (this.npcActions.supports(intent.intentType)) {
+      return this.npcActions.apply(intent.intentType, intent);
+    }
+
     switch (intent.intentType) {
       case "quest_seed_automation": {
         const result = await this.questSeed.apply(intent);
@@ -33,10 +37,6 @@ export class WorkerOutboxDispatcher {
           throw new Error(`QUEST_REWARD_NOT_APPLIED:${result.reason}`);
         }
         return { writes: result.granted ? 1 : 0 };
-      }
-      case "npc_action_move_character": {
-        const result = await this.npcActionMove.apply(intent);
-        return { writes: result.writes };
       }
       default:
         throw new Error(
