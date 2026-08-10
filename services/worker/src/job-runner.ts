@@ -7,6 +7,7 @@ import type {
 import type { SimulationRunInput } from "@lumi/simulation/application";
 import { SimulationRunner, BudgetPlanner } from "@lumi/simulation/application";
 import type { Logger } from "@lumi/logger";
+import type { NpcDecisionJobPort } from "./npc-decision-runner";
 
 export interface WorkerConfig {
   intervalMs: number;
@@ -50,6 +51,7 @@ export class SimulationJobRunner implements JobRunner {
     private readonly discoverySource: WorldDiscoveryPort,
     private readonly logger: Logger,
     private readonly seed: string,
+    private readonly npcDecisionRunner?: NpcDecisionJobPort,
   ) {}
 
   private get now(): Date {
@@ -163,6 +165,14 @@ export class SimulationJobRunner implements JobRunner {
       );
 
       const runResult = await runner.run(runInput);
+      const decisionSummary = this.npcDecisionRunner
+        ? await this.npcDecisionRunner.runForWorld({
+            householdId: candidate.householdId,
+            worldId: candidate.worldId,
+            childProfileId: candidate.childProfileId,
+            now: this.now,
+          })
+        : null;
 
       return {
         processed: 1,
@@ -172,7 +182,7 @@ export class SimulationJobRunner implements JobRunner {
         detail: {
           worldId: candidate.worldId,
           status: runResult.frozen ? "frozen" : "completed",
-          message: `Run ${runResult.runState.id}, ${runResult.committedCount} effects committed`,
+          message: `Run ${runResult.runState.id}, ${runResult.committedCount} effects committed${decisionSummary ? `; NPC decisions applied=${decisionSummary.applied}, replayed=${decisionSummary.duplicates}` : ""}`,
         },
       };
     } catch (error) {
