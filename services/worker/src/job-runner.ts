@@ -165,14 +165,15 @@ export class SimulationJobRunner implements JobRunner {
       );
 
       const runResult = await runner.run(runInput);
-      const decisionSummary = this.npcDecisionRunner
-        ? await this.npcDecisionRunner.runForWorld({
-            householdId: candidate.householdId,
-            worldId: candidate.worldId,
-            childProfileId: candidate.childProfileId,
-            now: this.now,
-          })
-        : null;
+      const decisionSummary =
+        this.npcDecisionRunner && !runResult.frozen
+          ? await this.npcDecisionRunner.runForWorld({
+              householdId: candidate.householdId,
+              worldId: candidate.worldId,
+              childProfileId: candidate.childProfileId,
+              now: this.now,
+            })
+          : null;
 
       return {
         processed: 1,
