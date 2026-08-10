@@ -133,7 +133,10 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
             manifest.character.originKey,
             manifest.world.startLocationKey,
             manifest.world.universeSeed,
-            JSON.stringify({ lumiDemo: true, visualCanonStatus: manifest.character.visualCanonStatus }),
+            JSON.stringify({
+              lumiDemo: true,
+              visualCanonStatus: manifest.character.visualCanonStatus,
+            }),
           ],
         );
         await client.query(
@@ -200,7 +203,13 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
               (id, world_id, from_location_id, to_location_id, connection_type,
                traversal_cost, is_bidirectional, version)
              VALUES ($1,$2,$3,$4,$5,1,true,1)`,
-            [CONNECTION_IDS[index], manifest.world.id, from.id, to.id, connection.type],
+            [
+              CONNECTION_IDS[index],
+              manifest.world.id,
+              from.id,
+              to.id,
+              connection.type,
+            ],
           );
         }
 
@@ -222,12 +231,33 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
     },
 
     async reset(manifest = LUMI_DEMO_MANIFEST) {
-      const result = await pool.query(
-        `DELETE FROM profile.households
-          WHERE id = $1 AND slug = $2`,
-        [manifest.household.id, manifest.household.key],
-      );
-      return { deletedHouseholds: result.rowCount ?? 0 };
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query(
+          `DELETE FROM profile.worlds WHERE id = $1 AND household_id = $2`,
+          [manifest.world.id, manifest.household.id],
+        );
+        await client.query(
+          `DELETE FROM profile.lumi_characters WHERE id = $1 AND household_id = $2`,
+          [manifest.character.id, manifest.household.id],
+        );
+        await client.query(
+          `DELETE FROM profile.child_profiles WHERE id = $1 AND household_id = $2`,
+          [manifest.childProfile.id, manifest.household.id],
+        );
+        const result = await client.query(
+          `DELETE FROM profile.households WHERE id = $1 AND slug = $2`,
+          [manifest.household.id, manifest.household.key],
+        );
+        await client.query("COMMIT");
+        return { deletedHouseholds: result.rowCount ?? 0 };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async close() {
