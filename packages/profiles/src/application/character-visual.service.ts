@@ -89,7 +89,10 @@ export async function listCharacterVisualCandidates(
         eq(characterVisualAssets.characterId, characterId),
       ),
     )
-    .orderBy(asc(characterVisualAssets.createdAt), asc(characterVisualAssets.candidateIndex));
+    .orderBy(
+      asc(characterVisualAssets.createdAt),
+      asc(characterVisualAssets.candidateIndex),
+    );
 }
 
 export async function getCharacterVisualCanon(
@@ -191,6 +194,10 @@ export async function generateCharacterVisualCandidates(
       resolution: "1K",
     });
 
+    if (generated.candidates.length === 0) {
+      throw new Error("VISUAL_PROVIDER_RETURNED_NO_CANDIDATES");
+    }
+
     const persisted = [];
     for (const candidate of generated.candidates) {
       const stored = await deps.storagePort.store({
@@ -213,8 +220,8 @@ export async function generateCharacterVisualCandidates(
           generationJobId: jobId,
           storageRef: stored.storageRef,
           mimeType: candidate.mimeType,
-          width: candidate.width,
-          height: candidate.height,
+          ...(typeof candidate.width === "number" ? { width: candidate.width } : {}),
+          ...(typeof candidate.height === "number" ? { height: candidate.height } : {}),
           provider: generated.provider,
           model: generated.model,
           candidateIndex: candidate.index,
@@ -234,9 +241,15 @@ export async function generateCharacterVisualCandidates(
           status: "succeeded",
           provider: generated.provider,
           model: generated.model,
-          providerRequestId: generated.providerRequestId,
-          usageMetadata: generated.usageMetadata,
-          costMetadata: generated.costMetadata,
+          ...(generated.providerRequestId
+            ? { providerRequestId: generated.providerRequestId }
+            : {}),
+          ...(generated.usageMetadata
+            ? { usageMetadata: generated.usageMetadata }
+            : {}),
+          ...(generated.costMetadata
+            ? { costMetadata: generated.costMetadata }
+            : {}),
           completedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -248,7 +261,8 @@ export async function generateCharacterVisualCandidates(
       .set({
         status: "failed",
         errorCode: "GENERATION_FAILED",
-        errorMessage: error instanceof Error ? error.message.slice(0, 2000) : String(error),
+        errorMessage:
+          error instanceof Error ? error.message.slice(0, 2000) : String(error),
         completedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -284,7 +298,9 @@ export async function selectCharacterVisualCanon(
       ),
     )
     .limit(1);
-  if (!asset || asset.lifecycleState === "rejected") throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
+  if (!asset || asset.lifecycleState === "rejected") {
+    throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
+  }
 
   const [job] = asset.generationJobId
     ? await db
@@ -306,13 +322,22 @@ export async function selectCharacterVisualCanon(
     if (current?.selectedAssetId && current.selectedAssetId !== assetId) {
       await tx
         .update(characterVisualAssets)
-        .set({ lifecycleState: "archived", archivedAt: new Date(), updatedAt: new Date() })
+        .set({
+          lifecycleState: "archived",
+          archivedAt: new Date(),
+          updatedAt: new Date(),
+        })
         .where(eq(characterVisualAssets.id, current.selectedAssetId));
     }
 
     await tx
       .update(characterVisualAssets)
-      .set({ lifecycleState: "canonical", rejectedAt: null, archivedAt: null, updatedAt: new Date() })
+      .set({
+        lifecycleState: "canonical",
+        rejectedAt: null,
+        archivedAt: null,
+        updatedAt: new Date(),
+      })
       .where(eq(characterVisualAssets.id, assetId));
 
     if (current) {
@@ -359,11 +384,17 @@ export async function rejectCharacterVisualCandidate(
 ) {
   await loadOwnedCharacterRecord(userId, householdId, characterId);
   const current = await getCharacterVisualCanon(userId, householdId, characterId);
-  if (current?.selectedAssetId === assetId) throw new Error("CANNOT_REJECT_ACTIVE_CANON");
+  if (current?.selectedAssetId === assetId) {
+    throw new Error("CANNOT_REJECT_ACTIVE_CANON");
+  }
 
   const updated = await getProfileDb()
     .update(characterVisualAssets)
-    .set({ lifecycleState: "rejected", rejectedAt: new Date(), updatedAt: new Date() })
+    .set({
+      lifecycleState: "rejected",
+      rejectedAt: new Date(),
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(characterVisualAssets.id, assetId),
