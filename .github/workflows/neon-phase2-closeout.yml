@@ -1,0 +1,111 @@
+name: Neon Phase 2 Closeout
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  closeout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      restore-postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: lumi_restore
+          POSTGRES_PASSWORD: lumi_restore_only
+          POSTGRES_DB: lumi_restore
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi_restore -d lumi_restore"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      DATABASE_URL: ${{ secrets.LUMI_DEV_DATABASE_URL }}
+      DATABASE_DIRECT_URL: ${{ secrets.LUMI_DEV_DATABASE_DIRECT_URL }}
+      DATABASE_POOL_MAX: "2"
+      NODE_ENV: test
+      ULTEF_SCENARIO: PX-LUMI-S48-NPC-SNAPSHOT-WORKER-001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Validate Neon secrets
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL" || { echo "LUMI_DEV_DATABASE_URL is missing"; exit 1; }
+          test -n "$DATABASE_DIRECT_URL" || { echo "LUMI_DEV_DATABASE_DIRECT_URL is missing"; exit 1; }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Re-apply canonical migrations
+        run: |
+          pnpm --filter @lumi/web auth:migrate
+          pnpm --filter @lumi/profiles profile:migrate
+          pnpm --filter @lumi/world world:migrate
+          pnpm --filter @lumi/npc-intelligence npc:migrate
+          pnpm --filter @lumi/story story:migrate
+
+      - name: Verify worker repository access, isolation and replay behavior on Neon
+        run: pnpm --filter @lumi/worker exec vitest run tests/ultef-s48-npc-snapshot-worker.integration.test.ts
+
+      - name: Observe pooled and direct connection latency
+        run: node apps/web/scripts/db-latency-observe.mjs
+
+      - name: Export Neon database with PostgreSQL 18 pg_dump
+        shell: bash
+        run: |
+          mkdir -p artifacts/neon-phase2
+          docker run --rm \
+            -e DATABASE_DIRECT_URL="$DATABASE_DIRECT_URL" \
+            -v "$PWD/artifacts/neon-phase2:/artifacts" \
+            postgres:18 \
+            bash -lc 'pg_dump "$DATABASE_DIRECT_URL" --format=custom --no-owner --no-privileges --file=/artifacts/lumi-neon.dump'
+          test -s artifacts/neon-phase2/lumi-neon.dump
+          ls -lh artifacts/neon-phase2/lumi-neon.dump
+
+      - name: Restore dump into clean PostgreSQL 18
+        shell: bash
+        run: |
+          docker run --rm --network host \
+            -e PGPASSWORD=lumi_restore_only \
+            -v "$PWD/artifacts/neon-phase2:/artifacts" \
+            postgres:18 \
+            pg_restore \
+              --host=127.0.0.1 \
+              --port=55432 \
+              --username=lumi_restore \
+              --dbname=lumi_restore \
+              --no-owner \
+              --no-privileges \
+              --exit-on-error \
+              /artifacts/lumi-neon.dump
+
+      - name: Verify restored database with canonical compatibility smoke
+        env:
+          DATABASE_URL: postgresql://lumi_restore:lumi_restore_only@127.0.0.1:55432/lumi_restore
+          DATABASE_DIRECT_URL: postgresql://lumi_restore:lumi_restore_only@127.0.0.1:55432/lumi_restore
+        run: pnpm --filter @lumi/web db:compatibility-smoke
+
+      - name: Upload backup rehearsal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-phase2-backup-rehearsal
+          path: artifacts/neon-phase2
+          if-no-files-found: warn
+          retention-days: 1
