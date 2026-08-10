@@ -100,13 +100,13 @@ jobs:
       - name: Build the deployable web Docker image
         run: docker build --build-arg NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 -t lumi-web:s51-artifact .
 
-      - name: Boot the deployable web Docker image
+      - name: Boot the deployable web Docker image with blank demo password env
         run: |
           docker run -d --name s51-artifact-web --network s51-artifact-runtime \
             -p 3101:3000 \
             -e DATABASE_URL="$ARTIFACT_INTERNAL_DATABASE_URL" \
             -e NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 \
-            -e LUMI_DEMO_PARENT_PASSWORD=lumi-demo-artifact-only-2026 \
+            -e LUMI_DEMO_PARENT_PASSWORD= \
             lumi-web:s51-artifact
           for i in $(seq 1 45); do
             if curl --fail --silent http://127.0.0.1:3101/api/health >/dev/null; then exit 0; fi
