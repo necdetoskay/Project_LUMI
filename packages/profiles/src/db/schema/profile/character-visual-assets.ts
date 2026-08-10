@@ -49,6 +49,7 @@ export const characterVisualGenerationJobs = profileSchema.table(
   (table) => [
     uniqueIndex("uq_character_visual_generation_job_idempotency").on(
       table.householdId,
+      table.characterId,
       table.idempotencyKey,
     ),
     index("character_visual_generation_jobs_character_idx").on(
