@@ -38,7 +38,9 @@ function relativeObjectKey(
   ].join("/");
 }
 
-export function objectStorageConfigFromEnv(): S3CompatibleObjectStorageConfig | null {
+export function objectStorageConfigFromEnv():
+  | S3CompatibleObjectStorageConfig
+  | null {
   const endpoint = process.env.OBJECT_STORAGE_ENDPOINT;
   const bucket = process.env.OBJECT_STORAGE_BUCKET;
   const accessKeyId = process.env.OBJECT_STORAGE_ACCESS_KEY_ID;
@@ -59,7 +61,10 @@ export class LocalCharacterVisualStorageAdapter
   async store(
     input: Parameters<CharacterVisualStoragePort["store"]>[0],
   ): Promise<{ storageRef: string }> {
-    const relative = relativeObjectKey(input).replace(/^character-visuals\//, "");
+    const relative = relativeObjectKey(input).replace(
+      /^character-visuals\//,
+      "",
+    );
     const absolute = resolve(storageRoot(), relative);
     await mkdir(resolve(absolute, ".."), { recursive: true });
     await writeFile(absolute, Buffer.from(input.bytesBase64, "base64"));
@@ -121,7 +126,9 @@ export async function readCharacterVisual(storageRef: string) {
     const slash = value.indexOf("/");
     if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
     const bucket = decodeURIComponent(value.slice(0, slash));
-    if (bucket !== config.bucket) throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
+    if (bucket !== config.bucket) {
+      throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
+    }
     const key = value.slice(slash + 1);
     const object = await getObject(config, key);
     return {
@@ -133,7 +140,9 @@ export async function readCharacterVisual(storageRef: string) {
   throw new Error("UNSUPPORTED_VISUAL_STORAGE_REF");
 }
 
-export async function deleteCharacterVisual(storageRef: string): Promise<void> {
+export async function deleteCharacterVisual(
+  storageRef: string,
+): Promise<void> {
   if (!storageRef.startsWith(S3_STORAGE_PREFIX)) return;
   const config = objectStorageConfigFromEnv();
   if (!config) throw new Error("OBJECT_STORAGE_NOT_CONFIGURED");
@@ -141,6 +150,8 @@ export async function deleteCharacterVisual(storageRef: string): Promise<void> {
   const slash = value.indexOf("/");
   if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
   const bucket = decodeURIComponent(value.slice(0, slash));
-  if (bucket !== config.bucket) throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
+  if (bucket !== config.bucket) {
+    throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
+  }
   await deleteObject(config, value.slice(slash + 1));
 }
