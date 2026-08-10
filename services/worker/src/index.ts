@@ -7,9 +7,9 @@ import {
 import { BackgroundWorker, type WorkerConfig } from "./worker";
 import { OutboxJobRunner } from "./outbox-runner";
 import {
-  EmptyNpcSourceAdapter,
   EmptyRelevanceSourceAdapter,
   EnvWorldDiscoveryAdapter,
+  RepositoryNpcSourceAdapter,
   SimulationRepositoryWorldSourceAdapter,
 } from "./adapters";
 
@@ -29,7 +29,10 @@ const logger = createLogger({ level: "info" });
 const seed = process.env.SIMULATION_SEED ?? "lumi-sim-v1";
 
 const worldSource = new SimulationRepositoryWorldSourceAdapter(repo, logger);
-const npcSource = new EmptyNpcSourceAdapter();
+const npcSource = new RepositoryNpcSourceAdapter(
+  undefined,
+  Number(process.env.WORKER_NPC_SNAPSHOT_LIMIT ?? "64"),
+);
 const relevanceSource = new EmptyRelevanceSourceAdapter();
 const discoverySource = new EnvWorldDiscoveryAdapter(
   process.env.WORKER_WORLD_CANDIDATES_JSON,
