@@ -72,24 +72,12 @@ export async function runDemoControl(
 
   if (action === "prepare") {
     await runMigrations();
-    return runNode(
-      "apps/web/scripts/lumi-demo-cli.mjs",
-      ["seed"],
-      demoEnv(),
-    );
+    return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["seed"], demoEnv());
   }
 
   if (action === "reset") {
-    return runNode(
-      "apps/web/scripts/lumi-demo-cli.mjs",
-      ["reset"],
-      demoEnv(),
-    );
+    return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["reset"], demoEnv());
   }
 
-  return runNode(
-    "apps/web/scripts/lumi-demo-cli.mjs",
-    ["status"],
-    demoEnv(),
-  );
+  return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["status"], demoEnv());
 }
