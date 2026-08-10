@@ -12,7 +12,7 @@ Build and verify the canonical LUMI Demo Universe so product evaluation can move
 - [x] T01 Reference manifest
 - [x] T02 Safe seed/reset runner
 - [x] T03 Profile/character/world bootstrap
-- [ ] T04 Inventory/relationships/memory/NPC state
+- [x] T04 Inventory/relationships/memory/NPC state
 - [ ] T05 Story bootstrap
 - [ ] T06 Browser-facing smoke journey
 - [ ] T07 Dedicated S51 DB-backed ULTEF
@@ -84,6 +84,22 @@ Dedicated workflow `ULTEF S51 Demo Bootstrap` prepares disposable PostgreSQL wit
 5. a foreign household fixture remains unchanged.
 
 The corrected T03 PostgreSQL bootstrap evidence is PASS.
+
+## T04 evidence — inventory / relationships / memory / NPC state
+
+T04 extends the same atomic demo seed transaction with real production-shaped supporting state:
+
+- a character-scoped persistent inventory containing Parlayan Pusula and Meşe Yaprağı;
+- three exact household/world/profile-scoped NPC snapshots for Mira, Tiko and Yaşlı Meşe;
+- authored Lina relationship values stored in canonical `npc_snapshots.relationship_to_character`;
+- two S44 canonical memories with deterministic effect keys and lifecycle semantics;
+- one active `Kayıp Işık İzini Bul` quest in the production quest aggregate table.
+
+The seeder does not repurpose unrelated fields to make authored content appear persisted. In particular, NPC traits are not written into `need_types`; the canonical NPC need list remains empty until true need state exists.
+
+The S51 disposable-PostgreSQL workflow now runs profile, world and NPC-intelligence migrations and verifies supporting-state counts, exact NPC/profile scope, Mira's authored relationship value, quest status, seed replay idempotency and scoped reset behavior. Reset removes canonical demo NPC/memory/quest/inventory state before deleting the core world/profile dependency chain.
+
+T04 DB-backed evidence is PASS.
 
 ## Merge rule
 
