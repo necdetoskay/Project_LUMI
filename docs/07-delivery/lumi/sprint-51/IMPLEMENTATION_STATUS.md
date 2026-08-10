@@ -10,7 +10,7 @@ Build and verify the canonical LUMI Demo Universe so product evaluation can move
 ## Workboard
 
 - [x] T01 Reference manifest
-- [ ] T02 Safe seed/reset runner
+- [x] T02 Safe seed/reset runner
 - [ ] T03 Profile/character/world bootstrap
 - [ ] T04 Inventory/relationships/memory/NPC state
 - [ ] T05 Story bootstrap
@@ -39,7 +39,25 @@ Canonical reference identities now include:
 
 All reference entities use stable UUIDs or semantic keys. The manifest validator rejects duplicate stable IDs/keys, invalid references, out-of-range relationship values and invalid memory salience. `scripts/demo/lumi-demo-manifest.selftest.mjs` includes both positive and intentionally malformed-manifest assertions.
 
-PR workflow `ULTEF S51 Demo Manifest` runs the manifest self-test on every pull request update. T01 does not write to PostgreSQL; DB mutation begins only in T02/T03 so the data-write and reset safety boundary remains explicit.
+## T02 evidence — safe seed/reset runner
+
+T02 adds an adapter-driven safety boundary at `scripts/demo/lumi-demo-runner.mjs` before any real PostgreSQL bootstrap is introduced.
+
+The runner now enforces:
+
+- `NODE_ENV=production` is always rejected;
+- database names must explicitly look disposable/local (`dev`, `local`, `test`, `demo` or `review`);
+- destructive seed/reset requires exact confirmation token `lumi-demo-v1`;
+- manifest validation runs before adapter mutation;
+- an existing household with the wrong stable ID/key is rejected;
+- manifest-version drift requires explicit reset rather than silent overwrite;
+- seed replay returns `already_seeded` without a second adapter seed call;
+- reset replay returns `already_absent` without a second adapter reset call;
+- post-seed and post-reset state are re-inspected before success is returned.
+
+`scripts/demo/lumi-demo-runner.selftest.mjs` proves safe DB acceptance, unsafe DB rejection, production rejection, confirmation rejection, seed idempotency, reset idempotency, scope collision rejection and version-change refusal using an in-memory adapter.
+
+The persistent `ULTEF S51 Demo Manifest` workflow now runs both the manifest and runner safety self-tests and is PASS. Repository-facing `pnpm demo:seed`, `demo:reset` and `demo:status` will be bound to the real PostgreSQL adapter as the first part of T03; T02 deliberately does not invent partial fixture rows merely to make the commands appear functional.
 
 ## Merge rule
 
