@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 
-import {
-  assertDemoControlToken,
-  isDemoWebControlEnabled,
-  runDemoControl,
-  type DemoControlAction,
-} from "@/lib/demo-control";
+import { runDemoControl, type DemoControlAction } from "@/lib/demo-control";
 
 export const runtime = "nodejs";
 
@@ -16,19 +11,10 @@ const ALLOWED_ACTIONS = new Set<DemoControlAction>([
 ]);
 
 export async function POST(request: Request) {
-  if (!isDemoWebControlEnabled()) {
-    return NextResponse.json(
-      { error: "DEMO_CONTROL_DISABLED" },
-      { status: 404 },
-    );
-  }
-
   const form = await request.formData();
-  const token = String(form.get("token") ?? "");
   const action = String(form.get("action") ?? "") as DemoControlAction;
 
   try {
-    assertDemoControlToken(token);
     if (!ALLOWED_ACTIONS.has(action)) {
       return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });
     }
