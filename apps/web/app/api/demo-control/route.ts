@@ -9,11 +9,18 @@ import {
 
 export const runtime = "nodejs";
 
-const ALLOWED_ACTIONS = new Set<DemoControlAction>(["prepare", "status", "reset"]);
+const ALLOWED_ACTIONS = new Set<DemoControlAction>([
+  "prepare",
+  "status",
+  "reset",
+]);
 
 export async function POST(request: Request) {
   if (!isDemoWebControlEnabled()) {
-    return NextResponse.json({ error: "DEMO_CONTROL_DISABLED" }, { status: 404 });
+    return NextResponse.json(
+      { error: "DEMO_CONTROL_DISABLED" },
+      { status: 404 },
+    );
   }
 
   const form = await request.formData();
@@ -33,7 +40,8 @@ export async function POST(request: Request) {
     url.searchParams.set("message", output.slice(-1800));
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "DEMO_CONTROL_FAILED";
+    const message =
+      error instanceof Error ? error.message : "DEMO_CONTROL_FAILED";
     const url = new URL("/demo-control", request.url);
     url.searchParams.set("result", "error");
     url.searchParams.set("action", action || "unknown");
