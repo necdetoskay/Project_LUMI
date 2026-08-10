@@ -1,0 +1,38 @@
+name: Temporary Format Main
+
+on:
+  push:
+    branches:
+      - chore/format-main
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/format-main
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format failing main files
+        run: pnpm exec prettier --write README.md apps/web/scripts/db-latency-observe.mjs
+      - name: Remove temporary workflow
+        run: rm .github/workflows/temporary-format-main.yml
+      - name: Commit formatter result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md apps/web/scripts/db-latency-observe.mjs .github/workflows/temporary-format-main.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: normalize main formatting"
+          git push
