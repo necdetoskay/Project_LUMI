@@ -13,7 +13,14 @@ export interface NpcMoveCharacterEffectIntent {
   targetLocationId: string;
 }
 
-export type NpcWorldEffectIntent = NpcMoveCharacterEffectIntent;
+export interface NpcSetRelationshipEffectIntent {
+  type: "set_relationship";
+  relationshipToCharacter: number;
+}
+
+export type NpcWorldEffectIntent =
+  | NpcMoveCharacterEffectIntent
+  | NpcSetRelationshipEffectIntent;
 
 export interface CanonicalNpcDecisionPayload {
   decisionKey: string;
@@ -106,12 +113,26 @@ function validEffects(
     if (!effect || typeof effect !== "object" || Array.isArray(effect)) {
       return false;
     }
-    const item = effect as Partial<NpcMoveCharacterEffectIntent>;
-    return (
-      item.type === "move_character" &&
-      typeof item.targetLocationId === "string" &&
-      item.targetLocationId.length > 0
-    );
+    const item = effect as Partial<NpcWorldEffectIntent>;
+    if (item.type === "move_character") {
+      return (
+        typeof (item as Partial<NpcMoveCharacterEffectIntent>).targetLocationId ===
+          "string" &&
+        (item as Partial<NpcMoveCharacterEffectIntent>).targetLocationId!.length > 0
+      );
+    }
+    if (item.type === "set_relationship") {
+      const relationship = (
+        item as Partial<NpcSetRelationshipEffectIntent>
+      ).relationshipToCharacter;
+      return (
+        typeof relationship === "number" &&
+        Number.isFinite(relationship) &&
+        relationship >= -1 &&
+        relationship <= 1
+      );
+    }
+    return false;
   });
 }
 
@@ -236,6 +257,55 @@ export class DrizzleNpcSnapshotRepository {
           updatedAt: input.updatedAt,
         },
       });
+  }
+
+  async setRelationship(
+    householdId: string,
+    worldId: string,
+    childProfileId: string,
+    npcId: string,
+    relationshipToCharacter: number,
+    updatedAt = new Date(),
+  ): Promise<"applied" | "duplicate" | "not_found"> {
+    if (
+      !Number.isFinite(relationshipToCharacter) ||
+      relationshipToCharacter < -1 ||
+      relationshipToCharacter > 1
+    ) {
+      throw new Error("NPC_RELATIONSHIP_OUT_OF_RANGE");
+    }
+    const rows = await this.db
+      .select({ relationshipToCharacter: npcSnapshots.relationshipToCharacter })
+      .from(npcSnapshots)
+      .where(
+        and(
+          eq(npcSnapshots.householdId, householdId),
+          eq(npcSnapshots.worldId, worldId),
+          eq(npcSnapshots.childProfileId, childProfileId),
+          eq(npcSnapshots.npcId, npcId),
+        ),
+      )
+      .limit(1);
+    const current = rows[0];
+    if (!current) return "not_found";
+    if (Number(current.relationshipToCharacter) === relationshipToCharacter) {
+      return "duplicate";
+    }
+    await this.db
+      .update(npcSnapshots)
+      .set({
+        relationshipToCharacter: String(relationshipToCharacter),
+        updatedAt,
+      })
+      .where(
+        and(
+          eq(npcSnapshots.householdId, householdId),
+          eq(npcSnapshots.worldId, worldId),
+          eq(npcSnapshots.childProfileId, childProfileId),
+          eq(npcSnapshots.npcId, npcId),
+        ),
+      );
+    return "applied";
   }
 
   async listForWorker(
