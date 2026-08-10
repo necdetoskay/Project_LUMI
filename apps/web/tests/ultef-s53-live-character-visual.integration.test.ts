@@ -12,6 +12,10 @@ import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapt
 const USER_ID = "51000000-0000-4000-8000-000000000009";
 const HOUSEHOLD_ID = "51000000-0000-4000-8000-000000000001";
 const CHARACTER_ID = "51000000-0000-4000-8000-000000000003";
+const describeLiveS53 =
+  process.env.ULTEF_S53_LIVE_IMAGE_ENABLE === "true"
+    ? describe
+    : describe.skip;
 
 class ArtifactStorage implements CharacterVisualStoragePort {
   async store(input: Parameters<CharacterVisualStoragePort["store"]>[0]) {
@@ -24,11 +28,12 @@ class ArtifactStorage implements CharacterVisualStoragePort {
   }
 }
 
-describe("PX-LUMI-S53 live character visual generation", () => {
+describeLiveS53("PX-LUMI-S53 live character visual generation", () => {
   it("generates one Lina candidate with Krea Turbo and selects it as canon", async () => {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey)
+    if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY is required for live S53 test");
+    }
 
     const provider = new OpenRouterCharacterVisualGenerationAdapter({ apiKey });
     const storage = new ArtifactStorage();
