@@ -1,0 +1,66 @@
+name: Neon Demo Journey
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-journey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.LUMI_DEV_DATABASE_URL }}
+      DATABASE_DIRECT_URL: ${{ secrets.LUMI_DEV_DATABASE_DIRECT_URL }}
+      DATABASE_POOL_MAX: "2"
+      NODE_ENV: test
+      LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_PARENT_PASSWORD: ${{ secrets.LUMI_DEV_DEMO_PARENT_PASSWORD }}
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3100
+      AUTH_COOKIE_SECURE: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL" || { echo "LUMI_DEV_DATABASE_URL is missing"; exit 1; }
+          test -n "$DATABASE_DIRECT_URL" || { echo "LUMI_DEV_DATABASE_DIRECT_URL is missing"; exit 1; }
+          test -n "$LUMI_DEMO_PARENT_PASSWORD" || { echo "LUMI_DEV_DEMO_PARENT_PASSWORD is missing"; exit 1; }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+
+      - name: Re-apply canonical migrations
+        run: |
+          pnpm --filter @lumi/web auth:migrate
+          pnpm --filter @lumi/profiles profile:migrate
+          pnpm --filter @lumi/world world:migrate
+          pnpm --filter @lumi/npc-intelligence npc:migrate
+          pnpm --filter @lumi/story story:migrate
+
+      - name: Prepare deterministic demo universe on Neon
+        run: pnpm demo:seed
+
+      - name: Re-run demo preparation to prove idempotency
+        run: pnpm demo:seed
+
+      - name: Run persistent login to story journey on Neon
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/ultef-s52-playable-demo-journey.spec.ts
+
+      - name: Run managed PostgreSQL compatibility smoke after journey
+        run: pnpm --filter @lumi/web db:compatibility-smoke
