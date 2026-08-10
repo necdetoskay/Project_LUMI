@@ -1,0 +1,126 @@
+name: ULTEF S53 Character Visual Canon
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  character-visual-canon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_s53_visual_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_s53_visual_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_s53_visual_test
+      NODE_ENV: test
+      LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
+      ULTEF_S53_VISUAL_ENABLE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare auth schema
+        run: pnpm --filter @lumi/web auth:migrate
+      - name: Prepare profile schema including S53 visual canon
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Seed canonical demo universe
+        run: pnpm demo:seed
+      - name: Run S53 DB-backed fake-provider visual lifecycle
+        run: pnpm --filter @lumi/web exec vitest run tests/ultef-s53-character-visual-canon.integration.test.ts
+
+  compose-cold-start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      WEB_PORT: 3001
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
+      AUTH_COOKIE_SECURE: "false"
+      LUMI_SETTINGS_ENCRYPTION_KEY: "ultef-s53-compose-only-not-production"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure fresh Compose volume
+        working-directory: infra/compose
+        run: docker compose down -v --remove-orphans || true
+      - name: Build and start complete Compose stack
+        working-directory: infra/compose
+        run: docker compose up -d --build
+      - name: Verify migration job and canonical tables
+        working-directory: infra/compose
+        run: |
+          container_id="$(docker compose ps -a -q schema-migrate)"
+          test -n "${container_id}"
+          exit_code="$(docker inspect "${container_id}" --format '{{.State.ExitCode}}')"
+          test "${exit_code}" = "0"
+          check_table() {
+            table="$1"
+            result="$(docker compose exec -T postgres psql -U lumi -d lumi -tAc "SELECT to_regclass('${table}') IS NOT NULL")"
+            echo "${table}: ${result}"
+            test "${result}" = "t"
+          }
+          check_table public.parent_accounts
+          check_table profile.households
+          check_table profile.character_visual_generation_jobs
+          check_table profile.character_visual_assets
+          check_table profile.character_visual_canons
+      - name: Wait for web health
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3001/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Re-run migrations to prove idempotency
+        working-directory: infra/compose
+        run: docker compose run --rm schema-migrate
+      - name: Restart web and verify health again
+        working-directory: infra/compose
+        run: |
+          docker compose restart web
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:3001/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Diagnostics
+        if: failure()
+        working-directory: infra/compose
+        run: |
+          docker compose ps -a || true
+          docker compose logs --no-color postgres schema-migrate web worker || true
+      - name: Tear down
+        if: always()
+        working-directory: infra/compose
+        run: docker compose down -v --remove-orphans || true

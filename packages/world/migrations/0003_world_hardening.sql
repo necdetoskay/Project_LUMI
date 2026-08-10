@@ -8,58 +8,78 @@ BEGIN;
 -- ============================================================
 -- 1. Foreign Key Constraints (self-contained within profile.*)
 -- ============================================================
+-- PostgreSQL does not support ADD CONSTRAINT IF NOT EXISTS. Guard every named
+-- constraint explicitly so this migration is safe to replay during container
+-- startup/recovery without hiding genuine FK validation failures.
 
--- world_regions → worlds
-ALTER TABLE profile.world_regions
-  ADD CONSTRAINT fk_world_regions_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_world_regions_world' AND conrelid = 'profile.world_regions'::regclass) THEN
+    ALTER TABLE profile.world_regions
+      ADD CONSTRAINT fk_world_regions_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
--- world_locations → worlds + world_regions
-ALTER TABLE profile.world_locations
-  ADD CONSTRAINT fk_world_locations_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_world_locations_world' AND conrelid = 'profile.world_locations'::regclass) THEN
+    ALTER TABLE profile.world_locations
+      ADD CONSTRAINT fk_world_locations_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_locations
-  ADD CONSTRAINT fk_world_locations_region
-  FOREIGN KEY (region_id) REFERENCES profile.world_regions(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_world_locations_region' AND conrelid = 'profile.world_locations'::regclass) THEN
+    ALTER TABLE profile.world_locations
+      ADD CONSTRAINT fk_world_locations_region
+      FOREIGN KEY (region_id) REFERENCES profile.world_regions(id) ON DELETE CASCADE;
+  END IF;
 
--- world_homes → worlds + world_locations
-ALTER TABLE profile.world_homes
-  ADD CONSTRAINT fk_world_homes_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_world_homes_world' AND conrelid = 'profile.world_homes'::regclass) THEN
+    ALTER TABLE profile.world_homes
+      ADD CONSTRAINT fk_world_homes_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_homes
-  ADD CONSTRAINT fk_world_homes_location
-  FOREIGN KEY (location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_world_homes_location' AND conrelid = 'profile.world_homes'::regclass) THEN
+    ALTER TABLE profile.world_homes
+      ADD CONSTRAINT fk_world_homes_location
+      FOREIGN KEY (location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  END IF;
 
--- world_bootstrap_manifests → worlds
-ALTER TABLE profile.world_bootstrap_manifests
-  ADD CONSTRAINT fk_wbm_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wbm_world' AND conrelid = 'profile.world_bootstrap_manifests'::regclass) THEN
+    ALTER TABLE profile.world_bootstrap_manifests
+      ADD CONSTRAINT fk_wbm_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
--- world_checkpoints → worlds
-ALTER TABLE profile.world_checkpoints
-  ADD CONSTRAINT fk_wc_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wc_world' AND conrelid = 'profile.world_checkpoints'::regclass) THEN
+    ALTER TABLE profile.world_checkpoints
+      ADD CONSTRAINT fk_wc_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
--- world_character_locations → worlds + world_locations
-ALTER TABLE profile.world_character_locations
-  ADD CONSTRAINT fk_wcl_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wcl_world' AND conrelid = 'profile.world_character_locations'::regclass) THEN
+    ALTER TABLE profile.world_character_locations
+      ADD CONSTRAINT fk_wcl_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_character_locations
-  ADD CONSTRAINT fk_wcl_location
-  FOREIGN KEY (location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wcl_location' AND conrelid = 'profile.world_character_locations'::regclass) THEN
+    ALTER TABLE profile.world_character_locations
+      ADD CONSTRAINT fk_wcl_location
+      FOREIGN KEY (location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  END IF;
 
--- world_character_movement_events → worlds
-ALTER TABLE profile.world_character_movement_events
-  ADD CONSTRAINT fk_wcme_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wcme_world' AND conrelid = 'profile.world_character_movement_events'::regclass) THEN
+    ALTER TABLE profile.world_character_movement_events
+      ADD CONSTRAINT fk_wcme_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
--- world_event_store → worlds
-ALTER TABLE profile.world_event_store
-  ADD CONSTRAINT fk_wes_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wes_world' AND conrelid = 'profile.world_event_store'::regclass) THEN
+    ALTER TABLE profile.world_event_store
+      ADD CONSTRAINT fk_wes_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- ============================================================
 -- 2. Unique Constraints for Business Rules
@@ -88,13 +108,20 @@ CREATE TABLE IF NOT EXISTS profile.world_environment_snapshots (
 CREATE INDEX IF NOT EXISTS wesnap_world_region_idx
   ON profile.world_environment_snapshots (world_id, region_id, created_at DESC);
 
-ALTER TABLE profile.world_environment_snapshots
-  ADD CONSTRAINT fk_wesnap_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wesnap_world' AND conrelid = 'profile.world_environment_snapshots'::regclass) THEN
+    ALTER TABLE profile.world_environment_snapshots
+      ADD CONSTRAINT fk_wesnap_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_environment_snapshots
-  ADD CONSTRAINT fk_wesnap_region
-  FOREIGN KEY (region_id) REFERENCES profile.world_regions(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wesnap_region' AND conrelid = 'profile.world_environment_snapshots'::regclass) THEN
+    ALTER TABLE profile.world_environment_snapshots
+      ADD CONSTRAINT fk_wesnap_region
+      FOREIGN KEY (region_id) REFERENCES profile.world_regions(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- ============================================================
 -- 4. Location Connections (graph edges)
@@ -120,16 +147,25 @@ CREATE INDEX IF NOT EXISTS wlc_world_idx ON profile.world_location_connections (
 CREATE INDEX IF NOT EXISTS wlc_from_idx ON profile.world_location_connections (from_location_id);
 CREATE INDEX IF NOT EXISTS wlc_to_idx ON profile.world_location_connections (to_location_id);
 
-ALTER TABLE profile.world_location_connections
-  ADD CONSTRAINT fk_wlc_world
-  FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wlc_world' AND conrelid = 'profile.world_location_connections'::regclass) THEN
+    ALTER TABLE profile.world_location_connections
+      ADD CONSTRAINT fk_wlc_world
+      FOREIGN KEY (world_id) REFERENCES profile.worlds(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_location_connections
-  ADD CONSTRAINT fk_wlc_from_location
-  FOREIGN KEY (from_location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wlc_from_location' AND conrelid = 'profile.world_location_connections'::regclass) THEN
+    ALTER TABLE profile.world_location_connections
+      ADD CONSTRAINT fk_wlc_from_location
+      FOREIGN KEY (from_location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  END IF;
 
-ALTER TABLE profile.world_location_connections
-  ADD CONSTRAINT fk_wlc_to_location
-  FOREIGN KEY (to_location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_wlc_to_location' AND conrelid = 'profile.world_location_connections'::regclass) THEN
+    ALTER TABLE profile.world_location_connections
+      ADD CONSTRAINT fk_wlc_to_location
+      FOREIGN KEY (to_location_id) REFERENCES profile.world_locations(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 COMMIT;

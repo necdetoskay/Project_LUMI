@@ -26,6 +26,48 @@ services:
       retries: 10
     restart: unless-stopped
 
+  schema-migrate:
+    image: postgres:17.7-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lumi}
+      POSTGRES_USER: ${POSTGRES_USER:-lumi}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-lumi_local_only}
+    volumes:
+      - ../../apps/web/migrations:/migrations/auth:ro
+      - ../../packages/profiles/migrations:/migrations/profile:ro
+      - ../../packages/world/migrations:/migrations/world:ro
+      - ../../packages/npc-intelligence/migrations:/migrations/npc:ro
+      - ../../packages/story/migrations:/migrations/story:ro
+    command:
+      - sh
+      - -ec
+      - |
+        apply_dir() {
+          label="$$1"
+          dir="$$2"
+          for file in "$$dir"/*.sql; do
+            [ -f "$$file" ] || continue
+            echo "Applying $$label migration: $${file##*/}"
+            psql \
+              -h postgres \
+              -U "$${POSTGRES_USER}" \
+              -d "$${POSTGRES_DB}" \
+              -v ON_ERROR_STOP=1 \
+              -f "$$file"
+            echo "Migration $${file##*/} applied successfully"
+          done
+        }
+        apply_dir auth /migrations/auth
+        apply_dir profile /migrations/profile
+        apply_dir world /migrations/world
+        apply_dir npc /migrations/npc
+        apply_dir story /migrations/story
+        echo "All canonical schema migrations applied successfully"
+    restart: "no"
+
   web:
     build:
       context: ../..
@@ -37,6 +79,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      schema-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
@@ -44,6 +88,9 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://172.41.42.51:3001}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       LUMI_SETTINGS_ENCRYPTION_KEY: ${LUMI_SETTINGS_ENCRYPTION_KEY}
+      LUMI_DEMO_CONFIRM: ${LUMI_DEMO_CONFIRM:-}
+      LUMI_DEMO_PARENT_PASSWORD: ${LUMI_DEMO_PARENT_PASSWORD:-}
+      LUMI_DEMO_WEB_CONTROL_TOKEN: ${LUMI_DEMO_WEB_CONTROL_TOKEN:-}
     ports:
       - "${WEB_PORT:-3001}:3000"
     restart: unless-stopped
@@ -58,6 +105,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      schema-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}

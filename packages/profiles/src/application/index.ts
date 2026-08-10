@@ -86,6 +86,38 @@ export {
 export type { CharacterDomainSummary } from "./character-domain.service";
 
 export {
+  CHARACTER_VISUAL_BRIEF_VERSION,
+  buildCharacterVisualBrief,
+  fingerprintCharacterVisualBrief,
+} from "./character-visual-brief";
+export type {
+  CharacterVisualBrief,
+  CharacterVisualBriefSource,
+} from "./character-visual-brief";
+
+export { renderCharacterVisualPrompt } from "./character-visual-generation";
+export type {
+  CharacterVisualGenerationPort,
+  CharacterVisualGenerationRequest,
+  CharacterVisualGenerationResult,
+  CharacterVisualStoragePort,
+  CharacterVisualStorageInput,
+  GeneratedImageCandidate,
+} from "./character-visual-generation";
+
+export {
+  generateCharacterVisualCandidates,
+  listCharacterVisualCandidates,
+  getCharacterVisualCanon,
+  selectCharacterVisualCanon,
+  rejectCharacterVisualCandidate,
+} from "./character-visual.service";
+export type {
+  GenerateCharacterVisualInput,
+  CharacterVisualServiceDeps,
+} from "./character-visual.service";
+
+export {
   EMOTION_RULE_VERSION,
   evaluateEmotionEvent,
   applyEmotionEvent,

@@ -3,6 +3,7 @@ import Link from "next/link";
 const navItems = [
   { href: "/app", label: "Ana Sayfa" },
   { href: "/app/profiles", label: "Çocuklarım" },
+  { href: "/app/assets", label: "Görsel Kütüphanesi" },
   { href: "/app/settings/safety", label: "Güvenlik" },
 ];
 
