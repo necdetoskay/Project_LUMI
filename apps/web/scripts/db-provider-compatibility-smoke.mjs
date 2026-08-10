@@ -21,7 +21,9 @@ const requiredTables = [
 const client = new pg.Client({ connectionString });
 
 function assert(condition, message) {
-  if (!condition) throw new Error(message);
+  if (!condition) {
+    throw new Error(message);
+  }
 }
 
 try {
