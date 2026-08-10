@@ -41,8 +41,7 @@ async function loadOwnedCharacterRecord(
   const summary = await getCharacterById(userId, householdId, characterId);
   if (!summary) throw new Error("CHARACTER_NOT_FOUND");
 
-  const db = getProfileDb();
-  const [record] = await db
+  const [record] = await getProfileDb()
     .select()
     .from(lumiCharacters)
     .where(
@@ -72,6 +71,33 @@ function toBrief(record: Awaited<ReturnType<typeof loadOwnedCharacterRecord>>) {
     safetyBounds: record.safetyBounds as Record<string, unknown>,
     preferenceHints: (record.preferenceHints ?? {}) as Record<string, unknown>,
   });
+}
+
+async function getExistingJob(
+  householdId: string,
+  characterId: string,
+  idempotencyKey: string,
+) {
+  const [job] = await getProfileDb()
+    .select()
+    .from(characterVisualGenerationJobs)
+    .where(
+      and(
+        eq(characterVisualGenerationJobs.householdId, householdId),
+        eq(characterVisualGenerationJobs.characterId, characterId),
+        eq(characterVisualGenerationJobs.idempotencyKey, idempotencyKey),
+      ),
+    )
+    .limit(1);
+  return job ?? null;
+}
+
+async function listJobCandidates(jobId: string) {
+  return getProfileDb()
+    .select()
+    .from(characterVisualAssets)
+    .where(eq(characterVisualAssets.generationJobId, jobId))
+    .orderBy(asc(characterVisualAssets.candidateIndex));
 }
 
 export async function listCharacterVisualCandidates(
@@ -114,20 +140,6 @@ export async function getCharacterVisualCanon(
   return canon ?? null;
 }
 
-async function getExistingJob(householdId: string, idempotencyKey: string) {
-  const [job] = await getProfileDb()
-    .select()
-    .from(characterVisualGenerationJobs)
-    .where(
-      and(
-        eq(characterVisualGenerationJobs.householdId, householdId),
-        eq(characterVisualGenerationJobs.idempotencyKey, idempotencyKey),
-      ),
-    )
-    .limit(1);
-  return job ?? null;
-}
-
 export async function generateCharacterVisualCandidates(
   userId: string,
   input: GenerateCharacterVisualInput,
@@ -139,14 +151,17 @@ export async function generateCharacterVisualCandidates(
     input.characterId,
   );
   const db = getProfileDb();
-  const existing = await getExistingJob(input.householdId, input.idempotencyKey);
+  const existing = await getExistingJob(
+    input.householdId,
+    input.characterId,
+    input.idempotencyKey,
+  );
   if (existing) {
-    const candidates = await db
-      .select()
-      .from(characterVisualAssets)
-      .where(eq(characterVisualAssets.generationJobId, existing.id))
-      .orderBy(asc(characterVisualAssets.candidateIndex));
-    return { job: existing, candidates, replayed: true };
+    return {
+      job: existing,
+      candidates: await listJobCandidates(existing.id),
+      replayed: true,
+    };
   }
 
   const brief = toBrief(character);
@@ -173,14 +188,17 @@ export async function generateCharacterVisualCandidates(
     .returning();
 
   if (inserted.length === 0) {
-    const raced = await getExistingJob(input.householdId, input.idempotencyKey);
+    const raced = await getExistingJob(
+      input.householdId,
+      input.characterId,
+      input.idempotencyKey,
+    );
     if (!raced) throw new Error("VISUAL_JOB_IDEMPOTENCY_RACE");
-    const candidates = await db
-      .select()
-      .from(characterVisualAssets)
-      .where(eq(characterVisualAssets.generationJobId, raced.id))
-      .orderBy(asc(characterVisualAssets.candidateIndex));
-    return { job: raced, candidates, replayed: true };
+    return {
+      job: raced,
+      candidates: await listJobCandidates(raced.id),
+      replayed: true,
+    };
   }
 
   try {
@@ -193,7 +211,6 @@ export async function generateCharacterVisualCandidates(
       aspectRatio: input.aspectRatio ?? "1:1",
       resolution: "1K",
     });
-
     if (generated.candidates.length === 0) {
       throw new Error("VISUAL_PROVIDER_RETURNED_NO_CANDIDATES");
     }
@@ -234,7 +251,6 @@ export async function generateCharacterVisualCandidates(
           },
         });
       }
-
       await tx
         .update(characterVisualGenerationJobs)
         .set({
@@ -247,9 +263,7 @@ export async function generateCharacterVisualCandidates(
           ...(generated.usageMetadata
             ? { usageMetadata: generated.usageMetadata }
             : {}),
-          ...(generated.costMetadata
-            ? { costMetadata: generated.costMetadata }
-            : {}),
+          ...(generated.costMetadata ? { costMetadata: generated.costMetadata } : {}),
           completedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -270,13 +284,13 @@ export async function generateCharacterVisualCandidates(
     throw error;
   }
 
-  const job = await getExistingJob(input.householdId, input.idempotencyKey);
-  const candidates = await db
-    .select()
-    .from(characterVisualAssets)
-    .where(eq(characterVisualAssets.generationJobId, jobId))
-    .orderBy(asc(characterVisualAssets.candidateIndex));
-  return { job: job!, candidates, replayed: false };
+  const job = await getExistingJob(
+    input.householdId,
+    input.characterId,
+    input.idempotencyKey,
+  );
+  if (!job) throw new Error("VISUAL_JOB_NOT_FOUND_AFTER_GENERATION");
+  return { job, candidates: await listJobCandidates(jobId), replayed: false };
 }
 
 export async function selectCharacterVisualCanon(
@@ -302,6 +316,9 @@ export async function selectCharacterVisualCanon(
     throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
   }
 
+  const current = await getCharacterVisualCanon(userId, householdId, characterId);
+  if (current?.selectedAssetId === assetId) return current;
+
   const [job] = asset.generationJobId
     ? await db
         .select()
@@ -313,13 +330,7 @@ export async function selectCharacterVisualCanon(
   const brief = job.visualBrief as unknown as CharacterVisualBrief;
 
   await db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(characterVisualCanons)
-      .where(eq(characterVisualCanons.characterId, characterId))
-      .limit(1);
-
-    if (current?.selectedAssetId && current.selectedAssetId !== assetId) {
+    if (current?.selectedAssetId) {
       await tx
         .update(characterVisualAssets)
         .set({
