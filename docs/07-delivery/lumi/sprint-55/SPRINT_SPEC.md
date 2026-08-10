@@ -1,6 +1,7 @@
 # Sprint 55 — Generic Asset Management Core
 
 Status: IN PROGRESS
+Validation: final-head CI / ULTEF verification pending
 Date: 2026-08-10
 Parent roadmap: `docs/07-delivery/lumi/SAAS_PORTABILITY_ASSET_PLATFORM_ROADMAP.md`
 Tracking issue: #91
