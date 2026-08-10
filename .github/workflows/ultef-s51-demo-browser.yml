@@ -92,13 +92,13 @@ jobs:
           docker logs s51-artifact-postgres
           exit 1
 
-      - name: Prepare artifact database schema
+      - name: Prepare artifact database schema without NPC migrations
         run: |
           DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/web auth:migrate
           DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/profiles profile:migrate
           DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/world world:migrate
-          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/npc-intelligence npc:migrate
           DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/story story:migrate
+          test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('npc_intelligence.npc_snapshots') IS NULL")" = "t"
 
       - name: Build the deployable web Docker image
         run: docker build --build-arg NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 -t lumi-web:s51-artifact .
@@ -118,7 +118,7 @@ jobs:
           docker logs s51-artifact-web
           exit 1
 
-      - name: Prepare demo through the real Docker artifact
+      - name: Prepare demo and upgrade NPC schema through the real Docker artifact
         run: |
           headers=$(mktemp)
           curl --fail --silent --show-error -D "$headers" -o /dev/null \
@@ -128,6 +128,7 @@ jobs:
           location=$(awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0, 11)}' "$headers" | tail -1)
           echo "Redirect: $location"
           echo "$location" | grep -q 'result=success'
+          test "$(docker exec s51-artifact-postgres psql -U lumi -d lumi_s51_artifact_test -Atc "SELECT to_regclass('npc_intelligence.npc_snapshots') IS NOT NULL")" = "t"
 
       - name: Verify demo status through the real Docker artifact
         run: |

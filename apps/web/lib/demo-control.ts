@@ -1,3 +1,7 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import pg from "pg";
+
 // These S51 runtime modules are JavaScript by design; importing them here keeps
 // their runtime dependencies inside Next.js standalone tracing instead of
 // spawning untraced CLI processes from the production image.
@@ -20,6 +24,65 @@ function databaseUrl(): string {
   return value;
 }
 
+function repositoryRoot(): string {
+  const cwd = process.cwd();
+  return cwd.endsWith("/apps/web") || cwd.endsWith("\\apps\\web")
+    ? resolve(cwd, "../..")
+    : cwd;
+}
+
+async function ensureNpcSchemaReady(url: string): Promise<void> {
+  const pool = new pg.Pool({ connectionString: url, max: 1 });
+  try {
+    const existing = await pool.query(
+      "SELECT to_regclass('npc_intelligence.npc_snapshots') AS relation",
+    );
+    if (existing.rows[0]?.relation) return;
+
+    await pool.query("CREATE SCHEMA IF NOT EXISTS npc_intelligence");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS npc_intelligence._npc_intelligence_migration_ledger (
+        id SERIAL PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL UNIQUE,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    const appliedResult = await pool.query(
+      "SELECT filename FROM npc_intelligence._npc_intelligence_migration_ledger ORDER BY id",
+    );
+    const applied = new Set<string>(
+      appliedResult.rows.map((row: { filename: string }) => row.filename),
+    );
+    const migrationDir = resolve(
+      repositoryRoot(),
+      "packages/npc-intelligence/migrations",
+    );
+    const files = readdirSync(migrationDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort();
+
+    for (const file of files) {
+      if (applied.has(file)) continue;
+      const sql = readFileSync(resolve(migrationDir, file), "utf8");
+      await pool.query(sql);
+      await pool.query(
+        "INSERT INTO npc_intelligence._npc_intelligence_migration_ledger (filename) VALUES ($1) ON CONFLICT (filename) DO NOTHING",
+        [file],
+      );
+    }
+
+    const after = await pool.query(
+      "SELECT to_regclass('npc_intelligence.npc_snapshots') AS relation",
+    );
+    if (!after.rows[0]?.relation) {
+      throw new Error("NPC_SCHEMA_UPGRADE_INCOMPLETE:npc_snapshots");
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
 function assertCanonicalStatus(status: {
   exists?: boolean;
   householdId?: string;
@@ -37,6 +100,10 @@ function assertCanonicalStatus(status: {
 
 async function executeDemoAction(action: DemoControlAction) {
   const url = databaseUrl();
+  if (action === "prepare") {
+    await ensureNpcSchemaReady(url);
+  }
+
   const adapter = createLumiDemoPostgresAdapter(url);
   const authAdapter = createLumiDemoAuthPostgresAdapter(url);
   const storyAdapter = createLumiDemoStoryPostgresAdapter(url);
