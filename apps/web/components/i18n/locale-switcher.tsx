@@ -29,7 +29,10 @@ export function LocaleSwitcher() {
   return (
     <label className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
       <span className="sr-only">{t("language")}</span>
-      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+      <span
+        className="material-symbols-outlined text-[20px]"
+        aria-hidden="true"
+      >
         language
       </span>
       <select
