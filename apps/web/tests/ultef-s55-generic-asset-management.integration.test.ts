@@ -22,7 +22,9 @@ const describeS55 =
   process.env.ULTEF_S55_ASSET_ENABLE === "true" ? describe : describe.skip;
 
 class AllowListedAssetAuthorization implements ManagedAssetAuthorizationPort {
-  async assertCanManage(input: Parameters<ManagedAssetAuthorizationPort["assertCanManage"]>[0]) {
+  async assertCanManage(
+    input: Parameters<ManagedAssetAuthorizationPort["assertCanManage"]>[0],
+  ) {
     if (input.userId !== USER_ID || input.householdId !== HOUSEHOLD_ID) {
       throw new Error("MANAGED_ASSET_FORBIDDEN");
     }
@@ -97,11 +99,21 @@ describeS55("PX-LUMI-S55 generic asset management core", () => {
       deps,
     );
 
-    const canonV1 = await selectManagedAssetCanon(USER_ID, scope, first.id, deps);
+    const canonV1 = await selectManagedAssetCanon(
+      USER_ID,
+      scope,
+      first.id,
+      deps,
+    );
     expect(canonV1?.selectedAssetId).toBe(first.id);
     expect(canonV1?.version).toBe(1);
 
-    const canonV2 = await selectManagedAssetCanon(USER_ID, scope, second.id, deps);
+    const canonV2 = await selectManagedAssetCanon(
+      USER_ID,
+      scope,
+      second.id,
+      deps,
+    );
     expect(canonV2?.selectedAssetId).toBe(second.id);
     expect(canonV2?.version).toBe(2);
 
@@ -137,11 +149,7 @@ describeS55("PX-LUMI-S55 generic asset management core", () => {
     ).rejects.toThrow("CANNOT_ARCHIVE_ACTIVE_MANAGED_ASSET_CANON");
 
     await expect(
-      listManagedAssets(
-        "52000000-0000-4000-8000-000000000099",
-        scope,
-        deps,
-      ),
+      listManagedAssets("52000000-0000-4000-8000-000000000099", scope, deps),
     ).rejects.toThrow("MANAGED_ASSET_FORBIDDEN");
   });
 
@@ -168,7 +176,9 @@ describeS55("PX-LUMI-S55 generic asset management core", () => {
     };
     const genericCandidates = await listManagedAssets(USER_ID, scope, deps);
     for (const candidate of generated.candidates) {
-      const mirrored = genericCandidates.find((asset) => asset.id === candidate.id);
+      const mirrored = genericCandidates.find(
+        (asset) => asset.id === candidate.id,
+      );
       expect(mirrored?.storageRef).toBe(candidate.storageRef);
       expect(mirrored?.sourceSystem).toBe("character_visual_assets");
     }

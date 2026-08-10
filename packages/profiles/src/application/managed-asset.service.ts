@@ -63,7 +63,9 @@ export type RegisterManagedAssetInput = ManagedAssetScope & {
   metadata?: Record<string, unknown>;
 };
 
-function assertSubjectType(value: string): asserts value is ManagedAssetSubjectType {
+function assertSubjectType(
+  value: string,
+): asserts value is ManagedAssetSubjectType {
   if (!MANAGED_ASSET_SUBJECT_TYPES.includes(value as ManagedAssetSubjectType)) {
     throw new Error("MANAGED_ASSET_SUBJECT_TYPE_INVALID");
   }
@@ -148,7 +150,8 @@ export async function registerManagedAssetMetadata(
   deps: ManagedAssetServiceDeps,
 ) {
   assertAssetKind(input.assetKind);
-  if (!input.storageRef.trim()) throw new Error("MANAGED_ASSET_STORAGE_REF_REQUIRED");
+  if (!input.storageRef.trim())
+    throw new Error("MANAGED_ASSET_STORAGE_REF_REQUIRED");
   await authorize(userId, input, deps);
 
   const db = getProfileDb();
@@ -304,7 +307,12 @@ export async function rejectManagedAsset(
   await authorize(userId, scope, deps);
   const asset = await getScopedAsset(scope, assetId);
   if (!asset) throw new Error("MANAGED_ASSET_NOT_FOUND");
-  const canon = await getManagedAssetCanon(userId, scope, asset.assetKind, deps);
+  const canon = await getManagedAssetCanon(
+    userId,
+    scope,
+    asset.assetKind,
+    deps,
+  );
   if (canon?.selectedAssetId === asset.id) {
     throw new Error("CANNOT_REJECT_ACTIVE_MANAGED_ASSET_CANON");
   }
@@ -340,7 +348,12 @@ export async function archiveManagedAsset(
   await authorize(userId, scope, deps);
   const asset = await getScopedAsset(scope, assetId);
   if (!asset) throw new Error("MANAGED_ASSET_NOT_FOUND");
-  const canon = await getManagedAssetCanon(userId, scope, asset.assetKind, deps);
+  const canon = await getManagedAssetCanon(
+    userId,
+    scope,
+    asset.assetKind,
+    deps,
+  );
   if (canon?.selectedAssetId === asset.id) {
     throw new Error("CANNOT_ARCHIVE_ACTIVE_MANAGED_ASSET_CANON");
   }

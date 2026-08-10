@@ -123,7 +123,9 @@ export const managedAssetLifecycleEvents = profileSchema.table(
     fromState: varchar("from_state", { length: 24 }),
     toState: varchar("to_state", { length: 24 }).notNull(),
     reason: varchar("reason", { length: 120 }),
-    actorType: varchar("actor_type", { length: 24 }).notNull().default("system"),
+    actorType: varchar("actor_type", { length: 24 })
+      .notNull()
+      .default("system"),
     actorUserId: uuid("actor_user_id"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
