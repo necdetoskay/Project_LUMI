@@ -3,6 +3,8 @@ import pg from "pg";
 
 import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs";
 
+const DEFAULT_DEMO_PARENT_PASSWORD = "LumiDemo2026!";
+
 export const LUMI_DEMO_PARENT = Object.freeze({
   id: "51000000-0000-4000-8000-000000000009",
   email: "demo@lumi.local",
@@ -20,10 +22,12 @@ async function createPasswordHash(password) {
 }
 
 function requireDemoPassword(password) {
-  if (typeof password !== "string" || password.length < 10) {
+  const normalized = typeof password === "string" ? password.trim() : "";
+  const effectivePassword = normalized || DEFAULT_DEMO_PARENT_PASSWORD;
+  if (effectivePassword.length < 10) {
     throw new Error("LUMI_DEMO_PARENT_PASSWORD_REQUIRED");
   }
-  return password;
+  return effectivePassword;
 }
 
 export function createLumiDemoAuthPostgresAdapter(databaseUrl) {
