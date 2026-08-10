@@ -49,7 +49,8 @@ try {
   if (!authFirst.ready) throw new Error("DEMO_PARENT_NOT_BROWSER_READY");
 
   const storyFirst = await storyAdapter.ensure();
-  if (storyFirst.outcome !== "seeded") throw new Error("FIRST_STORY_SEED_NOT_APPLIED");
+  if (storyFirst.outcome !== "seeded")
+    throw new Error("FIRST_STORY_SEED_NOT_APPLIED");
 
   const status = await runDemoStatus({ adapter });
   if (!status.exists) throw new Error("DEMO_STATUS_MISSING");
@@ -166,7 +167,8 @@ try {
 
   const replayStatus = await runDemoStatus({ adapter });
   if (
-    replayStatus.counts?.inventoryItems !== LUMI_DEMO_MANIFEST.inventory.length ||
+    replayStatus.counts?.inventoryItems !==
+      LUMI_DEMO_MANIFEST.inventory.length ||
     replayStatus.counts?.npcs !== LUMI_DEMO_MANIFEST.npcs.length ||
     replayStatus.counts?.memories !== LUMI_DEMO_MANIFEST.memories.length ||
     replayStatus.counts?.quests !== 1

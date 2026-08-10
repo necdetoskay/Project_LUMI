@@ -71,11 +71,13 @@ export function createLumiDemoAuthPostgresAdapter(databaseUrl) {
             ORDER BY id`,
           [LUMI_DEMO_PARENT.id, LUMI_DEMO_PARENT.email],
         );
-        if (existing.rowCount > 1) throw new Error("DEMO_PARENT_SCOPE_COLLISION");
+        if (existing.rowCount > 1)
+          throw new Error("DEMO_PARENT_SCOPE_COLLISION");
         const row = existing.rows[0];
         if (
           row &&
-          (row.id !== LUMI_DEMO_PARENT.id || row.email !== LUMI_DEMO_PARENT.email)
+          (row.id !== LUMI_DEMO_PARENT.id ||
+            row.email !== LUMI_DEMO_PARENT.email)
         ) {
           throw new Error("DEMO_PARENT_SCOPE_COLLISION");
         }

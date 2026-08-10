@@ -387,7 +387,10 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
           ],
         );
         await client.query("COMMIT");
-        return { householdId: manifest.household.id, worldId: manifest.world.id };
+        return {
+          householdId: manifest.household.id,
+          worldId: manifest.world.id,
+        };
       } catch (error) {
         await client.query("ROLLBACK");
         throw error;

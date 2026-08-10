@@ -2,10 +2,8 @@ import pg from "pg";
 
 import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs";
 
-export const LUMI_DEMO_ENTRY_SCENE_ID =
-  "51000000-0000-4000-8000-000000000073";
-export const LUMI_DEMO_ENTRY_VISIT_ID =
-  "51000000-0000-4000-8000-000000000074";
+export const LUMI_DEMO_ENTRY_SCENE_ID = "51000000-0000-4000-8000-000000000073";
+export const LUMI_DEMO_ENTRY_VISIT_ID = "51000000-0000-4000-8000-000000000074";
 
 export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
@@ -81,7 +79,12 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           ],
         );
         const coreRow = core.rows[0];
-        if (!coreRow?.household || !coreRow?.profile || !coreRow?.character || !coreRow?.world) {
+        if (
+          !coreRow?.household ||
+          !coreRow?.profile ||
+          !coreRow?.character ||
+          !coreRow?.world
+        ) {
           throw new Error("DEMO_STORY_CORE_STATE_REQUIRED");
         }
 
@@ -171,7 +174,10 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           [
             manifest.story.sessionId,
             manifest.character.id,
-            JSON.stringify({ lumiDemo: true, name: manifest.character.displayName }),
+            JSON.stringify({
+              lumiDemo: true,
+              name: manifest.character.displayName,
+            }),
           ],
         );
         await client.query(
@@ -179,7 +185,11 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
             (id, story_session_id, scene_id, visit_sequence, visit_reason)
            VALUES ($1,$2,$3,0,'session_start')
            ON CONFLICT (id) DO NOTHING`,
-          [LUMI_DEMO_ENTRY_VISIT_ID, manifest.story.sessionId, LUMI_DEMO_ENTRY_SCENE_ID],
+          [
+            LUMI_DEMO_ENTRY_VISIT_ID,
+            manifest.story.sessionId,
+            LUMI_DEMO_ENTRY_SCENE_ID,
+          ],
         );
         await client.query(
           `UPDATE profile.quests

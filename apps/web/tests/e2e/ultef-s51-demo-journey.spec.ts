@@ -32,7 +32,9 @@ test.describe("S51 LUMI Demo Universe playable browser journey", () => {
     await expect(
       page.getByText("Parlayan Pusula", { exact: true }).first(),
     ).toBeVisible();
-    await expect(page.getByText("Meşe Yaprağı", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("Meşe Yaprağı", { exact: true }).first(),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: "Hikâyelere git" }).click();
     await expect(page).toHaveURL(
