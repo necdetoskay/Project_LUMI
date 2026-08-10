@@ -86,6 +86,16 @@ export {
 export type { CharacterDomainSummary } from "./character-domain.service";
 
 export {
+  CHARACTER_VISUAL_BRIEF_VERSION,
+  buildCharacterVisualBrief,
+  fingerprintCharacterVisualBrief,
+} from "./character-visual-brief";
+export type {
+  CharacterVisualBrief,
+  CharacterVisualBriefSource,
+} from "./character-visual-brief";
+
+export {
   EMOTION_RULE_VERSION,
   evaluateEmotionEvent,
   applyEmotionEvent,
