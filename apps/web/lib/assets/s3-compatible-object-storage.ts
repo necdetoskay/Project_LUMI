@@ -79,11 +79,9 @@ async function signedRequest(
   });
   if (contentType) headers.set("Content-Type", contentType);
 
-  return fetch(url, {
-    method,
-    headers,
-    body: body ? Buffer.from(body) : undefined,
-  });
+  const requestInit: RequestInit = { method, headers };
+  if (body) requestInit.body = Buffer.from(body);
+  return fetch(url, requestInit);
 }
 
 export async function putObject(
