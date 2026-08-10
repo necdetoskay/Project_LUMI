@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
-import { readLocalCharacterVisual } from "@/lib/assets/character-visual-storage";
+import { readCharacterVisual } from "@/lib/assets/character-visual-storage";
 import {
   getOwnedHousehold,
   listCharacterVisualCandidates,
@@ -42,7 +42,7 @@ export async function GET(
         );
       }
 
-      const content = await readLocalCharacterVisual(asset.storageRef);
+      const content = await readCharacterVisual(asset.storageRef);
       return new NextResponse(new Uint8Array(content.bytes), {
         status: 200,
         headers: {
