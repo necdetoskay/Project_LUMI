@@ -50,7 +50,10 @@ try {
     schemaResult.rows.map((row) => row.schema_name),
   );
   for (const schema of requiredSchemas) {
-    assert(existingSchemas.has(schema), `Required schema ${schema} is missing.`);
+    assert(
+      existingSchemas.has(schema),
+      `Required schema ${schema} is missing.`,
+    );
   }
 
   for (const [schema, table] of requiredTables) {
