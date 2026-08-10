@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
+import { createLogger } from "@lumi/logger";
 import { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
 import {
   createDatabase,
@@ -22,12 +23,7 @@ describe.skipIf(!enabled || !databaseUrl)(
     const memoryRepo = new DrizzleCanonicalMemoryRepository(db);
     const decisionLedger = new DrizzleWorkerNpcDecisionRepository(db);
     const adapter = new RepositoryNpcSourceAdapter(repo, 8);
-    const logger = {
-      info: () => undefined,
-      warn: () => undefined,
-      error: () => undefined,
-      debug: () => undefined,
-    };
+    const logger = createLogger({ level: "error" });
     const decisionRunner = new NpcDecisionJobRunner(
       repo,
       new MemoryAwareDecisionService(memoryRepo),
