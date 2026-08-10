@@ -15,9 +15,12 @@ import { createLumiDemoStoryPostgresAdapter } from "./lumi-demo-story-db.mjs";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL_REQUIRED");
 
-const dbName = new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
+const dbName =
+  new URL(databaseUrl).pathname.replace(/^\//, "").split("?")[0] ?? "";
 if (!dbName.includes("test") && !dbName.includes("review")) {
-  throw new Error(`S51 ULTEF requires disposable test/review DB; got '${dbName}'.`);
+  throw new Error(
+    `S51 ULTEF requires disposable test/review DB; got '${dbName}'.`,
+  );
 }
 
 const confirmation = LUMI_DEMO_MANIFEST.manifestVersion;
@@ -70,11 +73,13 @@ try {
     authFirst.ready === true &&
     storyFirst.outcome === "seeded" &&
     firstStatus.exists === true &&
-    firstStatus.currentLocationKey === LUMI_DEMO_MANIFEST.world.startLocationKey &&
+    firstStatus.currentLocationKey ===
+      LUMI_DEMO_MANIFEST.world.startLocationKey &&
     firstStatus.counts?.profiles === 1 &&
     firstStatus.counts?.characters === 1 &&
     firstStatus.counts?.worlds === 1 &&
-    firstStatus.counts?.inventoryItems === LUMI_DEMO_MANIFEST.inventory.length &&
+    firstStatus.counts?.inventoryItems ===
+      LUMI_DEMO_MANIFEST.inventory.length &&
     firstStatus.counts?.npcs === LUMI_DEMO_MANIFEST.npcs.length &&
     firstStatus.counts?.memories === LUMI_DEMO_MANIFEST.memories.length &&
     firstStatus.counts?.quests === 1 &&
@@ -106,7 +111,8 @@ try {
 
   const replayScenario = createScenario({
     id: "PX-LUMI-S51-DEMO-SEED-REPLAY-002",
-    title: "Demo seed replay preserves existing reference state without duplicates",
+    title:
+      "Demo seed replay preserves existing reference state without duplicates",
     level: "L9",
     projectGate: "PX-LUMI-S51",
     seed: LUMI_DEMO_MANIFEST.manifestVersion,
@@ -129,7 +135,8 @@ try {
     replayStatus.counts?.profiles === 1 &&
     replayStatus.counts?.characters === 1 &&
     replayStatus.counts?.worlds === 1 &&
-    replayStatus.counts?.inventoryItems === LUMI_DEMO_MANIFEST.inventory.length &&
+    replayStatus.counts?.inventoryItems ===
+      LUMI_DEMO_MANIFEST.inventory.length &&
     replayStatus.counts?.npcs === LUMI_DEMO_MANIFEST.npcs.length &&
     replayStatus.counts?.memories === LUMI_DEMO_MANIFEST.memories.length &&
     replayStatus.counts?.quests === 1;
