@@ -14,15 +14,19 @@ export default async function DemoControlPage({
   const params = await searchParams;
   const result = typeof params.result === "string" ? params.result : undefined;
   const action = typeof params.action === "string" ? params.action : undefined;
-  const message = typeof params.message === "string" ? params.message : undefined;
+  const message =
+    typeof params.message === "string" ? params.message : undefined;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
       <div>
         <p className="text-sm font-medium text-muted-foreground">Project LUMI</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Demo Universe Control</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Demo Universe Control
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Elif → Lina → Işık Vadisi referans evrenini tarayıcıdan hazırla, durumunu kontrol et veya sıfırla.
+          Elif → Lina → Işık Vadisi referans evrenini tarayıcıdan hazırla,
+          durumunu kontrol et veya sıfırla.
         </p>
       </div>
 
@@ -84,7 +88,8 @@ export default async function DemoControlPage({
       )}
 
       <p className="text-xs text-muted-foreground">
-        Bu sayfa yalnız LUMI_DEMO_WEB_CONTROL_ENABLED=true olduğunda mevcuttur ve her işlem sunucu tarafında kontrol anahtarı doğrulaması gerektirir.
+        Bu sayfa yalnız LUMI_DEMO_WEB_CONTROL_ENABLED=true olduğunda mevcuttur
+        ve her işlem sunucu tarafında kontrol anahtarı doğrulaması gerektirir.
       </p>
     </main>
   );
