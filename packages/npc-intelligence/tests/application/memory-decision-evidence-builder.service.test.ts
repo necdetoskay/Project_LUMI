@@ -27,7 +27,10 @@ const candidates: CandidateAction[] = [
   },
 ];
 
-function memory(provenance: string[], overrides: Partial<CanonicalMemory> = {}): CanonicalMemory {
+function memory(
+  provenance: string[],
+  overrides: Partial<CanonicalMemory> = {},
+): CanonicalMemory {
   return {
     id: "11111111-1111-4111-8111-111111111111",
     householdId: "22222222-2222-4222-8222-222222222222",

@@ -56,7 +56,11 @@ const policy: UtilityWeightPolicy = {
   },
 };
 
-function candidate(id: string, kind: string, safety: CandidateAction["safety"] = "safe"): CandidateAction {
+function candidate(
+  id: string,
+  kind: string,
+  safety: CandidateAction["safety"] = "safe",
+): CandidateAction {
   return {
     id,
     kind,
@@ -103,7 +107,7 @@ function port(returned: CanonicalMemory[]): CanonicalMemoryPort {
 describe("MemoryAwareDecisionService", () => {
   it("uses bounded explicit memory evidence to break an otherwise equal decision", async () => {
     const service = new MemoryAwareDecisionService(
-      port([memory(["decision:candidate:join-1:1"])])
+      port([memory(["decision:candidate:join-1:1"])]),
     );
 
     const result = await service.decide({
@@ -111,7 +115,10 @@ describe("MemoryAwareDecisionService", () => {
       worldId: WORLD,
       childProfileId: PROFILE,
       npcId: NPC,
-      candidates: [candidate("join-1", "socialize"), candidate("rest-1", "rest")],
+      candidates: [
+        candidate("join-1", "socialize"),
+        candidate("rest-1", "rest"),
+      ],
       context,
       policy,
       seed: "same-seed",
@@ -119,7 +126,9 @@ describe("MemoryAwareDecisionService", () => {
     });
 
     expect(result.selection.selectedCandidateId).toBe("join-1");
-    expect(result.scores.find((score) => score.candidateId === "join-1")).toEqual(
+    expect(
+      result.scores.find((score) => score.candidateId === "join-1"),
+    ).toEqual(
       expect.objectContaining({ baseTotal: 1, memoryDelta: 0.2, total: 1.2 }),
     );
     expect(result.usedMemoryIds).toEqual([
@@ -129,7 +138,7 @@ describe("MemoryAwareDecisionService", () => {
 
   it("cannot use positive memory evidence to bypass a blocked candidate", async () => {
     const service = new MemoryAwareDecisionService(
-      port([memory(["decision:candidate:blocked-1:1"])])
+      port([memory(["decision:candidate:blocked-1:1"])]),
     );
 
     const result = await service.decide({
@@ -137,7 +146,10 @@ describe("MemoryAwareDecisionService", () => {
       worldId: WORLD,
       childProfileId: PROFILE,
       npcId: NPC,
-      candidates: [candidate("blocked-1", "explore", "blocked"), candidate("safe-1", "rest")],
+      candidates: [
+        candidate("blocked-1", "explore", "blocked"),
+        candidate("safe-1", "rest"),
+      ],
       context,
       policy,
       seed: "same-seed",

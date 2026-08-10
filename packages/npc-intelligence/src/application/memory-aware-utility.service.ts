@@ -1,7 +1,4 @@
-import type {
-  DecisionMemoryEvidence,
-  UtilityScore,
-} from "../domain";
+import type { DecisionMemoryEvidence, UtilityScore } from "../domain";
 import { computeCandidateMemoryInfluence } from "../domain/memory-decision-influence";
 
 export interface MemoryAdjustedUtilityScore extends UtilityScore {

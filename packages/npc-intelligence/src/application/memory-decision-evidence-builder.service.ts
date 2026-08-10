@@ -1,4 +1,8 @@
-import type { CandidateAction, CanonicalMemory, DecisionMemoryEvidence } from "../domain";
+import type {
+  CandidateAction,
+  CanonicalMemory,
+  DecisionMemoryEvidence,
+} from "../domain";
 import { effectiveMemorySalience } from "../domain/memory-lifecycle";
 
 const DECISION_TAG_PREFIX = "decision";
@@ -52,7 +56,9 @@ export class MemoryDecisionEvidenceBuilder {
     candidates: readonly CandidateAction[],
     now: Date,
   ): DecisionMemoryEvidence[] {
-    const candidateById = new Map(candidates.map((candidate) => [candidate.id, candidate]));
+    const candidateById = new Map(
+      candidates.map((candidate) => [candidate.id, candidate]),
+    );
 
     return memories.flatMap((memory) => {
       const tags = memory.provenance
@@ -76,10 +82,11 @@ export class MemoryDecisionEvidenceBuilder {
       if (affinities.size === 0) return [];
 
       const candidateAffinity: Record<string, number> = {};
-      for (const [candidateId, values] of [...affinities.entries()].sort(([a], [b]) =>
-        a.localeCompare(b),
+      for (const [candidateId, values] of [...affinities.entries()].sort(
+        ([a], [b]) => a.localeCompare(b),
       )) {
-        const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+        const average =
+          values.reduce((sum, value) => sum + value, 0) / values.length;
         candidateAffinity[candidateId] = Number(average.toFixed(6));
       }
 
@@ -87,7 +94,9 @@ export class MemoryDecisionEvidenceBuilder {
         {
           memoryId: memory.id,
           kind: memory.kind,
-          effectiveSalience: Number(effectiveMemorySalience(memory, now).toFixed(6)),
+          effectiveSalience: Number(
+            effectiveMemorySalience(memory, now).toFixed(6),
+          ),
           confidence: memory.confidence,
           candidateAffinity,
         },

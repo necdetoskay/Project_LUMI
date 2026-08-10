@@ -4,7 +4,10 @@ import type {
   UtilityWeightPolicy,
 } from "../domain";
 import type { CanonicalMemoryPort } from "../ports/canonical-memory.port";
-import { DecisionSelector, type SelectionResult } from "./decision-selector.service";
+import {
+  DecisionSelector,
+  type SelectionResult,
+} from "./decision-selector.service";
 import {
   MemoryAwareUtilityService,
   type MemoryAdjustedUtilityScore,
@@ -49,7 +52,9 @@ export class MemoryAwareDecisionService {
     this.memoryContext = new NpcDecisionMemoryContextService(memories);
   }
 
-  async decide(input: MemoryAwareDecisionInput): Promise<MemoryAwareDecisionResult> {
+  async decide(
+    input: MemoryAwareDecisionInput,
+  ): Promise<MemoryAwareDecisionResult> {
     const baseScores = this.baseUtility.evaluate(
       input.candidates,
       input.context,
@@ -72,13 +77,17 @@ export class MemoryAwareDecisionService {
     );
 
     const selectedScore = selection.selectedCandidateId
-      ? scores.find((score) => score.candidateId === selection.selectedCandidateId)
+      ? scores.find(
+          (score) => score.candidateId === selection.selectedCandidateId,
+        )
       : undefined;
 
     return {
       scores,
       selection,
-      usedMemoryIds: selectedScore ? [...selectedScore.memoryEvidenceIds].sort() : [],
+      usedMemoryIds: selectedScore
+        ? [...selectedScore.memoryEvidenceIds].sort()
+        : [],
     };
   }
 }

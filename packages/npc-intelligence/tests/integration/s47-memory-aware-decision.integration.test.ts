@@ -1,24 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 
-import {
-  MemoryAwareDecisionService,
-} from "../../src/application";
+import { MemoryAwareDecisionService } from "../../src/application";
 import type {
   CandidateAction,
   CanonicalMemory,
   DecisionContextVector,
   UtilityWeightPolicy,
 } from "../../src/domain";
-import {
-  createDatabase,
-  DrizzleCanonicalMemoryRepository,
-} from "../../src/db";
+import { createDatabase, DrizzleCanonicalMemoryRepository } from "../../src/db";
 
 const DATABASE_URL = process.env.DATABASE_URL;
-const enabled = process.env.ULTEF_SCENARIO === "PX-LUMI-S47-MEMORY-NPC-DECISION-001";
+const enabled =
+  process.env.ULTEF_SCENARIO === "PX-LUMI-S47-MEMORY-NPC-DECISION-001";
 const destructive = process.env.NPC_TEST_ENABLE_DESTRUCTIVE === "true";
-const ultefDescribe = enabled && destructive && DATABASE_URL ? describe : describe.skip;
+const ultefDescribe =
+  enabled && destructive && DATABASE_URL ? describe : describe.skip;
 
 let pool: pg.Pool;
 
@@ -52,9 +49,7 @@ function memory(input: {
     sourceType: "story_outcome",
     sourceId: `s47:${input.id}`,
     effectKey: `s47:${input.id}`,
-    provenance: [
-      `decision:candidate:${input.candidateId}:${input.affinity}`,
-    ],
+    provenance: [`decision:candidate:${input.candidateId}:${input.affinity}`],
     lifecycle: "durable",
     supersedesMemoryId: null,
     createdAt: new Date("2026-08-10T00:00:00.000Z"),
@@ -190,10 +185,12 @@ ultefDescribe("ULTEF PX-LUMI-S47-MEMORY-NPC-DECISION-001", () => {
 
       expect(first.selection.selectedCandidateId).toBe("help_friend");
       expect(first.usedMemoryIds).toHaveLength(1);
-      expect(first.scores.find((score) => score.candidateId === "help_friend"))
-        .toEqual(expect.objectContaining({ memoryDelta: 0.2, total: 0.2 }));
-      expect(first.scores.find((score) => score.candidateId === "walk_away"))
-        .toEqual(expect.objectContaining({ memoryDelta: 0, total: 0 }));
+      expect(
+        first.scores.find((score) => score.candidateId === "help_friend"),
+      ).toEqual(expect.objectContaining({ memoryDelta: 0.2, total: 0.2 }));
+      expect(
+        first.scores.find((score) => score.candidateId === "walk_away"),
+      ).toEqual(expect.objectContaining({ memoryDelta: 0, total: 0 }));
       expect(replay).toEqual(first);
 
       const scopedRows = await pool.query<{ child_profile_id: string }>(
