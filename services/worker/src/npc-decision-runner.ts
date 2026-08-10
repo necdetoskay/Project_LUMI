@@ -54,6 +54,22 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
         summary.skippedNotReady += 1;
         continue;
       }
+      if (
+        payload.context.npcId !== snapshot.npcId ||
+        payload.context.householdId !== snapshot.householdId
+      ) {
+        summary.skippedNotReady += 1;
+        this.logger.error(
+          "worker.npc_decision.scope_mismatch",
+          "decision payload context does not match snapshot scope",
+          {
+            worldId: snapshot.worldId,
+            npcId: snapshot.npcId,
+            decisionKey: payload.decisionKey,
+          },
+        );
+        continue;
+      }
 
       const alreadyCommitted = await this.ledger.has(
         snapshot.householdId,
