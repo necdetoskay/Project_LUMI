@@ -12,7 +12,10 @@ if (!pooledUrl || !directUrl) {
 function stats(values) {
   const sorted = [...values].sort((a, b) => a - b);
   const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+  const p95Index = Math.min(
+    sorted.length - 1,
+    Math.ceil(sorted.length * 0.95) - 1,
+  );
   return {
     minMs: Number(sorted[0].toFixed(1)),
     avgMs: Number(average.toFixed(1)),
@@ -57,7 +60,9 @@ const observations = [
   await observe("direct-admin", directUrl),
 ];
 
-console.warn("Managed PostgreSQL latency observation (informational, not a performance gate)");
+console.warn(
+  "Managed PostgreSQL latency observation (informational, not a performance gate)",
+);
 console.warn(JSON.stringify(observations, null, 2));
 
 if (process.env.GITHUB_STEP_SUMMARY) {
