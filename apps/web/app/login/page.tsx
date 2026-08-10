@@ -59,7 +59,7 @@ export default async function LoginPage({
           description={t("cardDescription")}
           note={
             <p>
-              {t("noUniverse")} {" "}
+              {t("noUniverse")}{" "}
               <Link className="storybook-inline-link" href="/register">
                 {t("createParentAccount")}
               </Link>
