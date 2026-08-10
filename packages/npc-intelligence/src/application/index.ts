@@ -35,6 +35,11 @@ export type {
   MemoryAwareDecisionInput,
   MemoryAwareDecisionResult,
 } from "./memory-aware-decision.service";
+export { NpcRelationshipApplicator } from "./npc-relationship-applicator.service";
+export type {
+  NpcRelationshipPayload,
+  NpcRelationshipApplicatorResult,
+} from "./npc-relationship-applicator.service";
 export {
   DecisionSelector,
   PERSONALITY_BOUNDARY,
@@ -105,6 +110,7 @@ export {
 export type {
   RumorSafetyCheckInput,
   RumorSafetyCheckResult,
+  OpportunityRiskLevel,
 } from "./rumor-safety-filter.service";
 export { RumorBeliefWriterService } from "./rumor-belief-writer.service";
 export type { WriteRumorBeliefInput } from "./rumor-belief-writer.service";
