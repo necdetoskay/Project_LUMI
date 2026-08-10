@@ -19,3 +19,5 @@ jobs:
           node-version: 24
       - name: Validate canonical LUMI Demo Universe manifest
         run: node scripts/demo/lumi-demo-manifest.selftest.mjs
+      - name: Validate safe demo seed/reset runner
+        run: node scripts/demo/lumi-demo-runner.selftest.mjs
