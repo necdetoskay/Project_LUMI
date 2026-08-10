@@ -1,6 +1,6 @@
 # Sprint 52 — Playable Demo Journey
 
-Status: ACTIVE
+Status: COMPLETE
 Date: 2026-08-10
 
 ## Goal
