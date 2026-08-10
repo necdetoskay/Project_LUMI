@@ -26,6 +26,11 @@ export { MemoryAwareUtilityService } from "./memory-aware-utility.service";
 export type { MemoryAdjustedUtilityScore } from "./memory-aware-utility.service";
 export { MemoryDecisionEvidenceBuilder } from "./memory-decision-evidence-builder.service";
 export {
+  NpcDecisionMemoryContextService,
+  DEFAULT_DECISION_MEMORY_LIMIT,
+} from "./npc-decision-memory-context.service";
+export type { NpcDecisionMemoryContextInput } from "./npc-decision-memory-context.service";
+export {
   DecisionSelector,
   PERSONALITY_BOUNDARY,
   STRONG_NEED_EVIDENCE,
