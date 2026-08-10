@@ -11,7 +11,7 @@ Build and verify the canonical LUMI Demo Universe so product evaluation can move
 
 - [x] T01 Reference manifest
 - [x] T02 Safe seed/reset runner
-- [ ] T03 Profile/character/world bootstrap
+- [x] T03 Profile/character/world bootstrap
 - [ ] T04 Inventory/relationships/memory/NPC state
 - [ ] T05 Story bootstrap
 - [ ] T06 Browser-facing smoke journey
@@ -57,7 +57,33 @@ The runner now enforces:
 
 `scripts/demo/lumi-demo-runner.selftest.mjs` proves safe DB acceptance, unsafe DB rejection, production rejection, confirmation rejection, seed idempotency, reset idempotency, scope collision rejection and version-change refusal using an in-memory adapter.
 
-The persistent `ULTEF S51 Demo Manifest` workflow now runs both the manifest and runner safety self-tests and is PASS. Repository-facing `pnpm demo:seed`, `demo:reset` and `demo:status` will be bound to the real PostgreSQL adapter as the first part of T03; T02 deliberately does not invent partial fixture rows merely to make the commands appear functional.
+The persistent `ULTEF S51 Demo Manifest` workflow runs both the manifest and runner safety self-tests and is PASS.
+
+## T03 evidence — profile / character / world bootstrap
+
+T03 binds the safe runner to a real PostgreSQL adapter in `apps/web/scripts/lumi-demo-db.mjs` and exposes repository commands:
+
+- `pnpm demo:seed`
+- `pnpm demo:status`
+- `pnpm demo:reset`
+
+The adapter creates the canonical production-shaped bootstrap in one transaction:
+
+`LUMI Demo Ailesi -> Elif -> Lina -> Işık Vadisi -> Işık Vadisi region -> five canonical locations -> deterministic location connections -> Lina current location = Fısıldayan Orman`.
+
+It also creates child preferences and parental settings required for a realistic development profile. Ordinary seed replay does not overwrite a played universe because `runDemoSeed()` returns `already_seeded` as soon as the manifest-versioned household exists.
+
+Reset is explicit and scoped. A DB-backed gate discovered that `profile.worlds` intentionally does not cascade household deletion; reset was therefore corrected to delete the canonical demo dependency chain in a transaction (`world -> character -> child profile -> household`) rather than relying on unsafe cascade assumptions.
+
+Dedicated workflow `ULTEF S51 Demo Bootstrap` prepares disposable PostgreSQL with the real profile/world migrations and proves:
+
+1. first seed creates exactly one demo profile, character and world;
+2. canonical current location is `fisildayan-orman`;
+3. second seed is `already_seeded` and produces no duplicates;
+4. scoped reset removes the demo universe;
+5. a foreign household fixture remains unchanged.
+
+The corrected T03 PostgreSQL bootstrap evidence is PASS.
 
 ## Merge rule
 
