@@ -27,16 +27,31 @@ services:
     restart: unless-stopped
 
   profile-migrate:
-    build:
-      context: ../..
-      dockerfile: Dockerfile
-      target: profile-migrator
+    image: postgres:17.7-alpine
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
+      POSTGRES_DB: ${POSTGRES_DB:-lumi}
+      POSTGRES_USER: ${POSTGRES_USER:-lumi}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-lumi_local_only}
+    volumes:
+      - ../../packages/profiles/migrations:/migrations:ro
+    command:
+      - sh
+      - -ec
+      - |
+        for file in /migrations/*.sql; do
+          echo "Applying migration: $${file##*/}"
+          psql \
+            -h postgres \
+            -U "$${POSTGRES_USER}" \
+            -d "$${POSTGRES_DB}" \
+            -v ON_ERROR_STOP=1 \
+            -f "$${file}"
+          echo "Migration $${file##*/} applied successfully"
+        done
+        echo "All profile migrations applied successfully"
     restart: "no"
 
   web:
