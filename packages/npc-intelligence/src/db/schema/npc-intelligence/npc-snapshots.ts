@@ -1,11 +1,4 @@
-import {
-  index,
-  jsonb,
-  numeric,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { index, jsonb, numeric, timestamp, uuid } from "drizzle-orm/pg-core";
 import { npcIntelligenceSchema } from "./schemas";
 import { primaryId } from "./common";
 
