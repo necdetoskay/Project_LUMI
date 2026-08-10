@@ -16,6 +16,7 @@ jobs:
       WEB_PORT: 3001
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
+      PLAYWRIGHT_REUSE_EXISTING_SERVER: "true"
       AUTH_COOKIE_SECURE: "false"
       LUMI_SETTINGS_ENCRYPTION_KEY: "ultef-s53-compose-only-not-production"
       LUMI_DEMO_CONFIRM: lumi-demo-v1
