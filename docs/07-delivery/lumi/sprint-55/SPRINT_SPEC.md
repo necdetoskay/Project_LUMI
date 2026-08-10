@@ -1,7 +1,7 @@
 # Sprint 55 — Generic Asset Management Core
 
-Status: IN PROGRESS
-Validation: final-head verification rerun after S53 workflow/test maintenance
+Status: COMPLETE
+Validation: final-head CI, Security, Integration, S53 regression gates, Compose cold-start and dedicated S55 ULTEF all PASS
 Date: 2026-08-10
 Parent roadmap: `docs/07-delivery/lumi/SAAS_PORTABILITY_ASSET_PLATFORM_ROADMAP.md`
 Tracking issue: #91
@@ -74,7 +74,7 @@ Sprint 56 may move generation directly to the generic boundary and retire the tr
 
 ### S55-T05 — Verification
 
-Dedicated `ULTEF S55 Generic Asset Management` must prove:
+Dedicated `ULTEF S55 Generic Asset Management` proves:
 
 - generic lifecycle and canon replacement;
 - lifecycle history ordering;
@@ -84,7 +84,7 @@ Dedicated `ULTEF S55 Generic Asset Management` must prove:
 - S53 canon synchronization into generic canon;
 - profile migration replay/idempotency.
 
-Normal CI, Security, Integration, S53 visual gates and the active PX regression matrix must remain green.
+Normal CI, Security, Integration, S53 visual gates and the active PX regression matrix are green on the final head.
 
 ## Invariants
 
@@ -98,13 +98,16 @@ Normal CI, Security, Integration, S53 visual gates and the active PX regression 
 8. Existing character visual assets remain usable and keep their UUID/storage references.
 9. No Sprint 55 operation silently generates or invents visual content.
 
-## Exit criteria
+## Exit evidence
 
-Sprint 55 is COMPLETE when:
-
-- generic schema and service are merged;
-- S53 history/canon preservation is proven;
-- generic Asset Management UI framing is merged;
-- dedicated S55 ULTEF passes on final head;
-- standard CI/build/security/regression gates are green;
-- Issue #91 Sprint 55 checklist is updated.
+- Generic schema/service implemented and verified.
+- S53 character visual UUID/storage/canon continuity preserved through backfill + transitional sync.
+- `/app/assets` reframed around the generic Asset Management model.
+- `ULTEF S55 Generic Asset Management`: PASS.
+- `ULTEF S53 Compose Cold Start`: PASS, including real browser Asset Management verification, worker health, migration replay and restart persistence.
+- `ULTEF S53 Character Visual Canon`: PASS.
+- `ULTEF S53 Live Krea Image`: PASS in marker-safe mode without an unintended provider call.
+- `ULTEF Integration`: PASS across DB integration, long-horizon, recovery, isolation and PX memory coherence profiles.
+- Security Scan: PASS.
+- Main CI: format, lint, typecheck, tests, load gate, build and Build Artifact all PASS.
+- Issue #91 Sprint 55 checklist updated.
