@@ -32,6 +32,7 @@ jobs:
       LUMI_DEMO_CONFIRM: lumi-demo-v1
       LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ULTEF_S53_LIVE_IMAGE_ENABLE: "true"
     steps:
       - uses: actions/checkout@v4
         with:
