@@ -8,3 +8,8 @@ export type {
   CanonicalNpcSnapshot,
   UpsertCanonicalNpcSnapshotInput,
 } from "./drizzle/drizzle-npc-snapshot.repository";
+export { DrizzleWorkerNpcDecisionRepository } from "./drizzle/drizzle-worker-npc-decision.repository";
+export type {
+  WorkerNpcDecisionCommit,
+  WorkerNpcDecisionCommitResult,
+} from "./drizzle/drizzle-worker-npc-decision.repository";
