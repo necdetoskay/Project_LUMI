@@ -54,7 +54,7 @@ function persistDecisionPayload(
 ): Record<string, unknown> | null {
   if (!payload) return null;
   const persisted: PersistedNpcDecisionPayload = {
-    ...payload,
+    decisionKey: payload.decisionKey,
     candidates: payload.candidates.map((candidate) => ({ ...candidate })),
     context: { ...payload.context },
     policy: {
@@ -62,9 +62,10 @@ function persistDecisionPayload(
       weights: { ...payload.policy.weights },
       updatedAt: payload.policy.updatedAt.toISOString(),
     },
-    effectsByCandidateId: payload.effectsByCandidateId
-      ? { ...payload.effectsByCandidateId }
-      : undefined,
+    seed: payload.seed,
+    ...(payload.effectsByCandidateId
+      ? { effectsByCandidateId: { ...payload.effectsByCandidateId } }
+      : {}),
   };
   return persisted as unknown as Record<string, unknown>;
 }
@@ -169,9 +170,9 @@ function restoreDecisionPayload(
     context: { ...context },
     policy,
     seed: raw.seed,
-    effectsByCandidateId: raw.effectsByCandidateId
-      ? { ...raw.effectsByCandidateId }
-      : undefined,
+    ...(raw.effectsByCandidateId
+      ? { effectsByCandidateId: { ...raw.effectsByCandidateId } }
+      : {}),
   };
 }
 
