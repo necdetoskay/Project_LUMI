@@ -35,4 +35,10 @@ export default [
       "no-console": "off",
     },
   },
+  {
+    files: ["apps/web/scripts/lumi-demo-*.mjs"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ];
