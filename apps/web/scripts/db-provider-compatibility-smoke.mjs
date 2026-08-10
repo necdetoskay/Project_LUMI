@@ -35,22 +35,26 @@ try {
   const extensionResult = await client.query(
     "select extname from pg_extension where extname = 'pgcrypto'",
   );
-  assert(extensionResult.rowCount === 1, "Required extension pgcrypto is missing.");
+  assert(
+    extensionResult.rowCount === 1,
+    "Required extension pgcrypto is missing.",
+  );
 
   const schemaResult = await client.query(
     "select schema_name from information_schema.schemata where schema_name = any($1::text[])",
     [requiredSchemas],
   );
-  const existingSchemas = new Set(schemaResult.rows.map((row) => row.schema_name));
+  const existingSchemas = new Set(
+    schemaResult.rows.map((row) => row.schema_name),
+  );
   for (const schema of requiredSchemas) {
     assert(existingSchemas.has(schema), `Required schema ${schema} is missing.`);
   }
 
   for (const [schema, table] of requiredTables) {
-    const tableResult = await client.query(
-      "select to_regclass($1) as relation",
-      [`${schema}.${table}`],
-    );
+    const tableResult = await client.query("select to_regclass($1) as relation", [
+      `${schema}.${table}`,
+    ]);
     assert(
       tableResult.rows[0]?.relation,
       `Required table ${schema}.${table} is missing.`,
