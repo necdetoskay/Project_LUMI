@@ -15,7 +15,8 @@
     "lint": "eslint . --max-warnings=0",
     "start": "node src/index.ts",
     "ultef:s35-outbox-worker": "ULTEF_SCENARIO=PX-LUMI-S35-OUTBOX-WORKER-001 vitest run tests/ultef-s35-outbox-worker.integration.test.ts",
-    "ultef:s36-quest-reward": "ULTEF_SCENARIO=PX-LUMI-S36-QUEST-REWARD-PROD-001 vitest run tests/ultef-s36-quest-reward-production.v3.integration.test.ts"
+    "ultef:s36-quest-reward": "ULTEF_SCENARIO=PX-LUMI-S36-QUEST-REWARD-PROD-001 vitest run tests/ultef-s36-quest-reward-production.v3.integration.test.ts",
+    "ultef:s48-npc-snapshot": "ULTEF_SCENARIO=PX-LUMI-S48-NPC-SNAPSHOT-WORKER-001 vitest run tests/ultef-s48-npc-snapshot-worker.integration.test.ts"
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
