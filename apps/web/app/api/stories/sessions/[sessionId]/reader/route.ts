@@ -22,6 +22,21 @@ type SceneRecord = {
   sceneKey: string;
 };
 
+type ChoicePointProjection = {
+  id: string;
+  prompt?: string;
+  promptText?: string;
+  [key: string]: unknown;
+};
+
+type ChoiceOptionProjection = {
+  id: string;
+  label?: string;
+  optionText?: string;
+  consequencePreviews?: unknown;
+  [key: string]: unknown;
+};
+
 function resolveNextSceneId(
   option: { consequencePreviews?: unknown },
   scenes: SceneRecord[],
@@ -49,6 +64,22 @@ function resolveNextSceneId(
   }
 
   return null;
+}
+
+function projectChoicePoint(point: unknown) {
+  const source = point as ChoicePointProjection;
+  return {
+    ...source,
+    prompt: source.prompt ?? source.promptText ?? "",
+  };
+}
+
+function projectChoiceOption(option: unknown) {
+  const source = option as ChoiceOptionProjection;
+  return {
+    ...source,
+    label: source.label ?? source.optionText ?? "",
+  };
 }
 
 export const GET = observeHandler(
@@ -117,17 +148,21 @@ export const GET = observeHandler(
             );
 
             return {
-              point: evaluation.point,
-              options: evaluation.options.map((entry) => ({
-                ...entry,
-                nextSceneId: resolveNextSceneId(
-                  entry.option as { consequencePreviews?: unknown },
-                  graph.scenes.map((scene) => ({
-                    id: scene.id,
-                    sceneKey: scene.sceneKey,
-                  })),
-                ),
-              })),
+              point: projectChoicePoint(evaluation.point),
+              options: evaluation.options.map((entry) => {
+                const option = projectChoiceOption(entry.option);
+                return {
+                  ...entry,
+                  option,
+                  nextSceneId: resolveNextSceneId(
+                    option,
+                    graph.scenes.map((scene) => ({
+                      id: scene.id,
+                      sceneKey: scene.sceneKey,
+                    })),
+                  ),
+                };
+              }),
             };
           }),
         );
