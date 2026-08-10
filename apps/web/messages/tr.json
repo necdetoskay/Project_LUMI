@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "Project LUMI",
+    "description": "Yaşayan, etkileşimli çocuk hikayeleri için LUMI platformu."
+  },
+  "common": {
+    "skipToContent": "Ana içeriğe geç",
+    "settings": "Ayarlar",
+    "language": "Dil",
+    "turkish": "Türkçe",
+    "english": "English"
+  },
+  "header": {
+    "tagline": "YAŞAYAN HİKÂYELER",
+    "navigationLabel": "Ana gezinme",
+    "home": "Ana Sayfa",
+    "children": "Çocuklarım",
+    "assets": "Görsel Kütüphanesi",
+    "safety": "Güvenlik",
+    "returnToStory": "Hikâyeme dön"
+  },
+  "footer": {
+    "tagline": "Hatırlayan, büyüyen ve hikâyeyle yaşayan dünyalar.",
+    "about": "LUMI hakkında",
+    "privacy": "Gizlilik",
+    "help": "Yardım"
+  }
+}
