@@ -27,7 +27,7 @@ export function assertDemoControlToken(candidate: string): void {
 async function runNode(
   script: string,
   args: string[] = [],
-  env: NodeJS.ProcessEnv = {},
+  env: Partial<NodeJS.ProcessEnv> = {},
 ) {
   const result = await execFileAsync(process.execPath, [script, ...args], {
     cwd: process.cwd(),
