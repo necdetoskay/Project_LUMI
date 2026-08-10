@@ -159,7 +159,9 @@ export class DrizzleNpcSnapshotRepository {
   constructor(private readonly db: Database = getNpcDb()) {}
 
   async upsert(input: UpsertCanonicalNpcSnapshotInput): Promise<void> {
-    const persistedDecisionPayload = persistDecisionPayload(input.decisionPayload);
+    const persistedDecisionPayload = persistDecisionPayload(
+      input.decisionPayload,
+    );
     await this.db
       .insert(npcSnapshots)
       .values({
