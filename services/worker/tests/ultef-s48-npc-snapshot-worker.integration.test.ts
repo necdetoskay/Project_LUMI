@@ -207,15 +207,17 @@ describe.skipIf(!enabled || !databaseUrl)(
         now,
       });
       expect(first).toEqual({ applied: 1, duplicates: 0, skippedNotReady: 0 });
-      expect(
-        await decisionLedger.has(
-          householdA,
-          worldId,
-          profileA,
-          npcA,
-          decisionKey,
-        ),
-      ).toBe(true);
+
+      const evidence = await decisionLedger.get(
+        householdA,
+        worldId,
+        profileA,
+        npcA,
+        decisionKey,
+      );
+      expect(evidence).not.toBeNull();
+      expect(evidence?.selectedCandidateId).toBe("join-1");
+      expect(evidence?.usedMemoryIds).toEqual([memoryId]);
 
       const replay = await decisionRunner.runForWorld({
         householdId: householdA,
@@ -225,6 +227,15 @@ describe.skipIf(!enabled || !databaseUrl)(
       });
       expect(replay).toEqual({ applied: 0, duplicates: 1, skippedNotReady: 0 });
 
+      const replayEvidence = await decisionLedger.get(
+        householdA,
+        worldId,
+        profileA,
+        npcA,
+        decisionKey,
+      );
+      expect(replayEvidence?.decidedAt.toISOString()).toBe(now.toISOString());
+
       const wrongProfile = await decisionRunner.runForWorld({
         householdId: householdA,
         worldId,
@@ -232,6 +243,15 @@ describe.skipIf(!enabled || !databaseUrl)(
         now,
       });
       expect(wrongProfile.applied).toBe(0);
+      expect(
+        await decisionLedger.get(
+          householdA,
+          worldId,
+          profileB,
+          npcA,
+          decisionKey,
+        ),
+      ).toBeNull();
     });
   },
 );
