@@ -43,28 +43,28 @@ Project LUMI bir `pnpm` + Turborepo monorepo olarak geliştirilir. Domain ve
 application katmanları altyapı sağlayıcılarından ayrıştırılır; PostgreSQL kalıcı
 verinin, Redis geçici/operasyonel işlerin temel altyapısını oluşturur.
 
-| Alan | Yaklaşım |
-| --- | --- |
-| Web | Next.js + TypeScript |
-| Monorepo | pnpm + Turborepo |
-| Kalıcı veri | PostgreSQL |
-| Operasyonel veri | Redis |
-| AI | Provider-neutral port/adapter mimarisi |
-| Görsel depolama | Local + S3-compatible object storage |
-| Test | Vitest + ULTEF katmanlı doğrulama sistemi |
-| Altyapı | Docker Compose + taşınabilir managed-service yaklaşımı |
+| Alan             | Yaklaşım                                               |
+| ---------------- | ------------------------------------------------------ |
+| Web              | Next.js + TypeScript                                   |
+| Monorepo         | pnpm + Turborepo                                       |
+| Kalıcı veri      | PostgreSQL                                             |
+| Operasyonel veri | Redis                                                  |
+| AI               | Provider-neutral port/adapter mimarisi                 |
+| Görsel depolama  | Local + S3-compatible object storage                   |
+| Test             | Vitest + ULTEF katmanlı doğrulama sistemi              |
+| Altyapı          | Docker Compose + taşınabilir managed-service yaklaşımı |
 
 ## Depo Yapısı
 
-| Yol | Sorumluluk |
-| --- | --- |
-| `apps/` | Çalıştırılabilir kullanıcı uygulamaları |
-| `services/` | Bağımsız arka plan ve servis süreçleri |
+| Yol         | Sorumluluk                                                      |
+| ----------- | --------------------------------------------------------------- |
+| `apps/`     | Çalıştırılabilir kullanıcı uygulamaları                         |
+| `services/` | Bağımsız arka plan ve servis süreçleri                          |
 | `packages/` | Domain, application ve yeniden kullanılabilir runtime paketleri |
-| `tooling/` | ULTEF, TypeScript, ESLint ve geliştirme araçları |
-| `infra/` | Yerel ve dağıtım altyapısı |
-| `tests/` | Depo seviyesindeki çapraz sistem testleri |
-| `docs/` | Kanonik ürün, domain, mimari ve teslimat dokümantasyonu |
+| `tooling/`  | ULTEF, TypeScript, ESLint ve geliştirme araçları                |
+| `infra/`    | Yerel ve dağıtım altyapısı                                      |
+| `tests/`    | Depo seviyesindeki çapraz sistem testleri                       |
+| `docs/`     | Kanonik ürün, domain, mimari ve teslimat dokümantasyonu         |
 
 ## Hızlı Başlangıç
 
