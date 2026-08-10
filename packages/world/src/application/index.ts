@@ -22,6 +22,12 @@ export type {
   MoveCharacterResult,
 } from "./movement.service";
 
+export { NpcActionMoveApplicator } from "./npc-action-move-applicator.service";
+export type {
+  NpcActionMovePayload,
+  NpcActionMoveApplicatorResult,
+} from "./npc-action-move-applicator.service";
+
 export {
   createCheckpoint,
   getWorldCheckpoints,

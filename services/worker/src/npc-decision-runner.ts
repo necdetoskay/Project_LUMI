@@ -1,9 +1,16 @@
 import type { Logger } from "@lumi/logger";
 import type { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
 import type {
+  CanonicalNpcDecisionPayload,
+  CanonicalNpcSnapshot,
   DrizzleNpcSnapshotRepository,
   DrizzleWorkerNpcDecisionRepository,
+  WorkerNpcDecisionEvidence,
 } from "@lumi/npc-intelligence/db";
+import {
+  enqueueNpcActionMoveIntent,
+  type EnqueueNpcActionMoveInput,
+} from "@lumi/story/application";
 
 export interface NpcDecisionWorldInput {
   householdId: string;
@@ -22,6 +29,10 @@ export interface NpcDecisionJobPort {
   runForWorld(input: NpcDecisionWorldInput): Promise<NpcDecisionRunSummary>;
 }
 
+export type NpcActionMoveEnqueuer = (
+  input: EnqueueNpcActionMoveInput,
+) => Promise<{ outcome: "enqueued" | "duplicate"; outboxId: string }>;
+
 function serializeResult(value: unknown): Record<string, unknown> {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
 }
@@ -33,7 +44,47 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
     private readonly ledger: DrizzleWorkerNpcDecisionRepository,
     private readonly logger: Logger,
     private readonly limit = 64,
+    private readonly enqueueMove: NpcActionMoveEnqueuer = enqueueNpcActionMoveIntent,
   ) {}
+
+  private async enqueueSelectedEffect(
+    snapshot: CanonicalNpcSnapshot,
+    payload: CanonicalNpcDecisionPayload,
+    evidence: WorkerNpcDecisionEvidence,
+  ): Promise<void> {
+    const selectedCandidateId = evidence.selectedCandidateId;
+    if (!selectedCandidateId) return;
+    const effect = payload.effectsByCandidateId?.[selectedCandidateId];
+    if (!effect) return;
+
+    switch (effect.type) {
+      case "move_character": {
+        const enqueued = await this.enqueueMove({
+          householdId: snapshot.householdId,
+          worldId: snapshot.worldId,
+          childProfileId: snapshot.childProfileId,
+          npcId: snapshot.npcId,
+          characterId: snapshot.characterId,
+          decisionEvidenceId: evidence.id,
+          decisionKey: evidence.decisionKey,
+          selectedCandidateId,
+          targetLocationId: effect.targetLocationId,
+        });
+        this.logger.info(
+          "worker.npc_decision.effect_outbox",
+          "NPC decision effect outbox ensured",
+          {
+            worldId: snapshot.worldId,
+            npcId: snapshot.npcId,
+            decisionKey: evidence.decisionKey,
+            outboxId: enqueued.outboxId,
+            outcome: enqueued.outcome,
+          },
+        );
+        return;
+      }
+    }
+  }
 
   async runForWorld(
     input: NpcDecisionWorldInput,
@@ -73,14 +124,15 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
         continue;
       }
 
-      const alreadyCommitted = await this.ledger.has(
+      const existing = await this.ledger.get(
         snapshot.householdId,
         snapshot.worldId,
         snapshot.childProfileId,
         snapshot.npcId,
         payload.decisionKey,
       );
-      if (alreadyCommitted) {
+      if (existing) {
+        await this.enqueueSelectedEffect(snapshot, payload, existing);
         summary.duplicates += 1;
         continue;
       }
@@ -108,6 +160,18 @@ export class NpcDecisionJobRunner implements NpcDecisionJobPort {
         resultJson: serializeResult(result),
         decidedAt: input.now,
       });
+
+      const evidence = await this.ledger.get(
+        snapshot.householdId,
+        snapshot.worldId,
+        snapshot.childProfileId,
+        snapshot.npcId,
+        payload.decisionKey,
+      );
+      if (!evidence) {
+        throw new Error("NPC_DECISION_EVIDENCE_MISSING_AFTER_COMMIT");
+      }
+      await this.enqueueSelectedEffect(snapshot, payload, evidence);
 
       if (commit === "applied") {
         summary.applied += 1;
