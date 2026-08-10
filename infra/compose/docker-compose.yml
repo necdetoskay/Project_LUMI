@@ -26,6 +26,19 @@ services:
       retries: 10
     restart: unless-stopped
 
+  profile-migrate:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: profile-migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
+    restart: "no"
+
   web:
     build:
       context: ../..
@@ -37,6 +50,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      profile-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
@@ -58,6 +73,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      profile-migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
