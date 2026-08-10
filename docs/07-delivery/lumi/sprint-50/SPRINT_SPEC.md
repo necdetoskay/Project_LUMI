@@ -1,6 +1,6 @@
 # Sprint 50 — Typed NPC Action Effect Registry
 
-Status: IMPLEMENTATION
+Status: COMPLETE
 
 ## Goal
 
