@@ -8,6 +8,8 @@ const appPort = Number(
 );
 const mockPort = Number(process.env.MOCK_OPENROUTER_PORT ?? 18999);
 const mockBaseUrl = `http://127.0.0.1:${mockPort}/api/v1`;
+const reuseExistingServer =
+  process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === "true";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -37,7 +39,7 @@ export default defineConfig({
     {
       command: `pnpm exec next dev --hostname ${appUrl.hostname} --port ${appPort}`,
       url: baseURL,
-      reuseExistingServer: false,
+      reuseExistingServer,
       timeout: 120_000,
       cwd: appDir,
       env: {
