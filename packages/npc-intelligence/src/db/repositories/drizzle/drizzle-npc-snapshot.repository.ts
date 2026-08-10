@@ -116,15 +116,15 @@ function validEffects(
     const item = effect as Partial<NpcWorldEffectIntent>;
     if (item.type === "move_character") {
       return (
-        typeof (item as Partial<NpcMoveCharacterEffectIntent>).targetLocationId ===
-          "string" &&
-        (item as Partial<NpcMoveCharacterEffectIntent>).targetLocationId!.length > 0
+        typeof (item as Partial<NpcMoveCharacterEffectIntent>)
+          .targetLocationId === "string" &&
+        (item as Partial<NpcMoveCharacterEffectIntent>).targetLocationId!
+          .length > 0
       );
     }
     if (item.type === "set_relationship") {
-      const relationship = (
-        item as Partial<NpcSetRelationshipEffectIntent>
-      ).relationshipToCharacter;
+      const relationship = (item as Partial<NpcSetRelationshipEffectIntent>)
+        .relationshipToCharacter;
       return (
         typeof relationship === "number" &&
         Number.isFinite(relationship) &&

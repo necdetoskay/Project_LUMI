@@ -34,9 +34,13 @@ function parsePayload(value: unknown): NpcRelationshipPayload {
 }
 
 export class NpcRelationshipApplicator {
-  constructor(private readonly snapshots = new DrizzleNpcSnapshotRepository()) {}
+  constructor(
+    private readonly snapshots = new DrizzleNpcSnapshotRepository(),
+  ) {}
 
-  async apply(intent: { payload?: unknown }): Promise<NpcRelationshipApplicatorResult> {
+  async apply(intent: {
+    payload?: unknown;
+  }): Promise<NpcRelationshipApplicatorResult> {
     const payload = parsePayload(intent.payload);
     const result = await this.snapshots.setRelationship(
       payload.householdId,

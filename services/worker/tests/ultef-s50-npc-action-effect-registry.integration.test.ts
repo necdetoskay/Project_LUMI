@@ -18,7 +18,9 @@ let pool: pg.Pool | null = null;
 function assertSafeDisposableDatabase(url: string): void {
   const name = new URL(url).pathname.replace(/^\//, "").split("?")[0] ?? "";
   if (!name.includes("test") && !name.includes("review")) {
-    throw new Error(`S50 ULTEF requires disposable test/review DB; got '${name}'.`);
+    throw new Error(
+      `S50 ULTEF requires disposable test/review DB; got '${name}'.`,
+    );
   }
 }
 
@@ -149,7 +151,8 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
         ),
       );
       const replaySafe =
-        replay.applied >= 1 && relationshipAfterReplay === relationshipToCharacter;
+        replay.applied >= 1 &&
+        relationshipAfterReplay === relationshipToCharacter;
       scenario.assert(
         "At-least-once replay leaves absolute relationship unchanged",
         replaySafe,
@@ -168,11 +171,17 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
         selectedCandidateId,
         relationshipToCharacter: -0.5,
       });
-      await new OutboxJobRunner(createLogger({ level: "error" }), 25, 100).run();
-      const foreignState = await pool.query<{ status: string; attempt_count: string }>(
-        `SELECT status, attempt_count FROM story.story_outbox WHERE id=$1`,
-        [foreign.outboxId],
-      );
+      await new OutboxJobRunner(
+        createLogger({ level: "error" }),
+        25,
+        100,
+      ).run();
+      const foreignState = await pool.query<{
+        status: string;
+        attempt_count: string;
+      }>(`SELECT status, attempt_count FROM story.story_outbox WHERE id=$1`, [
+        foreign.outboxId,
+      ]);
       const crossScopeRejected =
         foreignState.rows[0]?.status === "pending" &&
         foreignState.rows[0]?.attempt_count === "1";
@@ -195,10 +204,13 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
       });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_outbox WHERE world_id=$1`, [worldId]);
-      await pool.query(`DELETE FROM npc_intelligence.npc_snapshots WHERE world_id=$1`, [
+      await pool.query(`DELETE FROM story.story_outbox WHERE world_id=$1`, [
         worldId,
       ]);
+      await pool.query(
+        `DELETE FROM npc_intelligence.npc_snapshots WHERE world_id=$1`,
+        [worldId],
+      );
     }
   });
 });

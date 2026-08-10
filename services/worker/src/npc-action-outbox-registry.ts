@@ -12,10 +12,11 @@ interface NpcOutboxApplicator {
 }
 
 export class NpcActionOutboxRegistry {
-  private readonly handlers: Record<NpcActionIntentType, NpcOutboxApplicator> = {
-    npc_action_move_character: new NpcActionMoveApplicator(),
-    npc_action_set_relationship: new NpcRelationshipApplicator(),
-  };
+  private readonly handlers: Record<NpcActionIntentType, NpcOutboxApplicator> =
+    {
+      npc_action_move_character: new NpcActionMoveApplicator(),
+      npc_action_set_relationship: new NpcRelationshipApplicator(),
+    };
 
   supports(intentType: string | undefined): intentType is NpcActionIntentType {
     return (
