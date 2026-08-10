@@ -106,6 +106,31 @@ export type {
 } from "./character-visual-generation";
 
 export {
+  IMAGE_ASPECT_RATIOS,
+  createGridLayout,
+  createGridCropPlan,
+  planImageGeneration,
+  selectImageGenerationCapability,
+} from "./image-generation-platform";
+export type {
+  ImageAspectRatio,
+  ImageResolution,
+  ImageGenerationStrategy,
+  ImageGenerationSubject,
+  ImagePricing,
+  ImageGenerationModelCapabilities,
+  ImageGenerationProviderRequest,
+  GeneratedImage,
+  ImageGenerationProviderResult,
+  ImageGenerationProviderPort,
+  ImageGenerationBudgetPolicy,
+  ImageGenerationPlanInput,
+  GridCell,
+  GridLayout,
+  ImageGenerationPlan,
+} from "./image-generation-platform";
+
+export {
   generateCharacterVisualCandidates,
   listCharacterVisualCandidates,
   getCharacterVisualCanon,
