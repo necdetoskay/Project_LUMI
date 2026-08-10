@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
+    "@lumi/npc-intelligence": "workspace:*",
     "@lumi/simulation": "workspace:*",
     "@lumi/story": "workspace:*",
     "@lumi/world": "workspace:*"
