@@ -1,0 +1,64 @@
+name: ULTEF S56 Image Generation Platform
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-generation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_s56_image_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_s56_image_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_s56_image_test
+      NODE_ENV: test
+      LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
+      ULTEF_S56_IMAGE_ENABLE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare auth schema
+        run: pnpm --filter @lumi/web auth:migrate
+      - name: Prepare profile schema including S56 generation ledger
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Seed canonical demo universe
+        run: pnpm demo:seed
+      - name: Verify S56 generation tables
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('profile.image_generation_jobs') IS NOT NULL"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('profile.image_generation_cost_events') IS NOT NULL"
+      - name: Run S56 DB-backed image generation platform
+        run: pnpm --filter @lumi/web exec vitest run tests/ultef-s56-image-generation-platform.integration.test.ts
+      - name: Re-run profile migrations for idempotency
+        run: pnpm --filter @lumi/profiles profile:migrate
