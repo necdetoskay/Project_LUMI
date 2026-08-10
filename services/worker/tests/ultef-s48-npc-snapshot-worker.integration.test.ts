@@ -192,6 +192,27 @@ describe.skipIf(!enabled || !databaseUrl)(
         updatedAt: new Date(now.getTime() + 2000),
       });
 
+      await repo.upsert({
+        npcId: npcA,
+        householdId: householdA,
+        worldId,
+        childProfileId: profileA,
+        characterId,
+        locationId: null,
+        needTypes: ["belonging", "rest"],
+        relationshipToCharacter: 0.7,
+        lastInteractionAt: now,
+        updatedAt: new Date(now.getTime() + 3000),
+      });
+      const decisionReady = await repo.listDecisionReady(
+        householdA,
+        worldId,
+        profileA,
+        8,
+      );
+      expect(decisionReady).toHaveLength(1);
+      expect(decisionReady[0]?.decisionPayload?.decisionKey).toBe(decisionKey);
+
       const memory: CanonicalMemory = {
         id: memoryId,
         householdId: householdA,
