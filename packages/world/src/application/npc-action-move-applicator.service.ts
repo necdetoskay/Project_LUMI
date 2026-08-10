@@ -43,7 +43,9 @@ function parsePayload(value: unknown): NpcActionMovePayload {
 }
 
 export class NpcActionMoveApplicator {
-  async apply(intent: { payload?: unknown }): Promise<NpcActionMoveApplicatorResult> {
+  async apply(intent: {
+    payload?: unknown;
+  }): Promise<NpcActionMoveApplicatorResult> {
     const payload = parsePayload(intent.payload);
     try {
       await moveCharacterToLocation({
@@ -54,7 +56,10 @@ export class NpcActionMoveApplicator {
       });
       return { outcome: "applied", writes: 1 };
     } catch (error) {
-      if (error instanceof DomainError && error.code === "ALREADY_AT_LOCATION") {
+      if (
+        error instanceof DomainError &&
+        error.code === "ALREADY_AT_LOCATION"
+      ) {
         return { outcome: "duplicate", writes: 0 };
       }
       throw error;
