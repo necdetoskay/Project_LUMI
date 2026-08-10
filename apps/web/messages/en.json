@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "Project LUMI",
+    "description": "The LUMI platform for living, interactive children's stories."
+  },
+  "common": {
+    "skipToContent": "Skip to main content",
+    "settings": "Settings",
+    "language": "Language",
+    "turkish": "Türkçe",
+    "english": "English"
+  },
+  "header": {
+    "tagline": "LIVING STORIES",
+    "navigationLabel": "Main navigation",
+    "home": "Home",
+    "children": "My Children",
+    "assets": "Visual Library",
+    "safety": "Safety",
+    "returnToStory": "Return to my story"
+  },
+  "footer": {
+    "tagline": "Worlds that remember, grow, and live through stories.",
+    "about": "About LUMI",
+    "privacy": "Privacy",
+    "help": "Help"
+  }
+}
