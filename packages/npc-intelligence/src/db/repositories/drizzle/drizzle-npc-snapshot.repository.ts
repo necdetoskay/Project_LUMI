@@ -91,6 +91,22 @@ function restoreDecisionPayload(
   } as CanonicalNpcDecisionPayload;
 }
 
+function mapSnapshot(row: typeof npcSnapshots.$inferSelect): CanonicalNpcSnapshot {
+  return {
+    npcId: row.npcId,
+    householdId: row.householdId,
+    worldId: row.worldId,
+    childProfileId: row.childProfileId,
+    characterId: row.characterId,
+    locationId: row.locationId,
+    needTypes: row.needTypes ?? [],
+    relationshipToCharacter: Number(row.relationshipToCharacter),
+    decisionPayload: restoreDecisionPayload(row.decisionPayload),
+    lastInteractionAt: row.lastInteractionAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 export class DrizzleNpcSnapshotRepository {
   constructor(private readonly db: Database = getNpcDb()) {}
 
@@ -148,18 +164,29 @@ export class DrizzleNpcSnapshotRepository {
       .orderBy(asc(npcSnapshots.npcId), asc(npcSnapshots.childProfileId))
       .limit(boundedLimit);
 
-    return rows.map((row) => ({
-      npcId: row.npcId,
-      householdId: row.householdId,
-      worldId: row.worldId,
-      childProfileId: row.childProfileId,
-      characterId: row.characterId,
-      locationId: row.locationId,
-      needTypes: row.needTypes ?? [],
-      relationshipToCharacter: Number(row.relationshipToCharacter),
-      decisionPayload: restoreDecisionPayload(row.decisionPayload),
-      lastInteractionAt: row.lastInteractionAt,
-      updatedAt: row.updatedAt,
-    }));
+    return rows.map(mapSnapshot);
+  }
+
+  async listDecisionReady(
+    householdId: string,
+    worldId: string,
+    childProfileId: string,
+    limit = 64,
+  ): Promise<CanonicalNpcSnapshot[]> {
+    const boundedLimit = Math.max(1, Math.min(limit, 64));
+    const rows = await this.db
+      .select()
+      .from(npcSnapshots)
+      .where(
+        and(
+          eq(npcSnapshots.householdId, householdId),
+          eq(npcSnapshots.worldId, worldId),
+          eq(npcSnapshots.childProfileId, childProfileId),
+        ),
+      )
+      .orderBy(asc(npcSnapshots.npcId))
+      .limit(boundedLimit);
+
+    return rows.map(mapSnapshot).filter((snapshot) => snapshot.decisionPayload);
   }
 }
