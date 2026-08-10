@@ -31,6 +31,7 @@ jobs:
       NODE_ENV: test
       LUMI_DEMO_CONFIRM: lumi-demo-v1
       LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
+      ULTEF_S53_VISUAL_ENABLE: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
