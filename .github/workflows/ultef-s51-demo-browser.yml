@@ -58,3 +58,98 @@ jobs:
         run: pnpm demo:seed
       - name: Run S51 playable browser journey
         run: pnpm --filter @lumi/web exec playwright test tests/e2e/ultef-s51-demo-journey.spec.ts
+
+  demo-artifact-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARTIFACT_DATABASE_URL: postgresql://lumi:lumi_artifact_only@localhost:55432/lumi_s51_artifact_test
+      ARTIFACT_INTERNAL_DATABASE_URL: postgresql://lumi:lumi_artifact_only@s51-artifact-postgres:5432/lumi_s51_artifact_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create artifact runtime network and PostgreSQL
+        run: |
+          docker network create s51-artifact-runtime
+          docker run -d --name s51-artifact-postgres --network s51-artifact-runtime \
+            -p 55432:5432 \
+            -e POSTGRES_USER=lumi \
+            -e POSTGRES_PASSWORD=lumi_artifact_only \
+            -e POSTGRES_DB=lumi_s51_artifact_test \
+            postgres:17
+          for i in $(seq 1 30); do
+            if docker exec s51-artifact-postgres pg_isready -U lumi -d lumi_s51_artifact_test; then exit 0; fi
+            sleep 2
+          done
+          docker logs s51-artifact-postgres
+          exit 1
+
+      - name: Prepare artifact database schema
+        run: |
+          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/web auth:migrate
+          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/profiles profile:migrate
+          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/world world:migrate
+          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/npc-intelligence npc:migrate
+          DATABASE_URL="$ARTIFACT_DATABASE_URL" pnpm --filter @lumi/story story:migrate
+
+      - name: Build the deployable web Docker image
+        run: docker build --build-arg NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 -t lumi-web:s51-artifact .
+
+      - name: Boot the deployable web Docker image
+        run: |
+          docker run -d --name s51-artifact-web --network s51-artifact-runtime \
+            -p 3101:3000 \
+            -e DATABASE_URL="$ARTIFACT_INTERNAL_DATABASE_URL" \
+            -e NEXT_PUBLIC_APP_URL=http://127.0.0.1:3101 \
+            -e LUMI_DEMO_PARENT_PASSWORD=lumi-demo-artifact-only-2026 \
+            lumi-web:s51-artifact
+          for i in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:3101/api/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs s51-artifact-web
+          exit 1
+
+      - name: Prepare demo through the real Docker artifact
+        run: |
+          headers=$(mktemp)
+          curl --fail --silent --show-error -D "$headers" -o /dev/null \
+            -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'action=prepare' http://127.0.0.1:3101/api/demo-control
+          cat "$headers"
+          location=$(awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0, 11)}' "$headers" | tail -1)
+          echo "Redirect: $location"
+          echo "$location" | grep -q 'result=success'
+
+      - name: Verify demo status through the real Docker artifact
+        run: |
+          headers=$(mktemp)
+          curl --fail --silent --show-error -D "$headers" -o /dev/null \
+            -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'action=status' http://127.0.0.1:3101/api/demo-control
+          cat "$headers"
+          location=$(awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0, 11)}' "$headers" | tail -1)
+          echo "Redirect: $location"
+          echo "$location" | grep -q 'result=success'
+          echo "$location" | grep -q 'manifestVersion'
+
+      - name: Print container diagnostics on failure
+        if: failure()
+        run: |
+          docker ps -a || true
+          docker logs s51-artifact-web || true
+          docker logs s51-artifact-postgres || true
+
+      - name: Cleanup artifact runtime
+        if: always()
+        run: |
+          docker rm -f s51-artifact-web s51-artifact-postgres || true
+          docker network rm s51-artifact-runtime || true
