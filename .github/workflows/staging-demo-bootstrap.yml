@@ -2,6 +2,11 @@ name: Staging Demo Bootstrap
 
 on:
   workflow_dispatch:
+    inputs:
+      database_name_confirmation:
+        description: "Type the exact Neon development database name (for example: neondb)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,6 +21,7 @@ jobs:
       DATABASE_POOL_MAX: "2"
       NODE_ENV: test
       LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_ALLOWED_DATABASE_NAME: ${{ inputs.database_name_confirmation }}
       LUMI_DEMO_PARENT_PASSWORD: ${{ secrets.LUMI_DEV_DEMO_PARENT_PASSWORD }}
 
     steps:
@@ -30,12 +36,19 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Validate staging secrets
+      - name: Validate staging secrets and explicit database confirmation
         shell: bash
         run: |
           test -n "$DATABASE_URL" || { echo "LUMI_DEV_DATABASE_URL is missing"; exit 1; }
           test -n "$DATABASE_DIRECT_URL" || { echo "LUMI_DEV_DATABASE_DIRECT_URL is missing"; exit 1; }
           test -n "$LUMI_DEMO_PARENT_PASSWORD" || { echo "LUMI_DEV_DEMO_PARENT_PASSWORD is missing"; exit 1; }
+          test -n "$LUMI_DEMO_ALLOWED_DATABASE_NAME" || { echo "database_name_confirmation is required"; exit 1; }
+          ACTUAL_DATABASE_NAME="$(node -e 'const u=new URL(process.env.DATABASE_URL); process.stdout.write(u.pathname.replace(/^\//, ""))')"
+          test "$ACTUAL_DATABASE_NAME" = "$LUMI_DEMO_ALLOWED_DATABASE_NAME" || {
+            echo "Database confirmation mismatch: expected exact database name";
+            exit 1;
+          }
+          echo "Confirmed staging database: $ACTUAL_DATABASE_NAME"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
