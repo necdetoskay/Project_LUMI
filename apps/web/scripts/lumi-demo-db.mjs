@@ -9,6 +9,19 @@ const CONNECTION_IDS = [
   "51000000-0000-4000-8000-000000000028",
 ];
 const FIRST_ORIGIN_PACKAGE_ID = "51000000-0000-4000-8000-000000000005";
+const INVENTORY_ID = "51000000-0000-4000-8000-000000000042";
+const INVENTORY_DEFINITION_IDS = [
+  "51000000-0000-4000-8000-000000000043",
+  "51000000-0000-4000-8000-000000000044",
+];
+const INVENTORY_ENTRY_IDS = [
+  "51000000-0000-4000-8000-000000000045",
+  "51000000-0000-4000-8000-000000000046",
+];
+const INVENTORY_OWNERSHIP_IDS = [
+  "51000000-0000-4000-8000-000000000047",
+  "51000000-0000-4000-8000-000000000048",
+];
 
 function locationByKey(manifest, key) {
   const location = manifest.locations.find((entry) => entry.key === key);
@@ -20,6 +33,12 @@ function regionByKey(manifest, key) {
   const region = manifest.regions.find((entry) => entry.key === key);
   if (!region) throw new Error(`DEMO_REGION_NOT_FOUND:${key}`);
   return region;
+}
+
+function npcByKey(manifest, key) {
+  const npc = manifest.npcs.find((entry) => entry.key === key);
+  if (!npc) throw new Error(`DEMO_NPC_NOT_FOUND:${key}`);
+  return npc;
 }
 
 export function createLumiDemoPostgresAdapter(databaseUrl) {
@@ -53,11 +72,20 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
            (SELECT count(*)::int FROM profile.child_profiles WHERE household_id = $2) AS profiles,
            (SELECT count(*)::int FROM profile.lumi_characters WHERE household_id = $2) AS characters,
            (SELECT count(*)::int FROM profile.worlds WHERE household_id = $2) AS worlds,
+           (SELECT count(*)::int FROM profile.inventory_item_instances WHERE household_id = $2) AS inventory_items,
+           (SELECT count(*)::int FROM npc_intelligence.npc_snapshots WHERE household_id = $2 AND world_id = $4) AS npcs,
+           (SELECT count(*)::int FROM npc_intelligence.memories WHERE household_id = $2 AND world_id = $4) AS memories,
+           (SELECT count(*)::int FROM profile.quests WHERE household_id = $2 AND world_id = $4) AS quests,
            (SELECT wl.location_key
               FROM profile.world_character_locations wcl
               JOIN profile.world_locations wl ON wl.id = wcl.location_id
              WHERE wcl.character_id = $3 AND wcl.world_id = $4) AS current_location_key`,
-        [manifest.childProfile.id, manifest.household.id, manifest.character.id, manifest.world.id],
+        [
+          manifest.childProfile.id,
+          manifest.household.id,
+          manifest.character.id,
+          manifest.world.id,
+        ],
       );
       const detail = details.rows[0] ?? {};
       return {
@@ -69,6 +97,10 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
           profiles: Number(detail.profiles ?? 0),
           characters: Number(detail.characters ?? 0),
           worlds: Number(detail.worlds ?? 0),
+          inventoryItems: Number(detail.inventory_items ?? 0),
+          npcs: Number(detail.npcs ?? 0),
+          memories: Number(detail.memories ?? 0),
+          quests: Number(detail.quests ?? 0),
         },
         currentLocationKey: detail.current_location_key ?? null,
       };
@@ -81,7 +113,11 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
         await client.query(
           `INSERT INTO profile.households (id, name, slug)
            VALUES ($1,$2,$3)`,
-          [manifest.household.id, manifest.household.displayName, manifest.household.key],
+          [
+            manifest.household.id,
+            manifest.household.displayName,
+            manifest.household.key,
+          ],
         );
         await client.query(
           `INSERT INTO profile.child_profiles
@@ -220,6 +256,142 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
            VALUES ($1,$2,$3,1)`,
           [manifest.character.id, manifest.world.id, start.id],
         );
+
+        await client.query(
+          `INSERT INTO profile.inventory_inventories
+            (id, household_id, owner_type, owner_id, inventory_type, display_name, metadata)
+           VALUES ($1,$2,'character',$3,'personal',$4,$5::jsonb)`,
+          [
+            INVENTORY_ID,
+            manifest.household.id,
+            manifest.character.id,
+            `${manifest.character.displayName}'nın Eşyaları`,
+            JSON.stringify({ lumiDemo: true }),
+          ],
+        );
+
+        for (const [index, item] of manifest.inventory.entries()) {
+          await client.query(
+            `INSERT INTO profile.inventory_item_definitions
+              (id, definition_key, display_name, description, category, item_type, rarity,
+               stack_mode, durability_mode, is_transferable, is_equippable, is_consumable,
+               is_story_selectable, allowed_owner_types, metadata)
+             VALUES ($1,$2,$3,$4,'story','keepsake','common','single','none',true,false,false,true,
+                     '["character"]'::jsonb,$5::jsonb)`,
+            [
+              INVENTORY_DEFINITION_IDS[index],
+              `lumi-demo-${item.key}`,
+              item.displayName,
+              item.description,
+              JSON.stringify({ lumiDemo: true, demoKey: item.key }),
+            ],
+          );
+          await client.query(
+            `INSERT INTO profile.inventory_item_instances
+              (id, household_id, item_definition_id, instance_name, quantity, custom_properties,
+               origin_type, origin_id)
+             VALUES ($1,$2,$3,$4,1,$5::jsonb,'bootstrap',$6)`,
+            [
+              item.id,
+              manifest.household.id,
+              INVENTORY_DEFINITION_IDS[index],
+              item.displayName,
+              JSON.stringify({ lumiDemo: true }),
+              manifest.character.id,
+            ],
+          );
+          await client.query(
+            `INSERT INTO profile.inventory_entries
+              (id, inventory_id, item_instance_id, sort_order, quantity, metadata)
+             VALUES ($1,$2,$3,$4,1,$5::jsonb)`,
+            [
+              INVENTORY_ENTRY_IDS[index],
+              INVENTORY_ID,
+              item.id,
+              index,
+              JSON.stringify({ lumiDemo: true }),
+            ],
+          );
+          await client.query(
+            `INSERT INTO profile.inventory_ownerships
+              (id, item_instance_id, owner_type, owner_id, ownership_type, status,
+               source_type, source_id, metadata)
+             VALUES ($1,$2,'character',$3,'owned','active','bootstrap',$4,$5::jsonb)`,
+            [
+              INVENTORY_OWNERSHIP_IDS[index],
+              item.id,
+              manifest.character.id,
+              manifest.world.id,
+              JSON.stringify({ lumiDemo: true }),
+            ],
+          );
+        }
+
+        for (const npc of manifest.npcs) {
+          const location = locationByKey(manifest, npc.locationKey);
+          await client.query(
+            `INSERT INTO npc_intelligence.npc_snapshots
+              (id, npc_id, household_id, world_id, child_profile_id, character_id, location_id,
+               need_types, relationship_to_character, decision_payload, last_interaction_at)
+             VALUES ($1,$1,$2,$3,$4,$5,$6,$7::jsonb,$8,NULL,NOW())`,
+            [
+              npc.id,
+              manifest.household.id,
+              manifest.world.id,
+              manifest.childProfile.id,
+              manifest.character.id,
+              location.id,
+              JSON.stringify(npc.traits.map((trait) => `trait:${trait}`)),
+              npc.relationshipToCharacter,
+            ],
+          );
+        }
+
+        for (const memory of manifest.memories) {
+          const npc = npcByKey(manifest, memory.npcKey);
+          await client.query(
+            `INSERT INTO npc_intelligence.memories
+              (id, household_id, world_id, child_profile_id, owner_type, owner_id, kind,
+               summary, salience, confidence, source_type, source_id, effect_key, provenance,
+               lifecycle, last_reinforced_at)
+             VALUES ($1,$2,$3,$4,'npc',$5,$6,$7,$8,1,'bootstrap',$9,$10,$11::jsonb,$12,NOW())`,
+            [
+              memory.id,
+              manifest.household.id,
+              manifest.world.id,
+              manifest.childProfile.id,
+              npc.id,
+              memory.kind,
+              memory.summary,
+              memory.salience,
+              `lumi-demo:${memory.key}`,
+              `lumi-demo:${memory.key}`,
+              JSON.stringify([
+                {
+                  type: "demo_reference",
+                  key: memory.key,
+                },
+              ]),
+              memory.durable ? "durable" : "decaying",
+            ],
+          );
+        }
+
+        await client.query(
+          `INSERT INTO profile.quests
+            (id, household_id, world_id, story_session_id, title, summary, status,
+             evidence_ref, version)
+           VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,1)`,
+          [
+            manifest.quest.id,
+            manifest.household.id,
+            manifest.world.id,
+            manifest.quest.title,
+            manifest.quest.summary,
+            manifest.quest.status,
+            `lumi-demo:${manifest.quest.key}`,
+          ],
+        );
         await client.query("COMMIT");
         return { householdId: manifest.household.id, worldId: manifest.world.id };
       } catch (error) {
@@ -235,9 +407,44 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
       try {
         await client.query("BEGIN");
         await client.query(
-          `DELETE FROM profile.worlds WHERE id = $1 AND household_id = $2`,
-          [manifest.world.id, manifest.household.id],
+          `DELETE FROM npc_intelligence.memories WHERE household_id = $1 AND world_id = $2`,
+          [manifest.household.id, manifest.world.id],
         );
+        await client.query(
+          `DELETE FROM npc_intelligence.worker_npc_decisions WHERE household_id = $1 AND world_id = $2`,
+          [manifest.household.id, manifest.world.id],
+        );
+        await client.query(
+          `DELETE FROM npc_intelligence.npc_snapshots WHERE household_id = $1 AND world_id = $2`,
+          [manifest.household.id, manifest.world.id],
+        );
+        await client.query(
+          `DELETE FROM profile.quests WHERE household_id = $1 AND world_id = $2`,
+          [manifest.household.id, manifest.world.id],
+        );
+        await client.query(
+          `DELETE FROM profile.inventory_inventories WHERE id = $1 AND household_id = $2`,
+          [INVENTORY_ID, manifest.household.id],
+        );
+        await client.query(
+          `DELETE FROM profile.inventory_ownerships
+            WHERE item_instance_id = ANY($1::uuid[])`,
+          [manifest.inventory.map((item) => item.id)],
+        );
+        await client.query(
+          `DELETE FROM profile.inventory_item_instances
+            WHERE household_id = $1 AND id = ANY($2::uuid[])`,
+          [manifest.household.id, manifest.inventory.map((item) => item.id)],
+        );
+        await client.query(
+          `DELETE FROM profile.inventory_item_definitions
+            WHERE id = ANY($1::uuid[])`,
+          [INVENTORY_DEFINITION_IDS],
+        );
+        await client.query(`DELETE FROM profile.worlds WHERE id = $1 AND household_id = $2`, [
+          manifest.world.id,
+          manifest.household.id,
+        ]);
         await client.query(
           `DELETE FROM profile.lumi_characters WHERE id = $1 AND household_id = $2`,
           [manifest.character.id, manifest.household.id],
