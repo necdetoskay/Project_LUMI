@@ -142,6 +142,15 @@ export {
 } from "./quest-reward-outbox.service";
 export type { EnqueueQuestRewardInput } from "./quest-reward-outbox.service";
 
+export {
+  enqueueNpcActionMoveIntent,
+  __setTestNpcActionOutboxDb,
+} from "./npc-action-outbox.service";
+export type {
+  EnqueueNpcActionMoveInput,
+  EnqueueNpcActionResult,
+} from "./npc-action-outbox.service";
+
 export { buildHookSceneBrief } from "../domain/hook-scene-brief";
 export type { HookSceneBrief } from "../domain/hook-scene-brief";
 
