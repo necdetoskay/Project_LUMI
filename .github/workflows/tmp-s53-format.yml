@@ -1,0 +1,38 @@
+name: TEMP S53 Format Repair
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.ref == 's53/character-visual-canon'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: s53/character-visual-canon
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format Sprint 53 UI files
+        run: pnpm exec prettier --write apps/web/app/app/assets/assets-client-page.tsx apps/web/tests/assets-client-page.test.tsx
+      - name: Commit formatting when needed
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/assets/assets-client-page.tsx apps/web/tests/assets-client-page.test.tsx
+          git commit -m "style(s53): format asset management UI"
+          git push origin HEAD:s53/character-visual-canon
