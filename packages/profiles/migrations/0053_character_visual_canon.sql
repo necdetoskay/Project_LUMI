@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS profile.character_visual_generation_jobs (
   completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT uq_character_visual_generation_job_idempotency UNIQUE (household_id, idempotency_key)
+  CONSTRAINT uq_character_visual_generation_job_idempotency UNIQUE (household_id, character_id, idempotency_key)
 );
 
 CREATE INDEX IF NOT EXISTS character_visual_generation_jobs_character_idx
