@@ -7,6 +7,10 @@ import {
 } from "../../../scripts/demo/lumi-demo-runner.mjs";
 import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs";
 import { createLumiDemoPostgresAdapter } from "./lumi-demo-db.mjs";
+import {
+  createLumiDemoStoryPostgresAdapter,
+  LUMI_DEMO_ENTRY_SCENE_ID,
+} from "./lumi-demo-story-db.mjs";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL_REQUIRED");
@@ -16,6 +20,7 @@ const foreignSlug = "s51-foreign-household";
 const confirmation = LUMI_DEMO_MANIFEST.manifestVersion;
 const admin = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 const adapter = createLumiDemoPostgresAdapter(databaseUrl);
+const storyAdapter = createLumiDemoStoryPostgresAdapter(databaseUrl);
 
 try {
   await admin.query(
@@ -32,6 +37,9 @@ try {
     confirmation,
   });
   if (first.outcome !== "seeded") throw new Error("FIRST_SEED_NOT_APPLIED");
+
+  const storyFirst = await storyAdapter.ensure();
+  if (storyFirst.outcome !== "seeded") throw new Error("FIRST_STORY_SEED_NOT_APPLIED");
 
   const status = await runDemoStatus({ adapter });
   if (!status.exists) throw new Error("DEMO_STATUS_MISSING");
@@ -70,7 +78,10 @@ try {
          WHERE household_id = $1 AND world_id = $3 AND npc_id = $5) AS mira_relationship,
        (SELECT status
           FROM profile.quests
-         WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_status`,
+         WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_status,
+       (SELECT story_session_id::text
+          FROM profile.quests
+         WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_session_id`,
     [
       LUMI_DEMO_MANIFEST.household.id,
       LUMI_DEMO_MANIFEST.character.id,
@@ -87,11 +98,26 @@ try {
   if (support.scoped_npcs !== LUMI_DEMO_MANIFEST.npcs.length) {
     throw new Error("DEMO_NPC_SCOPE_INVALID");
   }
-  if (Number(support.mira_relationship) !== LUMI_DEMO_MANIFEST.npcs[0].relationshipToCharacter) {
+  if (
+    Number(support.mira_relationship) !==
+    LUMI_DEMO_MANIFEST.npcs[0].relationshipToCharacter
+  ) {
     throw new Error("DEMO_RELATIONSHIP_INVALID");
   }
   if (support.quest_status !== LUMI_DEMO_MANIFEST.quest.status) {
     throw new Error("DEMO_QUEST_STATUS_INVALID");
+  }
+  if (support.quest_session_id !== LUMI_DEMO_MANIFEST.story.sessionId) {
+    throw new Error("DEMO_QUEST_SESSION_NOT_BOUND");
+  }
+
+  const storyStatus = await storyAdapter.inspect();
+  if (!storyStatus.ready) throw new Error("DEMO_STORY_NOT_READER_READY");
+  if (storyStatus.currentSceneId !== LUMI_DEMO_ENTRY_SCENE_ID) {
+    throw new Error("DEMO_STORY_CURRENT_SCENE_INVALID");
+  }
+  if (storyStatus.sessionStatus !== "active") {
+    throw new Error("DEMO_STORY_SESSION_NOT_ACTIVE");
   }
 
   const replay = await runDemoSeed({
@@ -103,6 +129,10 @@ try {
   if (replay.outcome !== "already_seeded") {
     throw new Error("SEED_REPLAY_NOT_IDEMPOTENT");
   }
+  const storyReplay = await storyAdapter.ensure();
+  if (storyReplay.outcome !== "already_ready") {
+    throw new Error("STORY_REPLAY_NOT_IDEMPOTENT");
+  }
 
   const replayStatus = await runDemoStatus({ adapter });
   if (
@@ -112,6 +142,12 @@ try {
     replayStatus.counts?.quests !== 1
   ) {
     throw new Error("DEMO_SUPPORTING_STATE_REPLAY_DUPLICATED");
+  }
+
+  await storyAdapter.reset();
+  const storyAfterReset = await storyAdapter.inspect();
+  if (storyAfterReset.ready || storyAfterReset.sessions !== 0) {
+    throw new Error("DEMO_STORY_RESET_LEFT_STATE");
   }
 
   const reset = await runDemoReset({
@@ -133,8 +169,9 @@ try {
     throw new Error("FOREIGN_HOUSEHOLD_WAS_MUTATED");
   }
 
-  console.log("S51 T03/T04 PostgreSQL demo selftest: PASS");
+  console.log("S51 T03/T04/T05 PostgreSQL demo selftest: PASS");
 } finally {
+  await storyAdapter.close();
   await adapter.close();
   await admin.query(`DELETE FROM profile.households WHERE id = $1`, [
     foreignHouseholdId,
