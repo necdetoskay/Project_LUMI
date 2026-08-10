@@ -8,6 +8,7 @@ import {
   DrizzleWorkerNpcDecisionRepository,
 } from "@lumi/npc-intelligence/db";
 import type { CanonicalMemory } from "@lumi/npc-intelligence/domain";
+import type { CanonicalMemoryPort } from "@lumi/npc-intelligence/ports";
 import { RepositoryNpcSourceAdapter } from "../src/adapters";
 import { NpcDecisionJobRunner } from "../src/npc-decision-runner";
 
@@ -21,12 +22,23 @@ describe.skipIf(!enabled || !databaseUrl)(
     const db = createDatabase(databaseUrl!);
     const repo = new DrizzleNpcSnapshotRepository(db);
     const memoryRepo = new DrizzleCanonicalMemoryRepository(db);
+    let memoryReads = 0;
+    const countingMemoryPort: CanonicalMemoryPort = {
+      save: (memory) => memoryRepo.save(memory),
+      listRelevant: async (query) => {
+        memoryReads += 1;
+        return memoryRepo.listRelevant(query);
+      },
+      reinforce: (input) => memoryRepo.reinforce(input),
+      reinforceForScene: (input) => memoryRepo.reinforceForScene(input),
+      archive: (input) => memoryRepo.archive(input),
+    };
     const decisionLedger = new DrizzleWorkerNpcDecisionRepository(db);
     const adapter = new RepositoryNpcSourceAdapter(repo, 8);
     const logger = createLogger({ level: "error" });
     const decisionRunner = new NpcDecisionJobRunner(
       repo,
-      new MemoryAwareDecisionService(memoryRepo),
+      new MemoryAwareDecisionService(countingMemoryPort),
       decisionLedger,
       logger,
       8,
@@ -207,6 +219,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         now,
       });
       expect(first).toEqual({ applied: 1, duplicates: 0, skippedNotReady: 0 });
+      expect(memoryReads).toBe(1);
 
       const evidence = await decisionLedger.get(
         householdA,
@@ -226,6 +239,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         now: new Date(now.getTime() + 5000),
       });
       expect(replay).toEqual({ applied: 0, duplicates: 1, skippedNotReady: 0 });
+      expect(memoryReads).toBe(1);
 
       const replayEvidence = await decisionLedger.get(
         householdA,
@@ -243,6 +257,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         now,
       });
       expect(wrongProfile.applied).toBe(0);
+      expect(memoryReads).toBe(1);
       expect(
         await decisionLedger.get(
           householdA,
