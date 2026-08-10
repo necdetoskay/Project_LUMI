@@ -6,6 +6,7 @@ import { getOwnedHousehold } from "@lumi/profiles/application";
 import {
   commitChoice,
   commitPersistedChoiceConsequence,
+  getChoicePointWithOptions,
   getStorySessionOrForbidden,
 } from "@lumi/story/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
@@ -20,8 +21,18 @@ const bodySchema = z.object({
   optionId: z.string().uuid(),
   evidenceSceneId: z.string().uuid(),
   idempotencyKey: z.string().min(1).optional(),
-  commitWorldConsequence: z.boolean().optional().default(false),
+  commitWorldConsequence: z.boolean().optional(),
 });
+
+function hasDurableWorldPreview(value: unknown): boolean {
+  if (!Array.isArray(value)) return false;
+  return value.some((entry) => {
+    if (!entry || typeof entry !== "object") return false;
+    const consequenceType = (entry as { consequenceType?: unknown })
+      .consequenceType;
+    return consequenceType === "flag_set" || consequenceType === "flag_remove";
+  });
+}
 
 export const POST = observeHandler(
   async (
@@ -79,6 +90,14 @@ export const POST = observeHandler(
 
       try {
         const session = await getStorySessionOrForbidden(sessionId, householdId);
+        const choicePoint = await getChoicePointWithOptions(choicePointId);
+        const selectedOption = choicePoint.options.find(
+          (option) => option.id === optionId,
+        );
+        const shouldCommitWorldConsequence =
+          commitWorldConsequence ??
+          hasDurableWorldPreview(selectedOption?.consequencePreviews);
+
         const result = await commitChoice({
           storySessionId: sessionId,
           choicePointId,
@@ -90,7 +109,7 @@ export const POST = observeHandler(
 
         const committedChoice =
           "committedChoice" in result ? result.committedChoice : result;
-        const worldConsequence = commitWorldConsequence
+        const worldConsequence = shouldCommitWorldConsequence
           ? await commitPersistedChoiceConsequence({
               storySessionId: sessionId,
               committedChoiceId: committedChoice.id,
