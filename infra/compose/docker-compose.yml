@@ -26,7 +26,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  profile-migrate:
+  schema-migrate:
     image: postgres:17.7-alpine
     depends_on:
       postgres:
@@ -36,22 +36,36 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-lumi}
       PGPASSWORD: ${POSTGRES_PASSWORD:-lumi_local_only}
     volumes:
-      - ../../packages/profiles/migrations:/migrations:ro
+      - ../../apps/web/migrations:/migrations/auth:ro
+      - ../../packages/profiles/migrations:/migrations/profile:ro
+      - ../../packages/world/migrations:/migrations/world:ro
+      - ../../packages/npc-intelligence/migrations:/migrations/npc:ro
+      - ../../packages/story/migrations:/migrations/story:ro
     command:
       - sh
       - -ec
       - |
-        for file in /migrations/*.sql; do
-          echo "Applying migration: $${file##*/}"
-          psql \
-            -h postgres \
-            -U "$${POSTGRES_USER}" \
-            -d "$${POSTGRES_DB}" \
-            -v ON_ERROR_STOP=1 \
-            -f "$${file}"
-          echo "Migration $${file##*/} applied successfully"
-        done
-        echo "All profile migrations applied successfully"
+        apply_dir() {
+          label="$$1"
+          dir="$$2"
+          for file in "$$dir"/*.sql; do
+            [ -f "$$file" ] || continue
+            echo "Applying $$label migration: $${file##*/}"
+            psql \
+              -h postgres \
+              -U "$${POSTGRES_USER}" \
+              -d "$${POSTGRES_DB}" \
+              -v ON_ERROR_STOP=1 \
+              -f "$$file"
+            echo "Migration $${file##*/} applied successfully"
+          done
+        }
+        apply_dir auth /migrations/auth
+        apply_dir profile /migrations/profile
+        apply_dir world /migrations/world
+        apply_dir npc /migrations/npc
+        apply_dir story /migrations/story
+        echo "All canonical schema migrations applied successfully"
     restart: "no"
 
   web:
@@ -65,7 +79,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      profile-migrate:
+      schema-migrate:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
@@ -88,7 +102,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      profile-migrate:
+      schema-migrate:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
