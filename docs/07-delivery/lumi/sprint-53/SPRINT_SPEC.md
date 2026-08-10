@@ -1,6 +1,6 @@
 # Sprint 53 — Character Visual Canon
 
-Status: IN PROGRESS
+Status: COMPLETE
 Date: 2026-08-10
 
 ## Goal
@@ -183,6 +183,10 @@ Scenario family:
 12. Required CI uses deterministic fake-provider tests; live generation is opt-in and budget controlled.
 13. CI, Integration, Security and dedicated S53 ULTEF gates are green before COMPLETE.
 
+## Completion evidence
+
+Sprint 53 closed on 2026-08-10 after the final branch head passed the full CI/regression matrix, the dedicated DB-backed S53 lifecycle gate, opt-in live Krea generation, production-like fresh-volume Docker Compose cold start, migration replay/idempotency, web/worker health, restart persistence, and real-browser parent login -> `/app/assets` verification against the Compose artifact.
+
 ## Non-goals
 
 - full illustrated Story Reader;
@@ -195,4 +199,4 @@ Scenario family:
 
 ## Exit condition
 
-Sprint 53 is COMPLETE when Lina can receive one or more reproducibly generated/persisted visual candidates from her already-existing canonical data, a parent/admin can explicitly select one as the durable character visual canon, reload preserves that choice and provenance, and the entire flow is provider-independent, isolated and ULTEF-proven.
+Sprint 53 is COMPLETE: Lina can receive reproducibly generated and persisted visual candidates from already-existing canonical data, a parent/admin can explicitly select one as durable character visual canon, reload/restart preserves the state and provenance, and the flow is provider-independent, isolated and ULTEF-proven.
