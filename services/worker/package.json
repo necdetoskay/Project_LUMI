@@ -17,7 +17,8 @@
     "ultef:s35-outbox-worker": "ULTEF_SCENARIO=PX-LUMI-S35-OUTBOX-WORKER-001 vitest run tests/ultef-s35-outbox-worker.integration.test.ts",
     "ultef:s36-quest-reward": "ULTEF_SCENARIO=PX-LUMI-S36-QUEST-REWARD-PROD-001 vitest run tests/ultef-s36-quest-reward-production.v3.integration.test.ts",
     "ultef:s48-npc-snapshot": "ULTEF_SCENARIO=PX-LUMI-S48-NPC-SNAPSHOT-WORKER-001 vitest run tests/ultef-s48-npc-snapshot-worker.integration.test.ts",
-    "ultef:s49-npc-action-effect": "ULTEF_SCENARIO=PX-LUMI-S49-NPC-ACTION-EFFECT-001 vitest run tests/ultef-s49-npc-action-effect.integration.test.ts"
+    "ultef:s49-npc-action-effect": "ULTEF_SCENARIO=PX-LUMI-S49-NPC-ACTION-EFFECT-001 vitest run tests/ultef-s49-npc-action-effect.integration.test.ts",
+    "ultef:s50-npc-action-effect-registry": "ULTEF_SCENARIO=PX-LUMI-S50-NPC-ACTION-EFFECT-REGISTRY-001 vitest run tests/ultef-s50-npc-action-effect-registry.integration.test.ts"
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
