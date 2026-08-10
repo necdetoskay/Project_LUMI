@@ -333,7 +333,7 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
             `INSERT INTO npc_intelligence.npc_snapshots
               (id, npc_id, household_id, world_id, child_profile_id, character_id, location_id,
                need_types, relationship_to_character, decision_payload, last_interaction_at)
-             VALUES ($1,$1,$2,$3,$4,$5,$6,$7::jsonb,$8,NULL,NOW())`,
+             VALUES ($1,$1,$2,$3,$4,$5,$6,'[]'::jsonb,$7,NULL,NOW())`,
             [
               npc.id,
               manifest.household.id,
@@ -341,7 +341,6 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
               manifest.childProfile.id,
               manifest.character.id,
               location.id,
-              JSON.stringify(npc.traits.map((trait) => `trait:${trait}`)),
               npc.relationshipToCharacter,
             ],
           );
@@ -366,12 +365,7 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
               memory.salience,
               `lumi-demo:${memory.key}`,
               `lumi-demo:${memory.key}`,
-              JSON.stringify([
-                {
-                  type: "demo_reference",
-                  key: memory.key,
-                },
-              ]),
+              JSON.stringify([{ type: "demo_reference", key: memory.key }]),
               memory.durable ? "durable" : "decaying",
             ],
           );
@@ -427,24 +421,21 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
           [INVENTORY_ID, manifest.household.id],
         );
         await client.query(
-          `DELETE FROM profile.inventory_ownerships
-            WHERE item_instance_id = ANY($1::uuid[])`,
+          `DELETE FROM profile.inventory_ownerships WHERE item_instance_id = ANY($1::uuid[])`,
           [manifest.inventory.map((item) => item.id)],
         );
         await client.query(
-          `DELETE FROM profile.inventory_item_instances
-            WHERE household_id = $1 AND id = ANY($2::uuid[])`,
+          `DELETE FROM profile.inventory_item_instances WHERE household_id = $1 AND id = ANY($2::uuid[])`,
           [manifest.household.id, manifest.inventory.map((item) => item.id)],
         );
         await client.query(
-          `DELETE FROM profile.inventory_item_definitions
-            WHERE id = ANY($1::uuid[])`,
+          `DELETE FROM profile.inventory_item_definitions WHERE id = ANY($1::uuid[])`,
           [INVENTORY_DEFINITION_IDS],
         );
-        await client.query(`DELETE FROM profile.worlds WHERE id = $1 AND household_id = $2`, [
-          manifest.world.id,
-          manifest.household.id,
-        ]);
+        await client.query(
+          `DELETE FROM profile.worlds WHERE id = $1 AND household_id = $2`,
+          [manifest.world.id, manifest.household.id],
+        );
         await client.query(
           `DELETE FROM profile.lumi_characters WHERE id = $1 AND household_id = $2`,
           [manifest.character.id, manifest.household.id],
