@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
-import { LocalCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
+import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
 import {
   generateCharacterVisualCandidates,
   getCharacterVisualCanon,
@@ -108,7 +108,7 @@ export async function POST(
             generationPort: new OpenRouterCharacterVisualGenerationAdapter({
               apiKey,
             }),
-            storagePort: new LocalCharacterVisualStorageAdapter(),
+            storagePort: createCharacterVisualStorageAdapter(),
           },
         );
         return NextResponse.json(result, {
