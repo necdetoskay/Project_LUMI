@@ -183,7 +183,10 @@ export const POST = observeHandler(
       }
 
       try {
-        const session = await getStorySessionOrForbidden(sessionId, householdId);
+        const session = await getStorySessionOrForbidden(
+          sessionId,
+          householdId,
+        );
         const choicePoint = await getChoicePointWithOptions(choicePointId);
         const selectedOption = choicePoint.options.find(
           (option) => option.id === optionId,
@@ -191,7 +194,8 @@ export const POST = observeHandler(
         const consequencePreviews = selectedOption?.consequencePreviews;
         const shouldCommitWorldConsequence =
           commitWorldConsequence ?? hasDurableWorldPreview(consequencePreviews);
-        const targetSceneKeyOrId = getSceneTransitionTarget(consequencePreviews);
+        const targetSceneKeyOrId =
+          getSceneTransitionTarget(consequencePreviews);
 
         const result = await commitChoice({
           storySessionId: sessionId,

@@ -5,12 +5,16 @@ import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs
 export const LUMI_DEMO_ENTRY_SCENE_ID = "51000000-0000-4000-8000-000000000073";
 export const LUMI_DEMO_ENTRY_VISIT_ID = "51000000-0000-4000-8000-000000000074";
 export const LUMI_DEMO_CHOICE_POINT_ID = "51000000-0000-4000-8000-000000000075";
-export const LUMI_DEMO_FOLLOW_LIGHT_OPTION_ID = "51000000-0000-4000-8000-000000000076";
-export const LUMI_DEMO_STAY_WITH_MIRA_OPTION_ID = "51000000-0000-4000-8000-000000000077";
+export const LUMI_DEMO_FOLLOW_LIGHT_OPTION_ID =
+  "51000000-0000-4000-8000-000000000076";
+export const LUMI_DEMO_STAY_WITH_MIRA_OPTION_ID =
+  "51000000-0000-4000-8000-000000000077";
 export const LUMI_DEMO_GROVE_SCENE_ID = "51000000-0000-4000-8000-000000000078";
 export const LUMI_DEMO_MIRA_SCENE_ID = "51000000-0000-4000-8000-000000000079";
-export const LUMI_DEMO_GROVE_TRANSITION_ID = "51000000-0000-4000-8000-000000000080";
-export const LUMI_DEMO_MIRA_TRANSITION_ID = "51000000-0000-4000-8000-000000000081";
+export const LUMI_DEMO_GROVE_TRANSITION_ID =
+  "51000000-0000-4000-8000-000000000080";
+export const LUMI_DEMO_MIRA_TRANSITION_ID =
+  "51000000-0000-4000-8000-000000000081";
 
 const PLAYABLE_SCENE_IDS = [
   LUMI_DEMO_ENTRY_SCENE_ID,
@@ -235,7 +239,7 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           `INSERT INTO story.story_choice_points
             (id, story_version_id, scene_id, choice_point_key, choice_point_type,
              prompt_text, sequence_number, rule_version)
-           VALUES ($1,$2,$3,'ilk-isik-yolu','decision',$4,0,1)
+           VALUES ($1,$2,$3,'ilk-isik-yolu','single',$4,0,1)
            ON CONFLICT (id) DO NOTHING`,
           [
             LUMI_DEMO_CHOICE_POINT_ID,
@@ -281,12 +285,14 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
             JSON.stringify([
               {
                 consequenceType: "scene_transition",
-                previewText: "Mira ile ipuçlarını okuyarak daha temkinli ilerlersin.",
+                previewText:
+                  "Mira ile ipuçlarını okuyarak daha temkinli ilerlersin.",
                 targetKey: "mira-ile-izleri-okumak",
               },
               {
                 consequenceType: "flag_set",
-                previewText: "Lina ilk ışık izinde önce gözlem yapmayı seçmiş olur.",
+                previewText:
+                  "Lina ilk ışık izinde önce gözlem yapmayı seçmiş olur.",
                 targetKey: "demo.studied_first_light",
               },
             ]),
