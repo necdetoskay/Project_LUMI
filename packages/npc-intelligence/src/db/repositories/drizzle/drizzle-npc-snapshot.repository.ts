@@ -159,6 +159,7 @@ export class DrizzleNpcSnapshotRepository {
   constructor(private readonly db: Database = getNpcDb()) {}
 
   async upsert(input: UpsertCanonicalNpcSnapshotInput): Promise<void> {
+    const persistedDecisionPayload = persistDecisionPayload(input.decisionPayload);
     await this.db
       .insert(npcSnapshots)
       .values({
@@ -171,7 +172,7 @@ export class DrizzleNpcSnapshotRepository {
         locationId: input.locationId,
         needTypes: [...input.needTypes],
         relationshipToCharacter: String(input.relationshipToCharacter),
-        decisionPayload: persistDecisionPayload(input.decisionPayload),
+        decisionPayload: persistedDecisionPayload,
         lastInteractionAt: input.lastInteractionAt,
         updatedAt: input.updatedAt,
       })
@@ -187,7 +188,9 @@ export class DrizzleNpcSnapshotRepository {
           locationId: input.locationId,
           needTypes: [...input.needTypes],
           relationshipToCharacter: String(input.relationshipToCharacter),
-          decisionPayload: persistDecisionPayload(input.decisionPayload),
+          ...(input.decisionPayload !== undefined
+            ? { decisionPayload: persistedDecisionPayload }
+            : {}),
           lastInteractionAt: input.lastInteractionAt,
           updatedAt: input.updatedAt,
         },
