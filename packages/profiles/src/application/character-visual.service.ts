@@ -17,6 +17,7 @@ import {
   renderCharacterVisualPrompt,
   type CharacterVisualGenerationPort,
   type CharacterVisualStoragePort,
+  type GeneratedImageCandidate,
 } from "./character-visual-generation";
 
 export type GenerateCharacterVisualInput = {
@@ -68,7 +69,7 @@ function toBrief(record: Awaited<ReturnType<typeof loadOwnedCharacterRecord>>) {
     startingLocation: record.startingLocation,
     homeArchetype: record.homeArchetype,
     lifecycleStage: record.lifecycleStage,
-    safetyBounds: record.safetyBounds as Record<string, unknown>,
+    safetyBounds: record.safetyBounds as unknown as Record<string, unknown>,
     preferenceHints: (record.preferenceHints ?? {}) as Record<string, unknown>,
   });
 }
@@ -215,7 +216,10 @@ export async function generateCharacterVisualCandidates(
       throw new Error("VISUAL_PROVIDER_RETURNED_NO_CANDIDATES");
     }
 
-    const persisted = [];
+    const persisted: Array<{
+      candidate: GeneratedImageCandidate;
+      stored: { storageRef: string };
+    }> = [];
     for (const candidate of generated.candidates) {
       const stored = await deps.storagePort.store({
         householdId: input.householdId,
