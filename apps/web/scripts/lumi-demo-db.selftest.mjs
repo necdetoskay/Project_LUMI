@@ -6,6 +6,10 @@ import {
   runDemoStatus,
 } from "../../../scripts/demo/lumi-demo-runner.mjs";
 import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs";
+import {
+  createLumiDemoAuthPostgresAdapter,
+  LUMI_DEMO_PARENT,
+} from "./lumi-demo-auth-db.mjs";
 import { createLumiDemoPostgresAdapter } from "./lumi-demo-db.mjs";
 import {
   createLumiDemoStoryPostgresAdapter,
@@ -20,6 +24,7 @@ const foreignSlug = "s51-foreign-household";
 const confirmation = LUMI_DEMO_MANIFEST.manifestVersion;
 const admin = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 const adapter = createLumiDemoPostgresAdapter(databaseUrl);
+const authAdapter = createLumiDemoAuthPostgresAdapter(databaseUrl);
 const storyAdapter = createLumiDemoStoryPostgresAdapter(databaseUrl);
 
 try {
@@ -37,6 +42,11 @@ try {
     confirmation,
   });
   if (first.outcome !== "seeded") throw new Error("FIRST_SEED_NOT_APPLIED");
+
+  const authFirst = await authAdapter.ensure({
+    password: process.env.LUMI_DEMO_PARENT_PASSWORD,
+  });
+  if (!authFirst.ready) throw new Error("DEMO_PARENT_NOT_BROWSER_READY");
 
   const storyFirst = await storyAdapter.ensure();
   if (storyFirst.outcome !== "seeded") throw new Error("FIRST_STORY_SEED_NOT_APPLIED");
@@ -81,7 +91,11 @@ try {
          WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_status,
        (SELECT story_session_id::text
           FROM profile.quests
-         WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_session_id`,
+         WHERE id = $6 AND household_id = $1 AND world_id = $3) AS quest_session_id,
+       (SELECT count(*)::int
+          FROM profile.household_members
+         WHERE household_id = $1 AND user_id = $7
+           AND membership_role = 'owner' AND is_active = TRUE) AS demo_owner_memberships`,
     [
       LUMI_DEMO_MANIFEST.household.id,
       LUMI_DEMO_MANIFEST.character.id,
@@ -89,6 +103,7 @@ try {
       LUMI_DEMO_MANIFEST.childProfile.id,
       LUMI_DEMO_MANIFEST.npcs[0].id,
       LUMI_DEMO_MANIFEST.quest.id,
+      LUMI_DEMO_PARENT.id,
     ],
   );
   const support = supporting.rows[0] ?? {};
@@ -110,6 +125,17 @@ try {
   if (support.quest_session_id !== LUMI_DEMO_MANIFEST.story.sessionId) {
     throw new Error("DEMO_QUEST_SESSION_NOT_BOUND");
   }
+  if (support.demo_owner_memberships !== 1) {
+    throw new Error("DEMO_OWNER_MEMBERSHIP_INVALID");
+  }
+
+  const parent = await admin.query(
+    `SELECT id::text, email, display_name
+       FROM parent_accounts
+      WHERE id = $1 AND email = $2`,
+    [LUMI_DEMO_PARENT.id, LUMI_DEMO_PARENT.email],
+  );
+  if (parent.rowCount !== 1) throw new Error("DEMO_PARENT_ACCOUNT_MISSING");
 
   const storyStatus = await storyAdapter.inspect();
   if (!storyStatus.ready) throw new Error("DEMO_STORY_NOT_READER_READY");
@@ -129,6 +155,10 @@ try {
   if (replay.outcome !== "already_seeded") {
     throw new Error("SEED_REPLAY_NOT_IDEMPOTENT");
   }
+  const authReplay = await authAdapter.ensure({
+    password: process.env.LUMI_DEMO_PARENT_PASSWORD,
+  });
+  if (!authReplay.ready) throw new Error("AUTH_REPLAY_NOT_IDEMPOTENT");
   const storyReplay = await storyAdapter.ensure();
   if (storyReplay.outcome !== "already_ready") {
     throw new Error("STORY_REPLAY_NOT_IDEMPOTENT");
@@ -157,9 +187,14 @@ try {
     confirmation,
   });
   if (reset.outcome !== "reset") throw new Error("DEMO_RESET_NOT_APPLIED");
+  await authAdapter.reset();
 
   const after = await runDemoStatus({ adapter });
   if (after.exists) throw new Error("DEMO_RESET_LEFT_SCOPE");
+  const authAfter = await authAdapter.inspect();
+  if (authAfter.ready || authAfter.parentExists) {
+    throw new Error("DEMO_AUTH_RESET_LEFT_STATE");
+  }
 
   const foreign = await admin.query(
     `SELECT count(*)::int AS count FROM profile.households WHERE id = $1 AND slug = $2`,
@@ -169,9 +204,10 @@ try {
     throw new Error("FOREIGN_HOUSEHOLD_WAS_MUTATED");
   }
 
-  console.log("S51 T03/T04/T05 PostgreSQL demo selftest: PASS");
+  console.log("S51 T03/T04/T05/T06 auth-ready PostgreSQL demo selftest: PASS");
 } finally {
   await storyAdapter.close();
+  await authAdapter.close();
   await adapter.close();
   await admin.query(`DELETE FROM profile.households WHERE id = $1`, [
     foreignHouseholdId,
