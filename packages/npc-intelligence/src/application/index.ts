@@ -110,7 +110,6 @@ export {
 export type {
   RumorSafetyCheckInput,
   RumorSafetyCheckResult,
-  OpportunityRiskLevel,
 } from "./rumor-safety-filter.service";
 export { RumorBeliefWriterService } from "./rumor-belief-writer.service";
 export type { WriteRumorBeliefInput } from "./rumor-belief-writer.service";
