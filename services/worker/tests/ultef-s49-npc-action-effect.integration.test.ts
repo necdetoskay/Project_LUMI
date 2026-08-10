@@ -65,6 +65,30 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
 
     try {
       await pool.query(
+        `INSERT INTO profile.households (id, name, slug)
+         VALUES ($1, 'S49 Household', $2)`,
+        [householdId, `s49-${householdId}`],
+      );
+      await pool.query(
+        `INSERT INTO profile.child_profiles
+          (id, household_id, display_name, age_band, locale)
+         VALUES ($1,$2,'S49 Child','6-8','tr-TR')`,
+        [childProfileId, householdId],
+      );
+      await pool.query(
+        `INSERT INTO profile.lumi_characters
+          (id, child_profile_id, household_id, name, broad_kind, character_type,
+           subtype, origin_mode, first_origin_package_id, origin_concept,
+           starting_region_archetype, starting_location, home_archetype,
+           nearby_npc_seed, first_mystery_seed, universe_seed, safety_bounds,
+           character_subtype, lifecycle_stage, version)
+         VALUES
+          ($1,$2,$3,'S49 Character','human','explorer','child','auto',$4,
+           'S49 origin','forest','trailhead','cottage','nearby-npc','mystery','u',
+           '{}'::jsonb,'child_avatar','childhood',1)`,
+        [characterId, childProfileId, householdId, crypto.randomUUID()],
+      );
+      await pool.query(
         `INSERT INTO profile.worlds
           (id, household_id, child_profile_id, character_id, universe_seed, origin_seed,
            accepted_candidate_seed, generator_version, vector_version, lifecycle_status, version)
@@ -265,6 +289,15 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
         worldId,
       ]);
       await pool.query(`DELETE FROM profile.worlds WHERE id = $1`, [worldId]);
+      await pool.query(`DELETE FROM profile.lumi_characters WHERE id = $1`, [
+        characterId,
+      ]);
+      await pool.query(`DELETE FROM profile.child_profiles WHERE id = $1`, [
+        childProfileId,
+      ]);
+      await pool.query(`DELETE FROM profile.households WHERE id = $1`, [
+        householdId,
+      ]);
     }
   });
 });
