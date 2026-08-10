@@ -1,6 +1,6 @@
 # Sprint 53 — Implementation Status
 
-Status: IN PROGRESS
+Status: IN PROGRESS / STABILIZATION
 Date: 2026-08-10
 Branch: `s53/character-visual-canon`
 
@@ -8,80 +8,59 @@ Branch: `s53/character-visual-canon`
 
 Implement the first production visual pipeline for LUMI: existing character data -> reproducible visual brief -> provider generation job -> managed candidate assets -> explicit character visual canon selection.
 
-## Current state
+## Verified evidence
 
-- Sprint 52 playable persistent demo is merged to `main`.
-- The canonical demo character Lina exists independently of media generation.
-- Story media truthfully remains `not_generated` until a visual candidate is generated and explicitly selected.
-- OpenRouter's dedicated image endpoint and `krea/krea-2-medium-turbo` model contract are wired behind a provider-independent port.
-- Parent/admin Asset Management is available at `/app/assets` as `Görsel Kütüphanesi` and uses the production generation/select/reject services.
+- DB-backed S53 fake-provider lifecycle gate has passed against disposable PostgreSQL.
+- Real OpenRouter `krea/krea-2-medium-turbo` generation has passed once: one 1K Lina candidate was generated, persisted, selected as canon and uploaded as workflow evidence.
+- The provider-independent brief/job/asset/canon lifecycle is implemented.
+- Parent/admin Asset Management UI exists at `/app/assets`.
+
+## Explicitly not yet verified
+
+- Local/production-like Docker Compose cold start is NOT yet verified.
+- The user's local Compose run exposed a missing Sprint 53 schema because migrations were not part of the startup path.
+- A first Node-based Compose migrator attempt failed because `pg` was not resolvable in the slim/runtime image. That approach has been removed.
+- The current replacement uses the official PostgreSQL image and `psql`, with canonical schema order: auth -> profile -> world -> NPC -> story.
+- Fresh-volume and migration-replay evidence for that replacement is currently pending the dedicated Compose cold-start gate.
 
 ## Workboard
 
-- [x] T01 Sprint 53 canonical visual-canon specification
-- [x] T02 Provider-independent persistence schema for generation jobs, assets and character canon
-- [x] T03 Migration for character visual persistence
-- [x] T04 Deterministic/versioned character visual brief + fingerprint
-- [x] T05 Unit coverage for brief determinism and identity-relevant change
-- [x] T06 Application service for idempotent generation jobs and candidate persistence
-- [x] T07 Provider-independent generation/storage ports and prompt rendering
-- [x] T08 Explicit canon selection/replacement/rejection lifecycle
-- [x] T09 Minimal parent/admin Asset Management workflow
-- [x] T10 OpenRouter/Krea Turbo adapter behind opt-in live-generation boundary
-- [x] T11 Dedicated DB-backed fake-provider S53 ULTEF authored and green
-- [ ] T12 Live Krea evidence and final CI/regression matrix
+- [x] T01 Visual-canon specification
+- [x] T02 Generation job / managed asset / canon persistence model
+- [x] T03 Deterministic visual brief + fingerprint
+- [x] T04 Provider-independent generation/storage ports
+- [x] T05 Candidate persistence and explicit canon lifecycle
+- [x] T06 Parent/admin Asset Management UI foundation
+- [x] T07 DB-backed fake-provider lifecycle evidence
+- [x] T08 Real Krea one-image smoke evidence
+- [ ] T09 Fresh-volume Docker Compose migration evidence
+- [ ] T10 Migration replay/idempotency through Docker Compose
+- [ ] T11 Web health after fresh migration and restart
+- [ ] T12 `/app/assets` browser flow against production-like Compose
+- [ ] T13 Final CI/regression matrix and closeout
 
-## Implemented foundation
+## Compose stabilization design
 
-### Persistence
+`schema-migrate` is a one-shot Compose service based on `postgres:17.7-alpine`; it does not depend on Node, pnpm or workspace dependency resolution. Migration directories are mounted read-only and applied via `psql -v ON_ERROR_STOP=1` in the same dependency order already used by integration tests.
 
-`profile.character_visual_generation_jobs` stores one logical generation request with character-scoped idempotency, versioned visual brief, provider/model metadata, requested candidate count, usage/cost metadata and explicit failure state.
+Auth SQL has been extracted from the previous JS-embedded migration into `apps/web/migrations/0001_auth_schema.sql`; the existing `auth-migrate.mjs` now reads that same canonical SQL file so CI and Docker do not maintain two auth schema definitions.
 
-`profile.character_visual_assets` stores durable managed candidates independently of provider URLs. It includes lifecycle state, generation provenance, candidate index and composite/grid lineage through `source_composite_asset_id` plus `crop_metadata`.
+The dedicated cold-start gate must prove:
 
-`profile.character_visual_canons` stores the character-level canon pointer and visual identity contract separately from generated assets. Selection is explicit and generation never silently replaces canon.
+1. fresh PostgreSQL volume;
+2. all canonical migrations complete with exit code 0;
+3. `profile.character_visual_canons` and related S53 tables exist;
+4. web becomes healthy;
+5. the entire migration set can be replayed without failure;
+6. web remains healthy after restart.
 
-### Reproducible brief
-
-`CHARACTER_VISUAL_BRIEF_VERSION = lumi-character-visual-v1` builds a provider-independent brief from already-existing canonical character data. Stable object-key ordering plus SHA-256 produces an auditable fingerprint so unchanged canonical data yields the same brief identity.
-
-### Production lifecycle
-
-`generateCharacterVisualCandidates` performs authenticated character lookup, idempotent job creation, provider execution, storage handoff, managed candidate persistence, usage/cost provenance and explicit failed-job recording. Provider failure leaves a failed job and no phantom visual asset.
-
-`selectCharacterVisualCanon` makes one candidate canonical and archives the previous canon asset without deleting history. Re-selecting the already-active canon is idempotent and does not increment its version. `rejectCharacterVisualCandidate` refuses to reject the active canon and retains rejected provenance.
-
-### Provider adapter
-
-`OpenRouterCharacterVisualGenerationAdapter` targets the configured image-generation endpoint through the generic generation port. The default S53 model is `krea/krea-2-medium-turbo`; multi-candidate logical jobs fan out at the adapter while remaining one LUMI generation job.
-
-### Asset Management
-
-`/app/assets` lists household characters and their persisted visual candidates, exposes explicit generate/select/reject controls, shows the active canon, and serves image bytes through an authenticated content endpoint rather than exposing arbitrary filesystem paths.
-
-### Test gates
-
-- normal unit CI skips DB-backed and paid S53 integration scenarios;
-- the dedicated S53 workflow explicitly enables the DB-backed lifecycle scenario against disposable PostgreSQL;
-- the dedicated DB-backed S53 lifecycle gate is green, covering migration, seed, candidate persistence, idempotent replay, canon replacement, isolation and failed-provider/no-phantom behavior;
-- live Krea execution is isolated in `ULTEF S53 Live Krea Image`;
-- the live workflow only executes automatically for a commit carrying `[live-image-test]` or by manual dispatch;
-- if `OPENROUTER_API_KEY` is absent, the workflow skips the paid request and uploads a skip-evidence artifact;
-- if present, exactly one 1K Lina candidate is generated, persisted in the disposable DB, selected as canon, and uploaded as a GitHub Actions artifact.
+Until those checks are green, Sprint 53 remains IN PROGRESS regardless of other passing tests.
 
 ## Guardrails
 
 - no generation side effect during character creation;
 - no provider URL as the only persisted asset identity;
 - no silent canonical-image replacement;
-- no live-provider dependency in required CI;
-- no cross-household asset visibility;
-- no claim that grid generation is production-ready until crop/split provenance is tested;
-- no paid generation on ordinary pushes/PR runs;
-- the automatic live smoke is capped to one candidate.
-
-## Remaining blockers
-
-1. normal CI must pass with the S53 DB/live tests correctly isolated from the unit suite;
-2. the requested live Krea workflow must either produce the real visual artifact or explicitly prove the repository secret is unavailable;
-3. final CI / Integration / Security / PX / S35-S52 regressions must be green before COMPLETE.
+- no paid generation on ordinary CI runs;
+- no Docker/runtime change is called ready without fresh-volume evidence;
+- no Sprint 53 COMPLETE status before the production-like Compose gate and final regressions are green.
