@@ -15,7 +15,7 @@ export interface CanonicalNpcSnapshot {
   updatedAt: Date;
 }
 
-export interface UpsertCanonicalNpcSnapshotInput extends CanonicalNpcSnapshot {}
+export type UpsertCanonicalNpcSnapshotInput = CanonicalNpcSnapshot;
 
 export class DrizzleNpcSnapshotRepository {
   constructor(private readonly db: Database = getNpcDb()) {}
