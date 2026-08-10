@@ -36,7 +36,9 @@ async function signedRequest(
   contentType?: string,
 ): Promise<Response> {
   const endpoint = config.endpoint.replace(/\/$/, "");
-  const url = new URL(`${endpoint}/${encodeURIComponent(config.bucket)}/${encodePath(key)}`);
+  const url = new URL(
+    `${endpoint}/${encodeURIComponent(config.bucket)}/${encodePath(key)}`,
+  );
   const now = new Date();
   const { amzDate, dateStamp } = amzTimestamp(now);
   const region = config.region ?? "auto";
