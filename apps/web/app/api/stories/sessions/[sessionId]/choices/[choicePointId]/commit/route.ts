@@ -7,8 +7,15 @@ import {
   commitChoice,
   commitPersistedChoiceConsequence,
   getChoicePointWithOptions,
+  getSessionPlaybackState,
   getStorySessionOrForbidden,
+  getStoryVersionGraph,
 } from "@lumi/story/application";
+import {
+  getCharacterCurrentLocation,
+  getWorldDetail,
+  moveCharacterToLocation,
+} from "@lumi/world/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { handleStoryError } from "@/lib/story-api/error";
 
@@ -24,14 +31,101 @@ const bodySchema = z.object({
   commitWorldConsequence: z.boolean().optional(),
 });
 
+function previews(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    ? value.filter(
+        (entry): entry is Record<string, unknown> =>
+          Boolean(entry) && typeof entry === "object" && !Array.isArray(entry),
+      )
+    : [];
+}
+
 function hasDurableWorldPreview(value: unknown): boolean {
-  if (!Array.isArray(value)) return false;
-  return value.some((entry) => {
-    if (!entry || typeof entry !== "object") return false;
-    const consequenceType = (entry as { consequenceType?: unknown })
-      .consequenceType;
+  return previews(value).some((entry) => {
+    const consequenceType = entry.consequenceType;
     return consequenceType === "flag_set" || consequenceType === "flag_remove";
   });
+}
+
+function getSceneTransitionTarget(value: unknown): string | null {
+  for (const entry of previews(value)) {
+    if (
+      entry.consequenceType === "scene_transition" &&
+      typeof entry.targetKey === "string" &&
+      entry.targetKey.length > 0
+    ) {
+      return entry.targetKey;
+    }
+  }
+  return null;
+}
+
+async function syncCharacterLocationToTargetScene(input: {
+  storyVersionId: string;
+  targetSceneKeyOrId: string | null;
+  worldId: string;
+  householdId: string;
+  sessionId: string;
+}) {
+  if (!input.targetSceneKeyOrId) return null;
+
+  const [graph, playback, worldDetail] = await Promise.all([
+    getStoryVersionGraph(input.storyVersionId),
+    getSessionPlaybackState(input.sessionId),
+    getWorldDetail(input.worldId),
+  ]);
+
+  const targetScene = graph.scenes.find(
+    (scene) =>
+      scene.id === input.targetSceneKeyOrId ||
+      scene.sceneKey === input.targetSceneKeyOrId,
+  );
+  if (!targetScene) return null;
+
+  const metadata =
+    targetScene.metadata && typeof targetScene.metadata === "object"
+      ? (targetScene.metadata as Record<string, unknown>)
+      : {};
+  const locationKey =
+    typeof metadata.locationKey === "string" ? metadata.locationKey : null;
+  if (!locationKey) return null;
+
+  const targetLocation = worldDetail.locations.find(
+    (location) => location.locationKey === locationKey,
+  );
+  if (!targetLocation) return null;
+
+  const protagonist = playback.characters.find(
+    (entry) => entry.participationRole === "protagonist",
+  );
+  if (!protagonist) return null;
+
+  const currentLocation = await getCharacterCurrentLocation(
+    protagonist.characterId,
+  );
+  if (currentLocation?.id === targetLocation.id) {
+    return {
+      outcome: "already_at_target" as const,
+      characterId: protagonist.characterId,
+      locationId: targetLocation.id,
+      locationKey,
+    };
+  }
+
+  const movement = await moveCharacterToLocation({
+    characterId: protagonist.characterId,
+    targetLocationId: targetLocation.id,
+    householdId: input.householdId,
+    worldId: input.worldId,
+  });
+
+  return {
+    outcome: "moved" as const,
+    characterId: protagonist.characterId,
+    locationId: targetLocation.id,
+    locationKey,
+    movement,
+  };
 }
 
 export const POST = observeHandler(
@@ -94,9 +188,10 @@ export const POST = observeHandler(
         const selectedOption = choicePoint.options.find(
           (option) => option.id === optionId,
         );
+        const consequencePreviews = selectedOption?.consequencePreviews;
         const shouldCommitWorldConsequence =
-          commitWorldConsequence ??
-          hasDurableWorldPreview(selectedOption?.consequencePreviews);
+          commitWorldConsequence ?? hasDurableWorldPreview(consequencePreviews);
+        const targetSceneKeyOrId = getSceneTransitionTarget(consequencePreviews);
 
         const result = await commitChoice({
           storySessionId: sessionId,
@@ -118,12 +213,21 @@ export const POST = observeHandler(
             })
           : null;
 
+        const locationSync = await syncCharacterLocationToTargetScene({
+          storyVersionId: session.storyVersionId,
+          targetSceneKeyOrId,
+          worldId: session.worldId,
+          householdId,
+          sessionId,
+        });
+
         return NextResponse.json(
           {
             ...("committedChoice" in result
               ? result
               : { committedChoice: result }),
             worldConsequence,
+            locationSync,
           },
           { status: 201 },
         );
