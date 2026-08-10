@@ -28,7 +28,7 @@ Implement the first production visual pipeline for LUMI: existing character data
 - [x] T08 Explicit canon selection/replacement/rejection lifecycle
 - [x] T09 Minimal parent/admin Asset Management workflow
 - [x] T10 OpenRouter/Krea Turbo adapter behind opt-in live-generation boundary
-- [x] T11 Dedicated DB-backed fake-provider S53 ULTEF authored
+- [x] T11 Dedicated DB-backed fake-provider S53 ULTEF authored and green
 - [ ] T12 Live Krea evidence and final CI/regression matrix
 
 ## Implemented foundation
@@ -61,8 +61,9 @@ Implement the first production visual pipeline for LUMI: existing character data
 
 ### Test gates
 
-- required S53 CI uses a deterministic fake provider and disposable PostgreSQL;
-- the DB-backed S53 lifecycle gate has already passed on an earlier S53 implementation snapshot;
+- normal unit CI skips DB-backed and paid S53 integration scenarios;
+- the dedicated S53 workflow explicitly enables the DB-backed lifecycle scenario against disposable PostgreSQL;
+- the dedicated DB-backed S53 lifecycle gate is green, covering migration, seed, candidate persistence, idempotent replay, canon replacement, isolation and failed-provider/no-phantom behavior;
 - live Krea execution is isolated in `ULTEF S53 Live Krea Image`;
 - the live workflow only executes automatically for a commit carrying `[live-image-test]` or by manual dispatch;
 - if `OPENROUTER_API_KEY` is absent, the workflow skips the paid request and uploads a skip-evidence artifact;
@@ -81,6 +82,6 @@ Implement the first production visual pipeline for LUMI: existing character data
 
 ## Remaining blockers
 
-1. required S53 fake-provider gate and normal CI must pass on the final production head;
+1. normal CI must pass with the S53 DB/live tests correctly isolated from the unit suite;
 2. the requested live Krea workflow must either produce the real visual artifact or explicitly prove the repository secret is unavailable;
 3. final CI / Integration / Security / PX / S35-S52 regressions must be green before COMPLETE.
