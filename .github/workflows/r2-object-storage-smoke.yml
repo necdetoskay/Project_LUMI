@@ -1,0 +1,88 @@
+name: R2 Object Storage Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  r2-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      R2_ENDPOINT: ${{ secrets.LUMI_DEV_OBJECT_STORAGE_ENDPOINT }}
+      R2_BUCKET: ${{ secrets.LUMI_DEV_OBJECT_STORAGE_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUMI_DEV_OBJECT_STORAGE_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUMI_DEV_OBJECT_STORAGE_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      AWS_EC2_METADATA_DISABLED: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$R2_ENDPOINT" || { echo "LUMI_DEV_OBJECT_STORAGE_ENDPOINT is missing"; exit 1; }
+          test -n "$R2_BUCKET" || { echo "LUMI_DEV_OBJECT_STORAGE_BUCKET is missing"; exit 1; }
+          test -n "$AWS_ACCESS_KEY_ID" || { echo "LUMI_DEV_OBJECT_STORAGE_ACCESS_KEY_ID is missing"; exit 1; }
+          test -n "$AWS_SECRET_ACCESS_KEY" || { echo "LUMI_DEV_OBJECT_STORAGE_SECRET_ACCESS_KEY is missing"; exit 1; }
+
+      - name: Install AWS CLI
+        run: python -m pip install --disable-pip-version-check awscli
+
+      - name: Upload, read, verify and delete private object
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          key="smoke/github-actions/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          source_file="$(mktemp)"
+          downloaded_file="$(mktemp)"
+          printf 'Project LUMI R2 smoke %s\n' "$GITHUB_RUN_ID" > "$source_file"
+
+          cleanup() {
+            aws --endpoint-url "$R2_ENDPOINT" s3api delete-object \
+              --bucket "$R2_BUCKET" \
+              --key "$key" >/dev/null 2>&1 || true
+            rm -f "$source_file" "$downloaded_file"
+          }
+          trap cleanup EXIT
+
+          echo "Uploading smoke object to private bucket..."
+          aws --endpoint-url "$R2_ENDPOINT" s3api put-object \
+            --bucket "$R2_BUCKET" \
+            --key "$key" \
+            --body "$source_file" \
+            --content-type "text/plain" >/dev/null
+
+          echo "Verifying object metadata..."
+          aws --endpoint-url "$R2_ENDPOINT" s3api head-object \
+            --bucket "$R2_BUCKET" \
+            --key "$key" >/dev/null
+
+          echo "Downloading and comparing bytes..."
+          aws --endpoint-url "$R2_ENDPOINT" s3api get-object \
+            --bucket "$R2_BUCKET" \
+            --key "$key" \
+            "$downloaded_file" >/dev/null
+          cmp "$source_file" "$downloaded_file"
+
+          echo "Deleting smoke object..."
+          aws --endpoint-url "$R2_ENDPOINT" s3api delete-object \
+            --bucket "$R2_BUCKET" \
+            --key "$key" >/dev/null
+
+          echo "Confirming deletion..."
+          if aws --endpoint-url "$R2_ENDPOINT" s3api head-object \
+            --bucket "$R2_BUCKET" \
+            --key "$key" >/dev/null 2>&1; then
+            echo "Object still exists after delete"
+            exit 1
+          fi
+
+          trap - EXIT
+          rm -f "$source_file" "$downloaded_file"
+          echo "R2 smoke passed: put -> head -> get/compare -> delete."
