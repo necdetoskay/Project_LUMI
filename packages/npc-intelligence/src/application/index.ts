@@ -30,6 +30,11 @@ export {
   DEFAULT_DECISION_MEMORY_LIMIT,
 } from "./npc-decision-memory-context.service";
 export type { NpcDecisionMemoryContextInput } from "./npc-decision-memory-context.service";
+export { MemoryAwareDecisionService } from "./memory-aware-decision.service";
+export type {
+  MemoryAwareDecisionInput,
+  MemoryAwareDecisionResult,
+} from "./memory-aware-decision.service";
 export {
   DecisionSelector,
   PERSONALITY_BOUNDARY,
