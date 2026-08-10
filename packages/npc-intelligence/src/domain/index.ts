@@ -6,6 +6,7 @@ export * from "./errors";
 export * from "./goals";
 export * from "./hash";
 export * from "./memory";
+export * from "./memory-decision-influence";
 export * from "./memory-lifecycle";
 export * from "./needs";
 export * from "./opportunity";
