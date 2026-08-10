@@ -25,13 +25,16 @@ class FakeVisualProvider implements CharacterVisualGenerationPort {
       provider: "fake-s53",
       model: request.model,
       providerRequestId: `fake-${request.jobId}`,
-      candidates: Array.from({ length: request.candidateCount }, (_, index) => ({
-        index,
-        bytesBase64: Buffer.from(`fake-image-${index}`).toString("base64"),
-        mimeType: "image/png",
-        width: 1024,
-        height: 1024,
-      })),
+      candidates: Array.from(
+        { length: request.candidateCount },
+        (_, index) => ({
+          index,
+          bytesBase64: Buffer.from(`fake-image-${index}`).toString("base64"),
+          mimeType: "image/png",
+          width: 1024,
+          height: 1024,
+        }),
+      ),
       costMetadata: { currency: "USD", total: 0 },
     };
   }

@@ -28,9 +28,13 @@ export class OpenRouterCharacterVisualGenerationAdapter
   private readonly fetchImpl: typeof fetch;
   private readonly endpoint: string;
 
-  constructor(private readonly options: OpenRouterCharacterVisualAdapterOptions) {
+  constructor(
+    private readonly options: OpenRouterCharacterVisualAdapterOptions,
+  ) {
     if (!options.apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for live image generation");
+      throw new Error(
+        "OPENROUTER_API_KEY is required for live image generation",
+      );
     }
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.endpoint = options.endpoint ?? "https://openrouter.ai/api/v1/images";
@@ -64,7 +68,9 @@ export class OpenRouterCharacterVisualGenerationAdapter
 
       const raw = await response.text();
       if (!response.ok) {
-        throw new Error(`OPENROUTER_IMAGE_${response.status}: ${raw.slice(0, 500)}`);
+        throw new Error(
+          `OPENROUTER_IMAGE_${response.status}: ${raw.slice(0, 500)}`,
+        );
       }
 
       const payload = JSON.parse(raw) as OpenRouterImageResponse;
@@ -72,7 +78,9 @@ export class OpenRouterCharacterVisualGenerationAdapter
       if (payload.usage) Object.assign(usage, payload.usage);
       const image = payload.data?.[0];
       if (!image?.b64_json) {
-        throw new Error("OPENROUTER_IMAGE_EMPTY: response did not contain b64_json");
+        throw new Error(
+          "OPENROUTER_IMAGE_EMPTY: response did not contain b64_json",
+        );
       }
 
       candidates.push({
@@ -95,7 +103,9 @@ export class OpenRouterCharacterVisualGenerationAdapter
             costMetadata: {
               currency: "USD",
               estimatedUnitCost: 0.015,
-              estimatedTotalCost: Number((0.015 * request.candidateCount).toFixed(4)),
+              estimatedTotalCost: Number(
+                (0.015 * request.candidateCount).toFixed(4),
+              ),
               pricingBasis: "openrouter-model-list-2026-08-10",
             },
           }

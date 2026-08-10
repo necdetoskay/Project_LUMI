@@ -9,7 +9,9 @@ import {
 import { AssetsClientPage } from "./assets-client-page";
 
 export default async function CharacterVisualLibraryPage() {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
   if (!parent) redirect("/login");
 
   const household = await getOwnedHousehold(parent.id);

@@ -27,11 +27,15 @@ export const characterVisualGenerationJobs = profileSchema.table(
       .notNull()
       .references(() => lumiCharacters.id, { onDelete: "cascade" }),
     idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
-    visualBriefVersion: varchar("visual_brief_version", { length: 40 }).notNull(),
+    visualBriefVersion: varchar("visual_brief_version", {
+      length: 40,
+    }).notNull(),
     visualBriefFingerprint: varchar("visual_brief_fingerprint", {
       length: 128,
     }).notNull(),
-    visualBrief: jsonb("visual_brief").$type<Record<string, unknown>>().notNull(),
+    visualBrief: jsonb("visual_brief")
+      .$type<Record<string, unknown>>()
+      .notNull(),
     provider: varchar("provider", { length: 80 }),
     model: varchar("model", { length: 160 }),
     requestedCandidateCount: integer("requested_candidate_count")
@@ -102,7 +106,9 @@ export const characterVisualAssets = profileSchema.table(
   },
   (table) => [
     index("character_visual_assets_character_idx").on(table.characterId),
-    index("character_visual_assets_generation_job_idx").on(table.generationJobId),
+    index("character_visual_assets_generation_job_idx").on(
+      table.generationJobId,
+    ),
     check(
       "character_visual_assets_lifecycle_check",
       sql`${table.lifecycleState} IN ('candidate', 'canonical', 'rejected', 'archived')`,
@@ -128,14 +134,18 @@ export const characterVisualCanons = profileSchema.table(
       () => characterVisualAssets.id,
       { onDelete: "set null" },
     ),
-    visualBriefVersion: varchar("visual_brief_version", { length: 40 }).notNull(),
+    visualBriefVersion: varchar("visual_brief_version", {
+      length: 40,
+    }).notNull(),
     visualBriefFingerprint: varchar("visual_brief_fingerprint", {
       length: 128,
     }).notNull(),
     appearanceTraits: jsonb("appearance_traits")
       .$type<Record<string, unknown>>()
       .notNull(),
-    styleProfile: jsonb("style_profile").$type<Record<string, unknown>>().notNull(),
+    styleProfile: jsonb("style_profile")
+      .$type<Record<string, unknown>>()
+      .notNull(),
     safetyConstraints: jsonb("safety_constraints")
       .$type<Record<string, unknown>>()
       .notNull(),
@@ -158,7 +168,11 @@ export type CharacterVisualGenerationJobRecord =
   typeof characterVisualGenerationJobs.$inferSelect;
 export type NewCharacterVisualGenerationJobRecord =
   typeof characterVisualGenerationJobs.$inferInsert;
-export type CharacterVisualAssetRecord = typeof characterVisualAssets.$inferSelect;
-export type NewCharacterVisualAssetRecord = typeof characterVisualAssets.$inferInsert;
-export type CharacterVisualCanonRecord = typeof characterVisualCanons.$inferSelect;
-export type NewCharacterVisualCanonRecord = typeof characterVisualCanons.$inferInsert;
+export type CharacterVisualAssetRecord =
+  typeof characterVisualAssets.$inferSelect;
+export type NewCharacterVisualAssetRecord =
+  typeof characterVisualAssets.$inferInsert;
+export type CharacterVisualCanonRecord =
+  typeof characterVisualCanons.$inferSelect;
+export type NewCharacterVisualCanonRecord =
+  typeof characterVisualCanons.$inferInsert;

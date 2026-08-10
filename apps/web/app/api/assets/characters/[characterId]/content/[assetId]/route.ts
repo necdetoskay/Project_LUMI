@@ -15,9 +15,7 @@ const paramsSchema = z.object({
 
 export async function GET(
   request: Request,
-  {
-    params,
-  }: { params: Promise<{ characterId: string; assetId: string }> },
+  { params }: { params: Promise<{ characterId: string; assetId: string }> },
 ) {
   return withParent(async (parent) => {
     try {
@@ -25,7 +23,10 @@ export async function GET(
       const householdId = new URL(request.url).searchParams.get("householdId");
       const household = await getOwnedHousehold(parent.id);
       if (!householdId || !household || household.id !== householdId) {
-        return NextResponse.json({ error: "HOUSEHOLD_FORBIDDEN" }, { status: 403 });
+        return NextResponse.json(
+          { error: "HOUSEHOLD_FORBIDDEN" },
+          { status: 403 },
+        );
       }
 
       const candidates = await listCharacterVisualCandidates(
@@ -35,7 +36,10 @@ export async function GET(
       );
       const asset = candidates.find((entry) => entry.id === parsed.assetId);
       if (!asset) {
-        return NextResponse.json({ error: "VISUAL_ASSET_NOT_FOUND" }, { status: 404 });
+        return NextResponse.json(
+          { error: "VISUAL_ASSET_NOT_FOUND" },
+          { status: 404 },
+        );
       }
 
       const content = await readLocalCharacterVisual(asset.storageRef);
@@ -48,7 +52,8 @@ export async function GET(
         },
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "VISUAL_CONTENT_ERROR";
+      const message =
+        error instanceof Error ? error.message : "VISUAL_CONTENT_ERROR";
       return NextResponse.json({ error: message }, { status: 400 });
     }
   });

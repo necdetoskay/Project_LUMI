@@ -95,9 +95,7 @@ export type {
   CharacterVisualBriefSource,
 } from "./character-visual-brief";
 
-export {
-  renderCharacterVisualPrompt,
-} from "./character-visual-generation";
+export { renderCharacterVisualPrompt } from "./character-visual-generation";
 export type {
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,

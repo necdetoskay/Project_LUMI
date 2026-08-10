@@ -89,7 +89,10 @@ export function buildCharacterVisualBrief(
       consistencyPriority: "identity_over_scene_variation",
       composition: "clear_full_character_reference",
     },
-    safetyConstraints: stableValue(source.safetyBounds) as Record<string, unknown>,
+    safetyConstraints: stableValue(source.safetyBounds) as Record<
+      string,
+      unknown
+    >,
     preferenceHints: stableValue(source.preferenceHints ?? {}) as Record<
       string,
       unknown

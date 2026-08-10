@@ -52,12 +52,21 @@ export async function GET(
         new URL(request.url).searchParams.get("householdId"),
       );
       const [canon, candidates] = await Promise.all([
-        getCharacterVisualCanon(parent.id, householdId, parsedParams.characterId),
-        listCharacterVisualCandidates(parent.id, householdId, parsedParams.characterId),
+        getCharacterVisualCanon(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
+        ),
+        listCharacterVisualCandidates(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
+        ),
       ]);
       return NextResponse.json({ canon, candidates });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "VISUAL_ASSET_ERROR";
+      const message =
+        error instanceof Error ? error.message : "VISUAL_ASSET_ERROR";
       const status = message.includes("FORBIDDEN") ? 403 : 400;
       return NextResponse.json({ error: message }, { status });
     }
@@ -96,11 +105,15 @@ export async function POST(
             model: "krea/krea-2-medium-turbo",
           },
           {
-            generationPort: new OpenRouterCharacterVisualGenerationAdapter({ apiKey }),
+            generationPort: new OpenRouterCharacterVisualGenerationAdapter({
+              apiKey,
+            }),
             storagePort: new LocalCharacterVisualStorageAdapter(),
           },
         );
-        return NextResponse.json(result, { status: result.replayed ? 200 : 201 });
+        return NextResponse.json(result, {
+          status: result.replayed ? 200 : 201,
+        });
       }
 
       if (action.action === "select") {
@@ -121,7 +134,8 @@ export async function POST(
       );
       return NextResponse.json({ candidate });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "VISUAL_ASSET_ERROR";
+      const message =
+        error instanceof Error ? error.message : "VISUAL_ASSET_ERROR";
       const status = message.includes("FORBIDDEN") ? 403 : 400;
       return NextResponse.json({ error: message }, { status });
     }

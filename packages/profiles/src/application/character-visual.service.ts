@@ -237,8 +237,12 @@ export async function generateCharacterVisualCandidates(
           generationJobId: jobId,
           storageRef: stored.storageRef,
           mimeType: candidate.mimeType,
-          ...(typeof candidate.width === "number" ? { width: candidate.width } : {}),
-          ...(typeof candidate.height === "number" ? { height: candidate.height } : {}),
+          ...(typeof candidate.width === "number"
+            ? { width: candidate.width }
+            : {}),
+          ...(typeof candidate.height === "number"
+            ? { height: candidate.height }
+            : {}),
           provider: generated.provider,
           model: generated.model,
           candidateIndex: candidate.index,
@@ -263,7 +267,9 @@ export async function generateCharacterVisualCandidates(
           ...(generated.usageMetadata
             ? { usageMetadata: generated.usageMetadata }
             : {}),
-          ...(generated.costMetadata ? { costMetadata: generated.costMetadata } : {}),
+          ...(generated.costMetadata
+            ? { costMetadata: generated.costMetadata }
+            : {}),
           completedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -316,7 +322,11 @@ export async function selectCharacterVisualCanon(
     throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
   }
 
-  const current = await getCharacterVisualCanon(userId, householdId, characterId);
+  const current = await getCharacterVisualCanon(
+    userId,
+    householdId,
+    characterId,
+  );
   if (current?.selectedAssetId === assetId) return current;
 
   const [job] = asset.generationJobId
@@ -394,7 +404,11 @@ export async function rejectCharacterVisualCandidate(
   assetId: string,
 ) {
   await loadOwnedCharacterRecord(userId, householdId, characterId);
-  const current = await getCharacterVisualCanon(userId, householdId, characterId);
+  const current = await getCharacterVisualCanon(
+    userId,
+    householdId,
+    characterId,
+  );
   if (current?.selectedAssetId === assetId) {
     throw new Error("CANNOT_REJECT_ACTIVE_CANON");
   }

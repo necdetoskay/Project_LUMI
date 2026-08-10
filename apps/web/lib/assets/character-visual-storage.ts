@@ -7,7 +7,8 @@ const STORAGE_PREFIX = "local-character-visual://";
 
 function storageRoot(): string {
   return resolve(
-    process.env.LUMI_ASSET_STORAGE_DIR ?? resolve(process.cwd(), ".lumi-assets"),
+    process.env.LUMI_ASSET_STORAGE_DIR ??
+      resolve(process.cwd(), ".lumi-assets"),
     "character-visuals",
   );
 }

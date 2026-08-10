@@ -27,7 +27,8 @@ class ArtifactStorage implements CharacterVisualStoragePort {
 describe("PX-LUMI-S53 live character visual generation", () => {
   it("generates one Lina candidate with Krea Turbo and selects it as canon", async () => {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY is required for live S53 test");
+    if (!apiKey)
+      throw new Error("OPENROUTER_API_KEY is required for live S53 test");
 
     const provider = new OpenRouterCharacterVisualGenerationAdapter({ apiKey });
     const storage = new ArtifactStorage();
@@ -47,7 +48,9 @@ describe("PX-LUMI-S53 live character visual generation", () => {
 
     expect(result.job.status).toBe("succeeded");
     expect(result.candidates).toHaveLength(1);
-    expect(result.candidates[0]?.storageRef).toMatch(/^artifact:\/\/s53-live\//);
+    expect(result.candidates[0]?.storageRef).toMatch(
+      /^artifact:\/\/s53-live\//,
+    );
 
     const canon = await selectCharacterVisualCanon(
       USER_ID,

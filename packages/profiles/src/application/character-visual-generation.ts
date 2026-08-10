@@ -47,7 +47,9 @@ export interface CharacterVisualStoragePort {
   store(input: CharacterVisualStorageInput): Promise<{ storageRef: string }>;
 }
 
-export function renderCharacterVisualPrompt(brief: CharacterVisualBrief): string {
+export function renderCharacterVisualPrompt(
+  brief: CharacterVisualBrief,
+): string {
   const preferences = Object.keys(brief.preferenceHints).length
     ? ` Visual preference hints: ${JSON.stringify(brief.preferenceHints)}.`
     : "";
