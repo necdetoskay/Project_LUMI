@@ -3,6 +3,8 @@ name: ULTEF S53 Live Krea Image
 on:
   push:
     branches: [s53/character-visual-canon]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +12,6 @@ permissions:
 
 jobs:
   live-krea:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-image-test]')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -35,19 +36,36 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check live-test marker
+        id: marker
+        shell: bash
+        run: |
+          mkdir -p artifacts/s53-live
+          MESSAGE="$(git log -1 --pretty=%B)"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$MESSAGE" == *"[live-image-test]"* ]]; then
+            echo "requested=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "requested=false" >> "$GITHUB_OUTPUT"
+            echo "Live image request not requested by this commit." > artifacts/s53-live/LIVE_TEST_NOT_REQUESTED.txt
+          fi
       - uses: pnpm/action-setup@v4
+        if: steps.marker.outputs.requested == 'true'
         with:
           version: 11.7.0
       - uses: actions/setup-node@v4
+        if: steps.marker.outputs.requested == 'true'
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: steps.marker.outputs.requested == 'true'
       - name: Check live-provider secret
+        if: steps.marker.outputs.requested == 'true'
         id: secret
         shell: bash
         run: |
-          mkdir -p artifacts/s53-live
           if [ -z "$OPENROUTER_API_KEY" ]; then
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "OPENROUTER_API_KEY repository secret is not configured; live image request skipped." | tee artifacts/s53-live/LIVE_TEST_SKIPPED.txt
@@ -55,25 +73,25 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Prepare auth schema
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/web auth:migrate
       - name: Prepare profile schema
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/profiles profile:migrate
       - name: Prepare world schema
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/world world:migrate
       - name: Prepare NPC schema
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Prepare story schema
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/story story:migrate
       - name: Seed canonical demo universe
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm demo:seed
       - name: Generate one real Lina visual with Krea Turbo
-        if: steps.secret.outputs.available == 'true'
+        if: steps.marker.outputs.requested == 'true' && steps.secret.outputs.available == 'true'
         run: pnpm --filter @lumi/web exec vitest run tests/ultef-s53-live-character-visual.integration.test.ts
       - name: Upload live visual evidence
         if: always()
