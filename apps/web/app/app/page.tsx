@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import { getOnboardingState } from "@lumi/profiles/application";
 
 export default async function ProtectedAppPage() {
+  const t = await getTranslations("parentHome");
   const parent = await getParentFromSessionToken(
     await getParentSessionCookie(),
   );
@@ -25,23 +27,16 @@ export default async function ProtectedAppPage() {
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
             <div className="p-7 md:p-10">
               <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">
-                Ailenizin hikâye evi
+                {t("kicker")}
               </p>
               <h1 className="mt-3 max-w-[44rem] text-3xl font-extrabold tracking-tight text-on-surface md:text-5xl">
-                Hoş geldin {parent.displayName}.
+                {t("welcome", { name: parent.displayName })}
               </h1>
               <p className="mt-4 max-w-[42rem] text-base leading-7 text-on-surface-variant md:text-lg">
-                Burada her çocuk kendi dünyasına, anılarına ve devam eden
-                hikâyelerine sahip olur. Bir profili seçerek kaldığınız yerden
-                devam edebilir veya yeni bir dünya için ilk adımı atabilirsiniz.
+                {t("intro")}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  className="storybook-button"
-                  href={
-                    state.hasHousehold ? "/app/onboarding" : "/app/onboarding"
-                  }
-                >
+                <Link className="storybook-button" href="/app/onboarding">
                   <span
                     className="material-symbols-outlined"
                     aria-hidden="true"
@@ -49,15 +44,15 @@ export default async function ProtectedAppPage() {
                     {state.hasHousehold ? "person_add" : "auto_awesome"}
                   </span>
                   {state.hasHousehold
-                    ? "Yeni çocuk profili"
-                    : "Aile evrenini oluştur"}
+                    ? t("newChildProfile")
+                    : t("createFamilyUniverse")}
                 </Link>
                 {firstProfile ? (
                   <Link
                     className="storybook-button-secondary"
                     href={`/app/character-onboarding?childProfileId=${encodeURIComponent(firstProfile.id)}`}
                   >
-                    İlk hikâyeye hazırlan
+                    {t("prepareFirstStory")}
                   </Link>
                 ) : null}
               </div>
@@ -69,17 +64,13 @@ export default async function ProtectedAppPage() {
               <div className="relative z-10 flex h-full min-h-[200px] flex-col justify-between rounded-[1.6rem] border border-white/70 bg-white/55 p-5 backdrop-blur-sm">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">
-                    Bugünkü sakin başlangıç
+                    {t("todayKicker")}
                   </p>
                   <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
-                    {setupComplete
-                      ? "Bir çocuğun dünyasını seçin"
-                      : "Önce aile alanınızı hazırlayın"}
+                    {setupComplete ? t("chooseWorld") : t("prepareFamilySpace")}
                   </h2>
                   <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-                    {setupComplete
-                      ? "LUMI yalnızca gerçekten kayıtlı olan çocuk ve dünya durumlarını gösterir; burada olmayan bir olayı olmuş gibi anlatmaz."
-                      : "Evren ve çocuk profili hazır olduğunda bu alan yaşayan hikâyelerin başlangıç noktası olacak."}
+                    {setupComplete ? t("readyStateText") : t("setupStateText")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold text-on-surface">
@@ -91,9 +82,7 @@ export default async function ProtectedAppPage() {
                       family_restroom
                     </span>
                   </span>
-                  {state.childProfileCount > 0
-                    ? `${state.childProfileCount} çocuk profili hazır`
-                    : "Henüz çocuk profili yok"}
+                  {t("profileCount", { count: state.childProfileCount })}
                 </div>
               </div>
             </div>
@@ -104,17 +93,17 @@ export default async function ProtectedAppPage() {
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                Çocuklarım
+                {t("childrenKicker")}
               </p>
               <h2
                 id="children-heading"
                 className="mt-2 text-3xl font-extrabold text-on-surface"
               >
-                Her çocuk için ayrı bir dünya
+                {t("childrenTitle")}
               </h2>
             </div>
             <Link className="storybook-button-secondary" href="/app/profiles">
-              Tüm profilleri gör
+              {t("viewAllProfiles")}
             </Link>
           </div>
 
@@ -129,15 +118,13 @@ export default async function ProtectedAppPage() {
                 </span>
               </div>
               <h3 className="mt-5 text-2xl font-extrabold text-on-surface">
-                İlk çocuk profilini oluşturalım
+                {t("emptyTitle")}
               </h3>
               <p className="mx-auto mt-3 max-w-[38rem] text-base leading-7 text-on-surface-variant">
-                Profil; yaş grubu, ilgi alanları ve ileride hikâyeleri
-                kişiselleştirecek gelişim tercihleri için güvenli başlangıç
-                noktasıdır.
+                {t("emptyText")}
               </p>
               <Link className="storybook-button mt-6" href="/app/onboarding">
-                Profili oluşturmaya başla
+                {t("startProfile")}
               </Link>
             </div>
           ) : (
@@ -170,7 +157,7 @@ export default async function ProtectedAppPage() {
                       </div>
                       <div>
                         <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
-                          Yaş grubu {profile.ageBand}
+                          {t("ageBand", { ageBand: profile.ageBand })}
                         </p>
                         <h3 className="mt-2 text-2xl font-extrabold text-on-surface">
                           {profile.displayName}
@@ -180,20 +167,21 @@ export default async function ProtectedAppPage() {
                   </div>
                   <div className="p-5">
                     <p className="text-sm leading-6 text-on-surface-variant">
-                      Bu profil için karakteri hazırlayabilir, ardından yaşayan
-                      hikâye evrenine geçebilirsiniz.
+                      {t("profileCardText")}
                     </p>
                     <div className="mt-5 flex gap-2">
                       <Link
                         className="storybook-button flex-1 justify-center"
                         href={`/app/character-onboarding?childProfileId=${encodeURIComponent(profile.id)}`}
                       >
-                        Devam et
+                        {t("continue")}
                       </Link>
                       <Link
                         className="storybook-button-secondary"
                         href={`/app/profiles/${encodeURIComponent(profile.id)}`}
-                        aria-label={`${profile.displayName} profilini aç`}
+                        aria-label={t("openProfile", {
+                          name: profile.displayName,
+                        })}
                       >
                         <span
                           className="material-symbols-outlined"
@@ -223,18 +211,18 @@ export default async function ProtectedAppPage() {
               </div>
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                  Dünyalardan Haberler
+                  {t("worldNewsKicker")}
                 </p>
                 <h2
                   id="world-news-heading"
                   className="mt-2 text-2xl font-extrabold text-on-surface"
                 >
-                  Gerçek durumdan gelen küçük notlar
+                  {t("worldNewsTitle")}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-on-surface-variant">
                   {state.childProfileCount > 0
-                    ? "Henüz doğrulanmış bir dünya olayı akışı yok. LUMI bu yüzden burada uydurma haber göstermiyor; gerçek world-state feed hazır olduğunda yalnızca kanonik gelişmeler bu alana gelecek."
-                    : "İlk çocuk profili ve evren oluşturulduğunda, doğrulanmış dünya gelişmeleri ileride bu alanda sakin bir özet olarak görünecek."}
+                    ? t("worldNewsReady")
+                    : t("worldNewsSetup")}
                 </p>
               </div>
             </div>
@@ -242,15 +230,13 @@ export default async function ProtectedAppPage() {
 
           <aside className="rounded-[2rem] border border-outline-variant/70 bg-[#243127] p-7 text-white shadow-sm md:p-8">
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-white/65">
-              Bir sonraki doğal adım
+              {t("nextStepKicker")}
             </p>
             <h2 className="mt-2 text-2xl font-extrabold">
-              {setupComplete ? "Bir çocuk seçin" : "Aile alanını tamamlayın"}
+              {setupComplete ? t("chooseChild") : t("completeFamilySpace")}
             </h2>
             <p className="mt-3 text-sm leading-6 text-white/75">
-              {setupComplete
-                ? "Her çocuğun karakteri, ilgileri ve hikâye geçmişi ayrı tutulur. Bir profil seçerek kendi dünyasına geçin."
-                : "Evren ve profil oluşturma tamamlandığında karakter ve hikâye hazırlığına geçebilirsiniz."}
+              {setupComplete ? t("nextStepReady") : t("nextStepSetup")}
             </p>
             <Link
               className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-extrabold text-[#243127] transition-transform hover:-translate-y-0.5"
@@ -260,7 +246,7 @@ export default async function ProtectedAppPage() {
                   : "/app/onboarding"
               }
             >
-              {setupComplete ? "Profille devam et" : "Kuruluma devam et"}
+              {setupComplete ? t("continueWithProfile") : t("continueSetup")}
             </Link>
           </aside>
         </section>
