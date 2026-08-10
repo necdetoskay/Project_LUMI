@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   createDatabase,
   DrizzleNpcSnapshotRepository,
+  DrizzleWorkerNpcDecisionRepository,
 } from "@lumi/npc-intelligence/db";
 import { RepositoryNpcSourceAdapter } from "../src/adapters";
 
@@ -14,6 +15,7 @@ describe.skipIf(!enabled || !databaseUrl)(
   () => {
     const db = createDatabase(databaseUrl!);
     const repo = new DrizzleNpcSnapshotRepository(db);
+    const decisionRepo = new DrizzleWorkerNpcDecisionRepository(db);
     const adapter = new RepositoryNpcSourceAdapter(repo, 8);
 
     const householdA = crypto.randomUUID();
@@ -80,6 +82,30 @@ describe.skipIf(!enabled || !databaseUrl)(
       expect(snapshots).toHaveLength(1);
       expect(snapshots[0]?.needTypes).toEqual(["rest", "belonging"]);
       expect(snapshots[0]?.relationshipToCharacter).toBe(0.6);
+    });
+
+    it("commits the same scoped worker decision at most once", async () => {
+      const decisionKey = "snapshot-v1:seed-s48";
+      const input = {
+        householdId: householdA,
+        worldId,
+        childProfileId: profileA,
+        npcId: npcA,
+        decisionKey,
+        selectedCandidateId: "rest:self",
+        usedMemoryIds: [],
+        resultJson: { selectionReason: "highest_utility" },
+        decidedAt: now,
+      };
+
+      await expect(decisionRepo.commit(input)).resolves.toBe("applied");
+      await expect(decisionRepo.commit(input)).resolves.toBe("duplicate");
+      await expect(
+        decisionRepo.has(householdA, worldId, profileA, npcA, decisionKey),
+      ).resolves.toBe(true);
+      await expect(
+        decisionRepo.has(householdB, worldId, profileA, npcA, decisionKey),
+      ).resolves.toBe(false);
     });
   },
 );
