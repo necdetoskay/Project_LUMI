@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { resolve } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -7,13 +8,22 @@ const DEFAULT_DEMO_PARENT_PASSWORD = "LumiDemo2026!";
 
 export type DemoControlAction = "prepare" | "status" | "reset";
 
+function repositoryRoot(): string {
+  const cwd = process.cwd();
+  return cwd.endsWith("/apps/web") || cwd.endsWith("\\apps\\web")
+    ? resolve(cwd, "../..")
+    : cwd;
+}
+
 async function runNode(
   script: string,
   args: string[] = [],
   env: Partial<NodeJS.ProcessEnv> = {},
 ) {
-  const result = await execFileAsync(process.execPath, [script, ...args], {
-    cwd: process.cwd(),
+  const root = repositoryRoot();
+  const scriptPath = resolve(root, script);
+  const result = await execFileAsync(process.execPath, [scriptPath, ...args], {
+    cwd: root,
     env: { ...process.env, ...env },
     maxBuffer: 1024 * 1024,
   });
