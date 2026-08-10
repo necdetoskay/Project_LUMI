@@ -15,6 +15,10 @@ export interface WorkerNpcDecisionCommit {
   decidedAt: Date;
 }
 
+export interface WorkerNpcDecisionEvidence extends WorkerNpcDecisionCommit {
+  id: string;
+}
+
 export type WorkerNpcDecisionCommitResult = "applied" | "duplicate";
 
 export class DrizzleWorkerNpcDecisionRepository {
@@ -51,15 +55,15 @@ export class DrizzleWorkerNpcDecisionRepository {
     return rows.length === 1 ? "applied" : "duplicate";
   }
 
-  async has(
+  async get(
     householdId: string,
     worldId: string,
     childProfileId: string,
     npcId: string,
     decisionKey: string,
-  ): Promise<boolean> {
+  ): Promise<WorkerNpcDecisionEvidence | null> {
     const rows = await this.db
-      .select({ id: workerNpcDecisions.id })
+      .select()
       .from(workerNpcDecisions)
       .where(
         and(
@@ -71,7 +75,37 @@ export class DrizzleWorkerNpcDecisionRepository {
         ),
       )
       .limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      id: row.id,
+      householdId: row.householdId,
+      worldId: row.worldId,
+      childProfileId: row.childProfileId,
+      npcId: row.npcId,
+      decisionKey: row.decisionKey,
+      selectedCandidateId: row.selectedCandidateId,
+      usedMemoryIds: row.usedMemoryIds ?? [],
+      resultJson: row.resultJson,
+      decidedAt: row.decidedAt,
+    };
+  }
 
-    return rows.length === 1;
+  async has(
+    householdId: string,
+    worldId: string,
+    childProfileId: string,
+    npcId: string,
+    decisionKey: string,
+  ): Promise<boolean> {
+    return (
+      (await this.get(
+        householdId,
+        worldId,
+        childProfileId,
+        npcId,
+        decisionKey,
+      )) !== null
+    );
   }
 }
