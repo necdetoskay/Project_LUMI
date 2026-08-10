@@ -11,6 +11,9 @@ function source(path: string) {
 
 const parentHome = source("app/app/page.tsx");
 const profileLibrary = source("app/app/profiles/profiles-client-page.tsx");
+const turkishMessages = JSON.parse(source("messages/tr.json")) as {
+  parentHome: Record<string, string>;
+};
 const combined = `${parentHome}\n${profileLibrary}`;
 
 const forbiddenTechnicalLanguage =
@@ -20,24 +23,41 @@ const forbiddenGamificationLanguage =
 
 describe("ULTEF S41 parent home and child profile contract", () => {
   it("centers the parent home on children and their story worlds", () => {
-    expect(parentHome).toContain("Ailenizin hikâye evi");
-    expect(parentHome).toContain("Çocuklarım");
-    expect(parentHome).toContain("Her çocuk için ayrı bir dünya");
+    expect(parentHome).toContain('getTranslations("parentHome")');
+    expect(parentHome).toContain('t("kicker")');
+    expect(parentHome).toContain('t("childrenKicker")');
+    expect(parentHome).toContain('t("childrenTitle")');
+    expect(turkishMessages.parentHome.kicker).toBe("Ailenizin hikâye evi");
+    expect(turkishMessages.parentHome.childrenKicker).toBe("Çocuklarım");
+    expect(turkishMessages.parentHome.childrenTitle).toBe(
+      "Her çocuk için ayrı bir dünya",
+    );
     expect(parentHome).toContain("state.childProfiles.map");
     expect(parentHome).toContain("/app/character-onboarding?childProfileId=");
   });
 
   it("provides truthful household/profile empty states", () => {
-    expect(parentHome).toContain("İlk çocuk profilini oluşturalım");
+    expect(parentHome).toContain('t("emptyTitle")');
+    expect(turkishMessages.parentHome.emptyTitle).toBe(
+      "İlk çocuk profilini oluşturalım",
+    );
     expect(parentHome).toContain("/app/onboarding");
     expect(profileLibrary).toContain("Henüz bir çocuk profili yok");
     expect(profileLibrary).toContain("Aile evreni henüz oluşturulmamış.");
   });
 
   it("introduces Dünyalardan Haberler without fabricating world events", () => {
-    expect(parentHome).toContain("Dünyalardan Haberler");
-    expect(parentHome).toContain("uydurma haber göstermiyor");
-    expect(parentHome).toContain("doğrulanmış bir dünya olayı akışı yok");
+    expect(parentHome).toContain('t("worldNewsKicker")');
+    expect(parentHome).toContain('t("worldNewsReady")');
+    expect(turkishMessages.parentHome.worldNewsKicker).toBe(
+      "Dünyalardan Haberler",
+    );
+    expect(turkishMessages.parentHome.worldNewsReady).toContain(
+      "uydurma haber göstermiyor",
+    );
+    expect(turkishMessages.parentHome.worldNewsReady).toContain(
+      "doğrulanmış bir dünya olayı akışı yok",
+    );
     expect(parentHome).not.toMatch(
       /Mino .*geldi|festival başladı|köprü .*yıkıldı/i,
     );
