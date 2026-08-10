@@ -1,0 +1,37 @@
+name: Temporary Demo Control Formatter
+
+on:
+  push:
+    branches:
+      - hotfix/demo-universe-web-control
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/demo-universe-web-control
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/web/app/demo-control/page.tsx apps/web/lib/demo-control.ts
+      - name: Commit canonical formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/demo-control/page.tsx apps/web/lib/demo-control.ts
+          git commit -m "style: format demo control"
+          git push origin HEAD:hotfix/demo-universe-web-control
