@@ -75,10 +75,7 @@ export const imageGenerationJobs = profileSchema.table(
       table.subjectId,
       table.createdAt,
     ),
-    index("image_generation_jobs_status_idx").on(
-      table.status,
-      table.createdAt,
-    ),
+    index("image_generation_jobs_status_idx").on(table.status, table.createdAt),
     check(
       "image_generation_jobs_subject_type_check",
       sql`${table.subjectType} IN ('character', 'npc', 'location', 'item', 'story_scene')`,
@@ -155,6 +152,7 @@ export const imageGenerationCostEvents = profileSchema.table(
 );
 
 export type ImageGenerationJobRecord = typeof imageGenerationJobs.$inferSelect;
-export type NewImageGenerationJobRecord = typeof imageGenerationJobs.$inferInsert;
+export type NewImageGenerationJobRecord =
+  typeof imageGenerationJobs.$inferInsert;
 export type ImageGenerationCostEventRecord =
   typeof imageGenerationCostEvents.$inferSelect;

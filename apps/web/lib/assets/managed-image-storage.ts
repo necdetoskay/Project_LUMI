@@ -15,7 +15,8 @@ const S3_STORAGE_PREFIX = "s3-managed-image://";
 
 function storageRoot(): string {
   return resolve(
-    process.env.LUMI_ASSET_STORAGE_DIR ?? resolve(process.cwd(), ".lumi-assets"),
+    process.env.LUMI_ASSET_STORAGE_DIR ??
+      resolve(process.cwd(), ".lumi-assets"),
     "managed-images",
   );
 }
@@ -110,7 +111,10 @@ export function createManagedImageStorageAdapter(): ImageGenerationBinaryStorage
 export async function readManagedImage(storageRef: string) {
   if (storageRef.startsWith(LOCAL_STORAGE_PREFIX)) {
     const root = storageRoot();
-    const absolute = resolve(root, storageRef.slice(LOCAL_STORAGE_PREFIX.length));
+    const absolute = resolve(
+      root,
+      storageRef.slice(LOCAL_STORAGE_PREFIX.length),
+    );
     if (absolute !== root && !absolute.startsWith(`${root}${sep}`)) {
       throw new Error("INVALID_MANAGED_IMAGE_STORAGE_REF");
     }

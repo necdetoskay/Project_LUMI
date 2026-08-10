@@ -35,7 +35,9 @@ export type ImageGenerationBinaryStorageInput = ManagedAssetScope & {
 };
 
 export interface ImageGenerationBinaryStoragePort {
-  store(input: ImageGenerationBinaryStorageInput): Promise<{ storageRef: string }>;
+  store(
+    input: ImageGenerationBinaryStorageInput,
+  ): Promise<{ storageRef: string }>;
   delete?(storageRef: string): Promise<void>;
 }
 
@@ -95,7 +97,8 @@ function providerForPlan(
   const provider = providers.find((candidate) =>
     candidate.capabilities.some(
       (capability) =>
-        capability.provider === plan.provider && capability.model === plan.model,
+        capability.provider === plan.provider &&
+        capability.model === plan.model,
     ),
   );
   if (!provider) throw new Error("IMAGE_GENERATION_PROVIDER_NOT_FOUND");
@@ -137,7 +140,9 @@ async function cleanStoredObjects(
   refs: readonly string[],
 ) {
   if (!storagePort.delete) return;
-  await Promise.allSettled(refs.map((storageRef) => storagePort.delete!(storageRef)));
+  await Promise.allSettled(
+    refs.map((storageRef) => storagePort.delete!(storageRef)),
+  );
 }
 
 function planForInput(
@@ -158,9 +163,7 @@ function planForInput(
     planInput,
     deps.budgetPolicy,
     {
-      ...(input.preferredProvider
-        ? { provider: input.preferredProvider }
-        : {}),
+      ...(input.preferredProvider ? { provider: input.preferredProvider } : {}),
       ...(input.preferredModel ? { model: input.preferredModel } : {}),
     },
   );
@@ -177,9 +180,14 @@ async function normalizeProviderImages(
     }
     return images;
   }
-  if (!plan.grid || !splitter) throw new Error("IMAGE_GENERATION_GRID_SPLITTER_REQUIRED");
-  if (images.length !== 1) throw new Error("IMAGE_GENERATION_GRID_COMPOSITE_COUNT_INVALID");
-  const split = await splitter.split({ composite: images[0]!, layout: plan.grid });
+  if (!plan.grid || !splitter)
+    throw new Error("IMAGE_GENERATION_GRID_SPLITTER_REQUIRED");
+  if (images.length !== 1)
+    throw new Error("IMAGE_GENERATION_GRID_COMPOSITE_COUNT_INVALID");
+  const split = await splitter.split({
+    composite: images[0]!,
+    layout: plan.grid,
+  });
   if (split.length !== plan.candidateCount) {
     throw new Error("IMAGE_GENERATION_GRID_SPLIT_COUNT_MISMATCH");
   }
@@ -291,7 +299,10 @@ export async function generateManagedImageCandidates(
       strategy: plan.strategy,
       ...(plan.grid ? { grid: plan.grid } : {}),
     });
-    if (generated.provider !== plan.provider || generated.model !== plan.model) {
+    if (
+      generated.provider !== plan.provider ||
+      generated.model !== plan.model
+    ) {
       throw new Error("IMAGE_GENERATION_PROVIDER_IDENTITY_MISMATCH");
     }
     const candidates = await normalizeProviderImages(

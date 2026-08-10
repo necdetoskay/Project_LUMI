@@ -6,21 +6,22 @@ import type {
   ImageGenerationProviderResult,
 } from "../application/image-generation-platform";
 
-export const OPENROUTER_KREA_TURBO_CAPABILITY: ImageGenerationModelCapabilities = {
-  provider: "openrouter",
-  model: "krea/krea-2-medium-turbo",
-  supportedAspectRatios: ["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"],
-  supportedResolutions: ["1K"],
-  maxImagesPerRequest: 1,
-  supportsNativeBatch: false,
-  supportsGrid: true,
-  maxGridCells: 4,
-  pricing: {
-    currency: "USD",
-    perProviderRequestUsd: 0.015,
-    pricingBasis: "openrouter-model-list-2026-08-10",
-  },
-};
+export const OPENROUTER_KREA_TURBO_CAPABILITY: ImageGenerationModelCapabilities =
+  {
+    provider: "openrouter",
+    model: "krea/krea-2-medium-turbo",
+    supportedAspectRatios: ["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"],
+    supportedResolutions: ["1K"],
+    maxImagesPerRequest: 1,
+    supportsNativeBatch: false,
+    supportsGrid: true,
+    maxGridCells: 4,
+    pricing: {
+      currency: "USD",
+      perProviderRequestUsd: 0.015,
+      pricingBasis: "openrouter-model-list-2026-08-10",
+    },
+  };
 
 export type OpenRouterImageGenerationAdapterOptions = {
   apiKey: string;
@@ -57,13 +58,19 @@ export class OpenRouterImageGenerationAdapter
   private readonly fetchImpl: typeof fetch;
   private readonly endpoint: string;
 
-  constructor(private readonly options: OpenRouterImageGenerationAdapterOptions) {
+  constructor(
+    private readonly options: OpenRouterImageGenerationAdapterOptions,
+  ) {
     if (!options.apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for live image generation");
+      throw new Error(
+        "OPENROUTER_API_KEY is required for live image generation",
+      );
     }
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.endpoint = options.endpoint ?? "https://openrouter.ai/api/v1/images";
-    this.capabilities = options.capabilities ?? [OPENROUTER_KREA_TURBO_CAPABILITY];
+    this.capabilities = options.capabilities ?? [
+      OPENROUTER_KREA_TURBO_CAPABILITY,
+    ];
   }
 
   private capabilityFor(model: string) {
@@ -98,13 +105,17 @@ export class OpenRouterImageGenerationAdapter
 
     const raw = await response.text();
     if (!response.ok) {
-      throw new Error(`OPENROUTER_IMAGE_${response.status}: ${raw.slice(0, 500)}`);
+      throw new Error(
+        `OPENROUTER_IMAGE_${response.status}: ${raw.slice(0, 500)}`,
+      );
     }
 
     const payload = JSON.parse(raw) as OpenRouterImageResponse;
     const image = payload.data?.[0];
     if (!image?.b64_json) {
-      throw new Error("OPENROUTER_IMAGE_EMPTY: response did not contain b64_json");
+      throw new Error(
+        "OPENROUTER_IMAGE_EMPTY: response did not contain b64_json",
+      );
     }
 
     return {
@@ -124,14 +135,18 @@ export class OpenRouterImageGenerationAdapter
     request: ImageGenerationProviderRequest,
   ): Promise<ImageGenerationProviderResult> {
     const capability = this.capabilityFor(request.model);
-    if (request.strategy === "native_batch" && !capability.supportsNativeBatch) {
+    if (
+      request.strategy === "native_batch" &&
+      !capability.supportsNativeBatch
+    ) {
       throw new Error("OPENROUTER_NATIVE_BATCH_UNSUPPORTED");
     }
     if (request.strategy === "grid" && !capability.supportsGrid) {
       throw new Error("OPENROUTER_GRID_UNSUPPORTED");
     }
 
-    const providerRequestCount = request.strategy === "grid" ? 1 : request.candidateCount;
+    const providerRequestCount =
+      request.strategy === "grid" ? 1 : request.candidateCount;
     const images: GeneratedImage[] = [];
     let providerRequestId: string | undefined;
     const usageMetadata: Record<string, unknown> = {};
@@ -144,7 +159,11 @@ export class OpenRouterImageGenerationAdapter
     }
 
     const estimatedCostUsd = capability.pricing?.perProviderRequestUsd
-      ? Number((capability.pricing.perProviderRequestUsd * providerRequestCount).toFixed(6))
+      ? Number(
+          (
+            capability.pricing.perProviderRequestUsd * providerRequestCount
+          ).toFixed(6),
+        )
       : undefined;
 
     return {

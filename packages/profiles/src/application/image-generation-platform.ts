@@ -235,7 +235,10 @@ export function planImageGeneration(
   }
 
   const directImagesPerRequest = capability.supportsNativeBatch
-    ? Math.max(1, Math.min(capability.maxImagesPerRequest, input.candidateCount))
+    ? Math.max(
+        1,
+        Math.min(capability.maxImagesPerRequest, input.candidateCount),
+      )
     : 1;
   const directRequestCount = Math.ceil(
     input.candidateCount / directImagesPerRequest,
@@ -308,7 +311,8 @@ export function selectImageGenerationCapability(
     if (preference?.provider && capability.provider !== preference.provider) {
       return false;
     }
-    if (preference?.model && capability.model !== preference.model) return false;
+    if (preference?.model && capability.model !== preference.model)
+      return false;
     return (
       capability.supportedAspectRatios.includes(input.aspectRatio) &&
       capability.supportedResolutions.includes(input.resolution)
@@ -321,7 +325,10 @@ export function selectImageGenerationCapability(
   const planned = candidates
     .map((capability) => {
       try {
-        return { capability, plan: planImageGeneration(capability, input, policy) };
+        return {
+          capability,
+          plan: planImageGeneration(capability, input, policy),
+        };
       } catch (error) {
         if (
           error instanceof Error &&
