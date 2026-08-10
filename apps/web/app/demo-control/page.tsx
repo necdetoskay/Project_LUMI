@@ -1,7 +1,3 @@
-import { notFound } from "next/navigation";
-
-import { isDemoWebControlEnabled } from "@/lib/demo-control";
-
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function DemoControlPage({
@@ -9,8 +5,6 @@ export default async function DemoControlPage({
 }: {
   searchParams: SearchParams;
 }) {
-  if (!isDemoWebControlEnabled()) notFound();
-
   const params = await searchParams;
   const result = typeof params.result === "string" ? params.result : undefined;
   const action = typeof params.action === "string" ? params.action : undefined;
@@ -33,19 +27,7 @@ export default async function DemoControlPage({
       </div>
 
       <section className="rounded-xl border bg-card p-5 shadow-sm">
-        <form action="/api/demo-control" method="post" className="space-y-4">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">Demo kontrol anahtarı</span>
-            <input
-              type="password"
-              name="token"
-              required
-              autoComplete="off"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder="LUMI_DEMO_WEB_CONTROL_TOKEN"
-            />
-          </label>
-
+        <form action="/api/demo-control" method="post">
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
@@ -90,8 +72,9 @@ export default async function DemoControlPage({
       )}
 
       <p className="text-xs text-muted-foreground">
-        Bu sayfa yalnız LUMI_DEMO_WEB_CONTROL_ENABLED=true olduğunda mevcuttur
-        ve her işlem sunucu tarafında kontrol anahtarı doğrulaması gerektirir.
+        Bu dev/test yardımcı ekranı yalnız canonical LUMI demo evrenini yönetir.
+        Production veri kapsamına dokunmayan seed/reset güvenlik kontrolleri
+        runner katmanında korunur.
       </p>
     </main>
   );
