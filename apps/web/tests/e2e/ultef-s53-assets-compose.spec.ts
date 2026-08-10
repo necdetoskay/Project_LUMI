@@ -20,10 +20,10 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
 
     await page.goto("/app/assets");
     await expect(
-      page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
+      page.getByRole("heading", { name: "Asset Management" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Asset Management", { exact: true }),
+      page.getByText("Varlık türleri", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("Lina kütüphanesi", { exact: true }),

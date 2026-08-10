@@ -36,7 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: s53/character-visual-canon
           fetch-depth: 2
       - name: Check live-test marker
         id: marker

@@ -118,6 +118,26 @@ export type {
 } from "./character-visual.service";
 
 export {
+  MANAGED_ASSET_SUBJECT_TYPES,
+  listManagedAssets,
+  getManagedAssetCanon,
+  registerManagedAssetMetadata,
+  selectManagedAssetCanon,
+  rejectManagedAsset,
+  archiveManagedAsset,
+  getManagedAssetLifecycleHistory,
+} from "./managed-asset.service";
+export type {
+  ManagedAssetSubjectType,
+  ManagedAssetLifecycleState,
+  ManagedAssetOriginType,
+  ManagedAssetScope,
+  ManagedAssetAuthorizationPort,
+  ManagedAssetServiceDeps,
+  RegisterManagedAssetInput,
+} from "./managed-asset.service";
+
+export {
   EMOTION_RULE_VERSION,
   evaluateEmotionEvent,
   applyEmotionEvent,

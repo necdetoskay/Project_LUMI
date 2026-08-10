@@ -1,0 +1,65 @@
+name: ULTEF S55 Generic Asset Management
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generic-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_s55_asset_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_s55_asset_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_s55_asset_test
+      NODE_ENV: test
+      LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
+      ULTEF_S55_ASSET_ENABLE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare auth schema
+        run: pnpm --filter @lumi/web auth:migrate
+      - name: Prepare profile schema including S55 generic assets
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Prepare world schema
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Prepare NPC intelligence schema
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Prepare story schema
+        run: pnpm --filter @lumi/story story:migrate
+      - name: Seed canonical demo universe
+        run: pnpm demo:seed
+      - name: Verify generic asset tables
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('profile.managed_assets') IS NOT NULL"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('profile.managed_asset_canons') IS NOT NULL"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('profile.managed_asset_lifecycle_events') IS NOT NULL"
+      - name: Run S55 DB-backed generic asset lifecycle
+        run: pnpm --filter @lumi/web exec vitest run tests/ultef-s55-generic-asset-management.integration.test.ts
+      - name: Re-run profile migrations for idempotency
+        run: pnpm --filter @lumi/profiles profile:migrate

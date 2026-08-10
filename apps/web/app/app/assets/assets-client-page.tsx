@@ -179,7 +179,7 @@ export function AssetsClientPage({
         <div className="mx-auto w-full max-w-[920px] px-5 py-10">
           <div className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-8">
             <h1 className="text-3xl font-extrabold text-on-surface">
-              Görsel Kütüphanesi
+              Asset Management
             </h1>
             <p className="mt-3 text-on-surface-variant">
               Önce aile alanınızı oluşturun; karakter görselleri daha sonra
@@ -204,12 +204,13 @@ export function AssetsClientPage({
                 Asset Management
               </p>
               <h1 className="mt-2 text-3xl font-extrabold text-on-surface md:text-4xl">
-                Görsel Kütüphanesi
+                Asset Management
               </h1>
               <p className="mt-3 max-w-[52rem] leading-7 text-on-surface-variant">
-                Mevcut karakter verilerinden yeni görseller üretin, adayları
-                karşılaştırın ve hikâyelerde kullanılacak kalıcı görünümü seçin.
-                Üretim karakter oluşturma işleminden bağımsızdır.
+                Karakter, NPC, konum, eşya ve hikâye sahnesi görsellerini tek
+                bir varlık kütüphanesinde yönetin. Karakter üretim akışı bugün
+                aktif; diğer subject türleri generic asset çekirdeğine hazırdır
+                ve üretim yetenekleri Sprint 56 ile açılacaktır.
               </p>
             </div>
             <Link className="storybook-button-secondary" href="/app">
@@ -217,6 +218,36 @@ export function AssetsClientPage({
             </Link>
           </div>
         </header>
+
+        <section className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-7">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+            Varlık türleri
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              ["Karakter", "Aktif"],
+              ["NPC", "Core hazır"],
+              ["Konum", "Core hazır"],
+              ["Eşya", "Core hazır"],
+              ["Hikâye sahnesi", "Core hazır"],
+            ].map(([label, state]) => (
+              <div
+                className="rounded-2xl border border-outline-variant bg-surface-container-low px-4 py-4"
+                key={label}
+              >
+                <p className="font-extrabold text-on-surface">{label}</p>
+                <p className="mt-1 text-xs font-bold text-on-surface-variant">
+                  {state}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm leading-6 text-on-surface-variant">
+            Sprint 55 metadata, lifecycle, provenance ve canon modelini tüm
+            varlık türleri için ortaklaştırır. Yeni görsel üretim sağlayıcıları,
+            batch/grid üretim ve bütçe politikası Sprint 56 kapsamındadır.
+          </p>
+        </section>
 
         {characters.length === 0 ? (
           <div className="rounded-[2rem] border border-dashed border-outline-variant bg-white/75 p-8 text-center">
