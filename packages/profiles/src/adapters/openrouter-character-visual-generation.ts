@@ -2,6 +2,7 @@ import type {
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,
   CharacterVisualGenerationResult,
+  GeneratedImageCandidate,
 } from "../application/character-visual-generation";
 
 export type OpenRouterCharacterVisualAdapterOptions = {
@@ -38,7 +39,7 @@ export class OpenRouterCharacterVisualGenerationAdapter
   async generate(
     request: CharacterVisualGenerationRequest,
   ): Promise<CharacterVisualGenerationResult> {
-    const candidates = [];
+    const candidates: GeneratedImageCandidate[] = [];
     let providerRequestId: string | undefined;
     const usage: Record<string, unknown> = {};
 
@@ -78,26 +79,27 @@ export class OpenRouterCharacterVisualGenerationAdapter
         index,
         bytesBase64: image.b64_json,
         mimeType: image.mime_type ?? "image/png",
-        width: image.width,
-        height: image.height,
+        ...(typeof image.width === "number" ? { width: image.width } : {}),
+        ...(typeof image.height === "number" ? { height: image.height } : {}),
       });
     }
 
     return {
       provider: "openrouter",
       model: request.model,
-      providerRequestId,
       candidates,
-      usageMetadata: usage,
-      costMetadata:
-        request.model === "krea/krea-2-medium-turbo"
-          ? {
+      ...(providerRequestId ? { providerRequestId } : {}),
+      ...(Object.keys(usage).length > 0 ? { usageMetadata: usage } : {}),
+      ...(request.model === "krea/krea-2-medium-turbo"
+        ? {
+            costMetadata: {
               currency: "USD",
               estimatedUnitCost: 0.015,
               estimatedTotalCost: Number((0.015 * request.candidateCount).toFixed(4)),
               pricingBasis: "openrouter-model-list-2026-08-10",
-            }
-          : undefined,
+            },
+          }
+        : {}),
     };
   }
 }
