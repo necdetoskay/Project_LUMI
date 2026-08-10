@@ -1,0 +1,21 @@
+name: ULTEF S51 Demo Manifest
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate canonical LUMI Demo Universe manifest
+        run: node scripts/demo/lumi-demo-manifest.selftest.mjs
