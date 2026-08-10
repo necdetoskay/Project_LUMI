@@ -11,7 +11,7 @@ permissions:
 jobs:
   demo-bootstrap:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     services:
       postgres:
         image: postgres:17
@@ -53,3 +53,12 @@ jobs:
         run: pnpm --filter @lumi/story story:migrate
       - name: Run T03/T04/T05/T06 browser-ready PostgreSQL demo evidence
         run: pnpm --filter @lumi/web exec node scripts/lumi-demo-db.selftest.mjs
+      - name: Run T07 canonical DB-backed ULTEF evidence
+        run: pnpm --filter @lumi/web exec node scripts/lumi-demo-ultef.mjs
+      - name: Upload S51 ULTEF evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ultef-s51-demo-bootstrap-${{ github.run_id }}
+          path: artifacts/ultef/runs
+          if-no-files-found: warn
