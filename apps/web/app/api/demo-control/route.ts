@@ -10,6 +10,32 @@ const ALLOWED_ACTIONS = new Set<DemoControlAction>([
   "reset",
 ]);
 
+function getPublicBaseUrl(request: Request): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const forwardedProto = request.headers.get("x-forwarded-proto") ?? "http";
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
+function buildRedirectUrl(
+  request: Request,
+  result: "success" | "error",
+  action: string,
+  message: string,
+): URL {
+  const url = new URL("/demo-control", getPublicBaseUrl(request));
+  url.searchParams.set("result", result);
+  url.searchParams.set("action", action);
+  url.searchParams.set("message", message.slice(-1800));
+  return url;
+}
+
 export async function POST(request: Request) {
   const form = await request.formData();
   const action = String(form.get("action") ?? "") as DemoControlAction;
@@ -20,18 +46,16 @@ export async function POST(request: Request) {
     }
 
     const output = await runDemoControl(action);
-    const url = new URL("/demo-control", request.url);
-    url.searchParams.set("result", "success");
-    url.searchParams.set("action", action);
-    url.searchParams.set("message", output.slice(-1800));
-    return NextResponse.redirect(url, 303);
+    return NextResponse.redirect(
+      buildRedirectUrl(request, "success", action, output),
+      303,
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "DEMO_CONTROL_FAILED";
-    const url = new URL("/demo-control", request.url);
-    url.searchParams.set("result", "error");
-    url.searchParams.set("action", action || "unknown");
-    url.searchParams.set("message", message.slice(-1800));
-    return NextResponse.redirect(url, 303);
+    return NextResponse.redirect(
+      buildRedirectUrl(request, "error", action || "unknown", message),
+      303,
+    );
   }
 }
