@@ -1,8 +1,8 @@
 name: S47 Temporary Formatter
 
 on:
-  push:
-    branches: [s47/memory-aware-npc-decision-production]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -45,4 +45,3 @@ jobs:
             git commit -m "style(s47): format memory decision files"
             git push origin HEAD:s47/memory-aware-npc-decision-production
           fi
-      # trigger: 2026-08-10
