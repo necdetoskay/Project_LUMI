@@ -43,7 +43,7 @@ export async function GET(
       }
 
       const content = await readLocalCharacterVisual(asset.storageRef);
-      return new Response(content.bytes, {
+      return new NextResponse(new Uint8Array(content.bytes), {
         status: 200,
         headers: {
           "Content-Type": asset.mimeType ?? content.mimeType,
