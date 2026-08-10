@@ -1,6 +1,6 @@
 # Sprint 53 — Implementation Status
 
-Status: IN PROGRESS / STABILIZATION
+Status: COMPLETE
 Date: 2026-08-10
 Branch: `s53/character-visual-canon`
 
@@ -10,18 +10,16 @@ Implement the first production visual pipeline for LUMI: existing character data
 
 ## Verified evidence
 
-- DB-backed S53 fake-provider lifecycle gate has passed against disposable PostgreSQL.
-- Real OpenRouter `krea/krea-2-medium-turbo` generation has passed once: one 1K Lina candidate was generated, persisted, selected as canon and uploaded as workflow evidence.
+- DB-backed S53 fake-provider lifecycle gate passed against disposable PostgreSQL.
+- Real OpenRouter `krea/krea-2-medium-turbo` generation passed: one 1K Lina candidate was generated, persisted, selected as canon and uploaded as workflow evidence.
 - The provider-independent brief/job/asset/canon lifecycle is implemented.
-- Parent/admin Asset Management UI exists at `/app/assets`.
-
-## Explicitly not yet verified
-
-- Local/production-like Docker Compose cold start is NOT yet verified.
-- The user's local Compose run exposed a missing Sprint 53 schema because migrations were not part of the startup path.
-- A first Node-based Compose migrator attempt failed because `pg` was not resolvable in the slim/runtime image. That approach has been removed.
-- The current replacement uses the official PostgreSQL image and `psql`, with canonical schema order: auth -> profile -> world -> NPC -> story.
-- Fresh-volume and migration-replay evidence for that replacement is currently pending the dedicated Compose cold-start gate.
+- Parent/admin Asset Management UI is available at `/app/assets`.
+- Production-like Docker Compose cold start passed from a fresh PostgreSQL volume.
+- Canonical migrations execute in auth -> profile -> world -> NPC -> story order and can be replayed idempotently.
+- Web and worker health checks passed after fresh migration.
+- Web remained healthy after restart and Sprint 53 state remained available.
+- Real browser E2E passed against the Compose web artifact: parent login -> `/app/assets` -> Lina visual library.
+- Final head `88531ce4e37b5b6e1793f15532bbcea05814a717` passed CI #1160, ULTEF S53 Compose Cold Start #22, ULTEF S53 Character Visual Canon #62, ULTEF S53 Live Krea Image #77, ULTEF Integration #843, Security Scan #1105 and the active regression matrix.
 
 ## Workboard
 
@@ -33,34 +31,36 @@ Implement the first production visual pipeline for LUMI: existing character data
 - [x] T06 Parent/admin Asset Management UI foundation
 - [x] T07 DB-backed fake-provider lifecycle evidence
 - [x] T08 Real Krea one-image smoke evidence
-- [ ] T09 Fresh-volume Docker Compose migration evidence
-- [ ] T10 Migration replay/idempotency through Docker Compose
-- [ ] T11 Web health after fresh migration and restart
-- [ ] T12 `/app/assets` browser flow against production-like Compose
-- [ ] T13 Final CI/regression matrix and closeout
+- [x] T09 Fresh-volume Docker Compose migration evidence
+- [x] T10 Migration replay/idempotency through Docker Compose
+- [x] T11 Web and worker health after fresh migration and restart
+- [x] T12 `/app/assets` browser flow against production-like Compose
+- [x] T13 Final CI/regression matrix and closeout
 
-## Compose stabilization design
+## Stabilization outcome
 
-`schema-migrate` is a one-shot Compose service based on `postgres:17.7-alpine`; it does not depend on Node, pnpm or workspace dependency resolution. Migration directories are mounted read-only and applied via `psql -v ON_ERROR_STOP=1` in the same dependency order already used by integration tests.
+`schema-migrate` is a one-shot Compose service based on `postgres:17.7-alpine`; it does not depend on Node, pnpm or workspace dependency resolution. Migration directories are mounted read-only and applied via `psql -v ON_ERROR_STOP=1` in the same dependency order used by integration tests.
 
-Auth SQL has been extracted from the previous JS-embedded migration into `apps/web/migrations/0001_auth_schema.sql`; the existing `auth-migrate.mjs` now reads that same canonical SQL file so CI and Docker do not maintain two auth schema definitions.
+Auth SQL was extracted from the previous JS-embedded migration into `apps/web/migrations/0001_auth_schema.sql`; the existing `auth-migrate.mjs` reads that same canonical SQL file, preventing separate CI and Docker auth schema definitions.
 
-The dedicated cold-start gate must prove:
+The cold-start gate now proves:
 
 1. fresh PostgreSQL volume;
 2. all canonical migrations complete with exit code 0;
-3. `profile.character_visual_canons` and related S53 tables exist;
+3. Sprint 53 tables exist;
 4. web becomes healthy;
-5. the entire migration set can be replayed without failure;
-6. web remains healthy after restart.
+5. canonical demo preparation succeeds;
+6. parent login and `/app/assets` succeed in a real browser against the Compose artifact;
+7. worker remains running and healthy;
+8. the entire migration set can be replayed without failure;
+9. web remains healthy after restart;
+10. Sprint 53 persisted state remains available after migration replay and restart.
 
-Until those checks are green, Sprint 53 remains IN PROGRESS regardless of other passing tests.
-
-## Guardrails
+## Guardrails retained
 
 - no generation side effect during character creation;
 - no provider URL as the only persisted asset identity;
 - no silent canonical-image replacement;
 - no paid generation on ordinary CI runs;
 - no Docker/runtime change is called ready without fresh-volume evidence;
-- no Sprint 53 COMPLETE status before the production-like Compose gate and final regressions are green.
+- future visual sprints must preserve production-like browser, migration and regression evidence before COMPLETE.
