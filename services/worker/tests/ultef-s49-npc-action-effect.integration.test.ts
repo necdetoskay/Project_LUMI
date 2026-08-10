@@ -7,7 +7,8 @@ import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
 import { OutboxJobRunner } from "../src/outbox-runner";
 
-const enabled = process.env.ULTEF_SCENARIO === "PX-LUMI-S49-NPC-ACTION-EFFECT-001";
+const enabled =
+  process.env.ULTEF_SCENARIO === "PX-LUMI-S49-NPC-ACTION-EFFECT-001";
 const databaseUrl = process.env.DATABASE_URL;
 const describeDb = enabled && databaseUrl ? describe : describe.skip;
 
@@ -172,10 +173,17 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
         "Worker dispatch applies selected explicit movement to canonical world state",
         appliedOnce,
         { locationId: targetLocationId, movementEvents: 1 },
-        { locationId: locationAfter, movementEvents: movementCount, summary: firstRun },
+        {
+          locationId: locationAfter,
+          movementEvents: movementCount,
+          summary: firstRun,
+        },
       );
 
-      const foreignState = await pool.query<{ status: string; attempt_count: string }>(
+      const foreignState = await pool.query<{
+        status: string;
+        attempt_count: string;
+      }>(
         `SELECT status, attempt_count
            FROM story.story_outbox
           WHERE id = $1`,
@@ -231,7 +239,9 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
       });
       expect(report.result).toBe("PASS");
     } finally {
-      await pool.query(`DELETE FROM story.story_outbox WHERE world_id = $1`, [worldId]);
+      await pool.query(`DELETE FROM story.story_outbox WHERE world_id = $1`, [
+        worldId,
+      ]);
       await pool.query(
         `DELETE FROM profile.world_event_store WHERE world_id = $1`,
         [worldId],
@@ -248,8 +258,12 @@ describeDb("ULTEF S49 — NPC action outbox world effect", () => {
         `DELETE FROM profile.world_location_connections WHERE world_id = $1`,
         [worldId],
       );
-      await pool.query(`DELETE FROM profile.world_locations WHERE world_id = $1`, [worldId]);
-      await pool.query(`DELETE FROM profile.world_regions WHERE world_id = $1`, [worldId]);
+      await pool.query(`DELETE FROM profile.world_locations WHERE world_id = $1`, [
+        worldId,
+      ]);
+      await pool.query(`DELETE FROM profile.world_regions WHERE world_id = $1`, [
+        worldId,
+      ]);
       await pool.query(`DELETE FROM profile.worlds WHERE id = $1`, [worldId]);
     }
   });
