@@ -11,14 +11,31 @@ permissions:
 jobs:
   compose-cold-start:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       WEB_PORT: 3001
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3001
       AUTH_COOKIE_SECURE: "false"
       LUMI_SETTINGS_ENCRYPTION_KEY: "ultef-s53-compose-only-not-production"
+      LUMI_DEMO_CONFIRM: lumi-demo-v1
+      LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install browser test dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @lumi/web exec playwright install --with-deps chromium
 
       - name: Ensure clean Docker state and fresh database volume
         working-directory: infra/compose
@@ -69,6 +86,20 @@ jobs:
           echo "web health never became ready" >&2
           docker compose -f infra/compose/docker-compose.yml logs --no-color web >&2
           exit 1
+
+      - name: Prepare canonical demo through the real Compose web artifact
+        run: |
+          headers=$(mktemp)
+          curl --fail --silent --show-error -D "$headers" -o /dev/null \
+            -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'action=prepare' http://127.0.0.1:3001/api/demo-control
+          cat "$headers"
+          location=$(awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, ""); print substr($0, 11)}' "$headers" | tail -1)
+          echo "Redirect: $location"
+          echo "$location" | grep -q 'result=success'
+
+      - name: Verify Asset Management in a real browser against Compose
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/ultef-s53-assets-compose.spec.ts
 
       - name: Verify worker stays running and healthy
         working-directory: infra/compose
