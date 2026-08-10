@@ -4,6 +4,19 @@ import { LUMI_DEMO_MANIFEST } from "../../../scripts/demo/lumi-demo-manifest.mjs
 
 export const LUMI_DEMO_ENTRY_SCENE_ID = "51000000-0000-4000-8000-000000000073";
 export const LUMI_DEMO_ENTRY_VISIT_ID = "51000000-0000-4000-8000-000000000074";
+export const LUMI_DEMO_CHOICE_POINT_ID = "51000000-0000-4000-8000-000000000075";
+export const LUMI_DEMO_FOLLOW_LIGHT_OPTION_ID = "51000000-0000-4000-8000-000000000076";
+export const LUMI_DEMO_STAY_WITH_MIRA_OPTION_ID = "51000000-0000-4000-8000-000000000077";
+export const LUMI_DEMO_GROVE_SCENE_ID = "51000000-0000-4000-8000-000000000078";
+export const LUMI_DEMO_MIRA_SCENE_ID = "51000000-0000-4000-8000-000000000079";
+export const LUMI_DEMO_GROVE_TRANSITION_ID = "51000000-0000-4000-8000-000000000080";
+export const LUMI_DEMO_MIRA_TRANSITION_ID = "51000000-0000-4000-8000-000000000081";
+
+const PLAYABLE_SCENE_IDS = [
+  LUMI_DEMO_ENTRY_SCENE_ID,
+  LUMI_DEMO_GROVE_SCENE_ID,
+  LUMI_DEMO_MIRA_SCENE_ID,
+];
 
 export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
@@ -29,7 +42,13 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
              WHERE id = $3) AS session_status,
            (SELECT count(*)::int
               FROM story.story_scenes
-             WHERE id = $7 AND story_version_id = $2 AND is_entry_scene = true) AS entry_scenes`,
+             WHERE story_version_id = $2 AND id = ANY($7::uuid[])) AS playable_scenes,
+           (SELECT count(*)::int
+              FROM story.story_choice_points
+             WHERE id = $8 AND story_version_id = $2 AND scene_id = $9) AS choice_points,
+           (SELECT count(*)::int
+              FROM story.story_choice_options
+             WHERE choice_point_id = $8) AS choice_options`,
         [
           manifest.story.definitionId,
           manifest.story.versionId,
@@ -37,6 +56,8 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           manifest.household.id,
           manifest.childProfile.id,
           manifest.world.id,
+          PLAYABLE_SCENE_IDS,
+          LUMI_DEMO_CHOICE_POINT_ID,
           LUMI_DEMO_ENTRY_SCENE_ID,
         ],
       );
@@ -46,12 +67,16 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           Number(row.definitions ?? 0) === 1 &&
           Number(row.versions ?? 0) === 1 &&
           Number(row.sessions ?? 0) === 1 &&
-          Number(row.entry_scenes ?? 0) === 1 &&
-          row.current_scene_id === LUMI_DEMO_ENTRY_SCENE_ID,
+          Number(row.playable_scenes ?? 0) === PLAYABLE_SCENE_IDS.length &&
+          Number(row.choice_points ?? 0) === 1 &&
+          Number(row.choice_options ?? 0) === 2 &&
+          PLAYABLE_SCENE_IDS.includes(row.current_scene_id),
         definitions: Number(row.definitions ?? 0),
         versions: Number(row.versions ?? 0),
         sessions: Number(row.sessions ?? 0),
-        entryScenes: Number(row.entry_scenes ?? 0),
+        playableScenes: Number(row.playable_scenes ?? 0),
+        choicePoints: Number(row.choice_points ?? 0),
+        choiceOptions: Number(row.choice_options ?? 0),
         currentSceneId: row.current_scene_id ?? null,
         sessionStatus: row.session_status ?? null,
       };
@@ -113,7 +138,7 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
             manifest.story.definitionId,
             manifest.story.title,
             "Lina'nın Fısıldayan Orman'da Mira ile karşılaşıp kayıp ışık izinin peşine düşmeye başladığı demo hikâyesi.",
-            "lumi-demo-story-v1",
+            "lumi-demo-story-v2-playable",
           ],
         );
         await client.query(
@@ -124,6 +149,7 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
             WHERE id = $1`,
           [manifest.story.definitionId, manifest.story.versionId],
         );
+
         await client.query(
           `INSERT INTO story.story_scenes
             (id, story_version_id, scene_key, sequence_number, scene_type, title,
@@ -143,6 +169,130 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
             }),
           ],
         );
+        await client.query(
+          `INSERT INTO story.story_scenes
+            (id, story_version_id, scene_key, sequence_number, scene_type, title,
+             narrative_text, is_entry_scene, is_terminal_scene, metadata)
+           VALUES ($1,$2,'atesbocekleri-izinde',1,'narrative',$3,$4,false,false,$5::jsonb)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_GROVE_SCENE_ID,
+            manifest.story.versionId,
+            "Ateşböceklerinin İzinde",
+            "Lina Parlayan Pusula'yı avucunda tutup altın ışığın peşinden yürüdü. Patika onu Ateşböcekleri Korusu'na çıkardı. Tiko çalılıkların arasından başını uzattı; korunun üzerinde daha önce görmediği ince bir ışık yolu beliriyordu. Lina artık kayıp ışığın gerçek bir iz bıraktığını biliyordu.",
+            JSON.stringify({
+              lumiDemo: true,
+              locationKey: "atesbocekleri-korusu",
+              visualStatus: "not_generated",
+            }),
+          ],
+        );
+        await client.query(
+          `INSERT INTO story.story_scenes
+            (id, story_version_id, scene_key, sequence_number, scene_type, title,
+             narrative_text, is_entry_scene, is_terminal_scene, metadata)
+           VALUES ($1,$2,'mira-ile-izleri-okumak',2,'narrative',$3,$4,false,false,$5::jsonb)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_MIRA_SCENE_ID,
+            manifest.story.versionId,
+            "Mira ile İzleri Okumak",
+            "Lina hemen ilerlemek yerine Mira'nın yanında kaldı. Birlikte toprağın üzerindeki soluk parıltıları, kırılmış ince dalları ve rüzgârın taşıdığı sıcak kokuyu incelediler. Mira gülümsedi: ‘Bazen doğru yol, önce dikkatle bakınca görünür.’ Lina iz sürmenin yalnız hızlı olmak olmadığını anladı.",
+            JSON.stringify({
+              lumiDemo: true,
+              locationKey: "fisildayan-orman",
+              visualStatus: "not_generated",
+            }),
+          ],
+        );
+
+        await client.query(
+          `INSERT INTO story.story_scene_transitions
+            (id, story_version_id, from_scene_id, to_scene_id, transition_type, priority)
+           VALUES ($1,$2,$3,$4,'choice',0)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_GROVE_TRANSITION_ID,
+            manifest.story.versionId,
+            LUMI_DEMO_ENTRY_SCENE_ID,
+            LUMI_DEMO_GROVE_SCENE_ID,
+          ],
+        );
+        await client.query(
+          `INSERT INTO story.story_scene_transitions
+            (id, story_version_id, from_scene_id, to_scene_id, transition_type, priority)
+           VALUES ($1,$2,$3,$4,'choice',1)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_MIRA_TRANSITION_ID,
+            manifest.story.versionId,
+            LUMI_DEMO_ENTRY_SCENE_ID,
+            LUMI_DEMO_MIRA_SCENE_ID,
+          ],
+        );
+
+        await client.query(
+          `INSERT INTO story.story_choice_points
+            (id, story_version_id, scene_id, choice_point_key, choice_point_type,
+             prompt_text, sequence_number, rule_version)
+           VALUES ($1,$2,$3,'ilk-isik-yolu','decision',$4,0,1)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_CHOICE_POINT_ID,
+            manifest.story.versionId,
+            LUMI_DEMO_ENTRY_SCENE_ID,
+            "Lina ilk ışık izini nasıl takip etsin?",
+          ],
+        );
+        await client.query(
+          `INSERT INTO story.story_choice_options
+            (id, choice_point_id, option_key, option_text, sequence_number,
+             availability_rule, consequence_previews)
+           VALUES ($1,$2,'isigi-takip-et',$3,0,NULL,$4::jsonb)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_FOLLOW_LIGHT_OPTION_ID,
+            LUMI_DEMO_CHOICE_POINT_ID,
+            "Parlayan Pusula ile ışığın peşinden git",
+            JSON.stringify([
+              {
+                consequenceType: "scene_transition",
+                previewText: "Işık izini takip ederek koruya doğru ilerlersin.",
+                targetKey: "atesbocekleri-izinde",
+              },
+              {
+                consequenceType: "flag_set",
+                previewText: "Lina ilk ışık izini cesaretle takip etmiş olur.",
+                targetKey: "demo.followed_first_light",
+              },
+            ]),
+          ],
+        );
+        await client.query(
+          `INSERT INTO story.story_choice_options
+            (id, choice_point_id, option_key, option_text, sequence_number,
+             availability_rule, consequence_previews)
+           VALUES ($1,$2,'mira-ile-incele',$3,1,NULL,$4::jsonb)
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            LUMI_DEMO_STAY_WITH_MIRA_OPTION_ID,
+            LUMI_DEMO_CHOICE_POINT_ID,
+            "Önce Mira ile çevredeki izleri incele",
+            JSON.stringify([
+              {
+                consequenceType: "scene_transition",
+                previewText: "Mira ile ipuçlarını okuyarak daha temkinli ilerlersin.",
+                targetKey: "mira-ile-izleri-okumak",
+              },
+              {
+                consequenceType: "flag_set",
+                previewText: "Lina ilk ışık izinde önce gözlem yapmayı seçmiş olur.",
+                targetKey: "demo.studied_first_light",
+              },
+            ]),
+          ],
+        );
+
         await client.query(
           `INSERT INTO story.story_sessions
             (id, household_id, child_profile_id, world_id, story_definition_id,
@@ -229,7 +379,35 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
           [manifest.household.id, manifest.world.id, manifest.story.sessionId],
         );
         await client.query(
+          `DELETE FROM story.story_choice_consequences WHERE story_session_id = $1`,
+          [manifest.story.sessionId],
+        );
+        await client.query(
+          `DELETE FROM story.story_committed_choices WHERE story_session_id = $1`,
+          [manifest.story.sessionId],
+        );
+        await client.query(
+          `DELETE FROM story.story_choice_options WHERE choice_point_id = $1`,
+          [LUMI_DEMO_CHOICE_POINT_ID],
+        );
+        await client.query(
+          `DELETE FROM story.story_choice_points WHERE story_version_id = $1`,
+          [manifest.story.versionId],
+        );
+        await client.query(
+          `DELETE FROM story.story_session_checkpoints WHERE story_session_id = $1`,
+          [manifest.story.sessionId],
+        );
+        await client.query(
           `DELETE FROM story.story_session_scene_visits WHERE story_session_id = $1`,
+          [manifest.story.sessionId],
+        );
+        await client.query(
+          `DELETE FROM story.story_idempotency_ledger WHERE story_session_id = $1`,
+          [manifest.story.sessionId],
+        );
+        await client.query(
+          `DELETE FROM story.story_event_store WHERE story_session_id = $1`,
           [manifest.story.sessionId],
         );
         await client.query(
@@ -239,6 +417,10 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
         await client.query(
           `DELETE FROM story.story_sessions WHERE id = $1 AND household_id = $2`,
           [manifest.story.sessionId, manifest.household.id],
+        );
+        await client.query(
+          `DELETE FROM story.story_scene_transitions WHERE story_version_id = $1`,
+          [manifest.story.versionId],
         );
         await client.query(
           `DELETE FROM story.story_scenes WHERE story_version_id = $1`,
