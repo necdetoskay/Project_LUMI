@@ -10,6 +10,7 @@ RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY services/worker/package.json services/worker/package.json
+COPY packages/context/package.json packages/context/package.json
 COPY packages/logger/package.json packages/logger/package.json
 COPY packages/profiles/package.json packages/profiles/package.json
 COPY packages/simulation/package.json packages/simulation/package.json
@@ -19,6 +20,7 @@ COPY packages/world/package.json packages/world/package.json
 RUN pnpm install --frozen-lockfile --prod
 
 COPY services/worker services/worker
+COPY packages/context packages/context
 COPY packages/logger packages/logger
 COPY packages/profiles packages/profiles
 COPY packages/simulation packages/simulation
