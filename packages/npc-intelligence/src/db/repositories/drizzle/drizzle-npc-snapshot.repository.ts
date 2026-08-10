@@ -8,12 +8,20 @@ import { validateWeightPolicy } from "../../../domain/utility";
 import { getNpcDb, type Database } from "../../client";
 import { npcSnapshots } from "../../schema/npc-intelligence/npc-snapshots";
 
+export interface NpcMoveCharacterEffectIntent {
+  type: "move_character";
+  targetLocationId: string;
+}
+
+export type NpcWorldEffectIntent = NpcMoveCharacterEffectIntent;
+
 export interface CanonicalNpcDecisionPayload {
   decisionKey: string;
   candidates: CandidateAction[];
   context: DecisionContextVector;
   policy: UtilityWeightPolicy;
   seed: string;
+  effectsByCandidateId?: Record<string, NpcWorldEffectIntent>;
 }
 
 interface PersistedNpcDecisionPayload {
@@ -22,6 +30,7 @@ interface PersistedNpcDecisionPayload {
   context: DecisionContextVector;
   policy: Omit<UtilityWeightPolicy, "updatedAt"> & { updatedAt: string };
   seed: string;
+  effectsByCandidateId?: Record<string, NpcWorldEffectIntent>;
 }
 
 export interface CanonicalNpcSnapshot {
@@ -53,6 +62,9 @@ function persistDecisionPayload(
       weights: { ...payload.policy.weights },
       updatedAt: payload.policy.updatedAt.toISOString(),
     },
+    effectsByCandidateId: payload.effectsByCandidateId
+      ? { ...payload.effectsByCandidateId }
+      : undefined,
   };
   return persisted as unknown as Record<string, unknown>;
 }
@@ -82,6 +94,26 @@ function validCandidates(value: unknown): value is CandidateAction[] {
   );
 }
 
+function validEffects(
+  value: unknown,
+  candidateIds: ReadonlySet<string>,
+): value is Record<string, NpcWorldEffectIntent> | undefined {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.entries(value).every(([candidateId, effect]) => {
+    if (!candidateIds.has(candidateId)) return false;
+    if (!effect || typeof effect !== "object" || Array.isArray(effect)) {
+      return false;
+    }
+    const item = effect as Partial<NpcMoveCharacterEffectIntent>;
+    return (
+      item.type === "move_character" &&
+      typeof item.targetLocationId === "string" &&
+      item.targetLocationId.length > 0
+    );
+  });
+}
+
 function restoreDecisionPayload(
   value: Record<string, unknown> | null,
 ): CanonicalNpcDecisionPayload | null {
@@ -101,6 +133,9 @@ function restoreDecisionPayload(
   ) {
     return null;
   }
+
+  const candidateIds = new Set(raw.candidates.map((candidate) => candidate.id));
+  if (!validEffects(raw.effectsByCandidateId, candidateIds)) return null;
 
   const context = raw.context as DecisionContextVector;
   if (
@@ -134,6 +169,9 @@ function restoreDecisionPayload(
     context: { ...context },
     policy,
     seed: raw.seed,
+    effectsByCandidateId: raw.effectsByCandidateId
+      ? { ...raw.effectsByCandidateId }
+      : undefined,
   };
 }
 
