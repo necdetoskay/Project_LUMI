@@ -39,7 +39,8 @@ function loadEnv() {
 loadEnv();
 
 const DATABASE_URL =
-  process.env.DATABASE_URL ||
+  process.env.DATABASE_DIRECT_URL ??
+  process.env.DATABASE_URL ??
   "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
 
 const MIGRATION_DIR = resolve(__dirname, "..", "migrations");
