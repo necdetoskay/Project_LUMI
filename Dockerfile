@@ -72,11 +72,4 @@ ENV PORT=3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
-# Profile migrations are intentionally applied at runtime rather than image
-# build time: DATABASE_URL normally points to the Compose service hostname
-# (`postgres`), which only exists on the container network. The migration SQL
-# is idempotent, so every web-container start safely brings the profile schema
-# (including Sprint 53 character visual canon tables) up to date before Next.js
-# begins accepting traffic. Retry briefly because the database container may
-# still be finishing startup even when both services are launched together.
-CMD ["sh", "-c", "set -e; attempt=1; until node packages/profiles/scripts/profile-migrate.mjs; do if [ $attempt -ge 30 ]; then echo 'Profile migration failed after 30 attempts' >&2; exit 1; fi; echo \"PostgreSQL not ready; retrying profile migration ($attempt/30)...\" >&2; attempt=$((attempt + 1)); sleep 2; done; exec node apps/web/server.js"]
+CMD ["node", "apps/web/server.js"]
