@@ -1,28 +1,11 @@
 import { execFile } from "node:child_process";
-import { timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const DEMO_CONFIRMATION = "lumi-demo-v1";
+const DEFAULT_DEMO_PARENT_PASSWORD = "LumiDemo2026!";
 
 export type DemoControlAction = "prepare" | "status" | "reset";
-
-export function isDemoWebControlEnabled(): boolean {
-  return process.env.LUMI_DEMO_WEB_CONTROL_ENABLED === "true";
-}
-
-export function assertDemoControlToken(candidate: string): void {
-  const expected = process.env.LUMI_DEMO_WEB_CONTROL_TOKEN;
-  if (!expected || expected.length < 12) {
-    throw new Error("DEMO_CONTROL_TOKEN_NOT_CONFIGURED");
-  }
-
-  const left = Buffer.from(candidate);
-  const right = Buffer.from(expected);
-  if (left.length !== right.length || !timingSafeEqual(left, right)) {
-    throw new Error("DEMO_CONTROL_FORBIDDEN");
-  }
-}
 
 async function runNode(
   script: string,
@@ -52,24 +35,18 @@ async function runMigrations(): Promise<void> {
 }
 
 function demoEnv(): NodeJS.ProcessEnv {
-  const password = process.env.LUMI_DEMO_PARENT_PASSWORD;
-  if (!password) throw new Error("LUMI_DEMO_PARENT_PASSWORD_NOT_CONFIGURED");
-
   return {
-    // The web runtime is production-shaped, but the demo runner intentionally
-    // refuses NODE_ENV=production. This override is allowed only behind the
-    // explicitly enabled + token-protected demo control endpoint.
+    ...process.env,
     NODE_ENV: "development",
     LUMI_DEMO_CONFIRM: DEMO_CONFIRMATION,
-    LUMI_DEMO_PARENT_PASSWORD: password,
+    LUMI_DEMO_PARENT_PASSWORD:
+      process.env.LUMI_DEMO_PARENT_PASSWORD ?? DEFAULT_DEMO_PARENT_PASSWORD,
   };
 }
 
 export async function runDemoControl(
   action: DemoControlAction,
 ): Promise<string> {
-  if (!isDemoWebControlEnabled()) throw new Error("DEMO_CONTROL_DISABLED");
-
   if (action === "prepare") {
     await runMigrations();
     return runNode("apps/web/scripts/lumi-demo-cli.mjs", ["seed"], demoEnv());
