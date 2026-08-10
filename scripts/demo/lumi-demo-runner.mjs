@@ -20,20 +20,31 @@ export function assertDemoDatabaseSafety({
   databaseUrl,
   nodeEnv = process.env.NODE_ENV,
   confirmation = process.env.LUMI_DEMO_CONFIRM,
+  allowedDatabaseName = process.env.LUMI_DEMO_ALLOWED_DATABASE_NAME,
 }) {
   if (!databaseUrl) throw new Error("DEMO_DATABASE_URL_REQUIRED");
   if (nodeEnv === "production")
     throw new Error("DEMO_PRODUCTION_ENV_FORBIDDEN");
 
   const name = databaseName(databaseUrl).toLowerCase();
-  if (!SAFE_DATABASE_MARKERS.some((marker) => name.includes(marker))) {
+  const markerSafe = SAFE_DATABASE_MARKERS.some((marker) => name.includes(marker));
+  const exactNameConfirmed =
+    typeof allowedDatabaseName === "string" &&
+    allowedDatabaseName.trim().toLowerCase() === name &&
+    name.length > 0;
+
+  if (!markerSafe && !exactNameConfirmed) {
     throw new Error(`DEMO_DATABASE_NOT_DISPOSABLE:${name || "unknown"}`);
   }
   if (confirmation !== LUMI_DEMO_CONFIRMATION) {
     throw new Error(`DEMO_CONFIRMATION_REQUIRED:${LUMI_DEMO_CONFIRMATION}`);
   }
 
-  return Object.freeze({ databaseName: name, safe: true });
+  return Object.freeze({
+    databaseName: name,
+    safe: true,
+    safetyMode: markerSafe ? "marker" : "exact-name-confirmation",
+  });
 }
 
 function assertAdapter(adapter) {
