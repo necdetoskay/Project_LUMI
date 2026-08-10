@@ -1,5 +1,5 @@
 import type { Logger } from "@lumi/logger";
-import { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
+import type { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
 import type {
   DrizzleNpcSnapshotRepository,
   DrizzleWorkerNpcDecisionRepository,
