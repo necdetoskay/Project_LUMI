@@ -96,6 +96,30 @@ export type {
 } from "./character-visual-brief";
 
 export {
+  renderCharacterVisualPrompt,
+} from "./character-visual-generation";
+export type {
+  CharacterVisualGenerationPort,
+  CharacterVisualGenerationRequest,
+  CharacterVisualGenerationResult,
+  CharacterVisualStoragePort,
+  CharacterVisualStorageInput,
+  GeneratedImageCandidate,
+} from "./character-visual-generation";
+
+export {
+  generateCharacterVisualCandidates,
+  listCharacterVisualCandidates,
+  getCharacterVisualCanon,
+  selectCharacterVisualCanon,
+  rejectCharacterVisualCandidate,
+} from "./character-visual.service";
+export type {
+  GenerateCharacterVisualInput,
+  CharacterVisualServiceDeps,
+} from "./character-visual.service";
+
+export {
   EMOTION_RULE_VERSION,
   evaluateEmotionEvent,
   applyEmotionEvent,
