@@ -57,9 +57,10 @@ try {
   }
 
   for (const [schema, table] of requiredTables) {
-    const tableResult = await client.query("select to_regclass($1) as relation", [
-      `${schema}.${table}`,
-    ]);
+    const tableResult = await client.query(
+      "select to_regclass($1) as relation",
+      [`${schema}.${table}`],
+    );
     assert(
       tableResult.rows[0]?.relation,
       `Required table ${schema}.${table} is missing.`,
