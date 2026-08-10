@@ -1,9 +1,4 @@
-import nextEnv from "@next/env";
 import pg from "pg";
-
-const { loadEnvConfig } = nextEnv;
-
-loadEnvConfig(process.cwd());
 
 const databaseUrl = process.env.DATABASE_URL;
 const authSchemaSql = `
