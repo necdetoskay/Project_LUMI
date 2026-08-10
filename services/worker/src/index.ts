@@ -1,4 +1,11 @@
 import { createLogger } from "@lumi/logger";
+import { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
+import {
+  createDatabase as createNpcDatabase,
+  DrizzleCanonicalMemoryRepository,
+  DrizzleNpcSnapshotRepository,
+  DrizzleWorkerNpcDecisionRepository,
+} from "@lumi/npc-intelligence/db";
 import { createDatabase } from "@lumi/simulation/db";
 import {
   DrizzleSimulationRepository,
@@ -6,6 +13,7 @@ import {
 } from "@lumi/simulation/db";
 import { BackgroundWorker, type WorkerConfig } from "./worker";
 import { OutboxJobRunner } from "./outbox-runner";
+import { NpcDecisionJobRunner } from "./npc-decision-runner";
 import {
   EmptyRelevanceSourceAdapter,
   EnvWorldDiscoveryAdapter,
@@ -23,14 +31,16 @@ const dbUrl =
   process.env.DATABASE_URL ??
   "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
 const db = createDatabase(dbUrl);
+const npcDb = createNpcDatabase(dbUrl);
 const repo = new DrizzleSimulationRepository(db);
 const store = new SimulationStoreAdapter(repo);
 const logger = createLogger({ level: "info" });
 const seed = process.env.SIMULATION_SEED ?? "lumi-sim-v1";
 
 const worldSource = new SimulationRepositoryWorldSourceAdapter(repo, logger);
+const npcSnapshots = new DrizzleNpcSnapshotRepository(npcDb);
 const npcSource = new RepositoryNpcSourceAdapter(
-  undefined,
+  npcSnapshots,
   Number(process.env.WORKER_NPC_SNAPSHOT_LIMIT ?? "64"),
 );
 const relevanceSource = new EmptyRelevanceSourceAdapter();
@@ -43,6 +53,13 @@ const outboxRunner = new OutboxJobRunner(
   Number(process.env.WORKER_OUTBOX_BATCH_SIZE ?? "25"),
   Number(process.env.WORKER_OUTBOX_HOUSEHOLD_LIMIT ?? "100"),
 );
+const npcDecisionRunner = new NpcDecisionJobRunner(
+  npcSnapshots,
+  new MemoryAwareDecisionService(new DrizzleCanonicalMemoryRepository(npcDb)),
+  new DrizzleWorkerNpcDecisionRepository(npcDb),
+  logger,
+  Number(process.env.WORKER_NPC_DECISION_LIMIT ?? "64"),
+);
 
 const worker = new BackgroundWorker(
   workerConfig,
@@ -54,6 +71,7 @@ const worker = new BackgroundWorker(
   logger,
   seed,
   outboxRunner,
+  npcDecisionRunner,
 );
 
 worker.start();
