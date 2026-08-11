@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     "/api/**/*": [
       "../node_modules/drizzle-orm/**/*",
       "../node_modules/postgres/**/*",
-      "../node_modules/@img/sharp-linux-x64/**/*",
-      "../node_modules/@img/sharp-libvips-linux-x64/**/*",
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
     ],
   },
 };
