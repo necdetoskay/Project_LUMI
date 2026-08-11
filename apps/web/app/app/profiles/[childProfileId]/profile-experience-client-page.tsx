@@ -515,7 +515,7 @@ export default function ProfileExperienceClientPage({
                   className="h-52"
                   householdId={householdId}
                   sizes="(min-width: 768px) 50vw, 100vw"
-                  variant="body-front"
+                  variant="head-three-quarter"
                 />
                 <div className="p-6">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">

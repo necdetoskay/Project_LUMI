@@ -347,7 +347,7 @@ export function ProfileStoriesSection({
                   characterName={selectedLaunch.character.name}
                   className="aspect-square w-full rounded-xl border border-outline-variant shadow-sm"
                   sizes="220px"
-                  variant="head-front"
+                  variant="head-three-quarter"
                 />
               ) : null}
               <label className="block text-sm font-semibold text-on-surface">

@@ -645,7 +645,7 @@ function CharactersSection({
                 className="h-16 w-16 shrink-0 rounded-2xl"
                 householdId={householdId}
                 sizes="64px"
-                variant="head-front"
+                variant="head-three-quarter"
               />
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold text-on-surface">

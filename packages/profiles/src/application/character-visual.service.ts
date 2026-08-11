@@ -323,7 +323,7 @@ export async function generateCharacterVisualCandidates(
               briefVersion: brief.version,
               briefFingerprint: fingerprint,
               sourceCompositeAssetId,
-              derivation: "deterministic-3x2-crop-v1",
+              derivation: "deterministic-seven-view-crop-v2",
             },
           });
         }

@@ -62,7 +62,7 @@ describe("AssetsClientPage", () => {
     expect(screen.queryByText(/Unexpected token/)).toBeNull();
   });
 
-  it("generates a 3x2 reference set with the selected candidate count", async () => {
+  it("generates a seven-view reference set with the selected candidate count", async () => {
     const fetchMock = vi.fn(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
         if (init?.method === "POST") {
