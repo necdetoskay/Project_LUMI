@@ -61,6 +61,7 @@ export async function GET() {
 
   if (argon2Ready && sessionSchemaReady && uuidFunctionReady) {
     const client = await getAuthPool().connect();
+
     try {
       await client.query("BEGIN");
       const passwordHash = await hash("lumi-write-diagnostic", {
@@ -85,7 +86,10 @@ export async function GET() {
         ],
       );
       const parentId = parent.rows[0]?.id;
-      if (!parentId) throw new Error("DIAGNOSTIC_PARENT_INSERT_FAILED");
+
+      if (!parentId) {
+        throw new Error("DIAGNOSTIC_PARENT_INSERT_FAILED");
+      }
 
       authWriteStage = "session_insert";
       const session = await client.query<{ id: string }>(
@@ -102,7 +106,10 @@ export async function GET() {
         `,
         [parentId, `diagnostic-${crypto.randomUUID()}`],
       );
-      if (!session.rows[0]?.id) throw new Error("DIAGNOSTIC_SESSION_INSERT_FAILED");
+
+      if (!session.rows[0]?.id) {
+        throw new Error("DIAGNOSTIC_SESSION_INSERT_FAILED");
+      }
 
       authWriteStage = "rollback";
       await client.query("ROLLBACK");
