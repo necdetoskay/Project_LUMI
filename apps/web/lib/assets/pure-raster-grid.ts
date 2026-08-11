@@ -21,10 +21,14 @@ export function splitRasterGrid(input: {
   columns: number;
   rows: number;
 }) {
-  const source = decode(Buffer.from(input.bytesBase64, "base64"), input.mimeType);
+  const source = decode(
+    Buffer.from(input.bytesBase64, "base64"),
+    input.mimeType,
+  );
   const cellWidth = Math.floor(source.width / input.columns);
   const cellHeight = Math.floor(source.height / input.rows);
-  if (cellWidth < 128 || cellHeight < 128) throw new Error("RASTER_GRID_TOO_SMALL");
+  if (cellWidth < 128 || cellHeight < 128)
+    throw new Error("RASTER_GRID_TOO_SMALL");
 
   return Array.from({ length: input.columns * input.rows }, (_, index) => {
     const left = (index % input.columns) * cellWidth;
