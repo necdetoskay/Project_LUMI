@@ -24,7 +24,7 @@ const actionSchema = z.discriminatedUnion("action", [
     aspectRatio: z
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
-    mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    mode: z.enum(["portrait", "reference-sheet"]).default("portrait"),
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("reject"), assetId: z.string().uuid() }),
@@ -96,12 +96,6 @@ export async function POST(
       const action = actionSchema.parse(await request.json());
 
       if (action.action === "generate") {
-        // Keep the read-only GET path free of Sharp's native runtime. Loading
-        // the derivative adapter at module scope makes a harmless library read
-        // fail before the handler can return JSON when Sharp cannot initialize.
-        const { SharpCharacterReferenceSheetDerivativeAdapter } = await import(
-          "@/lib/assets/character-reference-sheet-derivative"
-        );
         const apiKey = await getOpenRouterApiKey(parent.id, householdId);
         if (!apiKey) {
           return NextResponse.json(
@@ -125,7 +119,6 @@ export async function POST(
               apiKey,
             }),
             storagePort: createCharacterVisualStorageAdapter(),
-            derivativePort: new SharpCharacterReferenceSheetDerivativeAdapter(),
           },
         );
         return NextResponse.json(result, {

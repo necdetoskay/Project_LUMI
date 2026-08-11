@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -22,20 +21,16 @@ const inputSchema = z.object({
   idempotencyKey: z.string().min(1).max(160),
 });
 
-function renderPrompt(
-  items: Array<{ displayName: string; category: string; rarity: string }>,
-) {
-  const slots = items
-    .map(
-      (item, index) =>
-        `Cell ${index + 1}: ${item.displayName}; category ${item.category}; rarity ${item.rarity}.`,
-    )
-    .join(" ");
+function renderPrompt(item: {
+  displayName: string;
+  category: string;
+  rarity: string;
+}) {
   return [
-    `Create one clean 3-column by 2-row inventory item sheet for a child-safe illustrated storybook.`,
-    `Use six equal borderless cells in strict reading order. ${slots}`,
-    `For every unused cell, leave it completely empty. Show exactly one isolated item centered in each used cell, front three-quarter view, generous safe margins, consistent soft lighting and a uniform pale background.`,
-    `Do not add people, hands, labels, letters, numbers, panel borders, logos, scenery, duplicates, or watermarks. Keep each item's identity and cell position exact.`,
+    `Create one isolated inventory item icon for a child-safe illustrated storybook.`,
+    `Item: ${item.displayName}; category ${item.category}; rarity ${item.rarity}.`,
+    `Show exactly one item centered in a front three-quarter view with generous safe margins, soft lighting and a uniform pale background.`,
+    `Do not add people, hands, labels, letters, numbers, borders, logos, scenery, duplicates, or watermarks.`,
   ].join(" ");
 }
 
@@ -98,49 +93,35 @@ export async function POST(request: Request) {
       const adapter = new OpenRouterCharacterVisualGenerationAdapter({
         apiKey,
       });
-      const generated = await adapter.generate({
-        jobId: crypto.randomUUID(),
-        brief: null as never,
-        prompt: renderPrompt(items as NonNullable<(typeof items)[number]>[]),
-        model: "krea/krea-2-medium-turbo",
-        candidateCount: 1,
-        aspectRatio: "3:2",
-        resolution: "1K",
-      });
-      const candidate = generated.candidates[0];
-      if (!candidate) throw new Error("ITEM_SHEET_EMPTY");
-      const source = Buffer.from(candidate.bytesBase64, "base64");
-      const metadata = await sharp(source).metadata();
-      if (!metadata.width || !metadata.height)
-        throw new Error("ITEM_SHEET_DIMENSIONS_MISSING");
-      const cellWidth = Math.floor(metadata.width / 3);
-      const cellHeight = Math.floor(metadata.height / 2);
-      if (cellWidth < 128 || cellHeight < 128)
-        throw new Error("ITEM_SHEET_TOO_SMALL");
-
       const storage = createCharacterVisualStorageAdapter();
       const batchId = crypto.randomUUID();
       const assets = [];
+      const costMetadata = [];
       for (const [index, item] of (
         items as NonNullable<(typeof items)[number]>[]
       ).entries()) {
-        const crop = {
-          left: (index % 3) * cellWidth,
-          top: Math.floor(index / 3) * cellHeight,
-          width: cellWidth,
-          height: cellHeight,
-        };
-        const bytes = await sharp(source)
-          .extract(crop)
-          .webp({ quality: 90 })
-          .toBuffer();
+        if (existing[index]) {
+          assets.push(existing[index]);
+          continue;
+        }
+        const generated = await adapter.generate({
+          jobId: crypto.randomUUID(),
+          brief: null as never,
+          prompt: renderPrompt(item),
+          model: "krea/krea-2-medium-turbo",
+          candidateCount: 1,
+          aspectRatio: "1:1",
+          resolution: "1K",
+        });
+        const candidate = generated.candidates[0];
+        if (!candidate) throw new Error("ITEM_IMAGE_EMPTY");
         const stored = await storage.store({
           householdId: input.householdId,
           characterId: item.id,
           jobId: batchId,
           candidateIndex: index,
-          bytesBase64: bytes.toString("base64"),
-          mimeType: "image/webp",
+          bytesBase64: candidate.bytesBase64,
+          mimeType: candidate.mimeType,
         });
         const scope = {
           householdId: input.householdId,
@@ -153,18 +134,21 @@ export async function POST(request: Request) {
             ...scope,
             assetKind: "item-icon",
             storageRef: stored.storageRef,
-            mimeType: "image/webp",
-            width: cellWidth,
-            height: cellHeight,
+            mimeType: candidate.mimeType,
+            ...(typeof candidate.width === "number"
+              ? { width: candidate.width }
+              : {}),
+            ...(typeof candidate.height === "number"
+              ? { height: candidate.height }
+              : {}),
             provider: generated.provider,
             model: generated.model,
-            originType: "derived",
-            sourceSystem: "item-batch-sheet-v1",
+            originType: "generated",
+            sourceSystem: "item-direct-v1",
             provenance: {
               batchId,
               idempotencyKey: input.idempotencyKey,
-              cellIndex: index,
-              crop,
+              itemIndex: index,
               providerRequestId: generated.providerRequestId ?? null,
             },
           },
@@ -172,9 +156,10 @@ export async function POST(request: Request) {
         );
         await selectManagedAssetCanon(parent.id, scope, asset.id, deps);
         assets.push(asset);
+        if (generated.costMetadata) costMetadata.push(generated.costMetadata);
       }
       return NextResponse.json(
-        { batchId, assets, costMetadata: generated.costMetadata },
+        { batchId, assets, costMetadata },
         { status: 201 },
       );
     } catch (error) {
