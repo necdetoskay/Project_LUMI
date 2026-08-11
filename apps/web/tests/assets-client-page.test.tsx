@@ -26,6 +26,42 @@ afterEach(() => {
 });
 
 describe("AssetsClientPage", () => {
+  it("shows a readable message when the initial API response is HTML", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).startsWith("/api/inventory/list")) {
+          return response({ items: [] });
+        }
+        return new Response("<!DOCTYPE html><title>Server error</title>", {
+          status: 500,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }),
+    );
+
+    render(
+      <AssetsClientPage
+        householdId={HOUSEHOLD_ID}
+        characters={[
+          {
+            id: CHARACTER_ID,
+            name: "Lina",
+            subtype: "player",
+            originConcept: "Meraklı bir ışık gezgini",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      await screen.findByText(
+        "Görsel kütüphanesi okunamadı. Sunucu geçici olarak yanıt veremedi.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Unexpected token/)).toBeNull();
+  });
+
   it("generates a 3x2 reference set with the selected candidate count", async () => {
     const fetchMock = vi.fn(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
