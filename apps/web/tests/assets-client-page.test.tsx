@@ -92,7 +92,12 @@ describe("AssetsClientPage", () => {
 
     await screen.findByText("Lina kütüphanesi");
 
-    fireEvent.click(screen.getByRole("button", { name: "3 aday" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aday sayısını artır" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aday sayısını artır" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "3 görsel üret" }));
 
     await waitFor(() => {
@@ -159,9 +164,9 @@ describe("AssetsClientPage", () => {
     expect(canonPanel).not.toBeNull();
     expect(canonPanel?.textContent).toContain("Canon v2");
     expect(screen.getByText("Aktif görünüm")).toBeTruthy();
-    expect(
-      screen.getByText("1024×1024 · krea/krea-2-medium-turbo"),
-    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Ayrıntılar"));
+    expect(screen.getByText(/1024×1024/)).toBeTruthy();
+    expect(screen.getByText(/krea\/krea-2-medium-turbo/)).toBeTruthy();
   });
 
   it("previews and visibly selects a derived character view", async () => {
@@ -252,5 +257,124 @@ describe("AssetsClientPage", () => {
       screen.getAllByAltText("Lina Yarım ¾")[0]?.getAttribute("src"),
     ).toContain(headThreeQuarterId);
     expect(screen.getAllByText("Uygulama görseli").length).toBeGreaterThan(0);
+  });
+
+  it("shows bag generation results inside the bag workspace", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.startsWith("/api/inventory/list"))
+          return response({ items: [] });
+        if (url === "/api/assets/bags" && init?.method === "POST") {
+          return response({ assets: [{ id: "bag-1" }, { id: "bag-2" }] }, 201);
+        }
+        if (url.includes("/api/assets/subjects/character/")) {
+          return response({
+            canon: {
+              selectedAssetId: url.includes("bag-open")
+                ? "bag-open-1"
+                : "bag-closed-1",
+            },
+          });
+        }
+        return response({ canon: null, candidates: [], variants: [] });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <AssetsClientPage
+        householdId={HOUSEHOLD_ID}
+        characters={[
+          {
+            id: CHARACTER_ID,
+            name: "Lina",
+            subtype: "player",
+            originConcept: "Kaşif",
+          },
+        ]}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("tab", { name: /Çanta/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Çanta görselleri üret" }),
+    );
+
+    expect(
+      await screen.findByText("Açık ve kapalı çanta görselleri hazırlandı."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Açık" }));
+    expect(screen.getByText("Açık çanta")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Kapalı" }));
+    expect(screen.getByText("Kapalı çanta")).toBeTruthy();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input]) =>
+          String(input).includes("assetKind=bag-open"),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it("keeps per-item success and failure visible and offers retry", async () => {
+    const itemOne = "51000000-0000-4000-8000-000000000071";
+    const itemTwo = "51000000-0000-4000-8000-000000000072";
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.startsWith("/api/inventory/list"))
+          return response({
+            items: [
+              {
+                id: itemOne,
+                displayName: "Pusula",
+                category: "tool",
+                rarity: "common",
+              },
+              {
+                id: itemTwo,
+                displayName: "Fener",
+                category: "tool",
+                rarity: "rare",
+              },
+            ],
+          });
+        if (url === "/api/assets/items/batch" && init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          return body.itemIds[0] === itemOne
+            ? response({ assets: [{ id: "asset-1" }] }, 201)
+            : response({ error: "ITEM_IMAGE_EMPTY" }, 400);
+        }
+        if (url.includes("/api/assets/subjects/item/"))
+          return response({ canon: null });
+        return response({ canon: null, candidates: [], variants: [] });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <AssetsClientPage
+        householdId={HOUSEHOLD_ID}
+        characters={[
+          {
+            id: CHARACTER_ID,
+            name: "Lina",
+            subtype: "player",
+            originConcept: "Kaşif",
+          },
+        ]}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("tab", { name: /Eşyalar/ }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "2 eşyayı üret" }),
+    );
+
+    expect(
+      await screen.findByText(/1 eşya hazırlandı; 1 eşya üretilemedi/),
+    ).toBeTruthy();
+    expect(screen.getByText("Hazır")).toBeTruthy();
+    expect(screen.getByText("Başarısız")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tekrar dene" })).toBeTruthy();
   });
 });
