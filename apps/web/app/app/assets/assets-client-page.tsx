@@ -55,6 +55,21 @@ function friendlyError(message: string) {
   return message;
 }
 
+async function readJsonResponse<T>(
+  response: Response,
+  fallbackMessage: string,
+): Promise<T> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error(
+      response.status >= 500
+        ? `${fallbackMessage} Sunucu geçici olarak yanıt veremedi.`
+        : fallbackMessage,
+    );
+  }
+  return (await response.json()) as T;
+}
+
 function lifecycleLabel(candidate: VisualCandidate, isCanon: boolean) {
   if (isCanon) return "Aktif görünüm";
   if (candidate.lifecycleState === "candidate") return "Aday";
@@ -98,9 +113,11 @@ export function AssetsClientPage({
     setLoading(true);
     try {
       const response = await fetch(endpoint, { cache: "no-store" });
-      const payload = (await response.json()) as LibraryResponse & {
-        error?: string;
-      };
+      const payload = await readJsonResponse<
+        LibraryResponse & {
+          error?: string;
+        }
+      >(response, "Görsel kütüphanesi okunamadı.");
       if (!response.ok) {
         throw new Error(payload.error ?? "Görsel kütüphanesi okunamadı.");
       }
@@ -167,7 +184,10 @@ export function AssetsClientPage({
           idempotencyKey: `item-sheet-${characterId}-${newIdempotencyKey()}`,
         }),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = await readJsonResponse<{ error?: string }>(
+        response,
+        "Eşya görselleri üretilemedi.",
+      );
       if (!response.ok)
         throw new Error(payload.error ?? "Eşya görselleri üretilemedi.");
       setSuccessMessage(
@@ -202,7 +222,10 @@ export function AssetsClientPage({
           idempotencyKey: `bag-sheet-${characterId}-${newIdempotencyKey()}`,
         }),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = await readJsonResponse<{ error?: string }>(
+        response,
+        "Çanta görselleri üretilemedi.",
+      );
       if (!response.ok)
         throw new Error(payload.error ?? "Çanta görselleri üretilemedi.");
       setSuccessMessage("Açık ve kapalı çanta görselleri hazırlandı.");
@@ -230,7 +253,10 @@ export function AssetsClientPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = await readJsonResponse<{ error?: string }>(
+        response,
+        "İşlem tamamlanamadı.",
+      );
       if (!response.ok) {
         throw new Error(payload.error ?? "İşlem tamamlanamadı.");
       }

@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
-import { SharpCharacterReferenceSheetDerivativeAdapter } from "@/lib/assets/character-reference-sheet-derivative";
 import {
   generateCharacterVisualCandidates,
   getCharacterVisualCanon,
@@ -97,6 +96,12 @@ export async function POST(
       const action = actionSchema.parse(await request.json());
 
       if (action.action === "generate") {
+        // Keep the read-only GET path free of Sharp's native runtime. Loading
+        // the derivative adapter at module scope makes a harmless library read
+        // fail before the handler can return JSON when Sharp cannot initialize.
+        const { SharpCharacterReferenceSheetDerivativeAdapter } = await import(
+          "@/lib/assets/character-reference-sheet-derivative"
+        );
         const apiKey = await getOpenRouterApiKey(parent.id, householdId);
         if (!apiKey) {
           return NextResponse.json(
