@@ -92,7 +92,12 @@ describe("AssetsClientPage", () => {
 
     await screen.findByText("Lina kütüphanesi");
 
-    fireEvent.click(screen.getByRole("button", { name: "3 aday" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aday sayısını artır" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aday sayısını artır" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "3 görsel üret" }));
 
     await waitFor(() => {
@@ -159,9 +164,9 @@ describe("AssetsClientPage", () => {
     expect(canonPanel).not.toBeNull();
     expect(canonPanel?.textContent).toContain("Canon v2");
     expect(screen.getByText("Aktif görünüm")).toBeTruthy();
-    expect(
-      screen.getByText("1024×1024 · krea/krea-2-medium-turbo"),
-    ).toBeTruthy();
+    fireEvent.click(screen.getByText("Ayrıntılar"));
+    expect(screen.getByText(/1024×1024/)).toBeTruthy();
+    expect(screen.getByText(/krea\/krea-2-medium-turbo/)).toBeTruthy();
   });
 
   it("previews and visibly selects a derived character view", async () => {
@@ -298,13 +303,17 @@ describe("AssetsClientPage", () => {
     expect(
       await screen.findByText("Açık ve kapalı çanta görselleri hazırlandı."),
     ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Açık" }));
     expect(screen.getByText("Açık çanta")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Kapalı" }));
     expect(screen.getByText("Kapalı çanta")).toBeTruthy();
-    expect(
-      fetchMock.mock.calls.some(([input]) =>
-        String(input).includes("assetKind=bag-open"),
-      ),
-    ).toBe(true);
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input]) =>
+          String(input).includes("assetKind=bag-open"),
+        ),
+      ).toBe(true);
+    });
   });
 
   it("keeps per-item success and failure visible and offers retry", async () => {
@@ -358,7 +367,7 @@ describe("AssetsClientPage", () => {
     );
     fireEvent.click(await screen.findByRole("tab", { name: /Eşyalar/ }));
     fireEvent.click(
-      await screen.findByRole("button", { name: "Seçilen 2 eşyayı üret" }),
+      await screen.findByRole("button", { name: "2 eşyayı üret" }),
     );
 
     expect(

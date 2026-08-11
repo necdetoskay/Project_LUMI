@@ -74,6 +74,13 @@ type ActiveOperation =
   | { type: "candidate-reject"; assetId: string }
   | null;
 type ItemGenerationState = "idle" | "generating" | "ready" | "failed";
+type BagVariant = "bag-closed" | "bag-open";
+type LightboxImage = {
+  src: string;
+  alt: string;
+  label: string;
+} | null;
+
 function friendlyError(message: string) {
   if (message === "OPENROUTER_API_KEY_NOT_CONFIGURED") {
     return "Görsel üretimi için OpenRouter anahtarı henüz ayarlanmamış. Ayarlar bölümünden API anahtarını ekleyin.";
@@ -132,6 +139,8 @@ export function AssetsClientPage({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [assetRevision, setAssetRevision] = useState(0);
+  const [bagVariant, setBagVariant] = useState<BagVariant>("bag-closed");
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage>(null);
   const [itemGenerationState, setItemGenerationState] = useState<
     Record<string, ItemGenerationState>
   >({});
@@ -412,23 +421,31 @@ export function AssetsClientPage({
 
   return (
     <section className="storybook-page min-h-full">
-      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-5 py-8 md:px-6 md:py-10">
-        <header className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-7 shadow-sm md:p-9">
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-4 px-3 py-4 sm:px-4 md:gap-6 md:px-6 md:py-10">
+        <header className="border-b border-outline-variant/70 pb-4 md:rounded-[1.5rem] md:border md:bg-white/85 md:p-7 md:shadow-sm">
+          <div className="flex items-start justify-between gap-3 md:items-end">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+              <p className="hidden text-xs font-extrabold uppercase tracking-[0.14em] text-primary md:block">
                 Asset Management
               </p>
-              <h1 className="mt-2 text-3xl font-extrabold text-on-surface md:text-4xl">
-                Asset Management
+              <h1 className="text-2xl font-extrabold text-on-surface md:mt-2 md:text-4xl">
+                Görsel Kütüphanesi
               </h1>
-              <p className="mt-3 max-w-[52rem] leading-7 text-on-surface-variant">
-                Karakterinizin görünümünü, çantasını ve eşyalarını ayrı çalışma
-                alanlarında üretin; sonucu başladığınız yerde hemen inceleyin.
+              <p className="mt-1 max-w-[52rem] text-sm leading-6 text-on-surface-variant md:mt-3 md:text-base md:leading-7">
+                Karakter, çanta ve eşya görsellerini ayrı alanlarda üretin.
               </p>
             </div>
-            <Link className="storybook-button-secondary" href="/app">
-              Aile evine dön
+            <Link
+              aria-label="Aile evine dön"
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-outline-variant bg-white text-on-surface shadow-sm md:size-auto md:px-4 md:py-3"
+              href="/app"
+            >
+              <span className="material-symbols-outlined text-xl md:hidden">
+                arrow_back
+              </span>
+              <span className="hidden font-extrabold md:inline">
+                Aile evine dön
+              </span>
             </Link>
           </div>
         </header>
@@ -445,12 +462,12 @@ export function AssetsClientPage({
           </div>
         ) : (
           <>
-            <section className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-5 shadow-sm md:p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <section className="sticky top-0 z-30 -mx-3 border-b border-outline-variant/70 bg-surface/95 px-3 py-3 backdrop-blur md:static md:mx-0 md:rounded-[1.5rem] md:border md:bg-white/85 md:p-5 md:shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <label className="w-full text-sm font-extrabold text-on-surface md:max-w-sm">
                   Karakter
                   <select
-                    className="mt-2 w-full rounded-2xl border border-outline-variant bg-white px-4 py-3 font-medium text-on-surface"
+                    className="mt-1 w-full rounded-xl border border-outline-variant bg-white px-3 py-2.5 font-medium text-on-surface md:mt-2 md:rounded-2xl md:px-4 md:py-3"
                     value={characterId}
                     onChange={(event) => setCharacterId(event.target.value)}
                   >
@@ -475,7 +492,7 @@ export function AssetsClientPage({
                   ).map(([value, label, icon]) => (
                     <button
                       aria-selected={activeTab === value}
-                      className={`rounded-2xl border px-3 py-3 text-sm font-extrabold transition ${activeTab === value ? "border-primary bg-primary text-on-primary shadow-md" : "border-outline-variant bg-white text-on-surface hover:border-primary"}`}
+                      className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-extrabold transition md:rounded-2xl md:px-3 md:py-3 md:text-sm ${activeTab === value ? "border-primary bg-primary text-on-primary shadow-md" : "border-outline-variant bg-white text-on-surface hover:border-primary"}`}
                       key={value}
                       onClick={() => {
                         setActiveTab(value);
@@ -485,7 +502,7 @@ export function AssetsClientPage({
                       role="tab"
                       type="button"
                     >
-                      <span className="material-symbols-outlined mr-1 align-middle text-lg">
+                      <span className="material-symbols-outlined mr-1 align-middle text-base md:text-lg">
                         {icon}
                       </span>
                       {label}
@@ -494,7 +511,7 @@ export function AssetsClientPage({
                 </div>
               </div>
               {selectedCharacter ? (
-                <p className="mt-4 text-sm text-on-surface-variant">
+                <p className="mt-3 line-clamp-2 text-xs text-on-surface-variant md:mt-4 md:text-sm">
                   <strong className="text-on-surface">
                     {selectedCharacter.name}
                   </strong>{" "}
@@ -506,16 +523,19 @@ export function AssetsClientPage({
             {activeTab === "character" ? (
               <>
                 <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-7">
+                  <div className="rounded-[1.25rem] border border-outline-variant/70 bg-white/85 p-4 shadow-sm md:rounded-[2rem] md:p-7">
                     <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
                       Üretim kontrolü
                     </p>
-                    <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
+                    <h2 className="mt-2 text-xl font-extrabold text-on-surface md:text-2xl">
                       Yeni adaylar oluştur
                     </h2>
 
-                    <div className="mt-6">
-                      <div className="rounded-2xl border border-outline-variant bg-white px-4 py-3">
+                    <details className="mt-4 rounded-xl border border-outline-variant bg-white px-3 py-2.5 md:mt-6 md:rounded-2xl md:px-4 md:py-3">
+                      <summary className="cursor-pointer text-sm font-extrabold text-on-surface">
+                        Nasıl çalışır?
+                      </summary>
+                      <div className="mt-2">
                         <p className="text-sm font-extrabold text-on-surface">
                           4+3 karakter referans seti
                         </p>
@@ -524,46 +544,68 @@ export function AssetsClientPage({
                           üretimde hazırlanır ve ayrı ayrı incelenebilir.
                         </p>
                       </div>
-                    </div>
+                    </details>
 
                     <div className="mt-5">
-                      <p className="text-sm font-extrabold text-on-surface">
-                        Kaç aday üretelim?
-                      </p>
                       <div
-                        className="mt-2 flex flex-wrap gap-2"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-outline-variant bg-white p-2"
                         role="group"
                         aria-label="Aday sayısı"
                       >
-                        {[1, 2, 3, 4].map((count) => (
-                          <button
-                            aria-pressed={candidateCount === count}
-                            className={
-                              candidateCount === count
-                                ? "storybook-button"
-                                : "storybook-button-secondary"
-                            }
-                            disabled={
-                              activeOperation?.type === "character-generate"
-                            }
-                            key={count}
-                            onClick={() => setCandidateCount(count)}
-                            type="button"
-                          >
-                            {count} aday
-                          </button>
-                        ))}
+                        <button
+                          aria-label="Aday sayısını azalt"
+                          className="grid size-11 place-items-center rounded-xl border border-outline-variant bg-surface-container font-black text-on-surface disabled:opacity-40"
+                          disabled={
+                            activeOperation?.type === "character-generate" ||
+                            candidateCount <= 1
+                          }
+                          onClick={() =>
+                            setCandidateCount((current) =>
+                              Math.max(1, current - 1),
+                            )
+                          }
+                          type="button"
+                        >
+                          -
+                        </button>
+                        <div className="text-center">
+                          <p className="text-lg font-black text-on-surface">
+                            {candidateCount} aday
+                          </p>
+                          <p className="text-[11px] font-bold text-on-surface-variant">
+                            Tahmini {candidateCount} üretim
+                          </p>
+                        </div>
+                        <button
+                          aria-label="Aday sayısını artır"
+                          className="grid size-11 place-items-center rounded-xl border border-outline-variant bg-surface-container font-black text-on-surface disabled:opacity-40"
+                          disabled={
+                            activeOperation?.type === "character-generate" ||
+                            candidateCount >= 4
+                          }
+                          onClick={() =>
+                            setCandidateCount((current) =>
+                              Math.min(4, current + 1),
+                            )
+                          }
+                          type="button"
+                        >
+                          +
+                        </button>
                       </div>
-                      <p className="mt-3 text-xs leading-5 text-on-surface-variant">
-                        Model: krea/krea-2-medium-turbo · Her aday ayrı
+                      <details className="mt-2 text-xs leading-5 text-on-surface-variant">
+                        <summary className="cursor-pointer font-bold">
+                          Teknik ayrıntılar
+                        </summary>
+                        Model: krea/krea-2-medium-turbo. Her aday ayrı
                         yönetilir ve hiçbir üretim mevcut canon’u otomatik
                         değiştirmez.
-                      </p>
+                      </details>
                     </div>
 
-                    <div className="mt-6 flex flex-wrap gap-3">
+                    <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap sm:gap-3">
                       <button
-                        className="storybook-button"
+                        className="storybook-button w-full sm:w-auto"
                         disabled={
                           activeOperation?.type === "character-generate" ||
                           loading
@@ -587,7 +629,7 @@ export function AssetsClientPage({
                           : `${candidateCount} görsel üret`}
                       </button>
                       <button
-                        className="storybook-button-secondary"
+                        className="storybook-button-secondary w-full sm:w-auto"
                         disabled={
                           activeOperation?.type === "character-generate" ||
                           loading
@@ -611,17 +653,27 @@ export function AssetsClientPage({
                     ) : null}
                   </div>
 
-                  <aside className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-7">
+                  <aside className="rounded-[1.25rem] border border-outline-variant/70 bg-white/85 p-4 shadow-sm md:rounded-[2rem] md:p-7">
                     <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
                       Aktif canon
                     </p>
-                    <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
+                    <h2 className="mt-2 text-xl font-extrabold text-on-surface md:text-2xl">
                       Hikâyelerde kullanılacak görünüm
                     </h2>
 
                     {canonCandidate && householdId ? (
                       <>
-                        <div className="relative mt-5 aspect-square overflow-hidden rounded-[1.6rem] bg-surface-container-low">
+                        <button
+                          className="relative mt-5 block aspect-square w-full overflow-hidden rounded-[1.2rem] bg-surface-container-low text-left md:rounded-[1.6rem]"
+                          onClick={() =>
+                            setLightboxImage({
+                              alt: `${selectedCharacter?.name ?? "Karakter"} aktif görünümü`,
+                              label: "Aktif canon",
+                              src: `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(canonBodyAsset?.id ?? canonCandidate.id)}?householdId=${encodeURIComponent(householdId)}`,
+                            })
+                          }
+                          type="button"
+                        >
                           <Image
                             alt={`${selectedCharacter?.name ?? "Karakter"} aktif görünümü`}
                             className="object-cover"
@@ -630,7 +682,10 @@ export function AssetsClientPage({
                             src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(canonBodyAsset?.id ?? canonCandidate.id)}?householdId=${encodeURIComponent(householdId)}`}
                             unoptimized
                           />
-                        </div>
+                          <span className="absolute right-3 top-3 rounded-full bg-on-surface/80 px-3 py-1 text-xs font-extrabold text-white">
+                            Büyüt
+                          </span>
+                        </button>
                         <div className="mt-4 flex items-start justify-between gap-4">
                           <div>
                             <p className="font-extrabold text-on-surface">
@@ -675,7 +730,7 @@ export function AssetsClientPage({
                       </p>
                       <h2
                         id="visual-candidates-heading"
-                        className="mt-2 text-3xl font-extrabold text-on-surface"
+                        className="mt-2 text-2xl font-extrabold text-on-surface md:text-3xl"
                       >
                         {selectedCharacter?.name ?? "Karakter"} kütüphanesi
                       </h2>
@@ -723,7 +778,7 @@ export function AssetsClientPage({
                       Bu filtrede gösterilecek görsel yok.
                     </div>
                   ) : (
-                    <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-3">
                       {visibleCandidates.map((candidate) => {
                         const isCanon =
                           state.canon?.selectedAssetId === candidate.id;
@@ -751,13 +806,23 @@ export function AssetsClientPage({
                           : "Referans sayfası";
                         return (
                           <article
-                            className="overflow-hidden rounded-[1.8rem] border border-outline-variant/70 bg-white/90 shadow-sm"
+                            className="overflow-hidden rounded-[1.25rem] border border-outline-variant/70 bg-white/90 shadow-sm md:rounded-[1.8rem]"
                             key={candidate.id}
                           >
-                            <div className="relative aspect-square bg-surface-container-low">
+                            <button
+                              className="relative block aspect-square w-full bg-surface-container-low text-left"
+                              onClick={() =>
+                                setLightboxImage({
+                                  alt: `${selectedCharacter?.name ?? "Karakter"} ${previewLabel}`,
+                                  label: previewLabel,
+                                  src: previewUrl,
+                                })
+                              }
+                              type="button"
+                            >
                               <Image
                                 alt={`${selectedCharacter?.name ?? "Karakter"} ${previewLabel}`}
-                                className="object-contain p-3 transition-transform duration-300 hover:scale-[1.03]"
+                                className="object-contain p-2 transition-transform duration-300 hover:scale-[1.03] md:p-3"
                                 fill
                                 sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                                 src={previewUrl}
@@ -780,7 +845,10 @@ export function AssetsClientPage({
                                   </span>
                                 ) : null}
                               </div>
-                            </div>
+                              <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-on-surface/80 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
+                                Büyüt
+                              </span>
+                            </button>
                             {candidateVariants.length > 0 ? (
                               <div className="border-t border-outline-variant/60 bg-surface-container-low p-3">
                                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -814,7 +882,7 @@ export function AssetsClientPage({
                                     Tüm sayfa
                                   </button>
                                 </div>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1">
                                   {candidateVariants.map((variant) => {
                                     const variantLabel =
                                       variantLabels[variant.assetKind ?? ""] ??
@@ -830,7 +898,7 @@ export function AssetsClientPage({
                                       <button
                                         aria-label={`${variantLabel}${roleLabel ? ` — ${roleLabel}` : ""}`}
                                         aria-pressed={isSelected}
-                                        className={`group relative rounded-xl border-2 p-1 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25 ${
+                                        className={`group relative w-24 shrink-0 rounded-xl border-2 p-1 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25 md:w-auto ${
                                           isSelected
                                             ? "border-primary bg-primary/10 shadow-md"
                                             : "border-transparent bg-white hover:-translate-y-1 hover:border-primary/60 hover:shadow-md"
@@ -862,11 +930,11 @@ export function AssetsClientPage({
                                             </span>
                                           ) : null}
                                         </div>
-                                        <p className="mt-1.5 truncate text-center text-[10px] font-extrabold text-on-surface-variant">
+                                        <p className="mt-1.5 text-center text-[10px] font-extrabold leading-3 text-on-surface-variant">
                                           {variantLabel}
                                         </p>
                                         {roleLabel ? (
-                                          <p className="mt-1 truncate rounded-full bg-secondary-container px-1.5 py-0.5 text-center text-[9px] font-extrabold text-on-secondary-container">
+                                          <p className="mt-1 rounded-full bg-secondary-container px-1.5 py-0.5 text-center text-[9px] font-extrabold leading-3 text-on-secondary-container">
                                             {roleLabel}
                                           </p>
                                         ) : null}
@@ -876,7 +944,7 @@ export function AssetsClientPage({
                                 </div>
                               </div>
                             ) : null}
-                            <div className="p-5">
+                            <div className="p-4 md:p-5">
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-sm font-extrabold text-on-surface">
                                   Aday {candidate.candidateIndex + 1}
@@ -885,24 +953,26 @@ export function AssetsClientPage({
                                   {lifecycleLabel(candidate, isCanon)}
                                 </span>
                               </div>
-                              <p className="mt-2 text-xs leading-5 text-on-surface-variant">
+                              <details className="mt-2 text-xs leading-5 text-on-surface-variant">
+                                <summary className="cursor-pointer font-bold">
+                                  Ayrıntılar
+                                </summary>
                                 {candidate.width && candidate.height
                                   ? `${candidate.width}×${candidate.height} · `
                                   : ""}
                                 {candidate.model ??
                                   candidate.provider ??
-                                  "Görsel üretimi"}
-                              </p>
-                              <p className="mt-1 text-xs text-on-surface-variant">
+                                  "Görsel üretimi"}{" "}
+                                ·{" "}
                                 {new Date(candidate.createdAt).toLocaleString(
                                   "tr-TR",
                                 )}
-                              </p>
-                              <div className="mt-4 flex flex-wrap gap-2">
+                              </details>
+                              <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
                                 {!isCanon &&
                                 candidate.lifecycleState !== "rejected" ? (
                                   <button
-                                    className="storybook-button"
+                                    className="storybook-button w-full sm:w-auto"
                                     disabled={
                                       activeOperation?.type ===
                                         "canon-select" &&
@@ -925,7 +995,7 @@ export function AssetsClientPage({
                                 {!isCanon &&
                                 candidate.lifecycleState !== "rejected" ? (
                                   <button
-                                    className="storybook-button-secondary"
+                                    className="storybook-button-secondary w-full sm:w-auto"
                                     disabled={
                                       activeOperation?.type ===
                                         "candidate-reject" &&
@@ -958,7 +1028,7 @@ export function AssetsClientPage({
 
             {activeTab === "bag" ? (
               <section
-                className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-8"
+                className="rounded-[1.25rem] border border-outline-variant/70 bg-white/85 p-4 shadow-sm md:rounded-[2rem] md:p-8"
                 aria-labelledby="bag-workspace-heading"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -968,7 +1038,7 @@ export function AssetsClientPage({
                     </p>
                     <h2
                       id="bag-workspace-heading"
-                      className="mt-2 text-3xl font-extrabold text-on-surface"
+                      className="mt-2 text-2xl font-extrabold text-on-surface md:text-3xl"
                     >
                       Açık ve kapalı çanta
                     </h2>
@@ -979,7 +1049,7 @@ export function AssetsClientPage({
                     </p>
                   </div>
                   <button
-                    className="storybook-button"
+                    className="storybook-button w-full md:w-auto"
                     disabled={
                       activeOperation?.type === "bag-generate" ||
                       !selectedCharacter
@@ -992,41 +1062,63 @@ export function AssetsClientPage({
                       : "Çanta görselleri üret"}
                   </button>
                 </div>
-                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                <div
+                  className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-surface-container-low p-1"
+                  role="group"
+                  aria-label="Çanta görünümü"
+                >
                   {(["bag-closed", "bag-open"] as const).map((variant) => (
-                    <article
-                      className="overflow-hidden rounded-[1.8rem] border border-outline-variant bg-surface-container-low p-4"
-                      key={`${variant}-${assetRevision}`}
+                    <button
+                      aria-pressed={bagVariant === variant}
+                      className={`min-h-11 rounded-xl px-3 py-2 text-sm font-extrabold transition ${
+                        bagVariant === variant
+                          ? "bg-primary text-on-primary shadow-sm"
+                          : "text-on-surface-variant"
+                      }`}
+                      key={variant}
+                      onClick={() => setBagVariant(variant)}
+                      type="button"
                     >
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="font-extrabold text-on-surface">
-                          {variant === "bag-open"
-                            ? "Açık çanta"
-                            : "Kapalı çanta"}
-                        </p>
-                        <span className="rounded-full bg-secondary-container px-3 py-1 text-xs font-extrabold text-on-secondary-container">
-                          Aktif çanta
-                        </span>
-                      </div>
-                      <CanonicalBagImage
-                        characterId={characterId}
-                        householdId={householdId}
-                        characterName={selectedCharacter?.name ?? "Karakter"}
-                        variant={variant}
-                        className="aspect-square rounded-2xl bg-white"
-                      />
-                    </article>
+                      {variant === "bag-open" ? "Açık" : "Kapalı"}
+                    </button>
                   ))}
                 </div>
                 {activeOperation?.type === "bag-generate" ? (
-                  <div
-                    className="mt-5 grid grid-cols-2 gap-5"
-                    aria-label="Çanta görselleri yükleniyor"
-                  >
-                    <div className="h-2 animate-pulse rounded-full bg-primary/25" />
-                    <div className="h-2 animate-pulse rounded-full bg-primary/25" />
+                  <div className="mt-5 overflow-hidden rounded-[1.4rem] border border-outline-variant bg-surface-container-low p-4">
+                    <div className="aspect-square animate-pulse rounded-2xl bg-primary/10" />
+                    <p className="mt-3 font-extrabold text-on-surface">
+                      {bagVariant === "bag-open"
+                        ? "Açık çanta hazırlanıyor"
+                        : "Kapalı çanta hazırlanıyor"}
+                    </p>
+                    <p className="mt-1 text-sm text-on-surface-variant">
+                      Görsel üretimi biraz sürebilir.
+                    </p>
                   </div>
-                ) : null}
+                ) : (
+                  <article
+                    className="mt-5 overflow-hidden rounded-[1.4rem] border border-outline-variant bg-surface-container-low p-3 md:p-4"
+                    key={`${bagVariant}-${assetRevision}`}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="font-extrabold text-on-surface">
+                        {bagVariant === "bag-open"
+                          ? "Açık çanta"
+                          : "Kapalı çanta"}
+                      </p>
+                      <span className="rounded-full bg-secondary-container px-3 py-1 text-xs font-extrabold text-on-secondary-container">
+                        Aktif çanta
+                      </span>
+                    </div>
+                    <CanonicalBagImage
+                      characterId={characterId}
+                      householdId={householdId}
+                      characterName={selectedCharacter?.name ?? "Karakter"}
+                      variant={bagVariant}
+                      className="aspect-square rounded-2xl bg-white"
+                    />
+                  </article>
+                )}
                 {message ? (
                   <p className="mt-5 rounded-2xl bg-error-container px-4 py-3 text-sm text-on-error-container">
                     {message}
@@ -1042,7 +1134,7 @@ export function AssetsClientPage({
 
             {activeTab === "items" ? (
               <section
-                className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-6 shadow-sm md:p-8"
+                className="rounded-[1.25rem] border border-outline-variant/70 bg-white/85 p-4 pb-28 shadow-sm md:rounded-[2rem] md:p-8"
                 aria-labelledby="item-workspace-heading"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1052,7 +1144,7 @@ export function AssetsClientPage({
                     </p>
                     <h2
                       id="item-workspace-heading"
-                      className="mt-2 text-3xl font-extrabold text-on-surface"
+                      className="mt-2 text-2xl font-extrabold text-on-surface md:text-3xl"
                     >
                       Çantadaki eşyalar
                     </h2>
@@ -1061,7 +1153,7 @@ export function AssetsClientPage({
                     </p>
                   </div>
                   <button
-                    className="storybook-button"
+                    className="storybook-button hidden md:inline-flex"
                     disabled={
                       activeOperation?.type === "item-generate" ||
                       selectedItemIds.length === 0
@@ -1075,20 +1167,20 @@ export function AssetsClientPage({
                   </button>
                 </div>
                 {inventoryItems.length > 0 ? (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-5 grid grid-cols-2 gap-3 md:mt-6 md:gap-4 lg:grid-cols-3">
                     {inventoryItems.map((item) => {
                       const selected = selectedItemIds.includes(item.id);
                       const generationState =
                         itemGenerationState[item.id] ?? "idle";
                       return (
                         <article
-                          className={`relative overflow-hidden rounded-[1.6rem] border-2 p-3 transition ${selected ? "border-primary bg-primary/5 shadow-md" : "border-outline-variant bg-white"}`}
+                          className={`relative overflow-hidden rounded-[1.1rem] border-2 p-2.5 transition md:rounded-[1.6rem] md:p-3 ${selected ? "border-primary bg-primary/5 shadow-md" : "border-outline-variant bg-white"}`}
                           key={`${item.id}-${assetRevision}`}
                         >
                           <button
                             aria-label={`${item.displayName} seç`}
                             aria-pressed={selected}
-                            className="absolute inset-0 z-10"
+                            className="absolute right-2 top-2 z-20 grid size-8 place-items-center rounded-full border border-outline-variant bg-white font-black text-primary shadow-sm"
                             disabled={!selected && selectedItemIds.length >= 6}
                             onClick={() =>
                               setSelectedItemIds((current) =>
@@ -1099,6 +1191,7 @@ export function AssetsClientPage({
                             }
                             type="button"
                           >
+                            {selected ? "✓" : ""}
                             <span className="sr-only">{item.displayName}</span>
                           </button>
                           <div className="relative">
@@ -1106,26 +1199,21 @@ export function AssetsClientPage({
                               itemId={item.id}
                               householdId={householdId}
                               itemName={item.displayName}
-                              className="aspect-square rounded-2xl"
-                              sizes="280px"
+                              className="aspect-square rounded-xl md:rounded-2xl"
+                              sizes="(min-width: 1024px) 280px, 45vw"
                             />
-                            {selected ? (
-                              <span className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-primary font-black text-on-primary shadow-md">
-                                ✓
-                              </span>
-                            ) : null}
                             {generationState === "generating" ? (
-                              <div className="absolute inset-0 grid place-items-center rounded-2xl bg-white/75 font-extrabold text-primary">
+                              <div className="absolute inset-0 grid place-items-center rounded-xl bg-white/75 text-sm font-extrabold text-primary md:rounded-2xl">
                                 Üretiliyor…
                               </div>
                             ) : null}
                           </div>
-                          <div className="mt-3 flex items-start justify-between gap-2">
+                          <div className="mt-2 flex flex-col gap-2 md:mt-3 md:flex-row md:items-start md:justify-between">
                             <div>
-                              <p className="font-extrabold text-on-surface">
+                              <p className="line-clamp-2 text-sm font-extrabold leading-5 text-on-surface md:text-base">
                                 {item.displayName}
                               </p>
-                              <p className="mt-1 text-xs text-on-surface-variant">
+                              <p className="mt-1 hidden text-xs text-on-surface-variant md:block">
                                 {item.category} · {item.rarity}
                               </p>
                             </div>
@@ -1173,11 +1261,63 @@ export function AssetsClientPage({
                     {successMessage}
                   </p>
                 ) : null}
+                <div className="fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant/70 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
+                  <div className="mx-auto flex max-w-[1240px] items-center gap-3">
+                    <p className="min-w-0 flex-1 text-sm font-extrabold text-on-surface">
+                      {selectedItemIds.length}/6 seçili
+                    </p>
+                    <button
+                      className="storybook-button flex-1"
+                      disabled={
+                        activeOperation?.type === "item-generate" ||
+                        selectedItemIds.length === 0
+                      }
+                      onClick={() => void generateItemBatch()}
+                      type="button"
+                    >
+                      {activeOperation?.type === "item-generate"
+                        ? "Hazırlanıyor…"
+                        : `${selectedItemIds.length} eşyayı üret`}
+                    </button>
+                  </div>
+                </div>
               </section>
             ) : null}
           </>
         )}
       </div>
+      {lightboxImage ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex flex-col bg-on-surface/90 p-3 text-white"
+          role="dialog"
+        >
+          <div className="flex items-center justify-between gap-3 pb-3">
+            <div>
+              <p className="text-sm font-extrabold">{lightboxImage.label}</p>
+              <p className="text-xs text-white/70">{lightboxImage.alt}</p>
+            </div>
+            <button
+              aria-label="Görseli kapat"
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-white/15 font-black text-white"
+              onClick={() => setLightboxImage(null)}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black/20">
+            <Image
+              alt={lightboxImage.alt}
+              className="object-contain"
+              fill
+              sizes="100vw"
+              src={lightboxImage.src}
+              unoptimized
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
