@@ -34,7 +34,7 @@ function relativeObjectKey(
     input.householdId,
     input.characterId,
     input.jobId,
-    `${input.candidateIndex}${extensionForMime(input.mimeType)}`,
+    `${input.candidateIndex}${input.variantKey ? `-${input.variantKey}` : ""}${extensionForMime(input.mimeType)}`,
   ].join("/");
 }
 

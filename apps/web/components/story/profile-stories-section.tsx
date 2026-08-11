@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { newIdempotencyKey } from "@/lib/new-id";
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
 import {
   StorySessionList,
   type StorySessionSummary,
@@ -339,6 +340,16 @@ export function ProfileStoriesSection({
         <div className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5">
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
             <div className="space-y-4">
+              {selectedLaunch && householdId ? (
+                <CanonicalCharacterImage
+                  characterId={selectedLaunch.character.id}
+                  householdId={householdId}
+                  characterName={selectedLaunch.character.name}
+                  className="aspect-square w-full rounded-xl border border-outline-variant shadow-sm"
+                  sizes="220px"
+                  variant="head-front"
+                />
+              ) : null}
               <label className="block text-sm font-semibold text-on-surface">
                 Karakter
                 <select

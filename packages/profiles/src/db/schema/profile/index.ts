@@ -18,6 +18,7 @@ export * from "./character-relationships";
 export * from "./character-domain-events";
 export * from "./character-visual-assets";
 export * from "./managed-assets";
+export * from "./image-generation";
 export * from "./inventory-item-definitions";
 export * from "./inventory-item-instances";
 export * from "./inventory-inventories";

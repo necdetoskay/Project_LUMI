@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProfileStoriesSection } from "@/components/story/profile-stories-section";
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
 
 type Profile = {
   id: string;
@@ -343,6 +344,7 @@ export default function ProfileDetailClientPage({
           characters={characters}
           loading={charactersLoading}
           childProfileId={childProfileId}
+          householdId={householdId}
         />
       )}
       {activeTab === "stories" && (
@@ -550,10 +552,12 @@ function CharactersSection({
   characters,
   loading,
   childProfileId,
+  householdId,
 }: {
   characters: CharacterInfo[];
   loading: boolean;
   childProfileId: string;
+  householdId: string | null;
 }) {
   const firstCharacter = characters[0] ?? null;
   if (loading) {
@@ -635,11 +639,14 @@ function CharactersSection({
             className="rounded-xl border border-outline-variant bg-surface-container-low p-5"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed text-tertiary">
-                <span className="material-symbols-outlined text-[24px]">
-                  magic_button
-                </span>
-              </div>
+              <CanonicalCharacterImage
+                characterId={character.id}
+                characterName={character.name}
+                className="h-16 w-16 shrink-0 rounded-2xl"
+                householdId={householdId}
+                sizes="64px"
+                variant="head-front"
+              />
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold text-on-surface">
                   {character.name}

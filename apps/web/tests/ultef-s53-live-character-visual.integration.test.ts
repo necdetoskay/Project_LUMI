@@ -12,6 +12,7 @@ import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapt
 const USER_ID = "51000000-0000-4000-8000-000000000009";
 const HOUSEHOLD_ID = "51000000-0000-4000-8000-000000000001";
 const CHARACTER_ID = "51000000-0000-4000-8000-000000000003";
+const LIVE_TEST_MAX_COST_USD = 0.02;
 const describeLiveS53 =
   process.env.ULTEF_S53_LIVE_IMAGE_ENABLE === "true" ? describe : describe.skip;
 
@@ -27,13 +28,17 @@ class ArtifactStorage implements CharacterVisualStoragePort {
 }
 
 describeLiveS53("PX-LUMI-S53 live character visual generation", () => {
-  it("generates one Lina candidate with Krea Turbo and selects it as canon", async () => {
+  it("generates one budget-capped Lina candidate with Krea Turbo and selects it as canon", async () => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY is required for live S53 test");
     }
 
-    const provider = new OpenRouterCharacterVisualGenerationAdapter({ apiKey });
+    const provider = new OpenRouterCharacterVisualGenerationAdapter({
+      apiKey,
+      maxJobCostUsd: LIVE_TEST_MAX_COST_USD,
+      liveTest: true,
+    });
     const storage = new ArtifactStorage();
 
     const result = await generateCharacterVisualCandidates(
@@ -51,6 +56,9 @@ describeLiveS53("PX-LUMI-S53 live character visual generation", () => {
 
     expect(result.job.status).toBe("succeeded");
     expect(result.candidates).toHaveLength(1);
+    expect(
+      Number(result.job.costMetadata?.estimatedTotalCost ?? 0),
+    ).toBeLessThanOrEqual(LIVE_TEST_MAX_COST_USD);
     expect(result.candidates[0]?.storageRef).toMatch(
       /^artifact:\/\/s53-live\//,
     );

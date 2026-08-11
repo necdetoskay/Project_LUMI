@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { newIdempotencyKey } from "@/lib/new-id";
+
 type CharacterOption = {
   id: string;
   name: string;
@@ -35,17 +37,14 @@ type LibraryResponse = {
   candidates: VisualCandidate[];
 };
 
+type InventoryItem = {
+  id: string;
+  displayName: string;
+  category: string;
+  rarity: string;
+};
+
 type CandidateFilter = "active" | "all" | "rejected" | "archived";
-type AspectRatio = "1:1" | "4:3" | "3:2" | "16:9" | "4:5" | "2:3" | "9:16";
-
-const aspectRatioOptions: Array<{ value: AspectRatio; label: string }> = [
-  { value: "1:1", label: "Kare · 1:1" },
-  { value: "4:5", label: "Portre · 4:5" },
-  { value: "2:3", label: "Uzun portre · 2:3" },
-  { value: "4:3", label: "Yatay · 4:3" },
-  { value: "16:9", label: "Geniş · 16:9" },
-];
-
 function friendlyError(message: string) {
   if (message === "OPENROUTER_API_KEY_NOT_CONFIGURED") {
     return "Görsel üretimi için OpenRouter anahtarı henüz ayarlanmamış. Ayarlar bölümünden API anahtarını ekleyin.";
@@ -76,12 +75,13 @@ export function AssetsClientPage({
     candidates: [],
   });
   const [candidateCount, setCandidateCount] = useState(1);
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1");
   const [filter, setFilter] = useState<CandidateFilter>("active");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
 
   const selectedCharacter = useMemo(
     () => characters.find((entry) => entry.id === characterId) ?? null,
@@ -119,6 +119,105 @@ export function AssetsClientPage({
       setMessage(friendlyError(text));
     });
   }, [refresh]);
+
+  useEffect(() => {
+    if (!householdId || !characterId) {
+      setInventoryItems([]);
+      setSelectedItemIds([]);
+      return;
+    }
+    const controller = new AbortController();
+    void fetch(
+      `/api/inventory/list?householdId=${encodeURIComponent(householdId)}&ownerType=character&ownerId=${encodeURIComponent(characterId)}`,
+      { cache: "no-store", signal: controller.signal },
+    )
+      .then(async (response) =>
+        response.ok
+          ? ((await response.json()) as { items?: InventoryItem[] })
+          : { items: [] },
+      )
+      .then((payload) => {
+        if (controller.signal.aborted) return;
+        const items = payload.items ?? [];
+        setInventoryItems(items);
+        setSelectedItemIds(items.slice(0, 6).map((item) => item.id));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setInventoryItems([]);
+          setSelectedItemIds([]);
+        }
+      });
+    return () => controller.abort();
+  }, [characterId, householdId]);
+
+  async function generateItemBatch() {
+    if (!householdId || !characterId || selectedItemIds.length === 0) return;
+    setBusy(true);
+    setMessage(null);
+    setSuccessMessage(null);
+    try {
+      const response = await fetch("/api/assets/items/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          householdId,
+          characterId,
+          itemIds: selectedItemIds,
+          idempotencyKey: `item-sheet-${characterId}-${newIdempotencyKey()}`,
+        }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok)
+        throw new Error(payload.error ?? "Eşya görselleri üretilemedi.");
+      setSuccessMessage(
+        `${selectedItemIds.length} eşya tek üretimde hazırlandı ve çantada kullanılmaya başladı.`,
+      );
+    } catch (error) {
+      setMessage(
+        friendlyError(
+          error instanceof Error
+            ? error.message
+            : "Eşya görselleri üretilemedi.",
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function generateBag() {
+    if (!householdId || !characterId || !selectedCharacter) return;
+    setBusy(true);
+    setMessage(null);
+    setSuccessMessage(null);
+    try {
+      const response = await fetch("/api/assets/bags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          householdId,
+          characterId,
+          characterName: selectedCharacter.name,
+          idempotencyKey: `bag-sheet-${characterId}-${newIdempotencyKey()}`,
+        }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok)
+        throw new Error(payload.error ?? "Çanta görselleri üretilemedi.");
+      setSuccessMessage("Açık ve kapalı çanta görselleri hazırlandı.");
+    } catch (error) {
+      setMessage(
+        friendlyError(
+          error instanceof Error
+            ? error.message
+            : "Çanta görselleri üretilemedi.",
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function act(body: Record<string, unknown>, successText: string) {
     if (!endpoint) return;
@@ -286,23 +385,15 @@ export function AssetsClientPage({
                     </select>
                   </label>
 
-                  <label className="text-sm font-extrabold text-on-surface">
-                    Görsel oranı
-                    <select
-                      aria-label="Görsel oranı"
-                      className="mt-2 w-full rounded-2xl border border-outline-variant bg-white px-4 py-3 font-medium text-on-surface"
-                      value={aspectRatio}
-                      onChange={(event) =>
-                        setAspectRatio(event.target.value as AspectRatio)
-                      }
-                    >
-                      {aspectRatioOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="rounded-2xl border border-outline-variant bg-white px-4 py-3">
+                    <p className="text-sm font-extrabold text-on-surface">
+                      3×2 karakter referans seti
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-on-surface-variant">
+                      Tam vücut ve baş için ön, yan ve arka/¾ görünümler tek
+                      üretimde hazırlanır.
+                    </p>
+                  </div>
                 </div>
 
                 {selectedCharacter ? (
@@ -356,9 +447,10 @@ export function AssetsClientPage({
                       void act(
                         {
                           action: "generate",
-                          idempotencyKey: `visual-${characterId}-${crypto.randomUUID()}`,
+                          idempotencyKey: `visual-${characterId}-${newIdempotencyKey()}`,
                           candidateCount,
-                          aspectRatio,
+                          aspectRatio: "3:2",
+                          mode: "reference-sheet",
                         },
                         `${candidateCount} yeni görsel adayı oluşturuldu.`,
                       )
@@ -376,6 +468,75 @@ export function AssetsClientPage({
                     type="button"
                   >
                     {loading ? "Yükleniyor…" : "Kütüphaneyi yenile"}
+                  </button>
+                </div>
+
+                <div className="mt-7 border-t border-outline-variant/60 pt-6">
+                  <p className="text-sm font-extrabold text-on-surface">
+                    Karakterin çantasını görselleştir
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-on-surface-variant">
+                    Tek üretimde aynı çantanın açık ve kapalı görünümü
+                    hazırlanır.
+                  </p>
+                  <button
+                    className="storybook-button mt-4"
+                    disabled={busy || !selectedCharacter}
+                    onClick={() => void generateBag()}
+                    type="button"
+                  >
+                    {busy ? "Çanta hazırlanıyor…" : "Çanta görselleri üret"}
+                  </button>
+                </div>
+
+                <div className="mt-7 border-t border-outline-variant/60 pt-6">
+                  <p className="text-sm font-extrabold text-on-surface">
+                    Çantadaki eşyaları toplu görselleştir
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-on-surface-variant">
+                    En fazla 6 eşya tek 3×2 sheet içinde üretilir ve ayrı
+                    ikonlara bölünür.
+                  </p>
+                  {inventoryItems.length > 0 ? (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {inventoryItems.map((item) => {
+                        const checked = selectedItemIds.includes(item.id);
+                        return (
+                          <label
+                            className="flex items-center gap-3 rounded-xl border border-outline-variant bg-white px-3 py-2 text-sm font-bold text-on-surface"
+                            key={item.id}
+                          >
+                            <input
+                              checked={checked}
+                              disabled={!checked && selectedItemIds.length >= 6}
+                              onChange={() =>
+                                setSelectedItemIds((current) =>
+                                  checked
+                                    ? current.filter((id) => id !== item.id)
+                                    : [...current, item.id].slice(0, 6),
+                                )
+                              }
+                              type="checkbox"
+                            />
+                            <span>{item.displayName}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-on-surface-variant">
+                      Bu karakterin çantasında henüz eşya yok.
+                    </p>
+                  )}
+                  <button
+                    className="storybook-button mt-4"
+                    disabled={busy || selectedItemIds.length === 0}
+                    onClick={() => void generateItemBatch()}
+                    type="button"
+                  >
+                    {busy
+                      ? "Eşyalar hazırlanıyor…"
+                      : `${selectedItemIds.length} eşya görseli üret`}
                   </button>
                 </div>
 

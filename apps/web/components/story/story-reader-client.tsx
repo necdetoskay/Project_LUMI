@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
 import { newIdempotencyKey } from "@/lib/new-id";
 
 type ReaderOption = {
@@ -67,6 +68,10 @@ type ReaderPayload = {
       version: number;
       updatedAt: string;
     };
+    characters?: Array<{
+      characterId: string;
+      participationRole: string;
+    }>;
     currentScene: {
       id: string;
       sceneKey: string;
@@ -283,6 +288,12 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
   const isPaused = payload?.playback.session.sessionStatus === "paused";
   const imageMedia = currentScene?.media?.image ?? null;
   const audioMedia = currentScene?.media?.audio ?? null;
+  const protagonist =
+    payload?.playback.characters?.find(
+      (entry) => entry.participationRole === "protagonist",
+    ) ??
+    payload?.playback.characters?.[0] ??
+    null;
 
   useEffect(() => {
     setFailedMedia({
@@ -568,40 +579,54 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
 
       <header className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-              Story Reader
-            </p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-on-surface">
-              {currentScene?.title ?? currentScene?.sceneKey ?? "Story session"}
-            </h1>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              Durum: {statusLabel} | Ziyaret:{" "}
-              {payload?.playback.visits.length ?? 0}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2 text-sm">
-              {childProfile ? (
-                <a
-                  className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
-                  href={`/app/profiles/${encodeURIComponent(childProfile.id)}`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    badge
-                  </span>
-                  {childProfile.displayName}
-                </a>
-              ) : null}
-              {childProfileId ? (
-                <a
-                  className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
-                  href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    travel_explore
-                  </span>
-                  Haritayi incele
-                </a>
-              ) : null}
+          <div className="flex min-w-0 flex-1 items-start gap-4">
+            {protagonist && householdId ? (
+              <CanonicalCharacterImage
+                characterId={protagonist.characterId}
+                householdId={householdId}
+                characterName="Hikaye karakteri"
+                className="h-20 w-20 shrink-0 rounded-2xl border border-outline-variant shadow-sm"
+                sizes="80px"
+                variant="head-three-quarter"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
+                Story Reader
+              </p>
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-on-surface">
+                {currentScene?.title ??
+                  currentScene?.sceneKey ??
+                  "Story session"}
+              </h1>
+              <p className="mt-2 text-sm text-on-surface-variant">
+                Durum: {statusLabel} | Ziyaret:{" "}
+                {payload?.playback.visits.length ?? 0}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-sm">
+                {childProfile ? (
+                  <a
+                    className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                    href={`/app/profiles/${encodeURIComponent(childProfile.id)}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      badge
+                    </span>
+                    {childProfile.displayName}
+                  </a>
+                ) : null}
+                {childProfileId ? (
+                  <a
+                    className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1.5 font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                    href={`/app/profiles/${encodeURIComponent(childProfileId)}/world`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      travel_explore
+                    </span>
+                    Haritayi incele
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">

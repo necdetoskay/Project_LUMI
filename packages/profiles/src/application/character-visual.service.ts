@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 
 import {
   characterVisualAssets,
@@ -16,6 +16,7 @@ import {
 import {
   renderCharacterVisualPrompt,
   type CharacterVisualGenerationPort,
+  type CharacterVisualDerivativePort,
   type CharacterVisualStoragePort,
   type GeneratedImageCandidate,
 } from "./character-visual-generation";
@@ -27,11 +28,13 @@ export type GenerateCharacterVisualInput = {
   model?: string;
   candidateCount?: number;
   aspectRatio?: "1:1" | "4:3" | "3:2" | "16:9" | "4:5" | "2:3" | "9:16";
+  mode?: "portrait" | "reference-sheet";
 };
 
 export type CharacterVisualServiceDeps = {
   generationPort: CharacterVisualGenerationPort;
   storagePort: CharacterVisualStoragePort;
+  derivativePort?: CharacterVisualDerivativePort;
 };
 
 async function loadOwnedCharacterRecord(
@@ -206,10 +209,11 @@ export async function generateCharacterVisualCandidates(
     const generated = await deps.generationPort.generate({
       jobId,
       brief,
-      prompt: renderCharacterVisualPrompt(brief),
+      prompt: renderCharacterVisualPrompt(brief, input.mode),
       model,
       candidateCount,
-      aspectRatio: input.aspectRatio ?? "1:1",
+      aspectRatio:
+        input.aspectRatio ?? (input.mode === "reference-sheet" ? "3:2" : "1:1"),
       resolution: "1K",
     });
     if (generated.candidates.length === 0) {
@@ -219,6 +223,14 @@ export async function generateCharacterVisualCandidates(
     const persisted: Array<{
       candidate: GeneratedImageCandidate;
       stored: { storageRef: string };
+      derivatives: Array<{
+        variant: string;
+        stored: { storageRef: string };
+        mimeType: string;
+        width: number;
+        height: number;
+        crop: Record<string, number>;
+      }>;
     }> = [];
     for (const candidate of generated.candidates) {
       const stored = await deps.storagePort.store({
@@ -229,13 +241,41 @@ export async function generateCharacterVisualCandidates(
         bytesBase64: candidate.bytesBase64,
         mimeType: candidate.mimeType,
       });
-      persisted.push({ candidate, stored });
+      const derivatives =
+        input.mode === "reference-sheet" && deps.derivativePort
+          ? await deps.derivativePort.splitReferenceSheet({
+              bytesBase64: candidate.bytesBase64,
+              mimeType: candidate.mimeType,
+            })
+          : [];
+      const storedDerivatives = [];
+      for (const derivative of derivatives) {
+        const derivativeStored = await deps.storagePort.store({
+          householdId: input.householdId,
+          characterId: input.characterId,
+          jobId,
+          candidateIndex: candidate.index,
+          bytesBase64: derivative.bytesBase64,
+          mimeType: derivative.mimeType,
+          variantKey: derivative.variant,
+        });
+        storedDerivatives.push({
+          variant: derivative.variant,
+          stored: derivativeStored,
+          mimeType: derivative.mimeType,
+          width: derivative.width,
+          height: derivative.height,
+          crop: derivative.crop,
+        });
+      }
+      persisted.push({ candidate, stored, derivatives: storedDerivatives });
     }
 
     await db.transaction(async (tx) => {
-      for (const { candidate, stored } of persisted) {
+      for (const { candidate, stored, derivatives } of persisted) {
+        const sourceCompositeAssetId = crypto.randomUUID();
         await tx.insert(characterVisualAssets).values({
-          id: crypto.randomUUID(),
+          id: sourceCompositeAssetId,
           householdId: input.householdId,
           characterId: input.characterId,
           generationJobId: jobId,
@@ -250,6 +290,10 @@ export async function generateCharacterVisualCandidates(
           provider: generated.provider,
           model: generated.model,
           candidateIndex: candidate.index,
+          assetKind:
+            input.mode === "reference-sheet"
+              ? "character_reference_sheet"
+              : "character_portrait",
           lifecycleState: "candidate",
           provenance: {
             briefVersion: brief.version,
@@ -258,6 +302,31 @@ export async function generateCharacterVisualCandidates(
             providerMetadata: candidate.providerMetadata ?? {},
           },
         });
+        for (const derivative of derivatives) {
+          await tx.insert(characterVisualAssets).values({
+            id: crypto.randomUUID(),
+            householdId: input.householdId,
+            characterId: input.characterId,
+            generationJobId: jobId,
+            assetKind: derivative.variant,
+            storageRef: derivative.stored.storageRef,
+            mimeType: derivative.mimeType,
+            width: derivative.width,
+            height: derivative.height,
+            provider: generated.provider,
+            model: generated.model,
+            candidateIndex: candidate.index,
+            lifecycleState: "candidate",
+            sourceCompositeAssetId,
+            cropMetadata: derivative.crop,
+            provenance: {
+              briefVersion: brief.version,
+              briefFingerprint: fingerprint,
+              sourceCompositeAssetId,
+              derivation: "deterministic-3x2-crop-v1",
+            },
+          });
+        }
       }
       await tx
         .update(characterVisualGenerationJobs)
@@ -325,6 +394,9 @@ export async function selectCharacterVisualCanon(
   if (!asset || asset.lifecycleState === "rejected") {
     throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
   }
+  if (asset.sourceCompositeAssetId) {
+    throw new Error("VISUAL_DERIVATIVE_NOT_SELECTABLE");
+  }
 
   const current = await getCharacterVisualCanon(
     userId,
@@ -352,7 +424,15 @@ export async function selectCharacterVisualCanon(
           archivedAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(characterVisualAssets.id, current.selectedAssetId));
+        .where(
+          or(
+            eq(characterVisualAssets.id, current.selectedAssetId),
+            eq(
+              characterVisualAssets.sourceCompositeAssetId,
+              current.selectedAssetId,
+            ),
+          ),
+        );
     }
 
     await tx
@@ -363,7 +443,12 @@ export async function selectCharacterVisualCanon(
         archivedAt: null,
         updatedAt: new Date(),
       })
-      .where(eq(characterVisualAssets.id, assetId));
+      .where(
+        or(
+          eq(characterVisualAssets.id, assetId),
+          eq(characterVisualAssets.sourceCompositeAssetId, assetId),
+        ),
+      );
 
     if (current) {
       await tx
@@ -426,7 +511,10 @@ export async function rejectCharacterVisualCandidate(
     })
     .where(
       and(
-        eq(characterVisualAssets.id, assetId),
+        or(
+          eq(characterVisualAssets.id, assetId),
+          eq(characterVisualAssets.sourceCompositeAssetId, assetId),
+        ),
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
       ),

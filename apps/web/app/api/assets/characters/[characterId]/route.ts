@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
+import { SharpCharacterReferenceSheetDerivativeAdapter } from "@/lib/assets/character-reference-sheet-derivative";
 import {
   generateCharacterVisualCandidates,
   getCharacterVisualCanon,
@@ -23,7 +24,8 @@ const actionSchema = z.discriminatedUnion("action", [
     candidateCount: z.number().int().min(1).max(4).default(1),
     aspectRatio: z
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
-      .default("1:1"),
+      .optional(),
+    mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("reject"), assetId: z.string().uuid() }),
@@ -63,7 +65,15 @@ export async function GET(
           parsedParams.characterId,
         ),
       ]);
-      return NextResponse.json({ canon, candidates });
+      return NextResponse.json({
+        canon,
+        candidates: candidates.filter(
+          (candidate) => !candidate.sourceCompositeAssetId,
+        ),
+        variants: candidates.filter((candidate) =>
+          Boolean(candidate.sourceCompositeAssetId),
+        ),
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "VISUAL_ASSET_ERROR";
@@ -101,7 +111,8 @@ export async function POST(
             characterId: parsedParams.characterId,
             idempotencyKey: action.idempotencyKey,
             candidateCount: action.candidateCount,
-            aspectRatio: action.aspectRatio,
+            ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
+            mode: action.mode,
             model: "krea/krea-2-medium-turbo",
           },
           {
@@ -109,6 +120,7 @@ export async function POST(
               apiKey,
             }),
             storagePort: createCharacterVisualStorageAdapter(),
+            derivativePort: new SharpCharacterReferenceSheetDerivativeAdapter(),
           },
         );
         return NextResponse.json(result, {

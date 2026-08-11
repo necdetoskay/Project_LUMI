@@ -95,15 +95,59 @@ export type {
   CharacterVisualBriefSource,
 } from "./character-visual-brief";
 
-export { renderCharacterVisualPrompt } from "./character-visual-generation";
+export {
+  CHARACTER_VISUAL_VARIANTS,
+  renderCharacterVisualPrompt,
+} from "./character-visual-generation";
 export type {
+  CharacterVisualDerivative,
+  CharacterVisualDerivativePort,
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,
   CharacterVisualGenerationResult,
   CharacterVisualStoragePort,
   CharacterVisualStorageInput,
+  CharacterVisualVariant,
   GeneratedImageCandidate,
 } from "./character-visual-generation";
+
+export {
+  IMAGE_ASPECT_RATIOS,
+  createGridLayout,
+  createGridCropPlan,
+  planImageGeneration,
+  selectImageGenerationCapability,
+} from "./image-generation-platform";
+export type {
+  ImageAspectRatio,
+  ImageResolution,
+  ImageGenerationStrategy,
+  ImageGenerationSubject,
+  ImagePricing,
+  ImageGenerationModelCapabilities,
+  ImageGenerationProviderRequest,
+  GeneratedImage,
+  ImageGenerationProviderResult,
+  ImageGenerationProviderPort,
+  ImageGenerationBudgetPolicy,
+  ImageGenerationPlanInput,
+  GridCell,
+  GridLayout,
+  ImageGenerationPlan,
+} from "./image-generation-platform";
+
+export {
+  generateManagedImageCandidates,
+  listImageGenerationCostEvents,
+  planManagedImageGenerationForTesting,
+} from "./image-generation.service";
+export type {
+  ImageGenerationBinaryStorageInput,
+  ImageGenerationBinaryStoragePort,
+  ImageGridSplitterPort,
+  GenerateManagedImageCandidatesInput,
+  ImageGenerationServiceDeps,
+} from "./image-generation.service";
 
 export {
   generateCharacterVisualCandidates,
