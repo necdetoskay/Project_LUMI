@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe("AssetsClientPage", () => {
-  it("generates the selected candidate count and aspect ratio", async () => {
+  it("generates a 3x2 reference set with the selected candidate count", async () => {
     const fetchMock = vi.fn(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
         if (init?.method === "POST") {
@@ -57,9 +57,6 @@ describe("AssetsClientPage", () => {
     await screen.findByText("Lina kütüphanesi");
 
     fireEvent.click(screen.getByRole("button", { name: "3 aday" }));
-    fireEvent.change(screen.getByLabelText("Görsel oranı"), {
-      target: { value: "4:5" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "3 görsel üret" }));
 
     await waitFor(() => {
@@ -70,7 +67,8 @@ describe("AssetsClientPage", () => {
       const payload = JSON.parse(String(postCall?.[1]?.body));
       expect(payload.action).toBe("generate");
       expect(payload.candidateCount).toBe(3);
-      expect(payload.aspectRatio).toBe("4:5");
+      expect(payload.aspectRatio).toBe("3:2");
+      expect(payload.mode).toBe("reference-sheet");
     });
 
     expect(

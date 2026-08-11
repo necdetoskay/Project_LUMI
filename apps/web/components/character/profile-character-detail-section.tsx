@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
+import { CanonicalBagImage } from "@/components/assets/canonical-bag-image";
+import { CanonicalItemImage } from "@/components/assets/canonical-item-image";
+
 type CharacterResponse = {
   character?: {
     id: string;
@@ -19,6 +23,7 @@ type CharacterResponse = {
 
 type InventoryItem = {
   id: string;
+  itemDefinitionId: string;
   displayName: string;
   quantity: number;
   conditionStatus: string;
@@ -61,6 +66,7 @@ export function ProfileCharacterDetailSection({
     useState<CharacterResponse["character"]>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [world, setWorld] = useState<WorldResponse["world"]>(null);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +86,8 @@ export function ProfileCharacterDetailSection({
         setWorld(null);
         return;
       }
+
+      setHouseholdId(householdId);
 
       const characterRes = await fetch(
         `/api/characters/${encodeURIComponent(characterId)}?householdId=${encodeURIComponent(householdId)}`,
@@ -249,38 +257,31 @@ export function ProfileCharacterDetailSection({
               </div>
             </div>
 
-            <div className="relative min-h-[290px] overflow-hidden bg-[linear-gradient(155deg,#dff2e9_0%,#f5e8cd_54%,#e7def7_100%)] p-7 md:p-9">
-              <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/55" />
-              <div className="absolute bottom-0 left-0 right-0 h-28 rounded-t-[50%] bg-[#7aa98b]/25" />
-              <div className="relative z-10 flex h-full min-h-[220px] flex-col justify-between rounded-[1.7rem] border border-white/70 bg-white/55 p-5 backdrop-blur-sm">
-                <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">
-                    {hasCanonicalCurrentLocation
-                      ? "Bulunduğun yer"
-                      : "Son bildiğimiz yer"}
-                  </p>
-                  <h2 className="mt-2 text-3xl font-extrabold text-on-surface">
-                    {locationTitle}
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-on-surface-variant">
-                    {currentRegion?.displayName
-                      ? `${currentRegion.displayName} içinde görünüyor.`
-                      : "Bölge bilgisi henüz kesinleşmedi."}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-on-surface">
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-white/80 text-primary">
-                    <span
-                      className="material-symbols-outlined"
-                      aria-hidden="true"
-                    >
-                      location_on
-                    </span>
-                  </span>
+            <div className="relative min-h-[360px] overflow-hidden">
+              <CanonicalCharacterImage
+                characterId={characterId}
+                characterName={character.name}
+                className="absolute inset-0"
+                householdId={householdId}
+                priority
+                variant="body-front"
+              />
+              <div className="absolute inset-x-5 bottom-5 z-10 rounded-[1.4rem] border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur-md">
+                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">
                   {hasCanonicalCurrentLocation
-                    ? "Kanonik dünya konumundan gösteriliyor"
-                    : "Yeni bir konum uydurulmadı"}
-                </div>
+                    ? "Bulunduğun yer"
+                    : "Son bildiğimiz yer"}
+                </p>
+                <h2 className="mt-1 text-2xl font-extrabold text-on-surface">
+                  {locationTitle}
+                </h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  {currentRegion?.displayName
+                    ? `${currentRegion.displayName} içinde görünüyor.`
+                    : hasCanonicalCurrentLocation
+                      ? "Kanonik dünya konumundan gösteriliyor."
+                      : "Yeni bir konum uydurulmadı."}
+                </p>
               </div>
             </div>
           </div>
@@ -298,6 +299,15 @@ export function ProfileCharacterDetailSection({
               title="Yolculukta seninle olanlar"
               description="Burada yalnızca karaktere gerçekten bağlı görünen eşyaları gösteriyoruz."
             >
+              <div className="relative mb-5 min-h-52 overflow-hidden rounded-[1.6rem] border border-outline-variant/60 bg-surface-container-low sm:min-h-64">
+                <CanonicalBagImage
+                  characterId={characterId}
+                  characterName={character.name}
+                  className="absolute inset-0"
+                  householdId={householdId}
+                  variant="bag-open"
+                />
+              </div>
               {inventory.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {inventory.map((item) => (
@@ -305,20 +315,28 @@ export function ProfileCharacterDetailSection({
                       key={item.id}
                       className="rounded-2xl border border-outline-variant/70 bg-surface-container-low/70 p-4"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-bold text-on-surface">
-                            {item.displayName}
-                          </p>
-                          <p className="mt-1 text-sm text-on-surface-variant">
-                            {conditionSentence(item.conditionStatus)}
-                          </p>
+                      <div className="flex items-start gap-3">
+                        <CanonicalItemImage
+                          className="h-16 w-16 shrink-0 rounded-xl border border-outline-variant/60"
+                          householdId={householdId}
+                          itemId={item.id}
+                          itemName={item.displayName}
+                        />
+                        <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+                          <div>
+                            <p className="font-bold text-on-surface">
+                              {item.displayName}
+                            </p>
+                            <p className="mt-1 text-sm text-on-surface-variant">
+                              {conditionSentence(item.conditionStatus)}
+                            </p>
+                          </div>
+                          {item.quantity > 1 ? (
+                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant">
+                              {item.quantity} tane
+                            </span>
+                          ) : null}
                         </div>
-                        {item.quantity > 1 ? (
-                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-on-surface-variant">
-                            {item.quantity} tane
-                          </span>
-                        ) : null}
                       </div>
                     </article>
                   ))}

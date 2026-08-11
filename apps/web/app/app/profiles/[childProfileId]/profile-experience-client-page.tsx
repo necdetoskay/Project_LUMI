@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ProfileStoriesSection } from "@/components/story/profile-stories-section";
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
 
 type Profile = {
   id: string;
@@ -508,7 +509,14 @@ export default function ProfileExperienceClientPage({
                 key={character.id}
                 className="overflow-hidden rounded-[28px] border border-outline-variant bg-white shadow-sm"
               >
-                <div className="h-36 bg-[radial-gradient(circle_at_top_right,_rgba(109,74,255,0.35),_transparent_35%),linear-gradient(135deg,#f5eeff,#eef8ff,#fff7e9)]" />
+                <CanonicalCharacterImage
+                  characterId={character.id}
+                  characterName={character.name}
+                  className="h-52"
+                  householdId={householdId}
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  variant="body-front"
+                />
                 <div className="p-6">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
                     {character.characterType}

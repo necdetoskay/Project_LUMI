@@ -1,5 +1,6 @@
 import {
   getCharacterById,
+  getItem,
   getOwnedHousehold,
   type ManagedAssetAuthorizationPort,
 } from "@lumi/profiles/application";
@@ -22,6 +23,16 @@ export class WebManagedAssetAuthorizationAdapter
         input.subjectId,
       );
       if (!character) throw new Error("MANAGED_ASSET_SUBJECT_NOT_FOUND");
+      return;
+    }
+
+    if (input.subjectType === "item") {
+      const item = await getItem(
+        input.userId,
+        input.householdId,
+        input.subjectId,
+      );
+      if (!item) throw new Error("MANAGED_ASSET_SUBJECT_NOT_FOUND");
       return;
     }
 

@@ -95,13 +95,19 @@ export type {
   CharacterVisualBriefSource,
 } from "./character-visual-brief";
 
-export { renderCharacterVisualPrompt } from "./character-visual-generation";
+export {
+  CHARACTER_VISUAL_VARIANTS,
+  renderCharacterVisualPrompt,
+} from "./character-visual-generation";
 export type {
+  CharacterVisualDerivative,
+  CharacterVisualDerivativePort,
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,
   CharacterVisualGenerationResult,
   CharacterVisualStoragePort,
   CharacterVisualStorageInput,
+  CharacterVisualVariant,
   GeneratedImageCandidate,
 } from "./character-visual-generation";
 

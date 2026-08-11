@@ -56,10 +56,12 @@ describeLiveS53("PX-LUMI-S53 live character visual generation", () => {
 
     expect(result.job.status).toBe("succeeded");
     expect(result.candidates).toHaveLength(1);
-    expect(Number(result.job.costMetadata?.estimatedTotalCost ?? 0)).toBeLessThanOrEqual(
-      LIVE_TEST_MAX_COST_USD,
+    expect(
+      Number(result.job.costMetadata?.estimatedTotalCost ?? 0),
+    ).toBeLessThanOrEqual(LIVE_TEST_MAX_COST_USD);
+    expect(result.candidates[0]?.storageRef).toMatch(
+      /^artifact:\/\/s53-live\//,
     );
-    expect(result.candidates[0]?.storageRef).toMatch(/^artifact:\/\/s53-live\//);
 
     const canon = await selectCharacterVisualCanon(
       USER_ID,

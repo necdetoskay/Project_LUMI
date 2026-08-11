@@ -50,16 +50,17 @@ export async function GET(
         );
       }
 
-      const scope = {
-        householdId,
-        subjectType: parsed.subjectType,
-        subjectId: parsed.subjectId,
-      };
-      const assets = await listManagedAssets(parent.id, scope, {
-        authorizationPort: new WebManagedAssetAuthorizationAdapter(),
-      });
-      const asset = assets.find((candidate) => candidate.id === parsed.assetId);
-      if (!asset) {
+      const assets = await listManagedAssets(
+        parent.id,
+        {
+          householdId,
+          subjectType: parsed.subjectType,
+          subjectId: parsed.subjectId,
+        },
+        { authorizationPort: new WebManagedAssetAuthorizationAdapter() },
+      );
+      const asset = assets.find((entry) => entry.id === parsed.assetId);
+      if (!asset || asset.lifecycleState === "rejected") {
         return NextResponse.json(
           { error: "MANAGED_ASSET_NOT_FOUND" },
           { status: 404 },
@@ -67,11 +68,11 @@ export async function GET(
       }
 
       const object = await readCompatibleImage(asset.storageRef);
-      return new NextResponse(object.bytes, {
+      return new NextResponse(new Uint8Array(object.bytes), {
         status: 200,
         headers: {
           "Content-Type": object.mimeType,
-          "Cache-Control": "private, max-age=3600",
+          "Cache-Control": "private, max-age=300",
           "X-Content-Type-Options": "nosniff",
         },
       });
