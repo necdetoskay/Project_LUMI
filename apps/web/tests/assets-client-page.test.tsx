@@ -163,4 +163,94 @@ describe("AssetsClientPage", () => {
       screen.getByText("1024×1024 · krea/krea-2-medium-turbo"),
     ).toBeTruthy();
   });
+
+  it("previews and visibly selects a derived character view", async () => {
+    const bodyThreeQuarterId = "51000000-0000-4000-8000-000000000091";
+    const headThreeQuarterId = "51000000-0000-4000-8000-000000000092";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        response({
+          canon: null,
+          candidates: [
+            {
+              id: ASSET_ID,
+              storageRef: "artifact://lina-sheet.png",
+              mimeType: "image/png",
+              width: 1536,
+              height: 1024,
+              lifecycleState: "candidate",
+              provider: "openrouter",
+              model: "krea/krea-2-medium-turbo",
+              candidateIndex: 0,
+              createdAt: "2026-08-10T14:06:49.000Z",
+            },
+          ],
+          variants: [
+            {
+              id: bodyThreeQuarterId,
+              storageRef: "artifact://lina-body-three-quarter.png",
+              mimeType: "image/png",
+              width: 384,
+              height: 512,
+              lifecycleState: "candidate",
+              provider: "derived",
+              model: null,
+              candidateIndex: 0,
+              createdAt: "2026-08-10T14:06:49.000Z",
+              assetKind: "body-three-quarter",
+              sourceCompositeAssetId: ASSET_ID,
+            },
+            {
+              id: headThreeQuarterId,
+              storageRef: "artifact://lina-head-three-quarter.png",
+              mimeType: "image/png",
+              width: 512,
+              height: 512,
+              lifecycleState: "candidate",
+              provider: "derived",
+              model: null,
+              candidateIndex: 0,
+              createdAt: "2026-08-10T14:06:49.000Z",
+              assetKind: "head-three-quarter",
+              sourceCompositeAssetId: ASSET_ID,
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <AssetsClientPage
+        householdId={HOUSEHOLD_ID}
+        characters={[
+          {
+            id: CHARACTER_ID,
+            name: "Lina",
+            subtype: "player",
+            originConcept: "Meraklı bir ışık gezgini",
+          },
+        ]}
+      />,
+    );
+
+    const bodyButton = await screen.findByRole("button", {
+      name: "Tam boy ¾ — Ana canon",
+    });
+    const avatarButton = screen.getByRole("button", {
+      name: "Yarım ¾ — Uygulama görseli",
+    });
+
+    expect(bodyButton.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getAllByText("Ana canon").length).toBeGreaterThan(0);
+
+    fireEvent.click(avatarButton);
+
+    expect(avatarButton.getAttribute("aria-pressed")).toBe("true");
+    expect(bodyButton.getAttribute("aria-pressed")).toBe("false");
+    expect(
+      screen.getAllByAltText("Lina Yarım ¾")[0]?.getAttribute("src"),
+    ).toContain(headThreeQuarterId);
+    expect(screen.getAllByText("Uygulama görseli").length).toBeGreaterThan(0);
+  });
 });
