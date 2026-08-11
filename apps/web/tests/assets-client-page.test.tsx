@@ -103,8 +103,8 @@ describe("AssetsClientPage", () => {
       const payload = JSON.parse(String(postCall?.[1]?.body));
       expect(payload.action).toBe("generate");
       expect(payload.candidateCount).toBe(3);
-      expect(payload.aspectRatio).toBe("3:2");
-      expect(payload.mode).toBe("reference-sheet");
+      expect(payload.aspectRatio).toBe("1:1");
+      expect(payload.mode).toBe("portrait");
     });
 
     expect(

@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -22,13 +21,20 @@ const inputSchema = z.object({
 
 const BAG_VARIANTS = ["bag-closed", "bag-open"] as const;
 
-function bagPrompt(characterName: string) {
+function bagPrompt(
+  characterName: string,
+  variant: (typeof BAG_VARIANTS)[number],
+) {
+  const state =
+    variant === "bag-closed"
+      ? "fully closed, viewed from the front three-quarter angle"
+      : "fully open, viewed from the front three-quarter angle, with an empty interior clearly visible";
   return [
-    "Create one strict 2-column by 1-row storybook inventory bag reference sheet.",
-    `The bag belongs to ${characterName}; both cells must show the exact same child-safe fantasy travel bag with identical materials, colors, decorations, scale, and camera angle.`,
-    "Left cell: bag fully closed. Right cell: the same bag fully open, with an empty interior clearly visible so item icons can be presented beside it in the UI.",
-    "Use equal borderless cells, centered objects, generous safe margins, uniform pale background, soft lighting.",
-    "No people, hands, loose items, labels, letters, numbers, panel borders, scenery, duplicates, logos, or watermarks.",
+    "Create one isolated child-safe fantasy travel bag illustration for a storybook inventory.",
+    `The bag belongs to ${characterName}. Show the bag ${state}.`,
+    "Use a warm brown canvas body, teal flap, two brass buckles and a small golden star patch so the open and closed variants share a stable canonical design.",
+    "Center one bag with generous safe margins, a uniform pale background and soft lighting.",
+    "No people, hands, loose items, labels, letters, numbers, borders, scenery, duplicates, logos, or watermarks.",
   ].join(" ");
 }
 
@@ -51,51 +57,33 @@ export async function POST(request: Request) {
         );
       }
 
-      const generated = await new OpenRouterCharacterVisualGenerationAdapter({
+      const adapter = new OpenRouterCharacterVisualGenerationAdapter({
         apiKey,
-      }).generate({
-        jobId: crypto.randomUUID(),
-        brief: null as never,
-        prompt: bagPrompt(input.characterName),
-        model: "krea/krea-2-medium-turbo",
-        candidateCount: 1,
-        aspectRatio: "3:2",
-        resolution: "1K",
       });
-      const candidate = generated.candidates[0];
-      if (!candidate) throw new Error("BAG_SHEET_EMPTY");
-      const source = Buffer.from(candidate.bytesBase64, "base64");
-      const metadata = await sharp(source).metadata();
-      if (!metadata.width || !metadata.height) {
-        throw new Error("BAG_SHEET_DIMENSIONS_MISSING");
-      }
-      const cellWidth = Math.floor(metadata.width / 2);
-      if (cellWidth < 128 || metadata.height < 128) {
-        throw new Error("BAG_SHEET_TOO_SMALL");
-      }
-
       const storage = createCharacterVisualStorageAdapter();
       const authorizationPort = new WebManagedAssetAuthorizationAdapter();
       const batchId = crypto.randomUUID();
       const assets = [];
+      const costMetadata = [];
       for (const [index, assetKind] of BAG_VARIANTS.entries()) {
-        const crop = {
-          left: index * cellWidth,
-          top: 0,
-          width: cellWidth,
-          height: metadata.height,
-        };
-        const bytes = await sharp(source)
-          .extract(crop)
-          .webp({ quality: 90 })
-          .toBuffer();
+        const generated = await adapter.generate({
+          jobId: crypto.randomUUID(),
+          brief: null as never,
+          prompt: bagPrompt(input.characterName, assetKind),
+          model: "krea/krea-2-medium-turbo",
+          candidateCount: 1,
+          aspectRatio: "1:1",
+          resolution: "1K",
+        });
+        const candidate = generated.candidates[0];
+        if (!candidate) throw new Error("BAG_IMAGE_EMPTY");
         const stored = await storage.store({
           householdId: input.householdId,
           characterId: input.characterId,
           jobId: batchId,
           candidateIndex: index,
-          bytesBase64: bytes.toString("base64"),
-          mimeType: "image/webp",
+          bytesBase64: candidate.bytesBase64,
+          mimeType: candidate.mimeType,
         });
         const scope = {
           householdId: input.householdId,
@@ -108,18 +96,21 @@ export async function POST(request: Request) {
             ...scope,
             assetKind,
             storageRef: stored.storageRef,
-            mimeType: "image/webp",
-            width: cellWidth,
-            height: metadata.height,
+            mimeType: candidate.mimeType,
+            ...(typeof candidate.width === "number"
+              ? { width: candidate.width }
+              : {}),
+            ...(typeof candidate.height === "number"
+              ? { height: candidate.height }
+              : {}),
             provider: generated.provider,
             model: generated.model,
-            originType: "derived",
-            sourceSystem: "bag-reference-sheet-v1",
+            originType: "generated",
+            sourceSystem: "bag-direct-v1",
             provenance: {
               batchId,
               idempotencyKey: input.idempotencyKey,
-              cellIndex: index,
-              crop,
+              variant: assetKind,
               providerRequestId: generated.providerRequestId ?? null,
             },
           },
@@ -129,9 +120,10 @@ export async function POST(request: Request) {
           authorizationPort,
         });
         assets.push(asset);
+        if (generated.costMetadata) costMetadata.push(generated.costMetadata);
       }
       return NextResponse.json(
-        { batchId, assets, costMetadata: generated.costMetadata },
+        { batchId, assets, costMetadata },
         { status: 201 },
       );
     } catch (error) {

@@ -181,7 +181,7 @@ export function AssetsClientPage({
           householdId,
           characterId,
           itemIds: selectedItemIds,
-          idempotencyKey: `item-sheet-${characterId}-${newIdempotencyKey()}`,
+          idempotencyKey: `item-direct-${characterId}-${newIdempotencyKey()}`,
         }),
       });
       const payload = await readJsonResponse<{ error?: string }>(
@@ -191,7 +191,7 @@ export function AssetsClientPage({
       if (!response.ok)
         throw new Error(payload.error ?? "Eşya görselleri üretilemedi.");
       setSuccessMessage(
-        `${selectedItemIds.length} eşya tek üretimde hazırlandı ve çantada kullanılmaya başladı.`,
+        `${selectedItemIds.length} eşya görseli hazırlandı ve çantada kullanılmaya başladı.`,
       );
     } catch (error) {
       setMessage(
@@ -219,7 +219,7 @@ export function AssetsClientPage({
           householdId,
           characterId,
           characterName: selectedCharacter.name,
-          idempotencyKey: `bag-sheet-${characterId}-${newIdempotencyKey()}`,
+          idempotencyKey: `bag-direct-${characterId}-${newIdempotencyKey()}`,
         }),
       });
       const payload = await readJsonResponse<{ error?: string }>(
@@ -413,11 +413,11 @@ export function AssetsClientPage({
 
                   <div className="rounded-2xl border border-outline-variant bg-white px-4 py-3">
                     <p className="text-sm font-extrabold text-on-surface">
-                      3×2 karakter referans seti
+                      Doğrudan karakter portresi
                     </p>
                     <p className="mt-1 text-xs leading-5 text-on-surface-variant">
-                      Tam vücut ve baş için ön, yan ve arka/¾ görünümler tek
-                      üretimde hazırlanır.
+                      Her aday tek bir kullanılabilir görsel olarak hazırlanır;
+                      sunucuda ek parçalama yapılmaz.
                     </p>
                   </div>
                 </div>
@@ -475,8 +475,8 @@ export function AssetsClientPage({
                           action: "generate",
                           idempotencyKey: `visual-${characterId}-${newIdempotencyKey()}`,
                           candidateCount,
-                          aspectRatio: "3:2",
-                          mode: "reference-sheet",
+                          aspectRatio: "1:1",
+                          mode: "portrait",
                         },
                         `${candidateCount} yeni görsel adayı oluşturuldu.`,
                       )
@@ -502,7 +502,7 @@ export function AssetsClientPage({
                     Karakterin çantasını görselleştir
                   </p>
                   <p className="mt-1 text-xs leading-5 text-on-surface-variant">
-                    Tek üretimde aynı çantanın açık ve kapalı görünümü
+                    Aynı tasarım yönergeleriyle açık ve kapalı çanta görselleri
                     hazırlanır.
                   </p>
                   <button
@@ -520,8 +520,8 @@ export function AssetsClientPage({
                     Çantadaki eşyaları toplu görselleştir
                   </p>
                   <p className="mt-1 text-xs leading-5 text-on-surface-variant">
-                    En fazla 6 eşya tek 3×2 sheet içinde üretilir ve ayrı
-                    ikonlara bölünür.
+                    En fazla 6 eşyanın her biri ayrı, doğrudan kullanılabilir
+                    bir ikon olarak üretilir.
                   </p>
                   {inventoryItems.length > 0 ? (
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
