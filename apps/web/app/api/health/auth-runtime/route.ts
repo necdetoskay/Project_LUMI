@@ -128,10 +128,7 @@ export async function GET() {
   }
 
   const ok =
-    argon2Ready &&
-    sessionSchemaReady &&
-    uuidFunctionReady &&
-    authWriteReady;
+    argon2Ready && sessionSchemaReady && uuidFunctionReady && authWriteReady;
   const code = !argon2Ready
     ? "ARGON2_RUNTIME_FAILED"
     : !sessionSchemaReady
