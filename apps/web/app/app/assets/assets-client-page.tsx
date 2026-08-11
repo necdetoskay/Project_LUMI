@@ -24,6 +24,8 @@ type VisualCandidate = {
   model: string | null;
   candidateIndex: number;
   createdAt: string;
+  assetKind?: string;
+  sourceCompositeAssetId?: string | null;
 };
 
 type VisualCanon = {
@@ -35,6 +37,17 @@ type VisualCanon = {
 type LibraryResponse = {
   canon: VisualCanon;
   candidates: VisualCandidate[];
+  variants: VisualCandidate[];
+};
+
+const variantLabels: Record<string, string> = {
+  "body-front": "Tam boy ön",
+  "body-three-quarter": "Tam boy ¾",
+  "body-side": "Tam boy profil",
+  "body-back": "Tam boy arka",
+  "head-front": "Yarım ön",
+  "head-three-quarter": "Yarım ¾",
+  "head-side": "Yarım profil",
 };
 
 type InventoryItem = {
@@ -88,6 +101,7 @@ export function AssetsClientPage({
   const [state, setState] = useState<LibraryResponse>({
     canon: null,
     candidates: [],
+    variants: [],
   });
   const [candidateCount, setCandidateCount] = useState(1);
   const [filter, setFilter] = useState<CandidateFilter>("active");
@@ -121,7 +135,11 @@ export function AssetsClientPage({
       if (!response.ok) {
         throw new Error(payload.error ?? "Görsel kütüphanesi okunamadı.");
       }
-      setState(payload);
+      setState({
+        canon: payload.canon,
+        candidates: payload.candidates,
+        variants: payload.variants ?? [],
+      });
     } finally {
       setLoading(false);
     }
@@ -277,6 +295,15 @@ export function AssetsClientPage({
         (candidate) => candidate.id === state.canon?.selectedAssetId,
       ) ?? null,
     [state.candidates, state.canon?.selectedAssetId],
+  );
+  const canonBodyAsset = useMemo(
+    () =>
+      state.variants.find(
+        (candidate) =>
+          candidate.sourceCompositeAssetId === canonCandidate?.id &&
+          candidate.assetKind === "body-three-quarter",
+      ) ?? canonCandidate,
+    [canonCandidate, state.variants],
   );
 
   const visibleCandidates = useMemo(() => {
@@ -594,7 +621,7 @@ export function AssetsClientPage({
                         className="object-cover"
                         fill
                         sizes="(min-width: 1024px) 40vw, 100vw"
-                        src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(canonCandidate.id)}?householdId=${encodeURIComponent(householdId)}`}
+                        src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(canonBodyAsset?.id ?? canonCandidate.id)}?householdId=${encodeURIComponent(householdId)}`}
                         unoptimized
                       />
                     </div>
@@ -695,6 +722,10 @@ export function AssetsClientPage({
                     const isCanon =
                       state.canon?.selectedAssetId === candidate.id;
                     const contentUrl = `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(candidate.id)}?householdId=${encodeURIComponent(householdId)}`;
+                    const candidateVariants = state.variants.filter(
+                      (variant) =>
+                        variant.sourceCompositeAssetId === candidate.id,
+                    );
                     return (
                       <article
                         className="overflow-hidden rounded-[1.8rem] border border-outline-variant/70 bg-white/90 shadow-sm"
@@ -710,6 +741,28 @@ export function AssetsClientPage({
                             unoptimized
                           />
                         </div>
+                        {candidateVariants.length > 0 ? (
+                          <div className="grid grid-cols-4 gap-1 border-t border-outline-variant/60 bg-surface-container-low p-2">
+                            {candidateVariants.map((variant) => (
+                              <div key={variant.id}>
+                                <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
+                                  <Image
+                                    alt={`${selectedCharacter?.name ?? "Karakter"} ${variantLabels[variant.assetKind ?? ""] ?? "görünümü"}`}
+                                    className="object-cover"
+                                    fill
+                                    sizes="120px"
+                                    src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(variant.id)}?householdId=${encodeURIComponent(householdId)}`}
+                                    unoptimized
+                                  />
+                                </div>
+                                <p className="mt-1 truncate text-center text-[10px] font-bold text-on-surface-variant">
+                                  {variantLabels[variant.assetKind ?? ""] ??
+                                    variant.assetKind}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                         <div className="p-5">
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-sm font-extrabold text-on-surface">

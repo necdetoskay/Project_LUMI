@@ -101,6 +101,38 @@ describe("CanonicalCharacterImage", () => {
     expect(image.getAttribute("src")).toContain("/content/head-1?");
   });
 
+  it("uses the three-quarter portrait by default for in-app character display", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          canon: { selectedAssetId: "sheet-1" },
+          variants: [
+            {
+              id: "head-three-quarter-1",
+              assetKind: "head-three-quarter",
+              sourceCompositeAssetId: "sheet-1",
+            },
+          ],
+        }),
+      }),
+    );
+
+    render(
+      <CanonicalCharacterImage
+        characterId="character-1"
+        characterName="Arin"
+        householdId="household-1"
+      />,
+    );
+
+    const image = await screen.findByAltText("Arin karakter görünümü");
+    expect(image.getAttribute("src")).toContain(
+      "/content/head-three-quarter-1?",
+    );
+  });
+
   it("ignores a late response after unmount", async () => {
     let resolveRequest: ((value: unknown) => void) | undefined;
     vi.stubGlobal(

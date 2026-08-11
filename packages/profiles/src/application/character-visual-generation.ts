@@ -12,6 +12,7 @@ export type CharacterVisualGenerationRequest = {
 
 export const CHARACTER_VISUAL_VARIANTS = [
   "body-front",
+  "body-three-quarter",
   "body-side",
   "body-back",
   "head-front",
@@ -85,7 +86,7 @@ export function renderCharacterVisualPrompt(
 
   const composition =
     mode === "reference-sheet"
-      ? `Create one clean 3-column by 2-row character reference sheet with six equal borderless panels. Top row, left to right: full body front view, full body side view, full body back view. Bottom row, left to right: close-up head front view, close-up head three-quarter view, close-up head side view. Keep exactly the same character, face, colors, clothing, accessories and proportions in every panel. Center one view in each panel with generous safe margins. Use a flat, uniform, pale background across the entire sheet. Do not add panel borders, labels, text, props or scenery.`
+      ? `Create one clean two-row character reference sheet with seven isolated borderless views. Top row has exactly four equal-width full-body views, left to right: front, three-quarter, side profile, and back. Bottom row has exactly three equal-width half-body portraits, left to right: front, three-quarter, and side profile. Keep exactly the same character, face, hair, colors, clothing, accessories and proportions in every view. Keep every full body completely visible from hair to feet. Center one view inside each reserved region with generous blank safe margins; no character or clothing may cross into a neighboring region. Use a flat, uniform, pale background across the entire sheet. Do not add panel borders, labels, text, props or scenery.`
       : `Show one clearly readable full character, neutral-to-friendly pose, simple uncluttered background, consistent proportions, child-safe storybook presentation.`;
 
   return [

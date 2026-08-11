@@ -264,7 +264,7 @@ export function ProfileCharacterDetailSection({
                 className="absolute inset-0"
                 householdId={householdId}
                 priority
-                variant="body-front"
+                variant="head-three-quarter"
               />
               <div className="absolute inset-x-5 bottom-5 z-10 rounded-[1.4rem] border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur-md">
                 <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-on-surface-variant">

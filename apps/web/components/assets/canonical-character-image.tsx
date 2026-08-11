@@ -14,6 +14,7 @@ type CharacterVisualLibrary = {
 
 export type CharacterVisualVariant =
   | "body-front"
+  | "body-three-quarter"
   | "body-side"
   | "body-back"
   | "head-front"
@@ -27,7 +28,7 @@ export function CanonicalCharacterImage({
   className = "",
   sizes = "(min-width: 768px) 40vw, 100vw",
   priority = false,
-  variant = "body-front",
+  variant = "head-three-quarter",
 }: {
   characterId: string;
   householdId: string | null;
