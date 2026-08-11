@@ -50,6 +50,11 @@ const variantLabels: Record<string, string> = {
   "head-side": "Yarım profil",
 };
 
+const variantRoleLabels: Record<string, string> = {
+  "body-three-quarter": "Ana canon",
+  "head-three-quarter": "Uygulama görseli",
+};
+
 type InventoryItem = {
   id: string;
   displayName: string;
@@ -109,6 +114,9 @@ export function AssetsClientPage({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedPreviewByCandidate, setSelectedPreviewByCandidate] = useState<
+    Record<string, string>
+  >({});
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
 
@@ -721,11 +729,27 @@ export function AssetsClientPage({
                   {visibleCandidates.map((candidate) => {
                     const isCanon =
                       state.canon?.selectedAssetId === candidate.id;
-                    const contentUrl = `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(candidate.id)}?householdId=${encodeURIComponent(householdId)}`;
                     const candidateVariants = state.variants.filter(
                       (variant) =>
                         variant.sourceCompositeAssetId === candidate.id,
                     );
+                    const preferredVariant =
+                      candidateVariants.find(
+                        (variant) => variant.assetKind === "body-three-quarter",
+                      ) ?? candidateVariants[0];
+                    const selectedPreviewId =
+                      selectedPreviewByCandidate[candidate.id] ??
+                      preferredVariant?.id ??
+                      candidate.id;
+                    const selectedVariant = candidateVariants.find(
+                      (variant) => variant.id === selectedPreviewId,
+                    );
+                    const previewAsset = selectedVariant ?? candidate;
+                    const previewUrl = `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(previewAsset.id)}?householdId=${encodeURIComponent(householdId)}`;
+                    const previewLabel = selectedVariant
+                      ? (variantLabels[selectedVariant.assetKind ?? ""] ??
+                        "Seçili görünüm")
+                      : "Referans sayfası";
                     return (
                       <article
                         className="overflow-hidden rounded-[1.8rem] border border-outline-variant/70 bg-white/90 shadow-sm"
@@ -733,34 +757,120 @@ export function AssetsClientPage({
                       >
                         <div className="relative aspect-square bg-surface-container-low">
                           <Image
-                            alt={`${selectedCharacter?.name ?? "Karakter"} görsel adayı`}
-                            className="object-cover"
+                            alt={`${selectedCharacter?.name ?? "Karakter"} ${previewLabel}`}
+                            className="object-contain p-3 transition-transform duration-300 hover:scale-[1.03]"
                             fill
                             sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-                            src={contentUrl}
+                            src={previewUrl}
                             unoptimized
                           />
+                          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between gap-2">
+                            <span className="rounded-full bg-on-surface/80 px-3 py-1 text-xs font-extrabold text-white shadow-sm backdrop-blur-sm">
+                              {previewLabel}
+                            </span>
+                            {selectedVariant &&
+                            variantRoleLabels[
+                              selectedVariant.assetKind ?? ""
+                            ] ? (
+                              <span className="rounded-full bg-primary px-3 py-1 text-xs font-extrabold text-on-primary shadow-sm">
+                                {
+                                  variantRoleLabels[
+                                    selectedVariant.assetKind ?? ""
+                                  ]
+                                }
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                         {candidateVariants.length > 0 ? (
-                          <div className="grid grid-cols-4 gap-1 border-t border-outline-variant/60 bg-surface-container-low p-2">
-                            {candidateVariants.map((variant) => (
-                              <div key={variant.id}>
-                                <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
-                                  <Image
-                                    alt={`${selectedCharacter?.name ?? "Karakter"} ${variantLabels[variant.assetKind ?? ""] ?? "görünümü"}`}
-                                    className="object-cover"
-                                    fill
-                                    sizes="120px"
-                                    src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(variant.id)}?householdId=${encodeURIComponent(householdId)}`}
-                                    unoptimized
-                                  />
-                                </div>
-                                <p className="mt-1 truncate text-center text-[10px] font-bold text-on-surface-variant">
-                                  {variantLabels[variant.assetKind ?? ""] ??
-                                    variant.assetKind}
+                          <div className="border-t border-outline-variant/60 bg-surface-container-low p-3">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-extrabold text-on-surface">
+                                  Görünümü incele
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-on-surface-variant">
+                                  Büyütmek için bir parçaya dokunun.
                                 </p>
                               </div>
-                            ))}
+                              <button
+                                aria-pressed={
+                                  selectedPreviewId === candidate.id
+                                }
+                                className={
+                                  selectedPreviewId === candidate.id
+                                    ? "rounded-full bg-primary px-3 py-1.5 text-[11px] font-extrabold text-on-primary"
+                                    : "rounded-full border border-outline-variant bg-white px-3 py-1.5 text-[11px] font-extrabold text-on-surface-variant transition hover:border-primary hover:text-primary"
+                                }
+                                onClick={() =>
+                                  setSelectedPreviewByCandidate((current) => ({
+                                    ...current,
+                                    [candidate.id]: candidate.id,
+                                  }))
+                                }
+                                type="button"
+                              >
+                                Tüm sayfa
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {candidateVariants.map((variant) => {
+                                const variantLabel =
+                                  variantLabels[variant.assetKind ?? ""] ??
+                                  variant.assetKind ??
+                                  "Görünüm";
+                                const roleLabel =
+                                  variantRoleLabels[variant.assetKind ?? ""];
+                                const isSelected =
+                                  selectedPreviewId === variant.id;
+                                return (
+                                  <button
+                                    aria-label={`${variantLabel}${roleLabel ? ` — ${roleLabel}` : ""}`}
+                                    aria-pressed={isSelected}
+                                    className={`group relative rounded-xl border-2 p-1 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25 ${
+                                      isSelected
+                                        ? "border-primary bg-primary/10 shadow-md"
+                                        : "border-transparent bg-white hover:-translate-y-1 hover:border-primary/60 hover:shadow-md"
+                                    }`}
+                                    key={variant.id}
+                                    onClick={() =>
+                                      setSelectedPreviewByCandidate(
+                                        (current) => ({
+                                          ...current,
+                                          [candidate.id]: variant.id,
+                                        }),
+                                      )
+                                    }
+                                    title={`${variantLabel}${roleLabel ? ` · ${roleLabel}` : ""}`}
+                                    type="button"
+                                  >
+                                    <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
+                                      <Image
+                                        alt={`${selectedCharacter?.name ?? "Karakter"} ${variantLabel}`}
+                                        className="object-contain transition-transform duration-200 group-hover:scale-110"
+                                        fill
+                                        sizes="120px"
+                                        src={`/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(variant.id)}?householdId=${encodeURIComponent(householdId)}`}
+                                        unoptimized
+                                      />
+                                      {isSelected ? (
+                                        <span className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-primary text-sm font-black text-on-primary shadow-md">
+                                          ✓
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <p className="mt-1.5 truncate text-center text-[10px] font-extrabold text-on-surface-variant">
+                                      {variantLabel}
+                                    </p>
+                                    {roleLabel ? (
+                                      <p className="mt-1 truncate rounded-full bg-secondary-container px-1.5 py-0.5 text-center text-[9px] font-extrabold text-on-secondary-container">
+                                        {roleLabel}
+                                      </p>
+                                    ) : null}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         ) : null}
                         <div className="p-5">
