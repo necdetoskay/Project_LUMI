@@ -131,9 +131,11 @@ describe("image generation platform planning", () => {
   });
 
   it("fails closed when pricing is unknown", () => {
+    const capabilityWithoutPricing = { ...krea };
+    delete capabilityWithoutPricing.pricing;
     expect(() =>
       planImageGeneration(
-        { ...krea, pricing: undefined },
+        capabilityWithoutPricing,
         {
           candidateCount: 1,
           aspectRatio: "1:1",
