@@ -22,8 +22,10 @@ describe("asset generation serverless runtime", () => {
 
     for (const source of [characterRoute, bagRoute, itemRoute]) {
       expect(source).not.toMatch(/(?:from|import\()\s*["']sharp["']/);
-      expect(source).not.toContain("splitReferenceSheet");
     }
+    expect(characterRoute).toContain(
+      "PureJsCharacterReferenceSheetDerivativeAdapter",
+    );
     expect(packageJson).not.toMatch(/["']sharp["']\s*:/);
     expect(nextConfig).not.toContain("sharp-libvips");
     expect(nextConfig).not.toContain("sharp-linux");

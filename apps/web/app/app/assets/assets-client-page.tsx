@@ -413,11 +413,11 @@ export function AssetsClientPage({
 
                   <div className="rounded-2xl border border-outline-variant bg-white px-4 py-3">
                     <p className="text-sm font-extrabold text-on-surface">
-                      Doğrudan karakter portresi
+                      3×2 karakter referans seti
                     </p>
                     <p className="mt-1 text-xs leading-5 text-on-surface-variant">
-                      Her aday tek bir kullanılabilir görsel olarak hazırlanır;
-                      sunucuda ek parçalama yapılmaz.
+                      Tam vücut ve baş için ön, yan ve arka/¾ görünümler tek
+                      üretimde hazırlanır.
                     </p>
                   </div>
                 </div>
@@ -475,8 +475,8 @@ export function AssetsClientPage({
                           action: "generate",
                           idempotencyKey: `visual-${characterId}-${newIdempotencyKey()}`,
                           candidateCount,
-                          aspectRatio: "1:1",
-                          mode: "portrait",
+                          aspectRatio: "3:2",
+                          mode: "reference-sheet",
                         },
                         `${candidateCount} yeni görsel adayı oluşturuldu.`,
                       )
