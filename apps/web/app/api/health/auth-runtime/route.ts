@@ -14,6 +14,7 @@ const REQUIRED_SESSION_COLUMNS = [
   "replaced_by_session_id",
 ] as const;
 
+// Probes the real auth write contract transactionally and always rolls it back.
 export async function GET() {
   let argon2Ready = false;
   let sessionSchemaReady = false;
