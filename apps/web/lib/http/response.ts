@@ -16,17 +16,24 @@ export function redirectWithQuery(
   pathname: string,
   query: Record<string, string | undefined>,
 ) {
-  // Next standalone servers run with HOSTNAME=0.0.0.0, which makes
-  // request.url resolve to 0.0.0.0 instead of the real public origin.
-  // Prefer the request Host header so redirects land on the address the
-  // browser actually used, falling back to the configured public app URL.
+  // Reverse proxies (including Vercel) terminate TLS before forwarding the
+  // request. Preserve the forwarded protocol so a HTTPS form submission does
+  // not get redirected to an insecure http:// URL.
   const forwardedHost = request.headers.get("x-forwarded-host");
   const hostHeader = request.headers.get("host");
-  const baseUrl = forwardedHost
-    ? `http://${forwardedHost}`
-    : hostHeader
-      ? `http://${hostHeader}`
-      : publicEnvironment.NEXT_PUBLIC_APP_URL;
+  const forwardedProtocol = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  const requestProtocol = new URL(request.url).protocol.replace(":", "");
+  const protocol =
+    forwardedProtocol === "http" || forwardedProtocol === "https"
+      ? forwardedProtocol
+      : requestProtocol;
+  const host = forwardedHost ?? hostHeader;
+  const baseUrl = host
+    ? `${protocol}://${host}`
+    : publicEnvironment.NEXT_PUBLIC_APP_URL;
   const url = new URL(pathname, baseUrl);
 
   for (const [key, value] of Object.entries(query)) {
