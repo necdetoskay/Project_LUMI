@@ -1,0 +1,38 @@
+name: One-shot Media Dependency Preflight
+
+on:
+  push:
+    branches:
+      - agent/story-visual-asset-sheet-planner
+
+permissions:
+  contents: write
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Refresh lockfile
+        run: |
+          pnpm install --no-frozen-lockfile
+          if ! git diff --quiet pnpm-lock.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml
+            git commit -m "chore(web): refresh lockfile for media dependency"
+            git push
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prettier --check apps/web/package.json packages/media/src/domain/story-visual-asset-sheet-planner.ts packages/media/src/domain/index.ts packages/media/tests/domain/story-visual-asset-sheet-planner.test.ts
+      - run: pnpm --filter @lumi/media lint
+      - run: pnpm --filter @lumi/media typecheck
+      - run: pnpm --filter @lumi/media test
+      - run: pnpm --filter @lumi/web typecheck
