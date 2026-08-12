@@ -53,6 +53,18 @@ export function objectStorageConfigFromEnv(): S3CompatibleObjectStorageConfig | 
   };
 }
 
+function configForReferencedBucket(
+  config: S3CompatibleObjectStorageConfig,
+  bucket: string,
+): S3CompatibleObjectStorageConfig {
+  // storageRef is persisted together with the authorized asset record. Older
+  // records may legitimately point at a previous R2 bucket name, so reads must
+  // honor the bucket encoded in that immutable reference instead of assuming
+  // today's write bucket. Credentials still determine whether that bucket is
+  // actually accessible.
+  return bucket === config.bucket ? config : { ...config, bucket };
+}
+
 export class LocalCharacterVisualStorageAdapter
   implements CharacterVisualStoragePort
 {
@@ -124,11 +136,8 @@ export async function readCharacterVisual(storageRef: string) {
     const slash = value.indexOf("/");
     if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
     const bucket = decodeURIComponent(value.slice(0, slash));
-    if (bucket !== config.bucket) {
-      throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
-    }
     const key = value.slice(slash + 1);
-    const object = await getObject(config, key);
+    const object = await getObject(configForReferencedBucket(config, bucket), key);
     return {
       bytes: object.bytes,
       mimeType: object.contentType ?? "application/octet-stream",
@@ -146,8 +155,8 @@ export async function deleteCharacterVisual(storageRef: string): Promise<void> {
   const slash = value.indexOf("/");
   if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
   const bucket = decodeURIComponent(value.slice(0, slash));
-  if (bucket !== config.bucket) {
-    throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
-  }
-  await deleteObject(config, value.slice(slash + 1));
+  await deleteObject(
+    configForReferencedBucket(config, bucket),
+    value.slice(slash + 1),
+  );
 }
