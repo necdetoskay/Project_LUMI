@@ -42,7 +42,9 @@ export class DrizzleStoryVisualWorkspaceRepository
 
   async getLatestManifest(
     storyId: string,
-    scope: Parameters<StoryVisualWorkspaceRepositoryPort["getLatestManifest"]>[1],
+    scope: Parameters<
+      StoryVisualWorkspaceRepositoryPort["getLatestManifest"]
+    >[1],
   ): Promise<PersistedStoryVisualManifest | null> {
     const [row] = await this.db
       .select()
@@ -87,7 +89,9 @@ export class DrizzleStoryVisualWorkspaceRepository
 
   async getActiveAssetSet(
     storyId: string,
-    scope: Parameters<StoryVisualWorkspaceRepositoryPort["getActiveAssetSet"]>[1],
+    scope: Parameters<
+      StoryVisualWorkspaceRepositoryPort["getActiveAssetSet"]
+    >[1],
   ): Promise<PersistedStoryVisualAssetSet | null> {
     const [row] = await this.db
       .select()
@@ -109,7 +113,9 @@ export class DrizzleStoryVisualWorkspaceRepository
   async setActiveAssetSet(
     assetSetId: string,
     storyId: string,
-    scope: Parameters<StoryVisualWorkspaceRepositoryPort["setActiveAssetSet"]>[2],
+    scope: Parameters<
+      StoryVisualWorkspaceRepositoryPort["setActiveAssetSet"]
+    >[2],
   ): Promise<PersistedStoryVisualAssetSet | null> {
     return this.db.transaction(async (tx) => {
       await tx
