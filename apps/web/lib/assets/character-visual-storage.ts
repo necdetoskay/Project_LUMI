@@ -89,28 +89,33 @@ async function getObjectWithLegacyBucketFallback(
   referencedBucket: string,
   key: string,
 ) {
-  // When the current bucket is publicly exposed (r2.dev or a custom domain),
-  // prefer that canonical object URL for reads. This avoids relying on custom
-  // SigV4 code for browser-facing image delivery while keeping signed S3
-  // access available for writes, deletes and private/legacy buckets.
-  if (referencedBucket === config.bucket) {
-    const publicObject = await getPublicObject(key);
-    if (publicObject) return publicObject;
-  }
-
+  // Preserve the existing signed S3/R2 read path as the canonical behavior.
+  // This keeps Vercel/production semantics unchanged. Public R2 access is only
+  // a compatibility fallback for deployments where the custom signed client
+  // cannot retrieve an object that is otherwise publicly reachable.
   try {
     return await getObject(configForReferencedBucket(config, referencedBucket), key);
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    const shouldRetryCurrentBucket =
-      referencedBucket !== config.bucket &&
-      message === "OBJECT_STORAGE_GET_FAILED:404";
+    const isNotFound = message === "OBJECT_STORAGE_GET_FAILED:404";
 
-    if (!shouldRetryCurrentBucket) throw error;
+    if (!isNotFound) throw error;
+
+    if (referencedBucket !== config.bucket) {
+      try {
+        return await getObject(config, key);
+      } catch (currentBucketError) {
+        const currentBucketMessage =
+          currentBucketError instanceof Error ? currentBucketError.message : "";
+        if (currentBucketMessage !== "OBJECT_STORAGE_GET_FAILED:404") {
+          throw currentBucketError;
+        }
+      }
+    }
 
     const publicObject = await getPublicObject(key);
     if (publicObject) return publicObject;
-    return getObject(config, key);
+    throw error;
   }
 }
 
