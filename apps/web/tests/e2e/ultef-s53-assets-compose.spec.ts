@@ -40,7 +40,9 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
 
     await page.getByRole("link", { name: /Lina/ }).first().click();
     await expect(page).toHaveURL(/\/app\/assets\/characters\//);
-    await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lina", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText("Character Visual Hub", { exact: true }),
     ).toBeVisible();
@@ -82,7 +84,9 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       .toBe(true);
 
     await page.getByRole("link", { name: /Lina/ }).first().click();
-    await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lina", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Yeni aday üret" }),
     ).toBeVisible();
