@@ -6,5 +6,6 @@ export * from "./identity";
 export * from "./item-visual-state";
 export * from "./media-jobs";
 export * from "./media-types";
+export * from "./story-visual-extraction";
 export * from "./story-visual-manifest";
 export * from "./visual-style";
