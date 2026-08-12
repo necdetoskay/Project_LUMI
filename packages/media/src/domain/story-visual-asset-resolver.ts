@@ -103,9 +103,7 @@ export function resolveStoryVisualEntities(input: {
   });
 }
 
-function renderDimensions(
-  requirement: StoryVisualEntityRequirement,
-): readonly {
+function renderDimensions(requirement: StoryVisualEntityRequirement): readonly {
   variant: StoryVisualVariant | null;
   state: StoryVisualStateRef | null;
 }[] {
