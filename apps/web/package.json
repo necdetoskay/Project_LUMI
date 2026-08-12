@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
-    "@lumi/media": "workspace:*",
     "@lumi/npc-intelligence": "workspace:*",
     "@lumi/privacy": "workspace:*",
     "@lumi/profiles": "workspace:*",
