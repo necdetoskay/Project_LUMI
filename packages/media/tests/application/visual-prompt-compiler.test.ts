@@ -26,6 +26,8 @@ describe("compileVisualPrompt", () => {
     expect(result.prompt).toContain("no logo");
     expect(result.prompt).toContain("no watermark");
     expect(result.prompt).toContain("Do not write state names");
+    expect(result.prompt).toContain("exactly two equal panels in one horizontal row");
+    expect(result.prompt).toContain("state 1 on the left and state 2 on the right");
   });
 
   it("keeps the chosen style and version explicit in provenance-ready output", () => {
@@ -39,6 +41,19 @@ describe("compileVisualPrompt", () => {
     expect(result.styleId).toBe("paper-cut-world");
     expect(result.styleVersion).toBe(1);
     expect(result.prompt).toContain("STYLE PROFILE: paper-cut-world v1");
+  });
+
+  it("uses a deterministic 2x2 layout for three-state items", () => {
+    const result = compileVisualPrompt({
+      assetType: "item",
+      styleId: "lumi-storybook",
+      identity: ["small potion bottle"],
+      states: getItemVisualStates("potion"),
+    });
+    expect(result.stateIds).toEqual(["full", "half", "empty"]);
+    expect(result.prompt).toContain("state 3 bottom-left");
+    expect(result.prompt).toContain("bottom-right cell empty");
+    expect(result.prompt).toContain("center-cropped to a square");
   });
 
   it("rejects more than four states in one grid", () => {

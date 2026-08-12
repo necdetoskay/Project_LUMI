@@ -4,9 +4,11 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { WebManagedAssetAuthorizationAdapter } from "@/lib/assets/managed-asset-authorization";
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
+import { splitItemStateGrid } from "@/lib/assets/item-state-grid";
 import {
   compileVisualPrompt,
   getItemVisualStates,
+  planItemStateGrid,
   type VisualStyleId,
 } from "@lumi/media";
 import {
@@ -36,13 +38,14 @@ const inputSchema = z.object({
   styleId: visualStyleSchema.default("lumi-storybook"),
 });
 
-function compileItemIconPrompt(
+function compileItemStatePrompt(
   item: {
     displayName: string;
     category: string;
     rarity: string;
   },
   styleId: VisualStyleId,
+  states: ReturnType<typeof getItemVisualStates>,
 ) {
   return compileVisualPrompt({
     assetType: "item",
@@ -51,8 +54,9 @@ function compileItemIconPrompt(
       `OBJECT NAME: ${item.displayName}`,
       `OBJECT CATEGORY: ${item.category}`,
       `RARITY / VISUAL IMPORTANCE: ${item.rarity}`,
-      "Create one canonical inventory icon of this physical object only",
+      "Create canonical inventory artwork of this physical object only",
     ],
+    states,
   });
 }
 
@@ -81,11 +85,13 @@ export async function POST(request: Request) {
           { status: 403 },
         );
       }
+
+      const resolvedItems = items as NonNullable<(typeof items)[number]>[];
       const deps = {
         authorizationPort: new WebManagedAssetAuthorizationAdapter(),
       };
-      const existing = await Promise.all(
-        (items as NonNullable<(typeof items)[number]>[]).map(async (item) => {
+      const existingByItem = await Promise.all(
+        resolvedItems.map(async (item) => {
           const assets = await listManagedAssets(
             parent.id,
             {
@@ -95,16 +101,30 @@ export async function POST(request: Request) {
             },
             deps,
           );
-          return assets.find(
+          return assets.filter(
             (asset) =>
               asset.assetKind === "item-icon" &&
               asset.provenance.idempotencyKey === input.idempotencyKey,
           );
         }),
       );
-      if (existing.every(Boolean)) {
-        return NextResponse.json({ assets: existing, replayed: true });
+
+      const isCompleteReplay = resolvedItems.every((item, itemIndex) => {
+        const expected = getItemVisualStates(item.category);
+        const existing = existingByItem[itemIndex] ?? [];
+        return expected.every((state) =>
+          existing.some((asset) => asset.provenance.stateId === state.id),
+        );
+      });
+      if (isCompleteReplay) {
+        return NextResponse.json({
+          assets: existingByItem.flat(),
+          stateAssets: existingByItem.flat(),
+          replayed: true,
+          visualStyle: input.styleId,
+        });
       }
+
       const apiKey = await getOpenRouterApiKey(parent.id, input.householdId);
       if (!apiKey) {
         return NextResponse.json(
@@ -112,87 +132,123 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
-      const adapter = new OpenRouterCharacterVisualGenerationAdapter({
-        apiKey,
-      });
+      const adapter = new OpenRouterCharacterVisualGenerationAdapter({ apiKey });
       const storage = createCharacterVisualStorageAdapter();
       const batchId = crypto.randomUUID();
-      const assets = [];
+      const canonicalAssets = [];
+      const stateAssets = [];
       const costMetadata = [];
-      for (const [index, item] of (
-        items as NonNullable<(typeof items)[number]>[]
-      ).entries()) {
-        if (existing[index]) {
-          assets.push(existing[index]);
-          continue;
-        }
 
-        const compiled = compileItemIconPrompt(item, input.styleId);
-        const plannedStateIds = getItemVisualStates(item.category).map(
-          (state) => state.id,
-        );
-        const generated = await adapter.generate({
-          jobId: crypto.randomUUID(),
-          brief: null as never,
-          prompt: compiled.prompt,
-          model: "krea/krea-2-medium-turbo",
-          candidateCount: 1,
-          aspectRatio: "1:1",
-          resolution: "1K",
-        });
-        const candidate = generated.candidates[0];
-        if (!candidate) throw new Error("ITEM_IMAGE_EMPTY");
-        const stored = await storage.store({
-          householdId: input.householdId,
-          characterId: item.id,
-          jobId: batchId,
-          candidateIndex: index,
-          bytesBase64: candidate.bytesBase64,
-          mimeType: candidate.mimeType,
-        });
+      for (const [itemIndex, item] of resolvedItems.entries()) {
+        const states = getItemVisualStates(item.category);
+        const gridBatches = planItemStateGrid(states, 4);
         const scope = {
           householdId: input.householdId,
           subjectType: "item" as const,
           subjectId: item.id,
         };
-        const asset = await registerManagedAssetMetadata(
-          parent.id,
-          {
-            ...scope,
-            assetKind: "item-icon",
-            storageRef: stored.storageRef,
-            mimeType: candidate.mimeType,
-            ...(typeof candidate.width === "number"
-              ? { width: candidate.width }
-              : {}),
-            ...(typeof candidate.height === "number"
-              ? { height: candidate.height }
-              : {}),
-            provider: generated.provider,
-            model: generated.model,
-            originType: "generated",
-            sourceSystem: "item-visual-style-v1",
-            provenance: {
-              batchId,
-              idempotencyKey: input.idempotencyKey,
-              itemIndex: index,
-              providerRequestId: generated.providerRequestId ?? null,
-              styleId: compiled.styleId,
-              styleVersion: compiled.styleVersion,
-              plannedStateIds,
-              promptCompiler: "lumi-visual-style-v1",
-            },
-          },
-          deps,
+        const existingForItem = existingByItem[itemIndex] ?? [];
+        const assetsByState = new Map(
+          existingForItem
+            .filter((asset) => typeof asset.provenance.stateId === "string")
+            .map((asset) => [asset.provenance.stateId as string, asset]),
         );
-        await selectManagedAssetCanon(parent.id, scope, asset.id, deps);
-        assets.push(asset);
-        if (generated.costMetadata) costMetadata.push(generated.costMetadata);
+
+        for (const [gridBatchIndex, gridStates] of gridBatches.entries()) {
+          const missingStates = gridStates.filter(
+            (state) => !assetsByState.has(state.id),
+          );
+          if (missingStates.length === 0) continue;
+
+          const compiled = compileItemStatePrompt(item, input.styleId, gridStates);
+          const generated = await adapter.generate({
+            jobId: crypto.randomUUID(),
+            brief: null as never,
+            prompt: compiled.prompt,
+            model: "krea/krea-2-medium-turbo",
+            candidateCount: 1,
+            aspectRatio: "1:1",
+            resolution: "1K",
+          });
+          const candidate = generated.candidates[0];
+          if (!candidate) throw new Error("ITEM_IMAGE_EMPTY");
+
+          const panels = splitItemStateGrid({
+            bytesBase64: candidate.bytesBase64,
+            mimeType: candidate.mimeType,
+            stateIds: gridStates.map((state) => state.id),
+            maxOutputSize: 300,
+          });
+
+          for (const [gridPanelIndex, panel] of panels.entries()) {
+            if (assetsByState.has(panel.stateId)) continue;
+            const state = gridStates.find((entry) => entry.id === panel.stateId);
+            if (!state) throw new Error("ITEM_STATE_GRID_STATE_MISMATCH");
+
+            const stored = await storage.store({
+              householdId: input.householdId,
+              characterId: item.id,
+              jobId: batchId,
+              candidateIndex:
+                itemIndex * 100 + gridBatchIndex * 10 + gridPanelIndex,
+              bytesBase64: panel.bytesBase64,
+              mimeType: panel.mimeType,
+            });
+            const asset = await registerManagedAssetMetadata(
+              parent.id,
+              {
+                ...scope,
+                assetKind: "item-icon",
+                storageRef: stored.storageRef,
+                mimeType: panel.mimeType,
+                width: panel.width,
+                height: panel.height,
+                provider: generated.provider,
+                model: generated.model,
+                originType: "generated",
+                sourceSystem: "item-state-grid-v1",
+                provenance: {
+                  batchId,
+                  idempotencyKey: input.idempotencyKey,
+                  itemIndex,
+                  providerRequestId: generated.providerRequestId ?? null,
+                  styleId: compiled.styleId,
+                  styleVersion: compiled.styleVersion,
+                  stateId: state.id,
+                  stateLabel: state.label,
+                  gridBatchIndex,
+                  gridPanelIndex,
+                  gridStateIds: compiled.stateIds,
+                  outputMaxPx: 300,
+                  promptCompiler: "lumi-visual-style-v1",
+                },
+              },
+              deps,
+            );
+            assetsByState.set(state.id, asset);
+          }
+          if (generated.costMetadata) costMetadata.push(generated.costMetadata);
+        }
+
+        const orderedAssets = states
+          .map((state) => assetsByState.get(state.id))
+          .filter(Boolean) as NonNullable<ReturnType<typeof assetsByState.get>>[];
+        if (orderedAssets.length !== states.length) {
+          throw new Error("ITEM_STATE_ASSET_SET_INCOMPLETE");
+        }
+
+        const canonical = orderedAssets[0];
+        if (!canonical) throw new Error("ITEM_CANONICAL_STATE_MISSING");
+        await selectManagedAssetCanon(parent.id, scope, canonical.id, deps);
+        canonicalAssets.push(canonical);
+        stateAssets.push(...orderedAssets);
       }
+
       return NextResponse.json(
         {
           batchId,
-          assets,
+          assets: canonicalAssets,
+          stateAssets,
           costMetadata,
           visualStyle: input.styleId,
         },
