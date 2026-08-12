@@ -6,7 +6,7 @@ import {
   getOwnedHousehold,
   listCharactersByHousehold,
 } from "@lumi/profiles/application";
-import { AssetsClientPage } from "./assets-client-page";
+import { VisualLibraryV2 } from "./visual-library-v2";
 
 export default async function CharacterVisualLibraryPage() {
   const parent = await getParentFromSessionToken(
@@ -20,7 +20,7 @@ export default async function CharacterVisualLibraryPage() {
     : [];
 
   return (
-    <AssetsClientPage
+    <VisualLibraryV2
       householdId={household?.id ?? null}
       characters={characters.map((character) => ({
         id: character.id,
