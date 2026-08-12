@@ -60,11 +60,44 @@ function configForReferencedBucket(
   return bucket === config.bucket ? config : { ...config, bucket };
 }
 
+function encodedObjectPath(key: string): string {
+  return key
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+async function getPublicObject(key: string) {
+  const publicBaseUrl = process.env.OBJECT_STORAGE_PUBLIC_URL?.trim();
+  if (!publicBaseUrl) return null;
+
+  const url = `${publicBaseUrl.replace(/\/$/, "")}/${encodedObjectPath(key)}`;
+  const response = await fetch(url, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`OBJECT_STORAGE_PUBLIC_GET_FAILED:${response.status}`);
+  }
+
+  return {
+    bytes: new Uint8Array(await response.arrayBuffer()),
+    contentType: response.headers.get("content-type"),
+  };
+}
+
 async function getObjectWithLegacyBucketFallback(
   config: S3CompatibleObjectStorageConfig,
   referencedBucket: string,
   key: string,
 ) {
+  // When the current bucket is publicly exposed (r2.dev or a custom domain),
+  // prefer that canonical object URL for reads. This avoids relying on custom
+  // SigV4 code for browser-facing image delivery while keeping signed S3
+  // access available for writes, deletes and private/legacy buckets.
+  if (referencedBucket === config.bucket) {
+    const publicObject = await getPublicObject(key);
+    if (publicObject) return publicObject;
+  }
+
   try {
     return await getObject(configForReferencedBucket(config, referencedBucket), key);
   } catch (error) {
@@ -75,6 +108,8 @@ async function getObjectWithLegacyBucketFallback(
 
     if (!shouldRetryCurrentBucket) throw error;
 
+    const publicObject = await getPublicObject(key);
+    if (publicObject) return publicObject;
     return getObject(config, key);
   }
 }
