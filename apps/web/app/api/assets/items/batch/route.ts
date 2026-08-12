@@ -21,15 +21,22 @@ const inputSchema = z.object({
   idempotencyKey: z.string().min(1).max(160),
 });
 
+const LUMI_ASSET_STYLE_DIRECTION = [
+  "STYLE - Match the already generated LUMI character canon: premium children's fantasy storybook concept art, handcrafted painterly 3D depth, delicate gouache-and-watercolor surface texture, crisp readable silhouette, clean controlled edges, warm soft studio lighting, rich harmonious colors and slightly simplified toyetic proportions.",
+  "This must look like an in-universe illustrated game/story inventory asset that belongs beside the character reference sheet, not a real product photo.",
+  "Avoid photorealism, catalogue photography, ecommerce packshot styling, ultra-real material scans, macro texture, hard product shadows, plastic toy render, flat vector icon, generic clip art, mockup, logo, text, UI frame or watermark.",
+].join(" ");
+
 function renderPrompt(item: {
   displayName: string;
   category: string;
   rarity: string;
 }) {
   return [
-    `Create one isolated inventory item icon for a child-safe illustrated storybook.`,
+    `Create one isolated inventory item illustration for the LUMI child-safe storybook inventory.`,
     `Item: ${item.displayName}; category ${item.category}; rarity ${item.rarity}.`,
-    `Show exactly one item centered in a front three-quarter view with generous safe margins, soft lighting and a uniform pale background.`,
+    LUMI_ASSET_STYLE_DIRECTION,
+    `Show exactly one stylized item centered in a front three-quarter view with generous safe margins, a warm softly textured ivory studio background and a subtle grounding shadow.`,
     `Do not add people, hands, labels, letters, numbers, borders, logos, scenery, duplicates, or watermarks.`,
   ].join(" ");
 }
