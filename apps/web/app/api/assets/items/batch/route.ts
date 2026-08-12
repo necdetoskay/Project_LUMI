@@ -5,6 +5,11 @@ import { withParent } from "@/lib/auth/with-parent";
 import { WebManagedAssetAuthorizationAdapter } from "@/lib/assets/managed-asset-authorization";
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
 import {
+  compileVisualPrompt,
+  getItemVisualStates,
+  type VisualStyleId,
+} from "@lumi/media";
+import {
   getOpenRouterApiKey,
   getOwnedHousehold,
   listManagedAssets,
@@ -14,31 +19,41 @@ import {
 } from "@lumi/profiles/application";
 import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapters";
 
+const visualStyleSchema = z.enum([
+  "lumi-storybook",
+  "soft-3d-adventure",
+  "paper-cut-world",
+  "colored-pencil-dreams",
+  "classic-fairytale",
+  "minimal-pastel",
+]);
+
 const inputSchema = z.object({
   householdId: z.string().uuid(),
   characterId: z.string().uuid(),
   itemIds: z.array(z.string().uuid()).min(1).max(6),
   idempotencyKey: z.string().min(1).max(160),
+  styleId: visualStyleSchema.default("lumi-storybook"),
 });
 
-const LUMI_ASSET_STYLE_DIRECTION = [
-  "STYLE - Match the already generated LUMI character canon: premium children's fantasy storybook concept art, handcrafted painterly 3D depth, delicate gouache-and-watercolor surface texture, crisp readable silhouette, clean controlled edges, warm soft studio lighting, rich harmonious colors and slightly simplified toyetic proportions.",
-  "This must look like an in-universe illustrated game/story inventory asset that belongs beside the character reference sheet, not a real product photo.",
-  "Avoid photorealism, catalogue photography, ecommerce packshot styling, ultra-real material scans, macro texture, hard product shadows, plastic toy render, flat vector icon, generic clip art, mockup, logo, text, UI frame or watermark.",
-].join(" ");
-
-function renderPrompt(item: {
-  displayName: string;
-  category: string;
-  rarity: string;
-}) {
-  return [
-    `Create one isolated inventory item illustration for the LUMI child-safe storybook inventory.`,
-    `Item: ${item.displayName}; category ${item.category}; rarity ${item.rarity}.`,
-    LUMI_ASSET_STYLE_DIRECTION,
-    `Show exactly one stylized item centered in a front three-quarter view with generous safe margins, a warm softly textured ivory studio background and a subtle grounding shadow.`,
-    `Do not add people, hands, labels, letters, numbers, borders, logos, scenery, duplicates, or watermarks.`,
-  ].join(" ");
+function compileItemIconPrompt(
+  item: {
+    displayName: string;
+    category: string;
+    rarity: string;
+  },
+  styleId: VisualStyleId,
+) {
+  return compileVisualPrompt({
+    assetType: "item",
+    styleId,
+    identity: [
+      `OBJECT NAME: ${item.displayName}`,
+      `OBJECT CATEGORY: ${item.category}`,
+      `RARITY / VISUAL IMPORTANCE: ${item.rarity}`,
+      "Create one canonical inventory icon of this physical object only",
+    ],
+  });
 }
 
 export async function POST(request: Request) {
@@ -111,10 +126,15 @@ export async function POST(request: Request) {
           assets.push(existing[index]);
           continue;
         }
+
+        const compiled = compileItemIconPrompt(item, input.styleId);
+        const plannedStateIds = getItemVisualStates(item.category).map(
+          (state) => state.id,
+        );
         const generated = await adapter.generate({
           jobId: crypto.randomUUID(),
           brief: null as never,
-          prompt: renderPrompt(item),
+          prompt: compiled.prompt,
           model: "krea/krea-2-medium-turbo",
           candidateCount: 1,
           aspectRatio: "1:1",
@@ -151,12 +171,16 @@ export async function POST(request: Request) {
             provider: generated.provider,
             model: generated.model,
             originType: "generated",
-            sourceSystem: "item-direct-v1",
+            sourceSystem: "item-visual-style-v1",
             provenance: {
               batchId,
               idempotencyKey: input.idempotencyKey,
               itemIndex: index,
               providerRequestId: generated.providerRequestId ?? null,
+              styleId: compiled.styleId,
+              styleVersion: compiled.styleVersion,
+              plannedStateIds,
+              promptCompiler: "lumi-visual-style-v1",
             },
           },
           deps,
@@ -166,7 +190,12 @@ export async function POST(request: Request) {
         if (generated.costMetadata) costMetadata.push(generated.costMetadata);
       }
       return NextResponse.json(
-        { batchId, assets, costMetadata },
+        {
+          batchId,
+          assets,
+          costMetadata,
+          visualStyle: input.styleId,
+        },
         { status: 201 },
       );
     } catch (error) {
