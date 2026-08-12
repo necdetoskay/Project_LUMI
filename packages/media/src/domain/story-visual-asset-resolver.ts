@@ -61,8 +61,9 @@ export function resolveStoryVisualEntities(input: {
     if (canonicalRef) {
       const canonicalCandidate = input.existingEntities.find(
         (candidate) =>
-          candidate.entityId === canonicalRef ||
-          candidate.identity.canonicalRef === canonicalRef,
+          candidate.identity.kind === requirement.identity.kind &&
+          (candidate.entityId === canonicalRef ||
+            candidate.identity.canonicalRef === canonicalRef),
       );
 
       if (canonicalCandidate) {
@@ -142,12 +143,15 @@ export function planMissingStoryVisualAssets(input: {
       throw new Error("STORY_VISUAL_ENTITY_RESOLUTION_MISSING");
     }
 
-    const resolvedIdentity: StoryVisualEntityIdentity = {
-      ...requirement.identity,
-      entityId: resolution.resolvedEntityId,
-      canonicalRef:
-        requirement.identity.canonicalRef ?? resolution.resolvedEntityId,
-    };
+    const existingEntity = input.existingEntities.find(
+      (candidate) => candidate.entityId === resolution.resolvedEntityId,
+    );
+    const resolvedIdentity: StoryVisualEntityIdentity = existingEntity
+      ? existingEntity.identity
+      : {
+          ...requirement.identity,
+          entityId: resolution.resolvedEntityId,
+        };
 
     return renderDimensions(requirement).map(({ variant, state }) => ({
       manifestEntityId: requirement.manifestEntityId,
