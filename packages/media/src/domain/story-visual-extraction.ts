@@ -49,7 +49,10 @@ function reconcileItemStates(
   ];
 
   if (requested.length === 0) {
-    return registryStates.map((state) => ({ id: state.id, label: state.label }));
+    return registryStates.map((state) => ({
+      id: state.id,
+      label: state.label,
+    }));
   }
 
   const accepted = requested
