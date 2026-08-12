@@ -70,9 +70,7 @@ export default async function StoryVisualWorkspacePage({
               className="inline-flex items-center gap-2 text-primary hover:underline"
               href={`/app/assets/characters/${encodeURIComponent(primaryCharacterId)}`}
             >
-              <span className="material-symbols-outlined text-lg">
-                arrow_back
-              </span>
+              <span className="material-symbols-outlined text-lg">arrow_back</span>
               Karaktere dön
             </Link>
           ) : (
