@@ -26,7 +26,7 @@ export default async function StoryVisualWorkspaceLayout({
           </div>
           <span className="material-symbols-outlined text-primary">palette</span>
         </div>
-        <StoryVisualActions sessionId={sessionId} missingCount={1} />
+        <StoryVisualActions sessionId={sessionId} />
       </aside>
     </>
   );
