@@ -174,7 +174,9 @@ export default async function StoryVisualWorkspacePage({
                   Stil: {selectedStyle}
                 </span>
                 <span className="rounded-full bg-surface-container px-3 py-1.5">
-                  {visualWorkspace?.manifest ? "Manifest bağlı" : "Manifest yok"}
+                  {visualWorkspace?.manifest
+                    ? "Manifest bağlı"
+                    : "Manifest yok"}
                 </span>
               </div>
             </div>
@@ -377,7 +379,8 @@ export default async function StoryVisualWorkspacePage({
                       {requirement.displayName}
                     </p>
                     <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                      {requirement.variantLabel || requirement.stateLabel ||
+                      {requirement.variantLabel ||
+                        requirement.stateLabel ||
                         (requirement.targetKind === "story-illustration"
                           ? "Sahne illüstrasyonu"
                           : "Temel render")}
