@@ -44,7 +44,9 @@ function reconcileItemStates(
 ): readonly StoryVisualStateRef[] {
   const registryStates = getItemVisualStates(category);
   const allowed = new Map(registryStates.map((state) => [state.id, state]));
-  const requested = [...new Set(requestedStateIds.map((id) => id.trim()).filter(Boolean))];
+  const requested = [
+    ...new Set(requestedStateIds.map((id) => id.trim()).filter(Boolean)),
+  ];
 
   if (requested.length === 0) {
     return registryStates.map((state) => ({ id: state.id, label: state.label }));
@@ -74,41 +76,43 @@ export function reconcileStoryVisualExtraction(
   const warnings: string[] = [];
   const entityIds = new Set<string>();
 
-  const entities: StoryVisualEntityRequirement[] = extraction.entities.map((entity) => {
-    if (!entity.manifestEntityId.trim()) {
-      throw new Error("STORY_VISUAL_EXTRACTION_ENTITY_ID_REQUIRED");
-    }
-    if (entityIds.has(entity.manifestEntityId)) {
-      throw new Error("STORY_VISUAL_EXTRACTION_ENTITY_ID_DUPLICATE");
-    }
-    entityIds.add(entity.manifestEntityId);
+  const entities: StoryVisualEntityRequirement[] = extraction.entities.map(
+    (entity) => {
+      if (!entity.manifestEntityId.trim()) {
+        throw new Error("STORY_VISUAL_EXTRACTION_ENTITY_ID_REQUIRED");
+      }
+      if (entityIds.has(entity.manifestEntityId)) {
+        throw new Error("STORY_VISUAL_EXTRACTION_ENTITY_ID_DUPLICATE");
+      }
+      entityIds.add(entity.manifestEntityId);
 
-    const requiredStates =
-      entity.kind === "item"
-        ? reconcileItemStates(
-            entity.category,
-            entity.requestedStateIds ?? [],
-            warnings,
-          )
-        : [];
+      const requiredStates =
+        entity.kind === "item"
+          ? reconcileItemStates(
+              entity.category,
+              entity.requestedStateIds ?? [],
+              warnings,
+            )
+          : [];
 
-    return {
-      manifestEntityId: entity.manifestEntityId,
-      identity: {
-        entityId: entity.canonicalRef ?? entity.manifestEntityId,
-        kind: entity.kind,
-        category: entity.category,
-        displayName: entity.displayName,
-        canonicalRef: entity.canonicalRef ?? null,
-        identityTraits: entity.identityTraits,
-      },
-      variants: entity.variants ?? [],
-      requiredStates,
-      importance: entity.importance,
-      reusable: entity.reusable,
-      sceneIds: entity.sceneIds,
-    };
-  });
+      return {
+        manifestEntityId: entity.manifestEntityId,
+        identity: {
+          entityId: entity.canonicalRef ?? entity.manifestEntityId,
+          kind: entity.kind,
+          category: entity.category,
+          displayName: entity.displayName,
+          canonicalRef: entity.canonicalRef ?? null,
+          identityTraits: entity.identityTraits,
+        },
+        variants: entity.variants ?? [],
+        requiredStates,
+        importance: entity.importance,
+        reusable: entity.reusable,
+        sceneIds: entity.sceneIds,
+      };
+    },
+  );
 
   return {
     manifest: {
