@@ -70,10 +70,9 @@ describe("story visual extraction reconciliation", () => {
       ],
     });
 
-    expect(result.manifest.entities[0]?.requiredStates.map((state) => state.id)).toEqual([
-      "full",
-      "empty",
-    ]);
+    expect(
+      result.manifest.entities[0]?.requiredStates.map((state) => state.id),
+    ).toEqual(["full", "empty"]);
     expect(result.warnings).toContain(
       "STORY_VISUAL_STATE_REJECTED:potion:broken",
     );
@@ -97,10 +96,9 @@ describe("story visual extraction reconciliation", () => {
       ],
     });
 
-    expect(result.manifest.entities[0]?.requiredStates.map((state) => state.id)).toEqual([
-      "closed",
-      "open",
-    ]);
+    expect(
+      result.manifest.entities[0]?.requiredStates.map((state) => state.id),
+    ).toEqual(["closed", "open"]);
     expect(result.warnings).toContain("STORY_VISUAL_STATE_FALLBACK:bag");
   });
 
@@ -138,7 +136,9 @@ describe("story visual extraction reconciliation", () => {
       ],
     });
 
-    expect(result.manifest.entities[0]?.identity.entityId).toBe("character-mira");
+    expect(result.manifest.entities[0]?.identity.entityId).toBe(
+      "character-mira",
+    );
     expect(result.manifest.entities[0]?.variants).toHaveLength(2);
     expect(result.manifest.entities[0]?.requiredStates).toEqual([]);
   });
