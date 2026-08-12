@@ -31,32 +31,32 @@ describe("asset generation serverless runtime", () => {
     expect(nextConfig).not.toContain("sharp-linux");
   });
 
-  it("generates item and bag assets directly instead of cropping sheets", async () => {
+  it("keeps bag generation direct while item generation uses the state-grid pipeline", async () => {
     const [bagRoute, itemRoute] = await Promise.all([
       read("app/api/assets/bags/route.ts"),
       read("app/api/assets/items/batch/route.ts"),
     ]);
 
     expect(bagRoute).toContain('sourceSystem: "bag-direct-v1"');
-    expect(itemRoute).toContain('sourceSystem: "item-direct-v1"');
+    expect(itemRoute).toContain('sourceSystem: "item-state-grid-v1"');
+    expect(itemRoute).toContain("planItemStateGrid(states, 4)");
+    expect(itemRoute).toContain("splitItemStateGrid");
     expect(bagRoute).not.toContain(".extract(");
-    expect(itemRoute).not.toContain(".extract(");
   });
 
-  it("keeps bag and item prompts aligned with LUMI character canon style", async () => {
+  it("routes item prompts through the shared LUMI visual style compiler", async () => {
     const [bagRoute, itemRoute] = await Promise.all([
       read("app/api/assets/bags/route.ts"),
       read("app/api/assets/items/batch/route.ts"),
     ]);
 
-    for (const source of [bagRoute, itemRoute]) {
-      expect(source).toContain(
-        "Match the already generated LUMI character canon",
-      );
-      expect(source).toContain("gouache-and-watercolor surface texture");
-      expect(source).toContain("not a real product photo");
-      expect(source).toContain("Avoid photorealism");
-      expect(source).toContain("catalogue photography");
-    }
+    expect(bagRoute).toContain(
+      "Match the already generated LUMI character canon",
+    );
+    expect(itemRoute).toContain("compileVisualPrompt");
+    expect(itemRoute).toContain('assetType: "item"');
+    expect(itemRoute).toContain("styleId: compiled.styleId");
+    expect(itemRoute).toContain("styleVersion: compiled.styleVersion");
+    expect(itemRoute).not.toContain("LUMI_ASSET_STYLE_DIRECTION");
   });
 });
