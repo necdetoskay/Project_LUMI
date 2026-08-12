@@ -1,7 +1,9 @@
 import {
+  boolean,
   check,
   index,
   integer,
+  jsonb,
   numeric,
   timestamp,
   unique,
@@ -132,6 +134,122 @@ export const mediaFingerprintCache = mediaSchema.table(
       table.householdId,
       table.childProfileId,
       table.fingerprint,
+    ),
+  ],
+);
+
+export const storyVisualManifests = mediaSchema.table(
+  "story_visual_manifests",
+  {
+    id: primaryId(),
+    householdId: uuid("household_id").notNull(),
+    childProfileId: uuid("child_profile_id").notNull(),
+    worldId: uuid("world_id").notNull(),
+    storyId: uuid("story_id").notNull(),
+    schemaVersion: integer("schema_version").notNull(),
+    source: varchar("source", { length: 32 }).notNull(),
+    manifestFingerprint: varchar("manifest_fingerprint", {
+      length: 64,
+    }).notNull(),
+    manifestJson: jsonb("manifest_json").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("uq_story_visual_manifest_fingerprint").on(
+      table.householdId,
+      table.storyId,
+      table.manifestFingerprint,
+    ),
+    index("story_visual_manifest_story_idx").on(
+      table.householdId,
+      table.storyId,
+      table.createdAt,
+    ),
+    check(
+      "chk_story_visual_manifest_source",
+      sql`${table.source} IN ('story-generation', 'story-edit', 'backfill')`,
+    ),
+  ],
+);
+
+export const storyVisualAssetSets = mediaSchema.table(
+  "story_visual_asset_sets",
+  {
+    id: primaryId(),
+    manifestId: uuid("manifest_id")
+      .notNull()
+      .references(() => storyVisualManifests.id, { onDelete: "cascade" }),
+    householdId: uuid("household_id").notNull(),
+    childProfileId: uuid("child_profile_id").notNull(),
+    worldId: uuid("world_id").notNull(),
+    storyId: uuid("story_id").notNull(),
+    manifestFingerprint: varchar("manifest_fingerprint", {
+      length: 64,
+    }).notNull(),
+    styleId: varchar("style_id", { length: 120 }).notNull(),
+    styleVersion: integer("style_version").notNull(),
+    status: varchar("status", { length: 20 }).notNull(),
+    active: boolean("active").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("story_visual_asset_set_story_idx").on(
+      table.householdId,
+      table.storyId,
+      table.createdAt,
+    ),
+    check(
+      "chk_story_visual_asset_set_status",
+      sql`${table.status} IN ('planned', 'generating', 'ready', 'partial', 'failed')`,
+    ),
+  ],
+);
+
+export const storyVisualAssetSetRenders = mediaSchema.table(
+  "story_visual_asset_set_renders",
+  {
+    id: primaryId(),
+    assetSetId: uuid("asset_set_id")
+      .notNull()
+      .references(() => storyVisualAssetSets.id, { onDelete: "cascade" }),
+    targetKind: varchar("target_kind", { length: 24 }).notNull(),
+    targetId: varchar("target_id", { length: 160 }).notNull(),
+    manifestEntityId: varchar("manifest_entity_id", { length: 160 }),
+    resolvedEntityId: varchar("resolved_entity_id", { length: 160 }),
+    variantId: varchar("variant_id", { length: 160 }),
+    stateId: varchar("state_id", { length: 160 }),
+    renderFingerprint: varchar("render_fingerprint", { length: 64 }).notNull(),
+    assetId: uuid("asset_id").references(() => mediaAssets.id, {
+      onDelete: "set null",
+    }),
+    status: varchar("status", { length: 20 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique("uq_story_visual_asset_set_render").on(
+      table.assetSetId,
+      table.renderFingerprint,
+    ),
+    index("story_visual_asset_set_render_status_idx").on(
+      table.assetSetId,
+      table.status,
+    ),
+    check(
+      "chk_story_visual_render_target_kind",
+      sql`${table.targetKind} IN ('entity-render', 'story-illustration')`,
+    ),
+    check(
+      "chk_story_visual_render_status",
+      sql`${table.status} IN ('planned', 'reused', 'missing', 'generating', 'ready', 'failed')`,
     ),
   ],
 );
