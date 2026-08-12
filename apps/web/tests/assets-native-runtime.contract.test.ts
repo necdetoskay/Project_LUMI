@@ -42,4 +42,19 @@ describe("asset generation serverless runtime", () => {
     expect(bagRoute).not.toContain(".extract(");
     expect(itemRoute).not.toContain(".extract(");
   });
+
+  it("keeps bag and item prompts aligned with LUMI character canon style", async () => {
+    const [bagRoute, itemRoute] = await Promise.all([
+      read("app/api/assets/bags/route.ts"),
+      read("app/api/assets/items/batch/route.ts"),
+    ]);
+
+    for (const source of [bagRoute, itemRoute]) {
+      expect(source).toContain("Match the already generated LUMI character canon");
+      expect(source).toContain("gouache-and-watercolor surface texture");
+      expect(source).toContain("not a real product photo");
+      expect(source).toContain("Avoid photorealism");
+      expect(source).toContain("catalogue photography");
+    }
+  });
 });

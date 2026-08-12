@@ -21,6 +21,12 @@ const inputSchema = z.object({
 
 const BAG_VARIANTS = ["bag-closed", "bag-open"] as const;
 
+const LUMI_ASSET_STYLE_DIRECTION = [
+  "STYLE - Match the already generated LUMI character canon: premium children's fantasy storybook concept art, handcrafted painterly 3D depth, delicate gouache-and-watercolor surface texture, crisp readable silhouette, clean controlled edges, warm soft studio lighting, rich harmonious colors and slightly simplified toyetic proportions.",
+  "This must look like an in-universe illustrated game/story inventory asset that belongs beside the character reference sheet, not a real product photo.",
+  "Avoid photorealism, catalogue photography, ecommerce packshot styling, ultra-real leather/canvas material scans, macro texture, hard product shadows, plastic toy render, flat vector icon, generic clip art, mockup, logo, text, UI frame or watermark.",
+].join(" ");
+
 function bagPrompt(
   characterName: string,
   variant: (typeof BAG_VARIANTS)[number],
@@ -30,10 +36,11 @@ function bagPrompt(
       ? "fully closed, viewed from the front three-quarter angle"
       : "fully open, viewed from the front three-quarter angle, with an empty interior clearly visible";
   return [
-    "Create one isolated child-safe fantasy travel bag illustration for a storybook inventory.",
+    "Create one isolated child-safe fantasy travel bag illustration for the LUMI storybook inventory.",
     `The bag belongs to ${characterName}. Show the bag ${state}.`,
-    "Use a warm brown canvas body, teal flap, two brass buckles and a small golden star patch so the open and closed variants share a stable canonical design.",
-    "Center one bag with generous safe margins, a uniform pale background and soft lighting.",
+    LUMI_ASSET_STYLE_DIRECTION,
+    "Use a warm brown illustrated fabric body, teal flap, two stylized brass buckles and a small golden star patch so the open and closed variants share a stable canonical design.",
+    "Center exactly one bag with generous safe margins, a warm softly textured ivory studio background and a subtle grounding shadow.",
     "No people, hands, loose items, labels, letters, numbers, borders, scenery, duplicates, logos, or watermarks.",
   ].join(" ");
 }
