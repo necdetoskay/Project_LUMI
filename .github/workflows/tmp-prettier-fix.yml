@@ -1,6 +1,5 @@
 name: TMP Prettier Fix
 
-# one-time trigger
 on:
   push:
     branches:
@@ -11,7 +10,6 @@ permissions:
 
 jobs:
   format:
-    if: ${{ github.event.head_commit.message != 'chore(ci): apply prettier to s53 visual library test' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
