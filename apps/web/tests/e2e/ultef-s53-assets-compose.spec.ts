@@ -16,7 +16,7 @@ async function loginDemoParent(page: Page) {
 }
 
 test.describe("S53 Asset Management production-like Compose journey", () => {
-  test("opens the character-first Visual Library and Character Visual Hub", async ({
+  test("opens the character-first Visual Library and focused Character Visual Hub", async ({
     page,
   }) => {
     await loginDemoParent(page);
@@ -45,14 +45,19 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       page.getByText("Character Visual Hub", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Lina hikâyeleri" }),
+      page.getByRole("heading", { name: "Görsel kimlik" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Character \/ Bag \/ Items paneli/),
+      page.getByRole("button", { name: "Yeni aday üret" }),
+    ).toBeVisible();
+    await expect(page.getByText("Üretilmiş adaylar", { exact: true })).toBeVisible();
+    await expect(page.getByText("Görünüm varyantları", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Lina hikâyeleri" }),
     ).toBeVisible();
   });
 
-  test("keeps the character-first Visual Library usable on a phone viewport", async ({
+  test("keeps the character visual manager usable on a phone viewport", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -61,9 +66,6 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
     await page.goto("/app/assets");
     await expect(
       page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Visual Library v3", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Lina", { exact: true })).toBeVisible();
 
@@ -77,6 +79,9 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
 
     await page.getByRole("link", { name: /Lina/ }).first().click();
     await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Yeni aday üret" }),
+    ).toBeVisible();
 
     await expect
       .poll(() =>
