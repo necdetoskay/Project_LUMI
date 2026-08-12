@@ -28,7 +28,9 @@ describe("splitItemStateGrid", () => {
     });
 
     expect(panels.map((panel) => panel.stateId)).toEqual(["closed", "open"]);
-    expect(panels.every((panel) => panel.width === 300 && panel.height === 300)).toBe(true);
+    expect(
+      panels.every((panel) => panel.width === 300 && panel.height === 300),
+    ).toBe(true);
     expect(panels.every((panel) => panel.mimeType === "image/png")).toBe(true);
 
     const closed = PNG.sync.read(Buffer.from(panels[0]!.bytesBase64, "base64"));

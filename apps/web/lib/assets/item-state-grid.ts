@@ -100,7 +100,11 @@ export function splitItemStateGrid(input: {
     throw new Error("ITEM_STATE_GRID_PANEL_COUNT_INVALID");
   }
   const maxOutputSize = input.maxOutputSize ?? 300;
-  if (!Number.isInteger(maxOutputSize) || maxOutputSize < 64 || maxOutputSize > 1024) {
+  if (
+    !Number.isInteger(maxOutputSize) ||
+    maxOutputSize < 64 ||
+    maxOutputSize > 1024
+  ) {
     throw new Error("ITEM_STATE_GRID_OUTPUT_SIZE_INVALID");
   }
 

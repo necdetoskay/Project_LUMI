@@ -3,10 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  compileVisualPrompt,
-  getItemVisualStates,
-} from "@lumi/media";
+import { compileVisualPrompt, getItemVisualStates } from "@lumi/media";
 
 const routePath = fileURLToPath(
   new URL("../app/api/assets/items/batch/route.ts", import.meta.url),
@@ -23,7 +20,9 @@ describe("item generation visual style wiring", () => {
     });
 
     expect(compiled.prompt).toContain("SUBJECT TYPE: ITEM / OBJECT");
-    expect(compiled.prompt).toContain("Do not generate people, children, characters");
+    expect(compiled.prompt).toContain(
+      "Do not generate people, children, characters",
+    );
     expect(compiled.prompt).toContain("no text");
     expect(compiled.styleId).toBe("lumi-storybook");
   });

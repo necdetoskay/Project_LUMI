@@ -20,14 +20,20 @@ describe("compileVisualPrompt", () => {
 
     expect(result.stateIds).toEqual(["closed", "open"]);
     expect(result.prompt).toContain("SUBJECT TYPE: ITEM / OBJECT");
-    expect(result.prompt).toContain("Do not generate people, children, characters");
+    expect(result.prompt).toContain(
+      "Do not generate people, children, characters",
+    );
     expect(result.prompt).toContain("exact same object identity");
     expect(result.prompt).toContain("no text");
     expect(result.prompt).toContain("no logo");
     expect(result.prompt).toContain("no watermark");
     expect(result.prompt).toContain("Do not write state names");
-    expect(result.prompt).toContain("exactly two equal panels in one horizontal row");
-    expect(result.prompt).toContain("state 1 on the left and state 2 on the right");
+    expect(result.prompt).toContain(
+      "exactly two equal panels in one horizontal row",
+    );
+    expect(result.prompt).toContain(
+      "state 1 on the left and state 2 on the right",
+    );
   });
 
   it("keeps the chosen style and version explicit in provenance-ready output", () => {

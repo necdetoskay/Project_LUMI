@@ -14,29 +14,61 @@ const profiles: readonly ItemVisualStateProfile[] = [
     category: "bag",
     states: [
       { id: "closed", label: "Closed", prompt: "the bag fully closed" },
-      { id: "open", label: "Open", prompt: "the same bag open, showing its opening clearly" },
+      {
+        id: "open",
+        label: "Open",
+        prompt: "the same bag open, showing its opening clearly",
+      },
     ],
   },
   {
     category: "candle",
     states: [
-      { id: "unlit", label: "Unlit", prompt: "the candle unlit with an intact wick" },
-      { id: "lit", label: "Lit", prompt: "the same candle lit with one small safe flame" },
-      { id: "burned-down", label: "Burned down", prompt: "the same candle visibly shorter after burning" },
+      {
+        id: "unlit",
+        label: "Unlit",
+        prompt: "the candle unlit with an intact wick",
+      },
+      {
+        id: "lit",
+        label: "Lit",
+        prompt: "the same candle lit with one small safe flame",
+      },
+      {
+        id: "burned-down",
+        label: "Burned down",
+        prompt: "the same candle visibly shorter after burning",
+      },
     ],
   },
   {
     category: "compass",
     states: [
-      { id: "closed", label: "Closed", prompt: "the compass case fully closed" },
-      { id: "open", label: "Open", prompt: "the exact same compass open with its dial visible" },
+      {
+        id: "closed",
+        label: "Closed",
+        prompt: "the compass case fully closed",
+      },
+      {
+        id: "open",
+        label: "Open",
+        prompt: "the exact same compass open with its dial visible",
+      },
     ],
   },
   {
     category: "potion",
     states: [
-      { id: "full", label: "Full", prompt: "the potion bottle completely full" },
-      { id: "half", label: "Half full", prompt: "the exact same bottle half full" },
+      {
+        id: "full",
+        label: "Full",
+        prompt: "the potion bottle completely full",
+      },
+      {
+        id: "half",
+        label: "Half full",
+        prompt: "the exact same bottle half full",
+      },
       { id: "empty", label: "Empty", prompt: "the exact same bottle empty" },
     ],
   },
@@ -44,14 +76,23 @@ const profiles: readonly ItemVisualStateProfile[] = [
     category: "book",
     states: [
       { id: "closed", label: "Closed", prompt: "the book fully closed" },
-      { id: "open", label: "Open", prompt: "the exact same book open to blank illustrated pages with no readable text" },
+      {
+        id: "open",
+        label: "Open",
+        prompt:
+          "the exact same book open to blank illustrated pages with no readable text",
+      },
     ],
   },
   {
     category: "lantern",
     states: [
       { id: "off", label: "Off", prompt: "the lantern switched off" },
-      { id: "on", label: "On", prompt: "the exact same lantern glowing softly" },
+      {
+        id: "on",
+        label: "On",
+        prompt: "the exact same lantern glowing softly",
+      },
     ],
   },
   {
@@ -59,18 +100,31 @@ const profiles: readonly ItemVisualStateProfile[] = [
     states: [
       { id: "closed", label: "Closed", prompt: "the chest fully closed" },
       { id: "open", label: "Open", prompt: "the exact same chest open" },
-      { id: "empty", label: "Empty", prompt: "the exact same chest open and visibly empty" },
+      {
+        id: "empty",
+        label: "Empty",
+        prompt: "the exact same chest open and visibly empty",
+      },
     ],
   },
 ];
 
 const DEFAULT_STATES: readonly ItemVisualState[] = [
-  { id: "default", label: "Default", prompt: "the canonical default state of the item" },
+  {
+    id: "default",
+    label: "Default",
+    prompt: "the canonical default state of the item",
+  },
 ];
 
-export function getItemVisualStates(category: string): readonly ItemVisualState[] {
+export function getItemVisualStates(
+  category: string,
+): readonly ItemVisualState[] {
   const normalized = category.trim().toLowerCase();
-  return profiles.find((profile) => profile.category === normalized)?.states ?? DEFAULT_STATES;
+  return (
+    profiles.find((profile) => profile.category === normalized)?.states ??
+    DEFAULT_STATES
+  );
 }
 
 export function planItemStateGrid(

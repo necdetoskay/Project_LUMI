@@ -132,7 +132,9 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
-      const adapter = new OpenRouterCharacterVisualGenerationAdapter({ apiKey });
+      const adapter = new OpenRouterCharacterVisualGenerationAdapter({
+        apiKey,
+      });
       const storage = createCharacterVisualStorageAdapter();
       const batchId = crypto.randomUUID();
       const canonicalAssets = [];
@@ -160,7 +162,11 @@ export async function POST(request: Request) {
           );
           if (missingStates.length === 0) continue;
 
-          const compiled = compileItemStatePrompt(item, input.styleId, gridStates);
+          const compiled = compileItemStatePrompt(
+            item,
+            input.styleId,
+            gridStates,
+          );
           const generated = await adapter.generate({
             jobId: crypto.randomUUID(),
             brief: null as never,
@@ -182,7 +188,9 @@ export async function POST(request: Request) {
 
           for (const [gridPanelIndex, panel] of panels.entries()) {
             if (assetsByState.has(panel.stateId)) continue;
-            const state = gridStates.find((entry) => entry.id === panel.stateId);
+            const state = gridStates.find(
+              (entry) => entry.id === panel.stateId,
+            );
             if (!state) throw new Error("ITEM_STATE_GRID_STATE_MISMATCH");
 
             const stored = await storage.store({
@@ -232,7 +240,9 @@ export async function POST(request: Request) {
 
         const orderedAssets = states
           .map((state) => assetsByState.get(state.id))
-          .filter(Boolean) as NonNullable<ReturnType<typeof assetsByState.get>>[];
+          .filter(Boolean) as NonNullable<
+          ReturnType<typeof assetsByState.get>
+        >[];
         if (orderedAssets.length !== states.length) {
           throw new Error("ITEM_STATE_ASSET_SET_INCOMPLETE");
         }
