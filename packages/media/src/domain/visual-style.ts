@@ -37,7 +37,10 @@ const GLOBAL_NEGATIVE_PROMPT = [
 ] as const;
 
 function style(
-  profile: Omit<VisualStyleProfile, "version" | "previewAssetRef" | "negativePrompt"> & {
+  profile: Omit<
+    VisualStyleProfile,
+    "version" | "previewAssetRef" | "negativePrompt"
+  > & {
     negativePrompt?: readonly string[];
   },
 ): VisualStyleProfile {
@@ -111,8 +114,14 @@ export const VISUAL_STYLE_CATALOG: readonly VisualStyleProfile[] = [
         "centered three-quarter view",
         "no people, children, faces, hands or animals",
       ],
-      environment: ["layered stylized 3D environment", "soft atmospheric depth"],
-      "story-illustration": ["cinematic child-safe composition", "preserve canon identities"],
+      environment: [
+        "layered stylized 3D environment",
+        "soft atmospheric depth",
+      ],
+      "story-illustration": [
+        "cinematic child-safe composition",
+        "preserve canon identities",
+      ],
     },
     negativePrompt: ["no photorealism", "no ecommerce product photography"],
   }),
@@ -130,9 +139,15 @@ export const VISUAL_STYLE_CATALOG: readonly VisualStyleProfile[] = [
     ],
     rules: {
       character: ["preserve character identity using paper-cut shapes"],
-      item: ["single isolated paper-cut object", "no people, children, faces or hands"],
+      item: [
+        "single isolated paper-cut object",
+        "no people, children, faces or hands",
+      ],
       environment: ["layered paper diorama composition"],
-      "story-illustration": ["paper theatre composition", "preserve identities"],
+      "story-illustration": [
+        "paper theatre composition",
+        "preserve identities",
+      ],
     },
   }),
   style({
@@ -148,10 +163,16 @@ export const VISUAL_STYLE_CATALOG: readonly VisualStyleProfile[] = [
       "gentle dreamy atmosphere",
     ],
     rules: {
-      character: ["preserve character identity", "natural hand-drawn expression"],
+      character: [
+        "preserve character identity",
+        "natural hand-drawn expression",
+      ],
       item: ["single isolated object", "no people, children, faces or hands"],
       environment: ["softly layered illustrated environment"],
-      "story-illustration": ["dreamy child-safe composition", "preserve identities"],
+      "story-illustration": [
+        "dreamy child-safe composition",
+        "preserve identities",
+      ],
     },
   }),
   style({
@@ -167,10 +188,22 @@ export const VISUAL_STYLE_CATALOG: readonly VisualStyleProfile[] = [
       "traditional illustrated-book finish",
     ],
     rules: {
-      character: ["preserve character identity", "storybook-natural proportions"],
-      item: ["single isolated illustrated object", "no people, children, faces or hands"],
-      environment: ["rich fairytale environment", "clear narrative focal point"],
-      "story-illustration": ["traditional story plate composition", "preserve identities"],
+      character: [
+        "preserve character identity",
+        "storybook-natural proportions",
+      ],
+      item: [
+        "single isolated illustrated object",
+        "no people, children, faces or hands",
+      ],
+      environment: [
+        "rich fairytale environment",
+        "clear narrative focal point",
+      ],
+      "story-illustration": [
+        "traditional story plate composition",
+        "preserve identities",
+      ],
     },
   }),
   style({
@@ -187,9 +220,15 @@ export const VISUAL_STYLE_CATALOG: readonly VisualStyleProfile[] = [
     ],
     rules: {
       character: ["preserve character identity using simplified forms"],
-      item: ["single isolated simplified object", "no people, children, faces or hands"],
+      item: [
+        "single isolated simplified object",
+        "no people, children, faces or hands",
+      ],
       environment: ["minimal environment", "clear simple spatial layers"],
-      "story-illustration": ["simple readable child-safe composition", "preserve identities"],
+      "story-illustration": [
+        "simple readable child-safe composition",
+        "preserve identities",
+      ],
     },
   }),
 ] as const;
@@ -202,7 +241,8 @@ export function getVisualStyleProfile(
 ): VisualStyleProfile {
   const profile = VISUAL_STYLE_CATALOG.find(
     (candidate) =>
-      candidate.id === id && (version === undefined || candidate.version === version),
+      candidate.id === id &&
+      (version === undefined || candidate.version === version),
   );
   if (!profile) {
     throw new Error(`VISUAL_STYLE_NOT_FOUND:${id}:${version ?? "latest"}`);

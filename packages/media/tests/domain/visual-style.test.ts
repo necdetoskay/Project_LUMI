@@ -48,9 +48,9 @@ describe("item visual states", () => {
   });
 
   it("falls back to one default state for unknown categories", () => {
-    expect(getItemVisualStates("mysterious-widget").map((state) => state.id)).toEqual([
-      "default",
-    ]);
+    expect(
+      getItemVisualStates("mysterious-widget").map((state) => state.id),
+    ).toEqual(["default"]);
   });
 
   it("plans at most four state panels per generation", () => {
@@ -59,6 +59,8 @@ describe("item visual states", () => {
       label: `S${index}`,
       prompt: `state ${index}`,
     }));
-    expect(planItemStateGrid(states).map((batch) => batch.length)).toEqual([4, 3]);
+    expect(planItemStateGrid(states).map((batch) => batch.length)).toEqual([
+      4, 3,
+    ]);
   });
 });
