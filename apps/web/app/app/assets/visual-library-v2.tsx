@@ -187,21 +187,9 @@ export function VisualLibraryV2({
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 {[
-                  [
-                    "inventory_2",
-                    "Reusable assetler",
-                    "Karakter, eşya ve ortamlar yeniden kullanılabilir.",
-                  ],
-                  [
-                    "layers",
-                    "State & variant",
-                    "Açık/kapalı, dolu/boş ve kıyafet varyantları ayrı tutulur.",
-                  ],
-                  [
-                    "palette",
-                    "Çoklu stil",
-                    "Aynı manifest farklı görsel stillerde render edilebilir.",
-                  ],
+                  ["inventory_2", "Reusable assetler", "Karakter, eşya ve ortamlar yeniden kullanılabilir."],
+                  ["layers", "State & variant", "Açık/kapalı, dolu/boş ve kıyafet varyantları ayrı tutulur."],
+                  ["palette", "Çoklu stil", "Aynı manifest farklı görsel stillerde render edilebilir."],
                 ].map(([icon, title, text]) => (
                   <div
                     className="rounded-2xl bg-surface-container-low p-4"
@@ -210,9 +198,7 @@ export function VisualLibraryV2({
                     <span className="material-symbols-outlined text-primary">
                       {icon}
                     </span>
-                    <p className="mt-2 font-extrabold text-on-surface">
-                      {title}
-                    </p>
+                    <p className="mt-2 font-extrabold text-on-surface">{title}</p>
                     <p className="mt-1 text-xs leading-5 text-on-surface-variant">
                       {text}
                     </p>
@@ -221,8 +207,7 @@ export function VisualLibraryV2({
               </div>
               <div className="mt-6 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-5">
                 <p className="font-extrabold text-on-surface">
-                  Hikâye kartları bir sonraki bağlantı adımında burada
-                  görünecek.
+                  Hikâye kartları bir sonraki bağlantı adımında burada görünecek.
                 </p>
                 <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                   Veri modeli hazır. Sıradaki web slice, mevcut ve yeni
@@ -277,10 +262,7 @@ export function VisualLibraryV2({
                 süresince burada korunuyor.
               </p>
               <div className="mt-4 overflow-hidden rounded-2xl border border-outline-variant bg-white">
-                <AssetsClientPage
-                  householdId={householdId}
-                  characters={characters}
-                />
+                <AssetsClientPage householdId={householdId} characters={characters} />
               </div>
             </details>
           </section>
@@ -313,9 +295,9 @@ export function VisualLibraryV2({
                   <CanonicalBagImage
                     characterId={characterId}
                     householdId={householdId}
+                    characterName={selectedCharacter?.name ?? "Karakter"}
                     variant="bag-closed"
                     className="aspect-square rounded-xl"
-                    sizes="260px"
                   />
                   <p className="mt-3 font-extrabold text-on-surface">
                     {selectedCharacter?.name ?? "Karakter"} çantası
