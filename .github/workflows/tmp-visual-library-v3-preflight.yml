@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   preflight:
-    if: github.event.head_commit.message != 'style(web): apply Visual Library v3 prettier output'
+    if: "${{ github.event.head_commit.message != 'style(web): apply Visual Library v3 prettier output' }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
