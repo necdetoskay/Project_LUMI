@@ -66,7 +66,9 @@ export default async function CharacterVisualHubPage({
             className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:underline"
             href="/app/assets"
           >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <span className="material-symbols-outlined text-lg">
+              arrow_back
+            </span>
             Görsel Kütüphanesi
           </Link>
         </div>
@@ -142,8 +144,8 @@ export default async function CharacterVisualHubPage({
                 {character.name} hikâyeleri
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-on-surface-variant">
-                Hikâyeye girerek yalnızca o maceraya ait karakter, eşya, ortam ve
-                sahne görsellerini yönetebilirsin.
+                Hikâyeye girerek yalnızca o maceraya ait karakter, eşya, ortam
+                ve sahne görsellerini yönetebilirsin.
               </p>
             </div>
             <span className="w-fit rounded-full bg-primary-fixed px-3 py-1.5 text-xs font-extrabold text-on-primary-fixed-variant">
