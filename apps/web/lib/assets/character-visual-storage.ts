@@ -57,12 +57,26 @@ function configForReferencedBucket(
   config: S3CompatibleObjectStorageConfig,
   bucket: string,
 ): S3CompatibleObjectStorageConfig {
-  // storageRef is persisted together with the authorized asset record. Older
-  // records may legitimately point at a previous R2 bucket name, so reads must
-  // honor the bucket encoded in that immutable reference instead of assuming
-  // today's write bucket. Credentials still determine whether that bucket is
-  // actually accessible.
   return bucket === config.bucket ? config : { ...config, bucket };
+}
+
+async function getObjectWithLegacyBucketFallback(
+  config: S3CompatibleObjectStorageConfig,
+  referencedBucket: string,
+  key: string,
+) {
+  try {
+    return await getObject(configForReferencedBucket(config, referencedBucket), key);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const shouldRetryCurrentBucket =
+      referencedBucket !== config.bucket &&
+      message === "OBJECT_STORAGE_GET_FAILED:404";
+
+    if (!shouldRetryCurrentBucket) throw error;
+
+    return getObject(config, key);
+  }
 }
 
 export class LocalCharacterVisualStorageAdapter
@@ -137,7 +151,7 @@ export async function readCharacterVisual(storageRef: string) {
     if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
     const bucket = decodeURIComponent(value.slice(0, slash));
     const key = value.slice(slash + 1);
-    const object = await getObject(configForReferencedBucket(config, bucket), key);
+    const object = await getObjectWithLegacyBucketFallback(config, bucket, key);
     return {
       bytes: object.bytes,
       mimeType: object.contentType ?? "application/octet-stream",
