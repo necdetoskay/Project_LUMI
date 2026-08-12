@@ -16,7 +16,7 @@ async function loginDemoParent(page: Page) {
 }
 
 test.describe("S53 Asset Management production-like Compose journey", () => {
-  test("opens the Visual Library v2 after real parent login", async ({
+  test("opens the character-first Visual Library and Character Visual Hub", async ({
     page,
   }) => {
     await loginDemoParent(page);
@@ -26,34 +26,27 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Visual Library v2", { exact: true }),
+      page.getByText("Visual Library v3", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Hikâyeler/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Karakterler/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Eşyalar/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Ortamlar/ })).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: "Görsellerin ana merkezi artık hikâye",
+        name: "Görsel dünyasını yönetmek istediğin karakteri seç",
       }),
     ).toBeVisible();
+    await expect(page.getByText("Lina", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Karakter → Hikâyeler → Hikâye Görselleri/)).toBeVisible();
 
-    await page.getByRole("tab", { name: /Eşyalar/ }).click();
-    await expect(page.getByLabel("Karakter bağlamı")).toHaveValue(
-      "51000000-0000-4000-8000-000000000003",
-    );
+    await page.getByRole("link", { name: /Lina/ }).first().click();
+    await expect(page).toHaveURL(/\/app\/assets\/characters\//);
+    await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
+    await expect(page.getByText("Character Visual Hub", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Eşyalar ve görsel durumları" }),
+      page.getByRole("heading", { name: "Lina hikâyeleri" }),
     ).toBeVisible();
-    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
-    await expect(
-      page.getByText("Çanta · state seti", { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText("Kapalı", { exact: true })).toBeVisible();
-    await expect(page.getByText("Açık", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Character \/ Bag \/ Items paneli/)).toBeVisible();
   });
 
-  test("keeps Visual Library v2 usable on a phone viewport", async ({
+  test("keeps the character-first Visual Library usable on a phone viewport", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -63,10 +56,10 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
     await expect(
       page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
     ).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Hikâyeler/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Karakterler/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Eşyalar/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Ortamlar/ })).toBeVisible();
+    await expect(
+      page.getByText("Visual Library v3", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Lina", { exact: true })).toBeVisible();
 
     await expect
       .poll(() =>
@@ -76,10 +69,8 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       )
       .toBe(true);
 
-    await page.getByRole("tab", { name: /Eşyalar/ }).click();
-    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
-    await expect(page.getByText("Kapalı", { exact: true })).toBeVisible();
-    await expect(page.getByText("Açık", { exact: true })).toBeVisible();
+    await page.getByRole("link", { name: /Lina/ }).first().click();
+    await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
 
     await expect
       .poll(() =>
