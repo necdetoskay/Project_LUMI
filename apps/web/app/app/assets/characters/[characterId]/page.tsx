@@ -7,6 +7,7 @@ import {
   getOwnedHousehold,
   listCharactersByHousehold,
 } from "@lumi/profiles/application";
+import { CharacterVisualManager } from "./character-visual-manager";
 
 export default async function CharacterVisualHubPage({
   params,
@@ -76,15 +77,15 @@ export default async function CharacterVisualHubPage({
                 <div className="rounded-2xl bg-surface-container-low p-4">
                   <p className="text-2xl font-black text-on-surface">—</p>
                   <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                    Görünüm
+                    Outfit
                   </p>
                 </div>
                 <div className="rounded-2xl bg-surface-container-low p-4">
                   <span className="material-symbols-outlined text-2xl text-primary">
-                    pending
+                    photo_library
                   </span>
                   <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                    Görsel durum
+                    Görsel kimlik
                   </p>
                 </div>
               </div>
@@ -92,57 +93,41 @@ export default async function CharacterVisualHubPage({
           </div>
         </header>
 
-        <section className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-          <article className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-              Karakter görselleri
-            </p>
-            <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
-              Görsel kimlik
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Canonical görsel, aday görseller, kıyafet/görünüm varyantları ve
-              farklı stil renderları bu karakter bağlamında yönetilecek.
-            </p>
-            <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-5">
-              <p className="font-extrabold text-on-surface">
-                Karakter görsel yönetimi sonraki slice'ta bağlanıyor
-              </p>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                Eski iç içe Character / Bag / Items paneli geri gelmeyecek;
-                mevcut candidate/canon işlevleri doğrudan bu karta taşınacak.
-              </p>
-            </div>
-          </article>
+        <section className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
+          <CharacterVisualManager
+            characterId={character.id}
+            characterName={character.name}
+            householdId={household.id}
+          />
+        </section>
 
-          <article className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                  Hikâyeler
-                </p>
-                <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
-                  {character.name} hikâyeleri
-                </h2>
-              </div>
-              <span className="rounded-full bg-surface-container px-3 py-1.5 text-xs font-extrabold text-on-surface-variant">
-                Bağlantı bekliyor
-              </span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Hikâye kartları bu alanda görsel stil, eşya/ortam/sahne sayıları
-              ve hazır/eksik görsel durumuyla listelenecek. Bir karta tıklamak
-              Story Visual Workspace'i açacak.
-            </p>
-            <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-6 text-center">
-              <span className="material-symbols-outlined text-4xl text-primary">
-                auto_stories
-              </span>
-              <p className="mt-3 font-extrabold text-on-surface">
-                Gerçek hikâye kartları Slice C'de bağlanacak
+        <section className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+                Hikâyeler
               </p>
+              <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
+                {character.name} hikâyeleri
+              </h2>
             </div>
-          </article>
+            <span className="rounded-full bg-surface-container px-3 py-1.5 text-xs font-extrabold text-on-surface-variant">
+              Slice C
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+            Hikâye kartları bu alanda görsel stil, eşya/ortam/sahne sayıları ve
+            hazır/eksik görsel durumuyla listelenecek. Bir karta tıklamak Story
+            Visual Workspace'i açacak.
+          </p>
+          <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-6 text-center">
+            <span className="material-symbols-outlined text-4xl text-primary">
+              auto_stories
+            </span>
+            <p className="mt-3 font-extrabold text-on-surface">
+              Gerçek hikâye kartları sıradaki slice'ta bağlanacak
+            </p>
+          </div>
         </section>
       </div>
     </section>
