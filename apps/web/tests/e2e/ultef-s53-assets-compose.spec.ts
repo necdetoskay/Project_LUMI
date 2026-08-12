@@ -16,32 +16,36 @@ async function loginDemoParent(page: Page) {
 }
 
 test.describe("S53 Asset Management production-like Compose journey", () => {
-  test("opens the Lina asset library after real parent login", async ({
-    page,
-  }) => {
+  test("opens the Visual Library v2 after real parent login", async ({ page }) => {
     await loginDemoParent(page);
 
     await page.goto("/app/assets");
     await expect(
       page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
     ).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Karakter/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Çanta/ })).toBeVisible();
+    await expect(page.getByText("Visual Library v2", { exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Hikâyeler/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Karakterler/ })).toBeVisible();
     await expect(page.getByRole("tab", { name: /Eşyalar/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Ortamlar/ })).toBeVisible();
     await expect(
-      page.getByText("Lina kütüphanesi", { exact: true }),
+      page.getByRole("heading", { name: "Görsellerin ana merkezi artık hikâye" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Karakter")).toHaveValue(
+
+    await page.getByRole("tab", { name: /Eşyalar/ }).click();
+    await expect(page.getByLabel("Karakter bağlamı")).toHaveValue(
       "51000000-0000-4000-8000-000000000003",
     );
     await expect(
-      page.getByRole("button", { name: "1 görsel üret" }),
+      page.getByRole("heading", { name: "Eşyalar ve görsel durumları" }),
     ).toBeVisible();
+    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
+    await expect(page.getByText("Çanta · state seti", { exact: true })).toBeVisible();
+    await expect(page.getByText("Kapalı", { exact: true })).toBeVisible();
+    await expect(page.getByText("Açık", { exact: true })).toBeVisible();
   });
 
-  test("keeps the asset workspace usable on a phone viewport", async ({
-    page,
-  }) => {
+  test("keeps Visual Library v2 usable on a phone viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loginDemoParent(page);
 
@@ -49,10 +53,10 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
     await expect(
       page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
     ).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Karakter/ })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "1 görsel üret" }),
-    ).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Hikâyeler/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Karakterler/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Eşyalar/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Ortamlar/ })).toBeVisible();
 
     await expect
       .poll(() =>
@@ -62,15 +66,11 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       )
       .toBe(true);
 
-    await page.getByRole("tab", { name: /Çanta/ }).click();
-    await expect(page.getByRole("button", { name: "Kapalı" })).toBeVisible();
-    await page.getByRole("button", { name: "Açık" }).click();
-    await expect(page.getByText("Açık çanta")).toBeVisible();
-
     await page.getByRole("tab", { name: /Eşyalar/ }).click();
-    await expect(
-      page.getByRole("button", { name: "2 eşyayı üret", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
+    await expect(page.getByText("Kapalı", { exact: true })).toBeVisible();
+    await expect(page.getByText("Açık", { exact: true })).toBeVisible();
+
     await expect
       .poll(() =>
         page.evaluate(
