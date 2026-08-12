@@ -123,6 +123,21 @@ describe("story visual workspace summary", () => {
     expect(result.counts.total).toBe(6);
     expect(result.counts.ready).toBe(1);
     expect(result.counts.missing).toBe(5);
+    expect(result.requirements).toHaveLength(6);
+    expect(
+      result.requirements.find(
+        (requirement) => requirement.key === "lina:winter:base",
+      ),
+    ).toMatchObject({ status: "ready", variantLabel: "Winter" });
+    expect(
+      result.requirements.find(
+        (requirement) => requirement.key === "compass:base:open",
+      ),
+    ).toMatchObject({
+      displayName: "Old Brass Compass",
+      stateLabel: "Open",
+      status: "missing",
+    });
   });
 
   it("does not count a ready status without a bound asset as ready", () => {
@@ -146,5 +161,10 @@ describe("story visual workspace summary", () => {
 
     expect(result.counts.ready).toBe(0);
     expect(result.counts.missing).toBe(6);
+    expect(
+      result.requirements.find(
+        (requirement) => requirement.key === "illustration:illustration-1",
+      )?.status,
+    ).toBe("missing");
   });
 });
