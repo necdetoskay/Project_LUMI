@@ -7,6 +7,7 @@ export * from "./item-visual-state";
 export * from "./media-jobs";
 export * from "./media-types";
 export * from "./story-visual-asset-resolver";
+export * from "./story-visual-asset-sheet-planner";
 export * from "./story-visual-extraction";
 export * from "./story-visual-manifest";
 export * from "./visual-style";
