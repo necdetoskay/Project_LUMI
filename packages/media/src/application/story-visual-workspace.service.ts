@@ -1,9 +1,13 @@
 import type { AssetScope } from "../domain/asset";
-import type { StoryVisualEntityRequirement } from "../domain/story-visual-manifest";
+import type {
+  StoryIllustrationRequirement,
+  StoryVisualEntityRequirement,
+} from "../domain/story-visual-manifest";
 import type {
   PersistedStoryVisualAssetSet,
   PersistedStoryVisualManifest,
   PersistedStoryVisualRender,
+  StoryVisualRenderStatus,
   StoryVisualWorkspaceRepositoryPort,
 } from "../ports/repository.port";
 
@@ -19,19 +23,109 @@ export type StoryVisualWorkspaceCounts = {
   failed: number;
 };
 
+export type StoryVisualWorkspaceRequirement = {
+  key: string;
+  targetKind: "entity-render" | "story-illustration";
+  entityKind?: "character" | "item" | "environment";
+  manifestEntityId?: string;
+  displayName: string;
+  variantId?: string | null;
+  variantLabel?: string | null;
+  stateId?: string | null;
+  stateLabel?: string | null;
+  sceneId?: string | null;
+  status: StoryVisualRenderStatus;
+  assetId?: string | null;
+};
+
 export type StoryVisualWorkspaceReadModel = {
   manifest: PersistedStoryVisualManifest | null;
   assetSet: PersistedStoryVisualAssetSet | null;
   renders: readonly PersistedStoryVisualRender[];
+  requirements: readonly StoryVisualWorkspaceRequirement[];
   counts: StoryVisualWorkspaceCounts;
 };
 
-function renderCountForEntity(
-  requirement: StoryVisualEntityRequirement,
-): number {
+function renderCountForEntity(requirement: StoryVisualEntityRequirement): number {
   const variants = Math.max(requirement.variants.length, 1);
   const states = Math.max(requirement.requiredStates.length, 1);
   return variants * states;
+}
+
+function effectiveStatus(
+  render: PersistedStoryVisualRender | undefined,
+): StoryVisualRenderStatus {
+  if (!render) return "missing";
+  if (
+    (render.status === "ready" || render.status === "reused") &&
+    !render.assetId
+  ) {
+    return "missing";
+  }
+  return render.status;
+}
+
+function expandEntityRequirements(
+  requirement: StoryVisualEntityRequirement,
+  renders: readonly PersistedStoryVisualRender[],
+): StoryVisualWorkspaceRequirement[] {
+  const variants =
+    requirement.variants.length > 0 ? requirement.variants : [null];
+  const states =
+    requirement.requiredStates.length > 0
+      ? requirement.requiredStates
+      : [null];
+
+  return variants.flatMap((variant) =>
+    states.map((state) => {
+      const render = renders.find(
+        (entry) =>
+          entry.targetKind === "entity-render" &&
+          entry.manifestEntityId === requirement.manifestEntityId &&
+          (entry.variantId ?? null) === (variant?.id ?? null) &&
+          (entry.stateId ?? null) === (state?.id ?? null),
+      );
+
+      return {
+        key: [
+          requirement.manifestEntityId,
+          variant?.id ?? "base",
+          state?.id ?? "base",
+        ].join(":"),
+        targetKind: "entity-render" as const,
+        entityKind: requirement.identity.kind,
+        manifestEntityId: requirement.manifestEntityId,
+        displayName: requirement.identity.displayName,
+        variantId: variant?.id ?? null,
+        variantLabel: variant?.label ?? null,
+        stateId: state?.id ?? null,
+        stateLabel: state?.label ?? null,
+        sceneId: requirement.sceneIds[0] ?? null,
+        status: effectiveStatus(render),
+        assetId: render?.assetId ?? null,
+      };
+    }),
+  );
+}
+
+function expandIllustrationRequirement(
+  requirement: StoryIllustrationRequirement,
+  renders: readonly PersistedStoryVisualRender[],
+): StoryVisualWorkspaceRequirement {
+  const render = renders.find(
+    (entry) =>
+      entry.targetKind === "story-illustration" &&
+      entry.targetId === requirement.id,
+  );
+
+  return {
+    key: `illustration:${requirement.id}`,
+    targetKind: "story-illustration",
+    displayName: requirement.compositionBrief,
+    sceneId: requirement.sceneId,
+    status: effectiveStatus(render),
+    assetId: render?.assetId ?? null,
+  };
 }
 
 export function summarizeStoryVisualWorkspace(input: {
@@ -48,22 +142,33 @@ export function summarizeStoryVisualWorkspace(input: {
   const expectedIllustrations = manifest?.storyIllustrations.length ?? 0;
   const total = expectedEntityRenders + expectedIllustrations;
 
-  const ready = input.renders.filter(
-    (render) =>
-      (render.status === "ready" || render.status === "reused") &&
-      Boolean(render.assetId),
+  const requirements = manifest
+    ? [
+        ...manifest.entities.flatMap((requirement) =>
+          expandEntityRequirements(requirement, input.renders),
+        ),
+        ...manifest.storyIllustrations.map((requirement) =>
+          expandIllustrationRequirement(requirement, input.renders),
+        ),
+      ]
+    : [];
+
+  const ready = requirements.filter(
+    (requirement) =>
+      requirement.status === "ready" || requirement.status === "reused",
   ).length;
-  const generating = input.renders.filter(
-    (render) => render.status === "generating",
+  const generating = requirements.filter(
+    (requirement) => requirement.status === "generating",
   ).length;
-  const failed = input.renders.filter(
-    (render) => render.status === "failed",
+  const failed = requirements.filter(
+    (requirement) => requirement.status === "failed",
   ).length;
 
   return {
     manifest: input.manifest,
     assetSet: input.assetSet,
     renders: input.renders,
+    requirements,
     counts: {
       characters:
         manifest?.entities.filter(
