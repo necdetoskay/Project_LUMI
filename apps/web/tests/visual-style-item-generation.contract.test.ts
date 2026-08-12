@@ -27,18 +27,20 @@ describe("item generation visual style wiring", () => {
     expect(compiled.styleId).toBe("lumi-storybook");
   });
 
-  it("keeps semantic compass states ready for the grid/crop migration", () => {
+  it("keeps semantic compass states ready for the grid/crop pipeline", () => {
     expect(getItemVisualStates("compass").map((state) => state.id)).toEqual([
       "closed",
       "open",
     ]);
   });
 
-  it("routes web item generation through the shared compiler and records style provenance", () => {
+  it("routes web item generation through the shared compiler and records state/style provenance", () => {
     expect(routeSource).toContain("compileVisualPrompt");
-    expect(routeSource).toContain('sourceSystem: "item-visual-style-v1"');
+    expect(routeSource).toContain('sourceSystem: "item-state-grid-v1"');
     expect(routeSource).toContain("styleId: compiled.styleId");
     expect(routeSource).toContain("styleVersion: compiled.styleVersion");
+    expect(routeSource).toContain("stateId: state.id");
+    expect(routeSource).toContain("outputMaxPx: 300");
     expect(routeSource).not.toContain("LUMI_ASSET_STYLE_DIRECTION");
   });
 });
