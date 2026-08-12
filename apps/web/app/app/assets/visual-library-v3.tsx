@@ -39,7 +39,8 @@ function CharacterCard({ character }: { character: CharacterOption }) {
         </div>
 
         <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-on-surface-variant">
-          {summary || "Bu karakterin görsel kimliği, görünüm varyantları ve hikâye görselleri burada yönetilir."}
+          {summary ||
+            "Bu karakterin görsel kimliği, görünüm varyantları ve hikâye görselleri burada yönetilir."}
         </p>
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center">

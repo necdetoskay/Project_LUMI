@@ -34,16 +34,22 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText("Lina", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Karakter → Hikâyeler → Hikâye Görselleri/)).toBeVisible();
+    await expect(
+      page.getByText(/Karakter → Hikâyeler → Hikâye Görselleri/),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: /Lina/ }).first().click();
     await expect(page).toHaveURL(/\/app\/assets\/characters\//);
     await expect(page.getByRole("heading", { name: "Lina" })).toBeVisible();
-    await expect(page.getByText("Character Visual Hub", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Character Visual Hub", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Lina hikâyeleri" }),
     ).toBeVisible();
-    await expect(page.getByText(/Character \/ Bag \/ Items paneli/)).toBeVisible();
+    await expect(
+      page.getByText(/Character \/ Bag \/ Items paneli/),
+    ).toBeVisible();
   });
 
   test("keeps the character-first Visual Library usable on a phone viewport", async ({

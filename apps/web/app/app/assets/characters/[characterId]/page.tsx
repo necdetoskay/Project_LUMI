@@ -34,7 +34,9 @@ export default async function CharacterVisualHubPage({
             className="inline-flex items-center gap-2 text-sm font-extrabold text-primary hover:underline"
             href="/app/assets"
           >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <span className="material-symbols-outlined text-lg">
+              arrow_back
+            </span>
             Görsel Kütüphanesi
           </Link>
         </div>
@@ -128,8 +130,8 @@ export default async function CharacterVisualHubPage({
               </span>
             </div>
             <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Hikâye kartları bu alanda görsel stil, eşya/ortam/sahne sayıları ve
-              hazır/eksik görsel durumuyla listelenecek. Bir karta tıklamak
+              Hikâye kartları bu alanda görsel stil, eşya/ortam/sahne sayıları
+              ve hazır/eksik görsel durumuyla listelenecek. Bir karta tıklamak
               Story Visual Workspace'i açacak.
             </p>
             <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-6 text-center">
