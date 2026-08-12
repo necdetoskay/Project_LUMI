@@ -354,8 +354,8 @@ export default async function StoryVisualWorkspacePage({
                 </p>
                 <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                   Manifest oluştuğunda karakter varyantları, eşya state'leri,
-                  ortamlar ve sahne illüstrasyonları burada otomatik olarak
-                  ayrı gereksinimler halinde görünecek.
+                  ortamlar ve sahne illüstrasyonları burada otomatik olarak ayrı
+                  gereksinimler halinde görünecek.
                 </p>
               </div>
             )}
@@ -413,7 +413,9 @@ export default async function StoryVisualWorkspacePage({
                       key={participant.characterId}
                     >
                       <div className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-primary">
-                        <span className="material-symbols-outlined">person</span>
+                        <span className="material-symbols-outlined">
+                          person
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <p className="truncate font-extrabold text-on-surface">

@@ -74,9 +74,7 @@ function expandEntityRequirements(
   const variants =
     requirement.variants.length > 0 ? requirement.variants : [null];
   const states =
-    requirement.requiredStates.length > 0
-      ? requirement.requiredStates
-      : [null];
+    requirement.requiredStates.length > 0 ? requirement.requiredStates : [null];
 
   return variants.flatMap((variant) =>
     states.map((state) => {
