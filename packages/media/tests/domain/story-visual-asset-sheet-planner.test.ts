@@ -22,9 +22,7 @@ function target(input: {
           traits: [input.variantId],
         }
       : null,
-    state: input.stateId
-      ? { id: input.stateId, label: input.stateId }
-      : null,
+    state: input.stateId ? { id: input.stateId, label: input.stateId } : null,
     renderFingerprint: input.fingerprint,
   };
 }
@@ -33,9 +31,21 @@ describe("story visual asset sheet planner", () => {
   it("keeps related states of the same entity together when they fit", () => {
     const plan = planStoryVisualAssetSheets({
       targets: [
-        target({ manifestEntityId: "potion", stateId: "full", fingerprint: "a" }),
-        target({ manifestEntityId: "potion", stateId: "half", fingerprint: "b" }),
-        target({ manifestEntityId: "potion", stateId: "empty", fingerprint: "c" }),
+        target({
+          manifestEntityId: "potion",
+          stateId: "full",
+          fingerprint: "a",
+        }),
+        target({
+          manifestEntityId: "potion",
+          stateId: "half",
+          fingerprint: "b",
+        }),
+        target({
+          manifestEntityId: "potion",
+          stateId: "empty",
+          fingerprint: "c",
+        }),
         target({ manifestEntityId: "key", fingerprint: "d" }),
       ],
       styleId: "lumi-storybook",
@@ -44,12 +54,9 @@ describe("story visual asset sheet planner", () => {
     });
 
     expect(plan.sheets).toHaveLength(1);
-    expect(plan.sheets[0]?.panels.map((panel) => panel.target.renderFingerprint)).toEqual([
-      "a",
-      "b",
-      "c",
-      "d",
-    ]);
+    expect(
+      plan.sheets[0]?.panels.map((panel) => panel.target.renderFingerprint),
+    ).toEqual(["a", "b", "c", "d"]);
     expect(plan.sheets[0]?.rows).toBe(2);
     expect(plan.sheets[0]?.columns).toBe(2);
   });
@@ -57,11 +64,31 @@ describe("story visual asset sheet planner", () => {
   it("packs multiple entities while moving an intact group to the next sheet", () => {
     const plan = planStoryVisualAssetSheets({
       targets: [
-        target({ manifestEntityId: "compass", stateId: "closed", fingerprint: "a" }),
-        target({ manifestEntityId: "compass", stateId: "open", fingerprint: "b" }),
-        target({ manifestEntityId: "candle", stateId: "unlit", fingerprint: "c" }),
-        target({ manifestEntityId: "candle", stateId: "lit", fingerprint: "d" }),
-        target({ manifestEntityId: "candle", stateId: "burned", fingerprint: "e" }),
+        target({
+          manifestEntityId: "compass",
+          stateId: "closed",
+          fingerprint: "a",
+        }),
+        target({
+          manifestEntityId: "compass",
+          stateId: "open",
+          fingerprint: "b",
+        }),
+        target({
+          manifestEntityId: "candle",
+          stateId: "unlit",
+          fingerprint: "c",
+        }),
+        target({
+          manifestEntityId: "candle",
+          stateId: "lit",
+          fingerprint: "d",
+        }),
+        target({
+          manifestEntityId: "candle",
+          stateId: "burned",
+          fingerprint: "e",
+        }),
       ],
       styleId: "lumi-storybook",
       styleVersion: 1,
@@ -69,15 +96,12 @@ describe("story visual asset sheet planner", () => {
     });
 
     expect(plan.sheets).toHaveLength(2);
-    expect(plan.sheets[0]?.panels.map((panel) => panel.target.manifestEntityId)).toEqual([
-      "compass",
-      "compass",
-    ]);
-    expect(plan.sheets[1]?.panels.map((panel) => panel.target.manifestEntityId)).toEqual([
-      "candle",
-      "candle",
-      "candle",
-    ]);
+    expect(
+      plan.sheets[0]?.panels.map((panel) => panel.target.manifestEntityId),
+    ).toEqual(["compass", "compass"]);
+    expect(
+      plan.sheets[1]?.panels.map((panel) => panel.target.manifestEntityId),
+    ).toEqual(["candle", "candle", "candle"]);
     expect(plan.splitGroupCount).toBe(0);
   });
 
@@ -120,19 +144,24 @@ describe("story visual asset sheet planner", () => {
       },
     });
 
-    expect(plan.sheets[0]?.panels.map((panel) => panel.target.manifestEntityId)).toEqual([
-      "critical-a",
-      "critical-b",
-      "support-a",
-      "support-b",
-    ]);
+    expect(
+      plan.sheets[0]?.panels.map((panel) => panel.target.manifestEntityId),
+    ).toEqual(["critical-a", "critical-b", "support-a", "support-b"]);
   });
 
   it("keeps variants of the same character as separate visual groups", () => {
     const plan = planStoryVisualAssetSheets({
       targets: [
-        target({ manifestEntityId: "mira", variantId: "desert-light", fingerprint: "a" }),
-        target({ manifestEntityId: "mira", variantId: "mountain-winter", fingerprint: "b" }),
+        target({
+          manifestEntityId: "mira",
+          variantId: "desert-light",
+          fingerprint: "a",
+        }),
+        target({
+          manifestEntityId: "mira",
+          variantId: "mountain-winter",
+          fingerprint: "b",
+        }),
       ],
       styleId: "lumi-storybook",
       styleVersion: 1,
@@ -141,13 +170,23 @@ describe("story visual asset sheet planner", () => {
 
     expect(plan.sheets).toHaveLength(2);
     expect(plan.sheets[0]?.panels[0]?.target.variant?.id).toBe("desert-light");
-    expect(plan.sheets[1]?.panels[0]?.target.variant?.id).toBe("mountain-winter");
+    expect(plan.sheets[1]?.panels[0]?.target.variant?.id).toBe(
+      "mountain-winter",
+    );
   });
 
   it("rejects duplicate render targets and unsafe panel limits", () => {
     const duplicateTargets = [
-      target({ manifestEntityId: "compass", stateId: "open", fingerprint: "same" }),
-      target({ manifestEntityId: "compass", stateId: "closed", fingerprint: "same" }),
+      target({
+        manifestEntityId: "compass",
+        stateId: "open",
+        fingerprint: "same",
+      }),
+      target({
+        manifestEntityId: "compass",
+        stateId: "closed",
+        fingerprint: "same",
+      }),
     ];
 
     expect(() =>

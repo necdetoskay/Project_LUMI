@@ -73,7 +73,9 @@ function dimensions(panelCount: number): { rows: number; columns: number } {
   return { rows, columns };
 }
 
-function assertUniqueTargets(targets: readonly StoryVisualRenderTarget[]): void {
+function assertUniqueTargets(
+  targets: readonly StoryVisualRenderTarget[],
+): void {
   const fingerprints = new Set<string>();
 
   for (const target of targets) {
