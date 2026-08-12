@@ -50,8 +50,12 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
     await expect(
       page.getByRole("button", { name: "Yeni aday üret" }),
     ).toBeVisible();
-    await expect(page.getByText("Üretilmiş adaylar", { exact: true })).toBeVisible();
-    await expect(page.getByText("Görünüm varyantları", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Üretilmiş adaylar", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Görünüm varyantları", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Lina hikâyeleri" }),
     ).toBeVisible();

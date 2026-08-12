@@ -66,7 +66,9 @@ export function CharacterVisualManager({
       });
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Karakter görselleri yüklenemedi.",
+        error instanceof Error
+          ? error.message
+          : "Karakter görselleri yüklenemedi.",
       );
     } finally {
       setLoading(false);
@@ -105,7 +107,9 @@ export function CharacterVisualManager({
       await refresh();
       setMessage(successText);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "İşlem tamamlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "İşlem tamamlanamadı.",
+      );
     } finally {
       setBusy(null);
     }
@@ -136,7 +140,9 @@ export function CharacterVisualManager({
             <select
               className="ml-2 rounded-xl border border-outline-variant bg-white px-3 py-2 text-sm font-bold text-on-surface"
               disabled={busy === "generate"}
-              onChange={(event) => setCandidateCount(Number(event.target.value))}
+              onChange={(event) =>
+                setCandidateCount(Number(event.target.value))
+              }
               value={candidateCount}
             >
               {[1, 2, 3, 4].map((count) => (
@@ -182,7 +188,9 @@ export function CharacterVisualManager({
                 Aktif görünüm
               </p>
               <p className="mt-1 font-extrabold text-on-surface">
-                {canonicalCandidate ? `${characterName} canonical` : "Henüz seçilmedi"}
+                {canonicalCandidate
+                  ? `${characterName} canonical`
+                  : "Henüz seçilmedi"}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-on-surface-variant">
@@ -268,7 +276,9 @@ export function CharacterVisualManager({
                     </div>
                     <div className="p-3">
                       <p className="truncate text-xs font-bold text-on-surface-variant">
-                        {candidate.model ?? candidate.provider ?? "Görsel adayı"}
+                        {candidate.model ??
+                          candidate.provider ??
+                          "Görsel adayı"}
                       </p>
                       <button
                         className="storybook-button-secondary mt-2 w-full text-xs"
@@ -299,8 +309,8 @@ export function CharacterVisualManager({
               Görünüm varyantları
             </p>
             <p className="mt-1 text-sm text-on-surface-variant">
-              Referans sheet'ten türetilen canon açılar burada korunur; outfit ve
-              hikâye varyantları sonraki adımda aynı alana eklenecek.
+              Referans sheet'ten türetilen canon açılar burada korunur; outfit
+              ve hikâye varyantları sonraki adımda aynı alana eklenecek.
             </p>
           </div>
           <span className="rounded-full bg-surface-container px-3 py-1 text-xs font-extrabold text-on-surface-variant">
