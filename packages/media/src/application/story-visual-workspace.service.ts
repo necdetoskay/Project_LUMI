@@ -46,7 +46,9 @@ export type StoryVisualWorkspaceReadModel = {
   counts: StoryVisualWorkspaceCounts;
 };
 
-function renderCountForEntity(requirement: StoryVisualEntityRequirement): number {
+function renderCountForEntity(
+  requirement: StoryVisualEntityRequirement,
+): number {
   const variants = Math.max(requirement.variants.length, 1);
   const states = Math.max(requirement.requiredStates.length, 1);
   return variants * states;
