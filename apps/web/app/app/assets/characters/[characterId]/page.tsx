@@ -169,9 +169,7 @@ export default async function CharacterVisualHubPage({
               {storyCards.map((entry) => (
                 <Link
                   className="group overflow-hidden rounded-[1.4rem] border border-outline-variant/70 bg-surface-container-low transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-                  href={`/app/assets/stories/${encodeURIComponent(
-                    entry.session.id,
-                  )}`}
+                  href={`/app/assets/stories/${encodeURIComponent(entry.session.id)}`}
                   key={entry.session.id}
                 >
                   <div className="grid min-h-40 place-items-center bg-gradient-to-br from-tertiary-fixed/60 via-primary-fixed/50 to-surface-container p-5">
