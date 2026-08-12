@@ -1,0 +1,36 @@
+name: One-shot Story Visual Extraction Formatter
+
+on:
+  push:
+    branches:
+      - agent/story-visual-manifest-extraction
+    paths:
+      - .github/workflows/tmp-format-story-visual-extraction.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/story-visual-manifest-extraction
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format and remove one-shot workflow
+        run: |
+          pnpm exec prettier --write packages/media/src/domain/story-visual-extraction.ts packages/media/tests/domain/story-visual-extraction.test.ts
+          rm .github/workflows/tmp-format-story-visual-extraction.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/media/src/domain/story-visual-extraction.ts packages/media/tests/domain/story-visual-extraction.test.ts .github/workflows/tmp-format-story-visual-extraction.yml
+          git diff --cached --quiet || git commit -m "style: format story visual extraction"
+          git push
