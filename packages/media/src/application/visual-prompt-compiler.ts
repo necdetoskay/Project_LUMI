@@ -28,10 +28,24 @@ const ITEM_HARD_GUARDRAILS = [
 ] as const;
 
 const GRID_RULES = [
-  "Render the requested states as a clean evenly divided grid with no gutters containing text.",
   "Every panel must show the exact same object identity, design, materials, proportions and colors; only the requested state changes.",
-  "Do not write state names, panel numbers, captions or labels inside the image.",
+  "Keep the object centered with generous safe margins inside every panel so each panel can be center-cropped to a square.",
+  "Do not draw gutters, frames or decorative dividers between panels.",
+  "Do not write state names, panel numbers, captions or labels anywhere inside the image.",
 ] as const;
+
+function gridGeometry(stateCount: number): string {
+  if (stateCount === 1) {
+    return "LAYOUT: one square panel containing only state 1.";
+  }
+  if (stateCount === 2) {
+    return "LAYOUT: exactly two equal panels in one horizontal row; state 1 on the left and state 2 on the right.";
+  }
+  if (stateCount === 3) {
+    return "LAYOUT: a 2 by 2 grid; state 1 top-left, state 2 top-right, state 3 bottom-left, and leave the bottom-right cell empty with only the shared background.";
+  }
+  return "LAYOUT: a 2 by 2 grid; states 1, 2, 3 and 4 placed top-left, top-right, bottom-left and bottom-right respectively.";
+}
 
 export function compileVisualPrompt(
   request: VisualPromptRequest,
@@ -62,6 +76,7 @@ export function compileVisualPrompt(
         `REQUESTED STATES (${states.length}): ${states
           .map((state, index) => `${index + 1}) ${state.prompt}`)
           .join("; ")}.`,
+        gridGeometry(states.length),
         ...GRID_RULES,
       );
     }
