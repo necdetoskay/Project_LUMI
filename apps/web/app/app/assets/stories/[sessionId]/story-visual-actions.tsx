@@ -18,7 +18,7 @@ export function StoryVisualActions({
   disabled,
 }: {
   sessionId: string;
-  missingCount: number;
+  missingCount?: number;
   disabled?: boolean;
 }) {
   const router = useRouter();
@@ -74,7 +74,9 @@ export function StoryVisualActions({
       >
         {pending === "generate"
           ? "Görseller oluşturuluyor…"
-          : `Eksik görselleri oluştur (${missingCount})`}
+          : typeof missingCount === "number"
+            ? `Eksik görselleri oluştur (${missingCount})`
+            : "Eksik görselleri oluştur"}
       </button>
 
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-1">
@@ -129,7 +131,7 @@ export function StoryVisualRegenerateButton({
       onClick={async () => {
         setPending(true);
         try {
-          await fetch(
+          const response = await fetch(
             `/api/assets/stories/${encodeURIComponent(sessionId)}/visuals`,
             {
               method: "POST",
@@ -140,6 +142,7 @@ export function StoryVisualRegenerateButton({
               }),
             },
           );
+          if (!response.ok) throw new Error("REGENERATE_FAILED");
           router.refresh();
         } finally {
           setPending(false);
