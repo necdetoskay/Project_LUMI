@@ -50,7 +50,9 @@ describe("asset generation serverless runtime", () => {
     ]);
 
     for (const source of [bagRoute, itemRoute]) {
-      expect(source).toContain("Match the already generated LUMI character canon");
+      expect(source).toContain(
+        "Match the already generated LUMI character canon",
+      );
       expect(source).toContain("gouache-and-watercolor surface texture");
       expect(source).toContain("not a real product photo");
       expect(source).toContain("Avoid photorealism");
