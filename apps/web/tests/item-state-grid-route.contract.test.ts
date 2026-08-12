@@ -1,9 +1,11 @@
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-const routePath = fileURLToPath(
-  new URL("../app/api/assets/items/batch/route.ts", import.meta.url),
+const routePath = path.resolve(
+  __dirname,
+  "../app/api/assets/items/batch/route.ts",
 );
 
 describe("item state grid route contract", () => {
