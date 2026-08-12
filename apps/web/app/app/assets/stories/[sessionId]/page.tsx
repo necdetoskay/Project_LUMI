@@ -3,6 +3,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
+import { loadStoryVisualWorkspace } from "@lumi/media/application";
+import {
+  DrizzleStoryVisualWorkspaceRepository,
+  getMediaDb,
+} from "@lumi/media/db";
 import {
   getOwnedHousehold,
   listCharactersByHousehold,
@@ -29,6 +34,15 @@ function sessionStatusLabel(status: string) {
   return "Devam ediyor";
 }
 
+function renderStatusLabel(status: string) {
+  if (status === "ready") return "Hazır";
+  if (status === "reused") return "Yeniden kullanıldı";
+  if (status === "generating") return "Üretiliyor";
+  if (status === "failed") return "Başarısız";
+  if (status === "planned") return "Planlandı";
+  return "Eksik";
+}
+
 export default async function StoryVisualWorkspacePage({
   params,
 }: {
@@ -53,6 +67,30 @@ export default async function StoryVisualWorkspacePage({
     listCharactersByHousehold(parent.id, household.id),
   ]);
 
+  const visualRepository = new DrizzleStoryVisualWorkspaceRepository(
+    getMediaDb(),
+  );
+  const scope = {
+    householdId: session.householdId,
+    childProfileId: session.childProfileId,
+    worldId: session.worldId,
+  };
+
+  let visualWorkspace = await loadStoryVisualWorkspace({
+    repository: visualRepository,
+    storyId: session.id,
+    scope,
+  }).catch(() => null);
+
+  if (!visualWorkspace?.manifest) {
+    const definitionWorkspace = await loadStoryVisualWorkspace({
+      repository: visualRepository,
+      storyId: session.storyDefinitionId,
+      scope,
+    }).catch(() => null);
+    if (definitionWorkspace?.manifest) visualWorkspace = definitionWorkspace;
+  }
+
   const participantNames = playback.characters.map((participant) => {
     const character = characters.find(
       (entry) => entry.id === participant.characterId,
@@ -60,6 +98,31 @@ export default async function StoryVisualWorkspacePage({
     return character?.name ?? "Karakter";
   });
   const primaryCharacterId = playback.characters[0]?.characterId ?? null;
+  const counts = visualWorkspace?.counts ?? {
+    characters: participantNames.length,
+    items: 0,
+    environments: 0,
+    scenes: playback.visits.length,
+    total: 0,
+    ready: 0,
+    missing: 0,
+    generating: 0,
+    failed: 0,
+  };
+  const requirements = visualWorkspace?.requirements ?? [];
+  const entityRequirements = requirements.filter(
+    (requirement) => requirement.targetKind === "entity-render",
+  );
+  const sceneRequirements = requirements.filter(
+    (requirement) => requirement.targetKind === "story-illustration",
+  );
+  const missingRequirements = requirements.filter(
+    (requirement) =>
+      requirement.status !== "ready" && requirement.status !== "reused",
+  );
+  const selectedStyle = visualWorkspace?.assetSet
+    ? `${visualWorkspace.assetSet.styleId} v${visualWorkspace.assetSet.styleVersion}`
+    : "Henüz seçilmedi";
 
   return (
     <section className="storybook-page min-h-full">
@@ -94,7 +157,8 @@ export default async function StoryVisualWorkspacePage({
               <p className="mt-3 max-w-3xl text-sm leading-7 text-on-surface-variant">
                 Bu çalışma alanı yalnızca bu hikâyenin görsel dünyasını yönetir.
                 Karakter varyantları, somut eşyalar, ortamlar ve sahne
-                illüstrasyonları burada hikâye bağlamında ayrılır.
+                illüstrasyonları Story Visual Manifest üzerinden ayrı ayrı
+                izlenir.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-on-surface-variant">
@@ -107,7 +171,10 @@ export default async function StoryVisualWorkspacePage({
                   {sessionStatusLabel(session.sessionStatus)}
                 </span>
                 <span className="rounded-full bg-surface-container px-3 py-1.5">
-                  Stil: henüz seçilmedi
+                  Stil: {selectedStyle}
+                </span>
+                <span className="rounded-full bg-surface-container px-3 py-1.5">
+                  {visualWorkspace?.manifest ? "Manifest bağlı" : "Manifest yok"}
                 </span>
               </div>
             </div>
@@ -116,14 +183,17 @@ export default async function StoryVisualWorkspacePage({
               <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
                 Görsel hazırlık
               </p>
-              <p className="mt-2 text-3xl font-black text-on-surface">— / —</p>
+              <p className="mt-2 text-3xl font-black text-on-surface">
+                {counts.ready} / {counts.total}
+              </p>
               <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                Story Visual Manifest ve Asset Set bağlandığında hazır/eksik
-                sayıları burada canlı güncellenecek.
+                {visualWorkspace?.manifest
+                  ? `${counts.missing} görsel henüz hazır değil. ${counts.generating} üretimde, ${counts.failed} başarısız.`
+                  : "Bu hikâye için Story Visual Manifest henüz oluşturulmamış."}
               </p>
               <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:flex-col">
                 <button className="storybook-button" disabled type="button">
-                  Eksik görselleri oluştur
+                  Eksik görselleri oluştur ({counts.missing})
                 </button>
                 <button
                   className="storybook-button-secondary"
@@ -168,10 +238,10 @@ export default async function StoryVisualWorkspacePage({
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                ["Karakter", participantNames.length, "group"],
-                ["Eşya", "—", "backpack"],
-                ["Ortam", "—", "landscape"],
-                ["Sahne", playback.visits.length, "auto_stories"],
+                ["Karakter", counts.characters, "group"],
+                ["Eşya", counts.items, "backpack"],
+                ["Ortam", counts.environments, "landscape"],
+                ["Sahne", counts.scenes, "auto_stories"],
               ].map(([label, value, icon]) => (
                 <div
                   className="rounded-2xl bg-surface-container-low p-4"
@@ -190,47 +260,170 @@ export default async function StoryVisualWorkspacePage({
               ))}
             </div>
 
-            <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-5">
-              <p className="font-extrabold text-on-surface">
-                Manifest binding sıradaki aşamada
-              </p>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                Eşya state'leri, ortam varyantları, outfit seçimleri ve farklı
-                stil renderları bu shell'in üzerine Story Visual Manifest'ten
-                bağlanacak. Aynı türde iki farklı eşya ayrı entity olarak
-                kalacak.
-              </p>
-            </div>
+            {visualWorkspace?.manifest ? (
+              <div className="mt-5 space-y-5">
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-extrabold text-on-surface">
+                      Somut entity görselleri
+                    </p>
+                    <span className="text-xs font-bold text-on-surface-variant">
+                      {entityRequirements.length} render gereksinimi
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {entityRequirements.map((requirement) => (
+                      <div
+                        className="rounded-2xl border border-outline-variant/60 bg-surface-container-low p-4"
+                        key={requirement.key}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-extrabold text-on-surface">
+                              {requirement.displayName}
+                            </p>
+                            <p className="mt-1 text-xs font-bold text-on-surface-variant">
+                              {requirement.entityKind === "character"
+                                ? "Karakter"
+                                : requirement.entityKind === "item"
+                                  ? "Eşya"
+                                  : "Ortam"}
+                              {requirement.variantLabel
+                                ? ` · ${requirement.variantLabel}`
+                                : ""}
+                              {requirement.stateLabel
+                                ? ` · ${requirement.stateLabel}`
+                                : ""}
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold text-on-surface-variant">
+                            {renderStatusLabel(requirement.status)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-extrabold text-on-surface">
+                      Sahne illüstrasyonları
+                    </p>
+                    <span className="text-xs font-bold text-on-surface-variant">
+                      {sceneRequirements.length} sahne
+                    </span>
+                  </div>
+                  {sceneRequirements.length === 0 ? (
+                    <p className="mt-3 rounded-2xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                      Manifest bu hikâye için ayrı bir sahne illüstrasyonu
+                      istemiyor.
+                    </p>
+                  ) : (
+                    <div className="mt-3 space-y-3">
+                      {sceneRequirements.map((requirement) => (
+                        <div
+                          className="rounded-2xl border border-outline-variant/60 bg-surface-container-low p-4"
+                          key={requirement.key}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-sm font-bold leading-6 text-on-surface">
+                              {requirement.displayName}
+                            </p>
+                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold text-on-surface-variant">
+                              {renderStatusLabel(requirement.status)}
+                            </span>
+                          </div>
+                          {requirement.sceneId ? (
+                            <p className="mt-2 text-xs font-bold text-on-surface-variant">
+                              Sahne: {requirement.sceneId}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-dashed border-outline-variant bg-surface-container-low p-5">
+                <p className="font-extrabold text-on-surface">
+                  Story Visual Manifest bekleniyor
+                </p>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  Manifest oluştuğunda karakter varyantları, eşya state'leri,
+                  ortamlar ve sahne illüstrasyonları burada otomatik olarak
+                  ayrı gereksinimler halinde görünecek.
+                </p>
+              </div>
+            )}
           </article>
 
-          <aside className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-              Hikâye karakterleri
-            </p>
-            <div className="mt-4 space-y-3">
-              {playback.characters.map((participant, index) => {
-                const character = characters.find(
-                  (entry) => entry.id === participant.characterId,
-                );
-                return (
+          <aside className="space-y-5">
+            <div className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+                Eksik görseller
+              </p>
+              <p className="mt-2 text-2xl font-black text-on-surface">
+                {missingRequirements.length}
+              </p>
+              <div className="mt-4 space-y-2">
+                {missingRequirements.slice(0, 8).map((requirement) => (
                   <div
-                    className="flex items-center gap-3 rounded-2xl bg-surface-container-low p-3"
-                    key={participant.characterId}
+                    className="rounded-xl bg-surface-container-low p-3"
+                    key={`missing:${requirement.key}`}
                   >
-                    <div className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-primary">
-                      <span className="material-symbols-outlined">person</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-extrabold text-on-surface">
-                        {character?.name ?? `Karakter ${index + 1}`}
-                      </p>
-                      <p className="text-xs font-bold text-on-surface-variant">
-                        {participant.participationRole}
-                      </p>
-                    </div>
+                    <p className="text-sm font-extrabold text-on-surface">
+                      {requirement.displayName}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-on-surface-variant">
+                      {requirement.variantLabel || requirement.stateLabel ||
+                        (requirement.targetKind === "story-illustration"
+                          ? "Sahne illüstrasyonu"
+                          : "Temel render")}
+                      {` · ${renderStatusLabel(requirement.status)}`}
+                    </p>
                   </div>
-                );
-              })}
+                ))}
+                {missingRequirements.length === 0 ? (
+                  <p className="rounded-xl bg-surface-container-low p-3 text-sm text-on-surface-variant">
+                    {visualWorkspace?.manifest
+                      ? "Tüm görsel gereksinimleri hazır."
+                      : "Manifest olmadığı için çözümlenecek görsel listesi henüz yok."}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+                Hikâye karakterleri
+              </p>
+              <div className="mt-4 space-y-3">
+                {playback.characters.map((participant, index) => {
+                  const character = characters.find(
+                    (entry) => entry.id === participant.characterId,
+                  );
+                  return (
+                    <div
+                      className="flex items-center gap-3 rounded-2xl bg-surface-container-low p-3"
+                      key={participant.characterId}
+                    >
+                      <div className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-primary">
+                        <span className="material-symbols-outlined">person</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-extrabold text-on-surface">
+                          {character?.name ?? `Karakter ${index + 1}`}
+                        </p>
+                        <p className="text-xs font-bold text-on-surface-variant">
+                          {participant.participationRole}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </aside>
         </section>
