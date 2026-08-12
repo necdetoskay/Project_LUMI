@@ -1,5 +1,6 @@
 name: TMP Prettier Fix
 
+# one-time trigger
 on:
   push:
     branches:
