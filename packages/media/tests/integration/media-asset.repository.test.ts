@@ -236,7 +236,7 @@ describe("media repository integration", () => {
     await repo.createAsset({
       id: assetId,
       kind: "image",
-      assetType: "character",
+      assetType: "character_portrait",
       mimeType: "image/png",
       storageProvider: "memory",
       storageKey: `media/${storyId}/hero.png`,
