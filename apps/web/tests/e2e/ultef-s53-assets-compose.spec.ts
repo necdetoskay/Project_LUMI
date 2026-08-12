@@ -45,9 +45,7 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
     await expect(
       page.getByRole("heading", { name: "Eşyalar ve görsel durumları" }),
     ).toBeVisible();
-    await expect(
-      page.getByText("Lina çantası", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
     await expect(
       page.getByText("Çanta · state seti", { exact: true }),
     ).toBeVisible();
@@ -79,9 +77,7 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       .toBe(true);
 
     await page.getByRole("tab", { name: /Eşyalar/ }).click();
-    await expect(
-      page.getByText("Lina çantası", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("Lina çantası", { exact: true })).toBeVisible();
     await expect(page.getByText("Kapalı", { exact: true })).toBeVisible();
     await expect(page.getByText("Açık", { exact: true })).toBeVisible();
 
