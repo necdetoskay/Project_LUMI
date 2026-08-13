@@ -1,0 +1,68 @@
+name: Vercel Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+
+concurrency:
+  group: vercel-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
+      VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Vercel token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN repository secret is required."
+            exit 1
+          fi
+
+      - name: Resolve deployment target
+        id: target
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "environment=production" >> "$GITHUB_OUTPUT"
+            echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.target }}" = "production" ]; then
+            echo "environment=production" >> "$GITHUB_OUTPUT"
+            echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=preview" >> "$GITHUB_OUTPUT"
+            echo "prod_flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull Vercel project settings
+        run: npx --yes vercel@latest pull --yes --environment=${{ steps.target.outputs.environment }} --token="$VERCEL_TOKEN"
+
+      - name: Build
+        run: npx --yes vercel@latest build ${{ steps.target.outputs.prod_flag }} --token="$VERCEL_TOKEN"
+
+      - name: Deploy prebuilt output
+        run: npx --yes vercel@latest deploy --prebuilt ${{ steps.target.outputs.prod_flag }} --token="$VERCEL_TOKEN"
