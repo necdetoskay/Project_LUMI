@@ -1,7 +1,7 @@
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
 import { splitAssetSheetImage } from "@/lib/assets/asset-sheet-image";
 import type {
-  StoryVisualAssetSheetPlan,
+  GenerationAssetSheetPlan,
   StoryVisualGeneratedSheet,
   StoryVisualGenerationJob,
   StoryVisualGenerationPort,
@@ -95,7 +95,7 @@ export class WebStoryVisualGenerationAdapter
   }
 
   async generateSheet(
-    plan: StoryVisualAssetSheetPlan,
+    plan: GenerationAssetSheetPlan,
   ): Promise<StoryVisualGeneratedSheet> {
     const sheetJobId = crypto.randomUUID();
     const result = await this.provider.generate({
