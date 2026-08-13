@@ -54,7 +54,7 @@ export async function CharacterIdentityHeaderServer({
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(canon.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
     : null;
 
-  console.info("[LUMI_ASSETS_SERVER]", {
+  console.warn("[LUMI_ASSETS_SERVER]", {
     marker: "assets-runtime-diag-2026-08-13-v1",
     route: "/app/assets/characters/[characterId]::identity-header",
     characterTypeKey: typeKey(character.subtype),
