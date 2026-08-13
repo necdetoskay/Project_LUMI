@@ -1,7 +1,7 @@
 import jpeg from "jpeg-js";
 import { PNG } from "pngjs";
 
-import type { StoryVisualAssetSheetPlan } from "@lumi/media/application";
+import type { GenerationAssetSheetPlan } from "@lumi/media/application";
 
 type DecodedImage = {
   width: number;
@@ -84,11 +84,9 @@ function encodeImage(
   mimeType: "image/png" | "image/jpeg",
 ) {
   if (mimeType === "image/png") {
-    return PNG.sync.write({
-      width: image.width,
-      height: image.height,
-      data: Buffer.from(image.data),
-    });
+    const png = new PNG({ width: image.width, height: image.height });
+    png.data = Buffer.from(image.data);
+    return PNG.sync.write(png);
   }
   return Buffer.from(
     jpeg.encode(
@@ -103,7 +101,7 @@ function encodeImage(
 }
 
 export function splitAssetSheetImage(input: {
-  plan: StoryVisualAssetSheetPlan;
+  plan: GenerationAssetSheetPlan;
   bytesBase64: string;
   mimeType: string;
 }): SplitAssetSheetTile[] {
