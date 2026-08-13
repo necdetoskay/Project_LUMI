@@ -1,9 +1,6 @@
 name: Vercel Deploy
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       target:
@@ -47,10 +44,7 @@ jobs:
         id: target
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "environment=production" >> "$GITHUB_OUTPUT"
-            echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
-          elif [ "${{ inputs.target }}" = "production" ]; then
+          if [ "${{ inputs.target }}" = "production" ]; then
             echo "environment=production" >> "$GITHUB_OUTPUT"
             echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
           else
