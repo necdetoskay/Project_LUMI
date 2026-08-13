@@ -24,11 +24,7 @@ export default async function CharacterVisualLibraryPage() {
     ? await Promise.all(
         characters.map(async (character) => {
           const [canon, currentLocation] = await Promise.all([
-            getCharacterVisualCanon(
-              parent.id,
-              household.id,
-              character.id,
-            ),
+            getCharacterVisualCanon(parent.id, household.id, character.id),
             getCharacterCurrentLocation(character.id),
           ]);
           return {
