@@ -66,7 +66,7 @@ export default async function CharacterVisualHubPage({
     storyCount: storyCards.length,
   };
 
-  console.info("[LUMI_ASSETS_SERVER]", {
+  console.warn("[LUMI_ASSETS_SERVER]", {
     marker: "assets-runtime-diag-2026-08-13-v1",
     route: "/app/assets/characters/[characterId]",
     ...diagnosticPayload,
