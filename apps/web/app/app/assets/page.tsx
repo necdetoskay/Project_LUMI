@@ -43,11 +43,11 @@ export default async function CharacterVisualLibraryPage() {
   const diagnosticPayload = {
     householdResolved: Boolean(household),
     characterCount: charactersWithVisuals.length,
-    charactersWithSelectedAsset: charactersWithVisuals.filter(
-      (character) => Boolean(character.selectedAssetId),
+    charactersWithSelectedAsset: charactersWithVisuals.filter((character) =>
+      Boolean(character.selectedAssetId),
     ).length,
-    charactersWithCanonicalLocation: charactersWithVisuals.filter(
-      (character) => Boolean(character.currentLocationName),
+    charactersWithCanonicalLocation: charactersWithVisuals.filter((character) =>
+      Boolean(character.currentLocationName),
     ).length,
   };
 
