@@ -1,0 +1,61 @@
+name: Temporary ULTEF Trigger Migration
+
+on:
+  push:
+    branches: [infra/ultef-ci-execution-policy]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: infra/ultef-ci-execution-policy
+          fetch-depth: 0
+      - name: Move standalone ULTEF workflows off PR commits
+        shell: python
+        run: |
+          from pathlib import Path
+
+          root = Path('.github/workflows')
+          changed = []
+          offenders = []
+          for path in sorted(root.glob('ultef-*.yml')):
+              if path.name == 'ultef-pr-gates.yml':
+                  continue
+              text = path.read_text()
+              if '\n  pull_request:\n' not in text:
+                  continue
+              if '\n  push:\n' in text:
+                  offenders.append(f'{path}: contains both pull_request and push; migrate manually')
+                  continue
+              updated = text.replace('\n  pull_request:\n', '\n  push:\n', 1)
+              path.write_text(updated)
+              changed.append(str(path))
+
+          for path in sorted(root.glob('ultef-*.yml')):
+              if path.name == 'ultef-pr-gates.yml':
+                  continue
+              text = path.read_text()
+              if '\n  pull_request:\n' in text:
+                  offenders.append(f'{path}: still has pull_request trigger')
+
+          if offenders:
+              raise SystemExit('\n'.join(offenders))
+
+          print(f'Migrated {len(changed)} standalone ULTEF workflows:')
+          print('\n'.join(changed))
+
+      - name: Remove one-shot migration workflow
+        run: rm .github/workflows/tmp-ultef-trigger-migration.yml
+      - name: Commit ULTEF execution-policy migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows
+          git commit -m "ci(ultef): move full regression off PR commits"
+          git push origin HEAD:infra/ultef-ci-execution-policy
