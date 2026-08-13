@@ -11,12 +11,7 @@ type CharacterOption = {
   selectedAssetId: string | null;
 };
 
-type CharacterTypeKey =
-  | "child"
-  | "human"
-  | "animal"
-  | "fantasy"
-  | "generic";
+type CharacterTypeKey = "child" | "human" | "animal" | "fantasy" | "generic";
 
 function characterTypeKey(subtype: string): CharacterTypeKey {
   const normalized = subtype.trim().toLowerCase();
@@ -233,9 +228,7 @@ export async function VisualLibrary({
               route
             </span>
             <div>
-              <p className="font-extrabold text-on-surface">
-                {t("flowTitle")}
-              </p>
+              <p className="font-extrabold text-on-surface">{t("flowTitle")}</p>
               <p className="mt-1 text-sm leading-6 text-on-surface-variant">
                 {t("flowText")}
               </p>

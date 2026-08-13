@@ -15,8 +15,7 @@ function typeKey(subtype: string) {
 
 function isTechnical(value: string) {
   return (
-    value.includes("_") ||
-    (/^[a-z0-9-]+$/.test(value) && value.includes("-"))
+    value.includes("_") || (/^[a-z0-9-]+$/.test(value) && value.includes("-"))
   );
 }
 
