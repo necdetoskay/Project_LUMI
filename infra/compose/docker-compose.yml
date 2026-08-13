@@ -1,21 +1,6 @@
 name: project-lumi
 
 services:
-  postgres:
-    image: postgres:17.7-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-lumi}
-      POSTGRES_USER: ${POSTGRES_USER:-lumi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lumi_local_only}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
   redis:
     image: redis:8.2.3-alpine
     command: ["redis-server", "--appendonly", "no"]
@@ -27,20 +12,11 @@ services:
     restart: unless-stopped
 
   schema-migrate:
-    image: postgres:17.7-alpine
-    depends_on:
-      postgres:
-        condition: service_healthy
+    build:
+      context: ../..
+      dockerfile: infra/compose/Dockerfile.migrations
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-lumi}
-      POSTGRES_USER: ${POSTGRES_USER:-lumi}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-lumi_local_only}
-    volumes:
-      - ../../apps/web/migrations:/migrations/auth:ro
-      - ../../packages/profiles/migrations:/migrations/profile:ro
-      - ../../packages/world/migrations:/migrations/world:ro
-      - ../../packages/npc-intelligence/migrations:/migrations/npc:ro
-      - ../../packages/story/migrations:/migrations/story:ro
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     command:
       - sh
       - -ec
@@ -52,9 +28,7 @@ services:
             [ -f "$$file" ] || continue
             echo "Applying $$label migration: $${file##*/}"
             psql \
-              -h postgres \
-              -U "$${POSTGRES_USER}" \
-              -d "$${POSTGRES_DB}" \
+              "$${DATABASE_URL}" \
               -v ON_ERROR_STOP=1 \
               -f "$$file"
             echo "Migration $${file##*/} applied successfully"
@@ -75,15 +49,14 @@ services:
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://172.41.42.51:3001}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
       schema-migrate:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-2}
       REDIS_URL: redis://redis:6379
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://172.41.42.51:3001}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
@@ -101,15 +74,14 @@ services:
       context: ../..
       dockerfile: services/worker/Dockerfile
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
       schema-migrate:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-lumi}:${POSTGRES_PASSWORD:-lumi_local_only}@postgres:5432/${POSTGRES_DB:-lumi}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-2}
       REDIS_URL: redis://redis:6379
       WORKER_INTERVAL_MS: ${WORKER_INTERVAL_MS:-60000}
       WORKER_BATCH_SIZE: ${WORKER_BATCH_SIZE:-10}
@@ -126,6 +98,3 @@ services:
       start_period: 10s
     restart: unless-stopped
     init: true
-
-volumes:
-  postgres-data:
