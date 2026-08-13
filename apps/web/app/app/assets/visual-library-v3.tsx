@@ -5,7 +5,8 @@ type CharacterOption = {
   id: string;
   name: string;
   subtype: string;
-  originConcept: string;
+  startingLocation: string;
+  currentLocationName: string | null;
   selectedAssetId: string | null;
 };
 
@@ -22,16 +23,24 @@ function localizeCharacterType(subtype: string) {
   return TURKISH_CHARACTER_TYPES[normalized] ?? subtype.trim() ?? "Karakter";
 }
 
-function localizeCharacterSummary(originConcept: string, subtype: string) {
-  const value = originConcept?.trim();
-  if (!value)
-    return `${localizeCharacterType(subtype)} için görsel kimlik oluşturuluyor.`;
+function looksLikeTechnicalIdentifier(value: string) {
+  const normalized = value.trim();
+  return (
+    normalized.includes("_") ||
+    (/^[a-z0-9-]+$/.test(normalized) && normalized.includes("-"))
+  );
+}
 
-  return value
-    .replace(/\bchild\b/gi, "çocuk")
-    .replace(/\bhuman\b/gi, "insan")
-    .replace(/\banimal\b/gi, "hayvan")
-    .replace(/\bfantastic\b/gi, "fantastik");
+function characterLocationLabel(character: CharacterOption) {
+  const currentLocation = character.currentLocationName?.trim();
+  if (currentLocation) return currentLocation;
+
+  const startingLocation = character.startingLocation?.trim();
+  if (startingLocation && !looksLikeTechnicalIdentifier(startingLocation)) {
+    return startingLocation;
+  }
+
+  return "Konum bilgisi hazırlanıyor";
 }
 
 function CharacterCard({
@@ -41,10 +50,7 @@ function CharacterCard({
   character: CharacterOption;
   householdId: string;
 }) {
-  const summary = localizeCharacterSummary(
-    character.originConcept,
-    character.subtype,
-  );
+  const locationLabel = characterLocationLabel(character);
   const characterType = localizeCharacterType(character.subtype);
   const selectedImageUrl = character.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(character.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
@@ -91,9 +97,22 @@ function CharacterCard({
           </span>
         </div>
 
-        <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-on-surface-variant">
-          {summary}
-        </p>
+        <div className="mt-3 flex min-h-[4.5rem] items-start gap-2 text-sm leading-6 text-on-surface-variant">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined mt-0.5 text-lg text-primary"
+          >
+            location_on
+          </span>
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant/80">
+              Konum
+            </p>
+            <p className="line-clamp-2 font-semibold text-on-surface-variant">
+              {locationLabel}
+            </p>
+          </div>
+        </div>
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-xl bg-surface-container-low px-2 py-3">
