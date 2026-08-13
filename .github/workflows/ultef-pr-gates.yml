@@ -24,8 +24,8 @@ concurrency:
 
 env:
   NODE_ENV: test
-  DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_pr
-  STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_pr
+  DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
+  STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_test
   STORY_TEST_ENABLE_DESTRUCTIVE: "true"
   LUMI_DEMO_CONFIRM: lumi-demo-v1
   LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
@@ -47,11 +47,11 @@ jobs:
         env:
           POSTGRES_USER: lumi
           POSTGRES_PASSWORD: lumi_test_only
-          POSTGRES_DB: lumi_ultef_pr
+          POSTGRES_DB: lumi_ultef_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U lumi -d lumi_ultef_pr"
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
@@ -162,11 +162,11 @@ jobs:
         env:
           POSTGRES_USER: lumi
           POSTGRES_PASSWORD: lumi_test_only
-          POSTGRES_DB: lumi_ultef_pr
+          POSTGRES_DB: lumi_ultef_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U lumi -d lumi_ultef_pr"
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_test"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
