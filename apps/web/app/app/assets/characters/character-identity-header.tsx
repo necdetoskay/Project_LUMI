@@ -30,18 +30,18 @@ export function CharacterIdentityHeader({
   return (
     <header className="overflow-hidden rounded-[1.6rem] border border-outline-variant/70 bg-white/90 shadow-sm md:rounded-[2rem]">
       <div className="grid md:grid-cols-[300px_1fr]">
-        <div className="relative min-h-72 overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
+        <div className="relative min-h-72 overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50 md:min-h-[360px]">
           {selectedImageUrl ? (
             <Image
               alt={imageAlt}
-              className="object-cover object-top"
+              className="object-contain object-center p-4 md:p-5"
               fill
               sizes="(min-width: 768px) 300px, 100vw"
               src={selectedImageUrl}
               unoptimized
             />
           ) : (
-            <div className="grid min-h-72 place-items-center">
+            <div className="grid min-h-72 place-items-center md:min-h-[360px]">
               <div className="grid size-36 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
                 <span className="material-symbols-outlined text-7xl text-primary">
                   person
