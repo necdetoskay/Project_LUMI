@@ -13,6 +13,30 @@ const paramsSchema = z.object({
   assetId: z.string().uuid(),
 });
 
+function safeStorageDiagnostic(storageRef: string) {
+  if (storageRef.startsWith("s3-character-visual://")) {
+    const value = storageRef.slice("s3-character-visual://".length);
+    const slash = value.indexOf("/");
+    if (slash > 0) {
+      return {
+        storageType: "s3",
+        referencedBucket: decodeURIComponent(value.slice(0, slash)),
+        objectKey: value.slice(slash + 1),
+        configuredBucket: process.env.OBJECT_STORAGE_BUCKET ?? null,
+      };
+    }
+  }
+
+  if (storageRef.startsWith("local-character-visual://")) {
+    return {
+      storageType: "local",
+      localRef: storageRef.slice("local-character-visual://".length),
+    };
+  }
+
+  return { storageType: "unknown" };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ characterId: string; assetId: string }> },
@@ -42,15 +66,27 @@ export async function GET(
         );
       }
 
-      const content = await readCharacterVisual(asset.storageRef);
-      return new NextResponse(new Uint8Array(content.bytes), {
-        status: 200,
-        headers: {
-          "Content-Type": asset.mimeType ?? content.mimeType,
-          "Cache-Control": "private, max-age=60",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
+      try {
+        const content = await readCharacterVisual(asset.storageRef);
+        return new NextResponse(new Uint8Array(content.bytes), {
+          status: 200,
+          headers: {
+            "Content-Type": asset.mimeType ?? content.mimeType,
+            "Cache-Control": "private, max-age=60",
+            "X-Content-Type-Options": "nosniff",
+          },
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "VISUAL_CONTENT_ERROR";
+        return NextResponse.json(
+          {
+            error: message,
+            diagnostic: safeStorageDiagnostic(asset.storageRef),
+          },
+          { status: 400 },
+        );
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "VISUAL_CONTENT_ERROR";

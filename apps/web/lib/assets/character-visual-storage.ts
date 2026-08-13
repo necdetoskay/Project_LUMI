@@ -53,6 +53,72 @@ export function objectStorageConfigFromEnv(): S3CompatibleObjectStorageConfig | 
   };
 }
 
+function configForReferencedBucket(
+  config: S3CompatibleObjectStorageConfig,
+  bucket: string,
+): S3CompatibleObjectStorageConfig {
+  return bucket === config.bucket ? config : { ...config, bucket };
+}
+
+function encodedObjectPath(key: string): string {
+  return key
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+async function getPublicObject(key: string) {
+  const publicBaseUrl = process.env.OBJECT_STORAGE_PUBLIC_URL?.trim();
+  if (!publicBaseUrl) return null;
+
+  const url = `${publicBaseUrl.replace(/\/$/, "")}/${encodedObjectPath(key)}`;
+  const response = await fetch(url, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`OBJECT_STORAGE_PUBLIC_GET_FAILED:${response.status}`);
+  }
+
+  return {
+    bytes: new Uint8Array(await response.arrayBuffer()),
+    contentType: response.headers.get("content-type"),
+  };
+}
+
+async function getObjectWithLegacyBucketFallback(
+  config: S3CompatibleObjectStorageConfig,
+  referencedBucket: string,
+  key: string,
+) {
+  // Preserve the existing signed S3/R2 read path as the canonical behavior.
+  // This keeps Vercel/production semantics unchanged. Public R2 access is only
+  // a compatibility fallback for deployments where the custom signed client
+  // cannot retrieve an object that is otherwise publicly reachable.
+  try {
+    return await getObject(configForReferencedBucket(config, referencedBucket), key);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const isNotFound = message === "OBJECT_STORAGE_GET_FAILED:404";
+
+    if (!isNotFound) throw error;
+
+    if (referencedBucket !== config.bucket) {
+      try {
+        return await getObject(config, key);
+      } catch (currentBucketError) {
+        const currentBucketMessage =
+          currentBucketError instanceof Error ? currentBucketError.message : "";
+        if (currentBucketMessage !== "OBJECT_STORAGE_GET_FAILED:404") {
+          throw currentBucketError;
+        }
+      }
+    }
+
+    const publicObject = await getPublicObject(key);
+    if (publicObject) return publicObject;
+    throw error;
+  }
+}
+
 export class LocalCharacterVisualStorageAdapter
   implements CharacterVisualStoragePort
 {
@@ -124,11 +190,8 @@ export async function readCharacterVisual(storageRef: string) {
     const slash = value.indexOf("/");
     if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
     const bucket = decodeURIComponent(value.slice(0, slash));
-    if (bucket !== config.bucket) {
-      throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
-    }
     const key = value.slice(slash + 1);
-    const object = await getObject(config, key);
+    const object = await getObjectWithLegacyBucketFallback(config, bucket, key);
     return {
       bytes: object.bytes,
       mimeType: object.contentType ?? "application/octet-stream",
@@ -146,8 +209,8 @@ export async function deleteCharacterVisual(storageRef: string): Promise<void> {
   const slash = value.indexOf("/");
   if (slash <= 0) throw new Error("INVALID_VISUAL_STORAGE_REF");
   const bucket = decodeURIComponent(value.slice(0, slash));
-  if (bucket !== config.bucket) {
-    throw new Error("VISUAL_STORAGE_BUCKET_MISMATCH");
-  }
-  await deleteObject(config, value.slice(slash + 1));
+  await deleteObject(
+    configForReferencedBucket(config, bucket),
+    value.slice(slash + 1),
+  );
 }
