@@ -13,6 +13,10 @@ import type {
   StoryVisualWorkspaceRepositoryPort,
 } from "../ports/repository.port";
 import {
+  planStoryVisualAssetSheets,
+  type StoryVisualAssetSheetPlan,
+} from "./asset-sheet-planner";
+import {
   loadStoryVisualWorkspace,
   type StoryVisualWorkspaceReadModel,
   type StoryVisualWorkspaceRequirement,
@@ -41,8 +45,19 @@ export type StoryVisualGeneratedAsset = {
   assetId: string;
 };
 
+export type StoryVisualGeneratedSheetAsset = StoryVisualGeneratedAsset & {
+  requirementKey: string;
+};
+
+export type StoryVisualGeneratedSheet = {
+  assets: readonly StoryVisualGeneratedSheetAsset[];
+};
+
 export interface StoryVisualGenerationPort {
   generate(job: StoryVisualGenerationJob): Promise<StoryVisualGeneratedAsset>;
+  generateSheet?(
+    plan: StoryVisualAssetSheetPlan,
+  ): Promise<StoryVisualGeneratedSheet>;
 }
 
 export type StoryVisualGenerationResult = {
@@ -51,6 +66,11 @@ export type StoryVisualGenerationResult = {
   reused: number;
   failed: number;
   skipped: number;
+};
+
+type PendingGeneration = {
+  job: StoryVisualGenerationJob;
+  render: PersistedStoryVisualRender;
 };
 
 function findEntityRequirement(
@@ -274,6 +294,17 @@ async function ensureRender(
   });
 }
 
+function sheetCandidate(job: StoryVisualGenerationJob) {
+  return {
+    requirementKey: job.requirement.key,
+    prompt: job.prompt,
+    renderFingerprint: job.renderFingerprint,
+    subjectId: job.subjectId,
+    subjectType: job.subjectType,
+    assetKind: job.assetKind,
+  };
+}
+
 export async function generateStoryVisuals(input: {
   repository: StoryVisualWorkspaceRepositoryPort;
   generator: StoryVisualGenerationPort;
@@ -301,6 +332,7 @@ export async function generateStoryVisuals(input: {
   let reused = 0;
   let failed = 0;
   let skipped = workspace.requirements.length - requirements.length;
+  const pending = new Map<string, PendingGeneration>();
 
   for (const requirement of requirements) {
     const job = buildJob(workspace, requirement);
@@ -328,6 +360,64 @@ export async function generateStoryVisuals(input: {
       }
     }
 
+    pending.set(requirement.key, { job, render });
+  }
+
+  if (input.generator.generateSheet && pending.size > 1) {
+    const plans = planStoryVisualAssetSheets(
+      [...pending.values()].map(({ job }) => sheetCandidate(job)),
+    );
+
+    for (const plan of plans) {
+      const members = plan.cells
+        .map((cell) => pending.get(cell.requirementKey))
+        .filter((entry): entry is PendingGeneration => Boolean(entry));
+      if (members.length < 2) continue;
+
+      await Promise.all(
+        members.map(({ render }) =>
+          input.repository.updateRender(render.id, {
+            assetId: null,
+            status: "generating",
+          }),
+        ),
+      );
+
+      try {
+        const result = await input.generator.generateSheet(plan);
+        const assets = new Map(
+          result.assets.map((asset) => [asset.requirementKey, asset.assetId]),
+        );
+        for (const member of members) {
+          const assetId = assets.get(member.job.requirement.key);
+          if (!assetId) {
+            await input.repository.updateRender(member.render.id, {
+              assetId: null,
+              status: "missing",
+            });
+            continue;
+          }
+          await input.repository.updateRender(member.render.id, {
+            assetId,
+            status: "ready",
+          });
+          pending.delete(member.job.requirement.key);
+          generated += 1;
+        }
+      } catch {
+        await Promise.all(
+          members.map(({ render }) =>
+            input.repository.updateRender(render.id, {
+              assetId: null,
+              status: "missing",
+            }),
+          ),
+        );
+      }
+    }
+  }
+
+  for (const { job, render } of pending.values()) {
     await input.repository.updateRender(render.id, {
       assetId: null,
       status: "generating",
