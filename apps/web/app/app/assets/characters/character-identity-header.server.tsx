@@ -14,7 +14,10 @@ function typeKey(subtype: string) {
 }
 
 function isTechnical(value: string) {
-  return value.includes("_") || (/^[a-z0-9-]+$/.test(value) && value.includes("-"));
+  return (
+    value.includes("_") ||
+    (/^[a-z0-9-]+$/.test(value) && value.includes("-"))
+  );
 }
 
 export async function CharacterIdentityHeaderServer({
@@ -42,7 +45,9 @@ export async function CharacterIdentityHeaderServer({
   const startingLocation = character.startingLocation.trim();
   const locationLabel =
     currentLocation?.displayName?.trim() ||
-    (startingLocation && !isTechnical(startingLocation) ? startingLocation : null) ||
+    (startingLocation && !isTechnical(startingLocation)
+      ? startingLocation
+      : null) ||
     t("detail.locationPending");
   const selectedImageUrl = canon?.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(canon.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
