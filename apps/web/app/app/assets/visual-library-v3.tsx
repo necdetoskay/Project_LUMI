@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type CharacterOption = {
@@ -5,22 +6,43 @@ type CharacterOption = {
   name: string;
   subtype: string;
   originConcept: string;
+  selectedAssetId: string | null;
 };
 
-function CharacterCard({ character }: { character: CharacterOption }) {
+function CharacterCard({
+  character,
+  householdId,
+}: {
+  character: CharacterOption;
+  householdId: string;
+}) {
   const summary = character.originConcept?.trim() || character.subtype;
+  const selectedImageUrl = character.selectedAssetId
+    ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(character.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
+    : null;
 
   return (
     <Link
       className="group overflow-hidden rounded-[1.6rem] border border-outline-variant/70 bg-white/90 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       href={`/app/assets/characters/${encodeURIComponent(character.id)}`}
     >
-      <div className="grid aspect-[4/3] place-items-center bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
-        <div className="grid size-24 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
-          <span className="material-symbols-outlined text-5xl text-primary">
-            person
-          </span>
-        </div>
+      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
+        {selectedImageUrl ? (
+          <Image
+            alt={`${character.name} seçili karakter görseli`}
+            className="object-contain p-3"
+            fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            src={selectedImageUrl}
+            unoptimized
+          />
+        ) : (
+          <div className="grid size-24 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
+            <span className="material-symbols-outlined text-5xl text-primary">
+              person
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-5">
@@ -167,7 +189,11 @@ export function VisualLibraryV3({
           {characters.length > 0 ? (
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {characters.map((character) => (
-                <CharacterCard character={character} key={character.id} />
+                <CharacterCard
+                  character={character}
+                  householdId={householdId}
+                  key={character.id}
+                />
               ))}
             </div>
           ) : (
