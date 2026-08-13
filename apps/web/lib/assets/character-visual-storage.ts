@@ -94,7 +94,10 @@ async function getObjectWithLegacyBucketFallback(
   // a compatibility fallback for deployments where the custom signed client
   // cannot retrieve an object that is otherwise publicly reachable.
   try {
-    return await getObject(configForReferencedBucket(config, referencedBucket), key);
+    return await getObject(
+      configForReferencedBucket(config, referencedBucket),
+      key,
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     const isNotFound = message === "OBJECT_STORAGE_GET_FAILED:404";

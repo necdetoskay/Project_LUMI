@@ -160,8 +160,8 @@ export default async function HealthPage() {
       </div>
 
       <p style={{ marginTop: 24, opacity: 0.7 }}>
-        Not: R2 S3 API endpoint'i ile tarayıcıda kullanılacak public asset URL aynı
-        şey değildir. Private/public erişim modeli ayrıca doğrulanmalıdır.
+        Not: R2 S3 API endpoint'i ile tarayıcıda kullanılacak public asset URL
+        aynı şey değildir. Private/public erişim modeli ayrıca doğrulanmalıdır.
       </p>
     </main>
   );
