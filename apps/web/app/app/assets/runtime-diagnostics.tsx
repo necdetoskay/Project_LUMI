@@ -12,7 +12,7 @@ export function AssetsRuntimeDiagnostics({
   payload: DiagnosticPayload;
 }) {
   useEffect(() => {
-    console.info("[LUMI_ASSETS_DIAG]", {
+    console.warn("[LUMI_ASSETS_DIAG]", {
       marker: "assets-runtime-diag-2026-08-13-v1",
       route,
       href: window.location.href,
