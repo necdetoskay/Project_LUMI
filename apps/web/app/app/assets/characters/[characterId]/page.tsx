@@ -11,6 +11,7 @@ import {
   getSessionPlaybackState,
   listSessionsForChildProfile,
 } from "@lumi/story/application";
+import { AssetsRuntimeDiagnostics } from "../../runtime-diagnostics";
 import { CharacterIdentityHeaderServer } from "../character-identity-header.server";
 import { CharacterVisualManager } from "./character-visual-manager";
 
@@ -59,8 +60,24 @@ export default async function CharacterVisualHubPage({
     )
   ).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
+  const diagnosticPayload = {
+    characterResolved: true,
+    characterTypeKey: character.subtype.trim().toLowerCase(),
+    storyCount: storyCards.length,
+  };
+
+  console.warn("[LUMI_ASSETS_SERVER]", {
+    marker: "assets-runtime-diag-2026-08-13-v1",
+    route: "/app/assets/characters/[characterId]",
+    ...diagnosticPayload,
+  });
+
   return (
     <section className="storybook-page min-h-full">
+      <AssetsRuntimeDiagnostics
+        payload={diagnosticPayload}
+        route="/app/assets/characters/[characterId]"
+      />
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-3 py-4 sm:px-4 md:px-6 md:py-10">
         <div>
           <Link

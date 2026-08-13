@@ -8,6 +8,7 @@ import {
   listCharactersByHousehold,
 } from "@lumi/profiles/application";
 import { getCharacterCurrentLocation } from "@lumi/world/application";
+import { AssetsRuntimeDiagnostics } from "./runtime-diagnostics";
 import { VisualLibrary } from "./visual-library";
 
 export default async function CharacterVisualLibraryPage() {
@@ -39,10 +40,33 @@ export default async function CharacterVisualLibraryPage() {
       )
     : [];
 
+  const diagnosticPayload = {
+    householdResolved: Boolean(household),
+    characterCount: charactersWithVisuals.length,
+    charactersWithSelectedAsset: charactersWithVisuals.filter((character) =>
+      Boolean(character.selectedAssetId),
+    ).length,
+    charactersWithCanonicalLocation: charactersWithVisuals.filter((character) =>
+      Boolean(character.currentLocationName),
+    ).length,
+  };
+
+  console.warn("[LUMI_ASSETS_SERVER]", {
+    marker: "assets-runtime-diag-2026-08-13-v1",
+    route: "/app/assets",
+    ...diagnosticPayload,
+  });
+
   return (
-    <VisualLibrary
-      householdId={household?.id ?? null}
-      characters={charactersWithVisuals}
-    />
+    <>
+      <AssetsRuntimeDiagnostics
+        payload={diagnosticPayload}
+        route="/app/assets"
+      />
+      <VisualLibrary
+        householdId={household?.id ?? null}
+        characters={charactersWithVisuals}
+      />
+    </>
   );
 }
