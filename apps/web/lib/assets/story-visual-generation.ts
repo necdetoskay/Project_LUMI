@@ -1,5 +1,8 @@
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
+import { splitAssetSheetImage } from "@/lib/assets/asset-sheet-image";
 import type {
+  StoryVisualAssetSheetPlan,
+  StoryVisualGeneratedSheet,
   StoryVisualGenerationJob,
   StoryVisualGenerationPort,
 } from "@lumi/media/application";
@@ -89,5 +92,79 @@ export class WebStoryVisualGenerationAdapter
     );
 
     return { assetId: asset.id };
+  }
+
+  async generateSheet(
+    plan: StoryVisualAssetSheetPlan,
+  ): Promise<StoryVisualGeneratedSheet> {
+    const sheetJobId = crypto.randomUUID();
+    const result = await this.provider.generate({
+      jobId: sheetJobId,
+      prompt: plan.prompt,
+      model: "krea/krea-2-medium-turbo",
+      candidateCount: 1,
+      aspectRatio: "1:1",
+      resolution: "1K",
+      strategy: "direct",
+    });
+    const image = result.images[0];
+    if (!image) throw new Error("STORY_VISUAL_SHEET_IMAGE_EMPTY");
+
+    const tiles = splitAssetSheetImage({
+      plan,
+      bytesBase64: image.bytesBase64,
+      mimeType: image.mimeType,
+    });
+    const assets = [];
+
+    for (const tile of tiles) {
+      const cell = plan.cells.find(
+        (candidate) => candidate.cellIndex === tile.cellIndex,
+      );
+      if (!cell) throw new Error("STORY_VISUAL_SHEET_CELL_NOT_FOUND");
+
+      const stored = await this.storage.store({
+        householdId: this.householdId,
+        characterId: cell.subjectId,
+        jobId: sheetJobId,
+        candidateIndex: cell.cellIndex,
+        bytesBase64: tile.bytesBase64,
+        mimeType: tile.mimeType,
+      });
+      const asset = await registerManagedAssetMetadata(
+        this.parentId,
+        {
+          householdId: this.householdId,
+          subjectType: cell.subjectType,
+          subjectId: cell.subjectId,
+          assetKind: cell.assetKind,
+          storageRef: stored.storageRef,
+          mimeType: tile.mimeType,
+          width: tile.width,
+          height: tile.height,
+          provider: result.provider,
+          model: result.model,
+          originType: "generated",
+          sourceSystem: "story-visual-sheet-v1",
+          provenance: {
+            renderFingerprint: cell.renderFingerprint,
+            requirementKey: cell.requirementKey,
+            sheetFingerprint: plan.sheetFingerprint,
+            sheetCompatibilityKey: plan.compatibilityKey,
+            sheetCellIndex: cell.cellIndex,
+            sheetRow: cell.row,
+            sheetColumn: cell.column,
+            sheetColumns: plan.columns,
+            sheetRows: plan.rows,
+            outputMaxPx: plan.outputMaxPx,
+            providerRequestId: result.providerRequestId ?? null,
+          },
+        },
+        { authorizationPort: this.authorizationPort },
+      );
+      assets.push({ requirementKey: cell.requirementKey, assetId: asset.id });
+    }
+
+    return { assets };
   }
 }
