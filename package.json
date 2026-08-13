@@ -12,6 +12,7 @@
     "demo:seed": "pnpm --filter @lumi/web exec node scripts/lumi-demo-cli.mjs seed",
     "demo:reset": "pnpm --filter @lumi/web exec node scripts/lumi-demo-cli.mjs reset",
     "demo:status": "pnpm --filter @lumi/web exec node scripts/lumi-demo-cli.mjs status",
+    "assets:backfill-sheets": "tsx scripts/backfill-character-sheet-derivatives.ts",
     "ultef": "node tooling/ultef/src/cli.mjs",
     "ultef:selftest": "node tooling/ultef/src/cli.mjs selftest",
     "ultef:l8-scenario-selftest": "node tooling/ultef/src/l8-scenario-pack-selftest.mjs",
@@ -87,6 +88,7 @@
     "globals": "16.5.0",
     "prettier": "3.6.2",
     "rimraf": "6.1.2",
+    "tsx": "^4.23.12",
     "turbo": "2.10.7",
     "typescript": "5.9.3",
     "typescript-eslint": "8.48.1"

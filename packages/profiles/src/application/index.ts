@@ -112,6 +112,39 @@ export type {
 } from "./character-visual-generation";
 
 export {
+  CHARACTER_VISUAL_SHEET_LAYOUT_VERSION,
+  SEVEN_VIEW_REGIONS,
+  getSevenViewSheetLayout,
+} from "./character-visual-sheet-layout";
+export type { SheetRegion } from "./character-visual-sheet-layout";
+
+export {
+  CHARACTER_VISUAL_SEMANTIC_ROLES,
+  SEMANTIC_ROLE_BY_VARIANT,
+  assertCharacterVisualVariant,
+  resolveSemanticRole,
+  resolveVariantForRole,
+} from "./character-visual-derivative-resolver";
+export type { CharacterVisualSemanticRole } from "./character-visual-derivative-resolver";
+
+export { buildDerivativeProvenance } from "./character-visual-provenance";
+export type {
+  CharacterVisualDerivativeProvenance,
+  CharacterVisualSourceProvenance,
+} from "./character-visual-provenance";
+
+export { CharacterVisualBackfillService } from "./character-visual-backfill.service";
+export type {
+  CharacterVisualBackfillDetail,
+  CharacterVisualBackfillDerivativeInsert,
+  CharacterVisualBackfillRunInput,
+  CharacterVisualBackfillSource,
+  CharacterVisualBackfillStoragePort,
+  CharacterVisualBackfillStorePort,
+  CharacterVisualBackfillSummary,
+} from "./character-visual-backfill.service";
+
+export {
   IMAGE_ASPECT_RATIOS,
   createGridLayout,
   createGridCropPlan,

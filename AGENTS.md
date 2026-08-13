@@ -172,3 +172,12 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - `/health` dependency health page eklendi; asset content route hatalarda güvenli storage teşhisi döner.
 - Compose web+worker'a `OBJECT_STORAGE_*`/`CLOUDFLARE_R2_BUCKET` env forwarding eklendi; `.env.example` object storage dokümantasyonu.
 - Prettier fix ayrıca doğrudan main'e cherry-pick edildi (`c90ff3f`); `fix/remote-context-neon-compose` ve `fix/storage-r2-read-fallback` dalları silindi. CI main'de green.
+
+### Character visual modularization + sheet derivative backfill (2026-08-13, PR #153)
+
+- `@lumi/profiles` application modülleri: `character-visual-sheet-layout.ts` (7 bölgeli deterministik layout + version), `character-visual-derivative-resolver.ts` (variant→semantic rol eşlemesi: `portrait_primary→head-front`, `full_body_front→body-front` vb.), `character-visual-provenance.ts` (derivative provenance builder: derivation/layout version/semanticRole/brief refs).
+- `CharacterVisualBackfillService` (port-driven: store + storage + splitter) — yalnızca eksik derivative'ları üretir, source sheet silinmez/değiştirilmez; dry-run/apply, household/character/limit filtreleri. Drizzle implementasyonu: `DrizzleCharacterVisualBackfillStore` (`@lumi/profiles/adapters`).
+- Web: splitter çekirdeği `apps/web/lib/assets/character-visual-sheet-splitter.ts`'a taşındı (layout domain'den import edilir); eski `character-reference-sheet-derivative.ts` re-export shim. Route davranışı değişmedi.
+- CLI: `scripts/backfill-character-sheet-derivatives.ts` (`pnpm assets:backfill-sheets -- --dry-run|--apply`). Root'a `tsx` devDependency eklendi (node native type-stripping, paketlerdeki extension'sız relative import'ları çözemez — worker `node src/index.ts` ile aynı sınırlama).
+- `@lumi/profiles` 249 unit test; lint/typecheck/build/mojibake green.
+- Not: DB seviyesi unique-index migration EKLENMEDİ — idempotency kod seviyesinde (mevcut derivative kontrolü). Race durumu varsa ayrı migration fazı gerekir.

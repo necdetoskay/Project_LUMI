@@ -36,7 +36,11 @@ export default [
     },
   },
   {
-    files: ["apps/web/scripts/lumi-demo-*.mjs"],
+    files: [
+      "apps/web/scripts/lumi-demo-*.mjs",
+      "apps/web/scripts/backfill-character-sheet-derivatives.mjs",
+      "scripts/backfill-character-sheet-derivatives.ts",
+    ],
     rules: {
       "no-console": "off",
     },
