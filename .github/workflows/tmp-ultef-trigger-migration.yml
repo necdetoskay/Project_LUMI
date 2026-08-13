@@ -5,7 +5,7 @@ on:
     branches: [infra/ultef-ci-execution-policy]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   migrate:
@@ -66,12 +66,13 @@ jobs:
           print(f'Migrated {len(changed)} standalone ULTEF workflows:')
           print('\n'.join(changed))
 
-      - name: Remove one-shot migration workflow
+      - name: Remove one-shot migration workflow from exported tree
         run: rm .github/workflows/tmp-ultef-trigger-migration.yml
-      - name: Commit ULTEF execution-policy migration
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows
-          git commit -m "ci(ultef): move full regression off PR commits"
-          git push origin HEAD:infra/ultef-ci-execution-policy
+      - name: Upload transformed workflow tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: ultef-workflow-migration
+          path: .github/workflows/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
