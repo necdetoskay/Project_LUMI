@@ -5,6 +5,7 @@ on:
     branches:
       - codex/ultef-lumi-sprint-00
       - codex/ultef-px-lumi-phase
+      - debug/assets-runtime-diagnostics
 
 permissions:
   contents: write
