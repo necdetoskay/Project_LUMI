@@ -31,7 +31,9 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText("Lina", { exact: true })).toBeVisible();
-    await expect(page.getByText("Çocuk karakter", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Çocuk karakter", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText(/Karakter → Hikâyeler → Hikâye Görselleri/),
     ).toBeVisible();
