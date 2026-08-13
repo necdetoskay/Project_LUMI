@@ -21,27 +21,43 @@ jobs:
         run: |
           from pathlib import Path
 
+          def remove_pull_request_block(text: str) -> str:
+              lines = text.splitlines(keepends=True)
+              result = []
+              skipping = False
+              for line in lines:
+                  if line.rstrip() == '  pull_request:':
+                      skipping = True
+                      continue
+                  if skipping:
+                      if line.startswith('    ') or not line.strip():
+                          continue
+                      skipping = False
+                  result.append(line)
+              return ''.join(result)
+
           root = Path('.github/workflows')
           changed = []
-          offenders = []
           for path in sorted(root.glob('ultef-*.yml')):
               if path.name == 'ultef-pr-gates.yml':
                   continue
               text = path.read_text()
               if '\n  pull_request:\n' not in text:
                   continue
+
               if '\n  push:\n' in text:
-                  offenders.append(f'{path}: contains both pull_request and push; migrate manually')
-                  continue
-              updated = text.replace('\n  pull_request:\n', '\n  push:\n', 1)
+                  updated = remove_pull_request_block(text)
+              else:
+                  updated = text.replace('\n  pull_request:\n', '\n  push:\n', 1)
+
               path.write_text(updated)
               changed.append(str(path))
 
+          offenders = []
           for path in sorted(root.glob('ultef-*.yml')):
               if path.name == 'ultef-pr-gates.yml':
                   continue
-              text = path.read_text()
-              if '\n  pull_request:\n' in text:
+              if '\n  pull_request:\n' in path.read_text():
                   offenders.append(f'{path}: still has pull_request trigger')
 
           if offenders:
