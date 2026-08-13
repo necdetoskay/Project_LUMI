@@ -16,17 +16,14 @@ async function loginDemoParent(page: Page) {
 }
 
 test.describe("S53 Asset Management production-like Compose journey", () => {
-  test("opens the character-first Visual Library and focused Character Visual Hub", async ({
+  test("opens the character-first visual library and focused character visual hub", async ({
     page,
   }) => {
     await loginDemoParent(page);
 
     await page.goto("/app/assets");
     await expect(
-      page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Visual Library v3", { exact: true }),
+      page.getByRole("heading", { name: "Karakter görsellerini yönet" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", {
@@ -34,6 +31,7 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText("Lina", { exact: true })).toBeVisible();
+    await expect(page.getByText("Çocuk karakter", { exact: true })).toBeVisible();
     await expect(
       page.getByText(/Karakter → Hikâyeler → Hikâye Görselleri/),
     ).toBeVisible();
@@ -71,7 +69,7 @@ test.describe("S53 Asset Management production-like Compose journey", () => {
 
     await page.goto("/app/assets");
     await expect(
-      page.getByRole("heading", { name: "Görsel Kütüphanesi" }),
+      page.getByRole("heading", { name: "Karakter görsellerini yönet" }),
     ).toBeVisible();
     await expect(page.getByText("Lina", { exact: true })).toBeVisible();
 
