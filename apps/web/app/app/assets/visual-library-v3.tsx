@@ -9,6 +9,31 @@ type CharacterOption = {
   selectedAssetId: string | null;
 };
 
+const TURKISH_CHARACTER_TYPES: Record<string, string> = {
+  child: "Çocuk karakter",
+  human: "İnsan karakter",
+  animal: "Hayvan karakter",
+  fantastic: "Fantastik karakter",
+  fantasy: "Fantastik karakter",
+};
+
+function localizeCharacterType(subtype: string) {
+  const normalized = subtype.trim().toLocaleLowerCase("tr-TR");
+  return TURKISH_CHARACTER_TYPES[normalized] ?? subtype.trim() ?? "Karakter";
+}
+
+function localizeCharacterSummary(originConcept: string, subtype: string) {
+  const value = originConcept?.trim();
+  if (!value)
+    return `${localizeCharacterType(subtype)} için görsel kimlik oluşturuluyor.`;
+
+  return value
+    .replace(/\bchild\b/gi, "çocuk")
+    .replace(/\bhuman\b/gi, "insan")
+    .replace(/\banimal\b/gi, "hayvan")
+    .replace(/\bfantastic\b/gi, "fantastik");
+}
+
 function CharacterCard({
   character,
   householdId,
@@ -16,31 +41,37 @@ function CharacterCard({
   character: CharacterOption;
   householdId: string;
 }) {
-  const summary = character.originConcept?.trim() || character.subtype;
+  const summary = localizeCharacterSummary(
+    character.originConcept,
+    character.subtype,
+  );
+  const characterType = localizeCharacterType(character.subtype);
   const selectedImageUrl = character.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(character.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
     : null;
 
   return (
     <Link
-      className="group overflow-hidden rounded-[1.6rem] border border-outline-variant/70 bg-white/90 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="group overflow-hidden rounded-[1.75rem] border border-outline-variant/70 bg-white/95 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       href={`/app/assets/characters/${encodeURIComponent(character.id)}`}
     >
-      <div className="relative grid aspect-[4/3] place-items-center overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
         {selectedImageUrl ? (
           <Image
             alt={`${character.name} seçili karakter görseli`}
-            className="object-contain p-3"
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
             fill
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             src={selectedImageUrl}
             unoptimized
           />
         ) : (
-          <div className="grid size-24 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
-            <span className="material-symbols-outlined text-5xl text-primary">
-              person
-            </span>
+          <div className="grid h-full place-items-center">
+            <div className="grid size-24 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
+              <span className="material-symbols-outlined text-5xl text-primary">
+                person
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -49,7 +80,7 @@ function CharacterCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">
-              {character.subtype || "Karakter"}
+              {characterType}
             </p>
             <h2 className="mt-1 text-xl font-extrabold text-on-surface">
               {character.name}
@@ -61,8 +92,7 @@ function CharacterCard({
         </div>
 
         <p className="mt-3 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-on-surface-variant">
-          {summary ||
-            "Bu karakterin görsel kimliği, görünüm varyantları ve hikâye görselleri burada yönetilir."}
+          {summary}
         </p>
 
         <div className="mt-5 grid grid-cols-3 gap-2 text-center">
@@ -127,10 +157,10 @@ export function VisualLibraryV3({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                Visual Library v3
+                Görsel Kütüphanesi
               </p>
               <h1 className="mt-2 text-3xl font-extrabold text-on-surface md:text-4xl">
-                Görsel Kütüphanesi
+                Karakter görsellerini yönet
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-on-surface-variant md:text-base md:leading-7">
                 Önce karakterini seç. Karakterin görsel kimliğini ve ona ait
@@ -164,7 +194,7 @@ export function VisualLibraryV3({
               </p>
               <p className="mt-1 text-sm leading-6 text-on-surface-variant">
                 Karakter → Hikâyeler → Hikâye Görselleri. Çanta artık ayrı bir
-                alan değildir; ilgili hikâyedeki diğer eşyalar gibi kendi state
+                alan değildir; ilgili hikâyedeki diğer eşyalar gibi kendi durum
                 görselleriyle yönetilir.
               </p>
             </div>
