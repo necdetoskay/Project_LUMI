@@ -2,7 +2,7 @@ import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
 
 import { splitAssetSheetImage } from "@/lib/assets/asset-sheet-image";
-import type { StoryVisualAssetSheetPlan } from "@lumi/media/application";
+import type { GenerationAssetSheetPlan } from "@lumi/media/application";
 
 function createSheetPng() {
   const png = new PNG({ width: 800, height: 800 });
@@ -26,7 +26,7 @@ function createSheetPng() {
   return PNG.sync.write(png).toString("base64");
 }
 
-const plan: StoryVisualAssetSheetPlan = {
+const plan: GenerationAssetSheetPlan = {
   sheetFingerprint: "a".repeat(64),
   compatibilityKey: "item:item-icon",
   columns: 2,
