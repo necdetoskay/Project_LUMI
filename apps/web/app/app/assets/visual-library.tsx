@@ -11,7 +11,12 @@ type CharacterOption = {
   selectedAssetId: string | null;
 };
 
-type CharacterTypeKey = "child" | "human" | "animal" | "fantasy" | "generic";
+type CharacterTypeKey =
+  | "child"
+  | "human"
+  | "animal"
+  | "fantasy"
+  | "generic";
 
 function characterTypeKey(subtype: string): CharacterTypeKey {
   const normalized = subtype.trim().toLowerCase();
@@ -62,7 +67,8 @@ function CharacterCard({
   typeLabel: string;
   copy: CardCopy;
 }) {
-  const locationLabel = canonicalLocationLabel(character) ?? copy.locationPending;
+  const locationLabel =
+    canonicalLocationLabel(character) ?? copy.locationPending;
   const selectedImageUrl = character.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(character.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
     : null;
@@ -169,7 +175,9 @@ export async function VisualLibrary({
             <h1 className="text-3xl font-extrabold text-on-surface">
               {t("libraryTitle")}
             </h1>
-            <p className="mt-3 text-on-surface-variant">{t("noHouseholdText")}</p>
+            <p className="mt-3 text-on-surface-variant">
+              {t("noHouseholdText")}
+            </p>
             <Link className="storybook-button mt-6" href="/app/onboarding">
               {t("prepareHousehold")}
             </Link>
@@ -225,7 +233,9 @@ export async function VisualLibrary({
               route
             </span>
             <div>
-              <p className="font-extrabold text-on-surface">{t("flowTitle")}</p>
+              <p className="font-extrabold text-on-surface">
+                {t("flowTitle")}
+              </p>
               <p className="mt-1 text-sm leading-6 text-on-surface-variant">
                 {t("flowText")}
               </p>
@@ -256,7 +266,9 @@ export async function VisualLibrary({
                   copy={copy}
                   householdId={householdId}
                   key={character.id}
-                  typeLabel={t(`characterTypes.${characterTypeKey(character.subtype)}`)}
+                  typeLabel={t(
+                    `characterTypes.${characterTypeKey(character.subtype)}`,
+                  )}
                 />
               ))}
             </div>
