@@ -7,6 +7,7 @@ import {
   getOwnedHousehold,
   listCharactersByHousehold,
 } from "@lumi/profiles/application";
+import { getCharacterCurrentLocation } from "@lumi/world/application";
 import { VisualLibraryV3 } from "./visual-library-v3";
 
 export default async function CharacterVisualLibraryPage() {
@@ -22,16 +23,20 @@ export default async function CharacterVisualLibraryPage() {
   const charactersWithVisuals = household
     ? await Promise.all(
         characters.map(async (character) => {
-          const canon = await getCharacterVisualCanon(
-            parent.id,
-            household.id,
-            character.id,
-          );
+          const [canon, currentLocation] = await Promise.all([
+            getCharacterVisualCanon(
+              parent.id,
+              household.id,
+              character.id,
+            ),
+            getCharacterCurrentLocation(character.id),
+          ]);
           return {
             id: character.id,
             name: character.name,
             subtype: character.subtype,
-            originConcept: character.originConcept,
+            startingLocation: character.startingLocation,
+            currentLocationName: currentLocation?.displayName ?? null,
             selectedAssetId: canon?.selectedAssetId ?? null,
           };
         }),
