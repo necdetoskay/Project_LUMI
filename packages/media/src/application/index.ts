@@ -1,5 +1,5 @@
 export {
-  planStoryVisualAssetSheets,
+  planStoryVisualAssetSheets as planGenerationAssetSheets,
   STORY_VISUAL_SHEET_GRID_COLUMNS,
   STORY_VISUAL_SHEET_GRID_ROWS,
   STORY_VISUAL_SHEET_MAX_CELLS,
