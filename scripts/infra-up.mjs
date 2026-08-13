@@ -1,3 +1,3 @@
 import { runCompose } from "./compose.mjs";
 
-runCompose(["up", "--detach", "--wait"]);
+runCompose(["up", "--detach", "--wait", "--build"]);
