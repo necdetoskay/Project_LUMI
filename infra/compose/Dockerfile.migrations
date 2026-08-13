@@ -1,0 +1,7 @@
+FROM postgres:17.7-alpine
+
+COPY apps/web/migrations /migrations/auth
+COPY packages/profiles/migrations /migrations/profile
+COPY packages/world/migrations /migrations/world
+COPY packages/npc-intelligence/migrations /migrations/npc
+COPY packages/story/migrations /migrations/story
