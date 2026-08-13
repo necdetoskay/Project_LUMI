@@ -42,15 +42,27 @@ export async function CharacterIdentityHeaderServer({
   ]);
 
   const startingLocation = character.startingLocation.trim();
+  const hasCanonicalLocation = Boolean(currentLocation?.displayName?.trim());
+  const hasSafeStartingLocation = Boolean(
+    startingLocation && !isTechnical(startingLocation),
+  );
   const locationLabel =
     currentLocation?.displayName?.trim() ||
-    (startingLocation && !isTechnical(startingLocation)
-      ? startingLocation
-      : null) ||
+    (hasSafeStartingLocation ? startingLocation : null) ||
     t("detail.locationPending");
   const selectedImageUrl = canon?.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(canon.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
     : null;
+
+  console.info("[LUMI_ASSETS_SERVER]", {
+    marker: "assets-runtime-diag-2026-08-13-v1",
+    route: "/app/assets/characters/[characterId]::identity-header",
+    characterTypeKey: typeKey(character.subtype),
+    hasSelectedAsset: Boolean(canon?.selectedAssetId),
+    hasCanonicalLocation,
+    hasSafeStartingLocation,
+    storyCount,
+  });
 
   return (
     <CharacterIdentityHeader
