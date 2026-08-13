@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 type CharacterOption = {
   id: string;
@@ -10,17 +11,15 @@ type CharacterOption = {
   selectedAssetId: string | null;
 };
 
-const TURKISH_CHARACTER_TYPES: Record<string, string> = {
-  child: "Çocuk karakter",
-  human: "İnsan karakter",
-  animal: "Hayvan karakter",
-  fantastic: "Fantastik karakter",
-  fantasy: "Fantastik karakter",
-};
+type CharacterTypeKey = "child" | "human" | "animal" | "fantasy" | "generic";
 
-function localizeCharacterType(subtype: string) {
-  const normalized = subtype.trim().toLocaleLowerCase("tr-TR");
-  return TURKISH_CHARACTER_TYPES[normalized] ?? subtype.trim() ?? "Karakter";
+function characterTypeKey(subtype: string): CharacterTypeKey {
+  const normalized = subtype.trim().toLowerCase();
+  if (normalized === "child" || normalized === "child_avatar") return "child";
+  if (normalized === "human") return "human";
+  if (normalized === "animal") return "animal";
+  if (normalized === "fantastic" || normalized === "fantasy") return "fantasy";
+  return "generic";
 }
 
 function looksLikeTechnicalIdentifier(value: string) {
@@ -31,7 +30,7 @@ function looksLikeTechnicalIdentifier(value: string) {
   );
 }
 
-function characterLocationLabel(character: CharacterOption) {
+function canonicalLocationLabel(character: CharacterOption) {
   const currentLocation = character.currentLocationName?.trim();
   if (currentLocation) return currentLocation;
 
@@ -40,18 +39,30 @@ function characterLocationLabel(character: CharacterOption) {
     return startingLocation;
   }
 
-  return "Konum bilgisi hazırlanıyor";
+  return null;
 }
+
+type CardCopy = {
+  location: string;
+  locationPending: string;
+  story: string;
+  appearance: string;
+  status: string;
+  imageAlt: string;
+};
 
 function CharacterCard({
   character,
   householdId,
+  typeLabel,
+  copy,
 }: {
   character: CharacterOption;
   householdId: string;
+  typeLabel: string;
+  copy: CardCopy;
 }) {
-  const locationLabel = characterLocationLabel(character);
-  const characterType = localizeCharacterType(character.subtype);
+  const locationLabel = canonicalLocationLabel(character) ?? copy.locationPending;
   const selectedImageUrl = character.selectedAssetId
     ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(character.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
     : null;
@@ -64,7 +75,7 @@ function CharacterCard({
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50">
         {selectedImageUrl ? (
           <Image
-            alt={`${character.name} seçili karakter görseli`}
+            alt={copy.imageAlt.replace("{name}", character.name)}
             className="object-cover transition duration-300 group-hover:scale-[1.02]"
             fill
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -86,7 +97,7 @@ function CharacterCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">
-              {characterType}
+              {typeLabel}
             </p>
             <h2 className="mt-1 text-xl font-extrabold text-on-surface">
               {character.name}
@@ -106,7 +117,7 @@ function CharacterCard({
           </span>
           <div>
             <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant/80">
-              Konum
+              {copy.location}
             </p>
             <p className="line-clamp-2 font-semibold text-on-surface-variant">
               {locationLabel}
@@ -118,13 +129,13 @@ function CharacterCard({
           <div className="rounded-xl bg-surface-container-low px-2 py-3">
             <p className="text-lg font-black text-on-surface">—</p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-              Hikâye
+              {copy.story}
             </p>
           </div>
           <div className="rounded-xl bg-surface-container-low px-2 py-3">
             <p className="text-lg font-black text-on-surface">—</p>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-              Görünüm
+              {copy.appearance}
             </p>
           </div>
           <div className="rounded-xl bg-surface-container-low px-2 py-3">
@@ -132,7 +143,7 @@ function CharacterCard({
               pending
             </span>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
-              Durum
+              {copy.status}
             </p>
           </div>
         </div>
@@ -141,33 +152,41 @@ function CharacterCard({
   );
 }
 
-export function VisualLibrary({
+export async function VisualLibrary({
   householdId,
   characters,
 }: {
   householdId: string | null;
   characters: CharacterOption[];
 }) {
+  const t = await getTranslations("assets");
+
   if (!householdId) {
     return (
       <section className="storybook-page min-h-full">
         <div className="mx-auto w-full max-w-[920px] px-5 py-10">
           <div className="rounded-[2rem] border border-outline-variant/70 bg-white/85 p-8">
             <h1 className="text-3xl font-extrabold text-on-surface">
-              Görsel Kütüphanesi
+              {t("libraryTitle")}
             </h1>
-            <p className="mt-3 text-on-surface-variant">
-              Önce aile alanınızı oluşturun; karakter ve hikâye görselleriniz
-              daha sonra burada toplanacak.
-            </p>
+            <p className="mt-3 text-on-surface-variant">{t("noHouseholdText")}</p>
             <Link className="storybook-button mt-6" href="/app/onboarding">
-              Aile alanını hazırla
+              {t("prepareHousehold")}
             </Link>
           </div>
         </div>
       </section>
     );
   }
+
+  const copy: CardCopy = {
+    location: t("location"),
+    locationPending: t("locationPending"),
+    story: t("story"),
+    appearance: t("appearance"),
+    status: t("status"),
+    imageAlt: t("selectedImageAlt", { name: "{name}" }),
+  };
 
   return (
     <section className="storybook-page min-h-full">
@@ -176,19 +195,17 @@ export function VisualLibrary({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                Görsel Kütüphanesi
+                {t("libraryTitle")}
               </p>
               <h1 className="mt-2 text-3xl font-extrabold text-on-surface md:text-4xl">
-                Karakter görsellerini yönet
+                {t("manageCharacterVisuals")}
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-on-surface-variant md:text-base md:leading-7">
-                Önce karakterini seç. Karakterin görsel kimliğini ve ona ait
-                hikâyeleri buradan aç; eşya, ortam ve sahne görsellerini ise
-                ilgili hikâyenin kendi görsel çalışma alanında yönet.
+                {t("libraryIntro")}
               </p>
             </div>
             <Link
-              aria-label="Aile evine dön"
+              aria-label={t("returnHome")}
               className="grid size-11 shrink-0 place-items-center rounded-full border border-outline-variant bg-white text-on-surface shadow-sm md:size-auto md:px-4 md:py-3"
               href="/app"
             >
@@ -196,7 +213,7 @@ export function VisualLibrary({
                 arrow_back
               </span>
               <span className="hidden font-extrabold md:inline">
-                Aile evine dön
+                {t("returnHome")}
               </span>
             </Link>
           </div>
@@ -208,13 +225,9 @@ export function VisualLibrary({
               route
             </span>
             <div>
-              <p className="font-extrabold text-on-surface">
-                Yeni görsel akışı
-              </p>
+              <p className="font-extrabold text-on-surface">{t("flowTitle")}</p>
               <p className="mt-1 text-sm leading-6 text-on-surface-variant">
-                Karakter → Hikâyeler → Hikâye Görselleri. Çanta artık ayrı bir
-                alan değildir; ilgili hikâyedeki diğer eşyalar gibi kendi durum
-                görselleriyle yönetilir.
+                {t("flowText")}
               </p>
             </div>
           </div>
@@ -224,14 +237,14 @@ export function VisualLibrary({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                Karakterler
+                {t("characters")}
               </p>
               <h2 className="mt-1 text-2xl font-extrabold text-on-surface">
-                Görsel dünyasını yönetmek istediğin karakteri seç
+                {t("chooseCharacter")}
               </h2>
             </div>
             <span className="w-fit rounded-full bg-surface-container px-3 py-1.5 text-xs font-extrabold text-on-surface-variant">
-              {characters.length} karakter
+              {t("characterCount", { count: characters.length })}
             </span>
           </div>
 
@@ -240,8 +253,10 @@ export function VisualLibrary({
               {characters.map((character) => (
                 <CharacterCard
                   character={character}
+                  copy={copy}
                   householdId={householdId}
                   key={character.id}
+                  typeLabel={t(`characterTypes.${characterTypeKey(character.subtype)}`)}
                 />
               ))}
             </div>
@@ -251,14 +266,13 @@ export function VisualLibrary({
                 person_add
               </span>
               <h3 className="mt-3 text-xl font-extrabold text-on-surface">
-                Henüz karakter yok
+                {t("noCharacterTitle")}
               </h3>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-on-surface-variant">
-                Bir karakter oluşturduğunda görsel kimliği ve hikâyeleri burada
-                kart olarak görünecek.
+                {t("noCharacterText")}
               </p>
               <Link className="storybook-button mt-5" href="/app">
-                Karakter oluştur
+                {t("createCharacter")}
               </Link>
             </div>
           )}
