@@ -1,0 +1,47 @@
+name: Temporary Slice G Prettier Fix
+
+on:
+  push:
+    branches:
+      - agent/visual-library-v3-asset-sheet-planner
+    paths:
+      - .github/workflows/tmp-prettier-slice-g.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/visual-library-v3-asset-sheet-planner
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format Slice G files
+        run: >-
+          pnpm exec prettier --write
+          'apps/web/lib/assets/asset-sheet-image.ts'
+          'apps/web/tests/asset-sheet-image.test.ts'
+          'packages/media/tests/application/asset-sheet-planner.test.ts'
+      - name: Commit formatter output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            'apps/web/lib/assets/asset-sheet-image.ts' \
+            'apps/web/tests/asset-sheet-image.test.ts' \
+            'packages/media/tests/application/asset-sheet-planner.test.ts'
+          if git diff --cached --quiet; then
+            echo "No formatter changes"
+            exit 0
+          fi
+          git commit -m "style: format Slice G asset sheet files"
+          git push origin HEAD:agent/visual-library-v3-asset-sheet-planner
