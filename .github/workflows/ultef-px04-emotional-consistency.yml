@@ -1,7 +1,7 @@
 name: ULTEF PX-04 Emotional Consistency
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 

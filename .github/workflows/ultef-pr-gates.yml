@@ -1,0 +1,192 @@
+name: ULTEF PR Gates
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Gate profile to run
+        required: true
+        default: fast
+        type: choice
+        options:
+          - fast
+          - merge
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ultef-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_pr
+  STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_ultef_pr
+  STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+  LUMI_DEMO_CONFIRM: lumi-demo-v1
+  LUMI_DEMO_PARENT_PASSWORD: lumi-demo-local-only-2026
+  ULTEF_S53_VISUAL_ENABLE: "true"
+  ULTEF_S55_ASSET_ENABLE: "true"
+  ULTEF_S56_IMAGE_ENABLE: "true"
+
+jobs:
+  fast-gate:
+    name: PR Fast Gate
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.profile == 'fast' ||
+      github.event_name == 'pull_request' && github.event.action != 'ready_for_review' && github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_pr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_pr"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Detect impacted ULTEF domains
+        id: impact
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            FILES="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
+          else
+            FILES="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || true)"
+          fi
+          printf '%s\n' "$FILES" | tee /tmp/ultef-changed-files.txt
+
+          flag() {
+            local name="$1"
+            local pattern="$2"
+            if printf '%s\n' "$FILES" | grep -Eq "$pattern"; then
+              echo "$name=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$name=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+
+          flag assets '^(apps/web/app/app/assets/|apps/web/app/api/assets/|apps/web/lib/assets/|packages/media/|packages/profiles/.*(visual|asset)|packages/profiles/migrations/)'
+          flag profiles '^(apps/web/app/app/(page|onboarding)|apps/web/lib/auth/|apps/web/app/api/auth/|packages/profiles/)'
+          flag story '^(packages/story/|packages/simulation/|apps/web/.*story|tooling/ultef/.*(story|continuity))'
+          flag memory_npc '^(packages/npc-intelligence/|services/worker/|apps/web/.*memory|tooling/ultef/.*npc)'
+          flag infra '^(infra/compose/|Dockerfile|docker-compose|\.github/workflows/|scripts/infra-)'
+
+      - name: Prepare canonical schemas when integration domains changed
+        if: >-
+          steps.impact.outputs.assets == 'true' ||
+          steps.impact.outputs.story == 'true' ||
+          steps.impact.outputs.memory_npc == 'true'
+        run: |
+          pnpm --filter @lumi/web auth:migrate
+          pnpm --filter @lumi/profiles profile:migrate
+          pnpm --filter @lumi/world world:migrate
+          pnpm --filter @lumi/npc-intelligence npc:migrate
+          pnpm --filter @lumi/story story:migrate
+          pnpm demo:seed
+
+      - name: Asset and image-generation fast evidence
+        if: steps.impact.outputs.assets == 'true'
+        run: |
+          pnpm --filter @lumi/web exec vitest run tests/ultef-s53-character-visual-canon.integration.test.ts
+          pnpm --filter @lumi/web exec vitest run tests/ultef-s55-generic-asset-management.integration.test.ts
+          pnpm --filter @lumi/web exec vitest run tests/ultef-s56-image-generation-platform.integration.test.ts
+
+      - name: Profile and parent-contract fast evidence
+        if: steps.impact.outputs.profiles == 'true'
+        run: pnpm --filter @lumi/web ultef:s41-parent-home
+
+      - name: Story continuity fast evidence
+        if: steps.impact.outputs.story == 'true'
+        run: |
+          pnpm ultef:px02-character-continuity
+          pnpm ultef:px05-story-consequence
+
+      - name: Memory and NPC fast evidence
+        if: steps.impact.outputs.memory_npc == 'true'
+        run: |
+          pnpm --filter @lumi/web ultef:s44-memory-production
+          pnpm --filter @lumi/web ultef:s45-memory-lifecycle
+          pnpm --filter @lumi/web ultef:s46-memory-story
+          pnpm ultef:px04-emotional-consistency
+
+      - name: Infra fast evidence
+        if: steps.impact.outputs.infra == 'true'
+        working-directory: infra/compose
+        run: docker compose config --quiet
+
+      - name: No specialized ULTEF domain impacted
+        if: >-
+          steps.impact.outputs.assets != 'true' &&
+          steps.impact.outputs.profiles != 'true' &&
+          steps.impact.outputs.story != 'true' &&
+          steps.impact.outputs.memory_npc != 'true' &&
+          steps.impact.outputs.infra != 'true'
+        run: echo "Core CI is sufficient for this change; no specialized ULTEF fast scenario selected."
+
+  merge-gate:
+    name: Merge Gate
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.profile == 'merge' ||
+      github.event_name == 'pull_request' && github.event.action == 'ready_for_review' ||
+      github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ultef:merge-gate' ||
+      github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_ultef_pr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_ultef_pr"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare canonical schemas
+        run: |
+          pnpm --filter @lumi/web auth:migrate
+          pnpm --filter @lumi/profiles profile:migrate
+          pnpm --filter @lumi/world world:migrate
+          pnpm --filter @lumi/npc-intelligence npc:migrate
+          pnpm --filter @lumi/story story:migrate
+      - name: Run broad ULTEF integration gate
+        run: pnpm ultef:integration

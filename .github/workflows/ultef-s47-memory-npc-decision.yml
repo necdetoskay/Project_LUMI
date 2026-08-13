@@ -1,7 +1,7 @@
 name: ULTEF S47 Memory NPC Decision
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 
