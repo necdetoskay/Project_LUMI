@@ -141,7 +141,7 @@ function CharacterCard({
   );
 }
 
-export function VisualLibraryV3({
+export function VisualLibrary({
   householdId,
   characters,
 }: {

@@ -11,7 +11,7 @@ const storyWorkspacePath = path.resolve(
   "../app/app/assets/stories/[sessionId]/page.tsx",
 );
 
-describe("Visual Library v3 story workspace contract", () => {
+describe("Visual Library story workspace contract", () => {
   it("binds character story sessions to story-scoped visual workspaces", () => {
     const source = fs.readFileSync(characterHubPath, "utf8");
     expect(source).toContain("listSessionsForChildProfile");
