@@ -164,3 +164,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Sprint 34 tamamlandı: T01–T06 tüm görevler yeşil (`@lumi/npc-intelligence` 171 unit, `@lumi/web` 152 unit).
 - `pnpm build` + `check-mojibake` green.
 - Kalan backlog: worker/web outbox propagator loop + applicator dispatch + deployment (worker Dockerfile/compose), real `acquireItem` web adapter for `InventoryGrantPort`, generated scene → `advanceSession`/reader wiring + web settings port adapter, template authoring UI/versioning.
+
+### R2 object storage read fallback (2026-08-13, PR #152)
+
+- Kapalı PR #132 (`fix/remote-context-neon-compose`) dalındaki main'e taşınamamış storage fix'leri PR #152 ile main'e alındı.
+- `readCharacterVisual`/`deleteCharacterVisual`: `VISUAL_STORAGE_BUCKET_MISMATCH` sert hatası kaldırıldı; referans edilen bucket'tan okuma, 404 ise güncel bucket + `OBJECT_STORAGE_PUBLIC_URL` public R2 fallback (imzalı S3/R2 yol canon olarak korunur).
+- `/health` dependency health page eklendi; asset content route hatalarda güvenli storage teşhisi döner.
+- Compose web+worker'a `OBJECT_STORAGE_*`/`CLOUDFLARE_R2_BUCKET` env forwarding eklendi; `.env.example` object storage dokümantasyonu.
+- Prettier fix ayrıca doğrudan main'e cherry-pick edildi (`c90ff3f`); `fix/remote-context-neon-compose` ve `fix/storage-r2-read-fallback` dalları silindi. CI main'de green.
