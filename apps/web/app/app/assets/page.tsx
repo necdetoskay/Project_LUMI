@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import {
-  getCharacterVisualCanon,
   getOwnedHousehold,
   listCharactersByHousehold,
 } from "@lumi/profiles/application";
+import { getCharacterVisualPresentationAsset } from "@lumi/profiles/visual-presentation";
 import { getCharacterCurrentLocation } from "@lumi/world/application";
 import { AssetsRuntimeDiagnostics } from "./runtime-diagnostics";
 import { VisualLibrary } from "./visual-library";
@@ -24,8 +24,13 @@ export default async function CharacterVisualLibraryPage() {
   const charactersWithVisuals = household
     ? await Promise.all(
         characters.map(async (character) => {
-          const [canon, currentLocation] = await Promise.all([
-            getCharacterVisualCanon(parent.id, household.id, character.id),
+          const [portraitAsset, currentLocation] = await Promise.all([
+            getCharacterVisualPresentationAsset(
+              parent.id,
+              household.id,
+              character.id,
+              "portrait_primary",
+            ),
             getCharacterCurrentLocation(character.id),
           ]);
           return {
@@ -34,7 +39,7 @@ export default async function CharacterVisualLibraryPage() {
             subtype: character.subtype,
             startingLocation: character.startingLocation,
             currentLocationName: currentLocation?.displayName ?? null,
-            selectedAssetId: canon?.selectedAssetId ?? null,
+            selectedAssetId: portraitAsset?.id ?? null,
           };
         }),
       )
