@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import type { StoryVisualAssetSet } from "../../../domain/story-visual-manifest";
 import type {
@@ -170,6 +170,58 @@ export class DrizzleStoryVisualWorkspaceRepository
       .returning();
 
     return toRender(row!);
+  }
+
+  async updateRender(
+    renderId: string,
+    patch: Parameters<StoryVisualWorkspaceRepositoryPort["updateRender"]>[1],
+  ): Promise<PersistedStoryVisualRender | null> {
+    const [row] = await this.db
+      .update(storyVisualAssetSetRenders)
+      .set({
+        ...(patch.assetId !== undefined ? { assetId: patch.assetId } : {}),
+        ...(patch.status !== undefined ? { status: patch.status } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(storyVisualAssetSetRenders.id, renderId))
+      .returning();
+
+    return row ? toRender(row) : null;
+  }
+
+  async findReusableRender(
+    renderFingerprint: string,
+    scope: Parameters<
+      StoryVisualWorkspaceRepositoryPort["findReusableRender"]
+    >[1],
+  ): Promise<PersistedStoryVisualRender | null> {
+    const assetSetRows = await this.db
+      .select({ id: storyVisualAssetSets.id })
+      .from(storyVisualAssetSets)
+      .where(
+        and(
+          eq(storyVisualAssetSets.householdId, scope.householdId),
+          eq(storyVisualAssetSets.childProfileId, scope.childProfileId),
+          eq(storyVisualAssetSets.worldId, scope.worldId),
+        ),
+      );
+    const assetSetIds = assetSetRows.map((row) => row.id);
+    if (assetSetIds.length === 0) return null;
+
+    const [row] = await this.db
+      .select()
+      .from(storyVisualAssetSetRenders)
+      .where(
+        and(
+          inArray(storyVisualAssetSetRenders.assetSetId, assetSetIds),
+          eq(storyVisualAssetSetRenders.renderFingerprint, renderFingerprint),
+          inArray(storyVisualAssetSetRenders.status, ["ready", "reused"]),
+        ),
+      )
+      .orderBy(desc(storyVisualAssetSetRenders.updatedAt))
+      .limit(1);
+
+    return row?.assetId ? toRender(row) : null;
   }
 
   async listRenders(assetSetId: string): Promise<PersistedStoryVisualRender[]> {

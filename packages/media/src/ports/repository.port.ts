@@ -103,5 +103,18 @@ export interface StoryVisualWorkspaceRepositoryPort {
     render: Omit<PersistedStoryVisualRender, "createdAt" | "updatedAt">,
   ): Promise<PersistedStoryVisualRender>;
 
+  updateRender(
+    renderId: string,
+    patch: {
+      assetId?: string | null;
+      status?: StoryVisualRenderStatus;
+    },
+  ): Promise<PersistedStoryVisualRender | null>;
+
+  findReusableRender(
+    renderFingerprint: string,
+    scope: AssetScope,
+  ): Promise<PersistedStoryVisualRender | null>;
+
   listRenders(assetSetId: string): Promise<PersistedStoryVisualRender[]>;
 }
