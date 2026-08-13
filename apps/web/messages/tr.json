@@ -84,5 +84,44 @@
     "nextStepSetup": "Evren ve profil oluşturma tamamlandığında karakter ve hikâye hazırlığına geçebilirsiniz.",
     "continueWithProfile": "Profille devam et",
     "continueSetup": "Kuruluma devam et"
+  },
+  "assets": {
+    "libraryTitle": "Görsel Kütüphanesi",
+    "manageCharacterVisuals": "Karakter görsellerini yönet",
+    "libraryIntro": "Önce karakterini seç. Karakterin görsel kimliğini ve ona ait hikâyeleri buradan aç; eşya, ortam ve sahne görsellerini ilgili hikâyenin kendi görsel çalışma alanında yönet.",
+    "returnHome": "Aile evine dön",
+    "flowTitle": "Görsel akış",
+    "flowText": "Karakter → Hikâyeler → Hikâye Görselleri. Eşyalar, ortamlar ve sahneler ilgili hikâyenin kendi çalışma alanında yönetilir.",
+    "characters": "Karakterler",
+    "chooseCharacter": "Görsel dünyasını yönetmek istediğin karakteri seç",
+    "characterCount": "{count} karakter",
+    "noHouseholdText": "Önce aile alanınızı oluşturun; karakter ve hikâye görselleriniz daha sonra burada toplanacak.",
+    "prepareHousehold": "Aile alanını hazırla",
+    "noCharacterTitle": "Henüz karakter yok",
+    "noCharacterText": "Bir karakter oluşturduğunda görsel kimliği ve hikâyeleri burada kart olarak görünecek.",
+    "createCharacter": "Karakter oluştur",
+    "location": "Konum",
+    "locationPending": "Konum bilgisi hazırlanıyor",
+    "story": "Hikâye",
+    "appearance": "Görünüm",
+    "status": "Durum",
+    "selectedImageAlt": "{name} seçili karakter görseli",
+    "characterTypes": {
+      "child": "Çocuk karakter",
+      "human": "İnsan karakter",
+      "animal": "Hayvan karakter",
+      "fantasy": "Fantastik karakter",
+      "generic": "Karakter"
+    },
+    "detail": {
+      "hubTitle": "Karakter Görsel Merkezi",
+      "back": "Görsel Kütüphanesine dön",
+      "location": "Konum",
+      "locationPending": "Konum bilgisi hazırlanıyor",
+      "story": "Hikâye",
+      "appearance": "Görünüm",
+      "visualIdentity": "Görsel kimlik",
+      "selectedImageAlt": "{name} seçili karakter görseli"
+    }
   }
 }

@@ -11,6 +11,7 @@ import {
   getSessionPlaybackState,
   listSessionsForChildProfile,
 } from "@lumi/story/application";
+import { CharacterIdentityHeaderServer } from "../character-identity-header.server";
 import { CharacterVisualManager } from "./character-visual-manager";
 
 function sessionStatusLabel(status: string) {
@@ -73,58 +74,12 @@ export default async function CharacterVisualHubPage({
           </Link>
         </div>
 
-        <header className="overflow-hidden rounded-[1.6rem] border border-outline-variant/70 bg-white/90 shadow-sm md:rounded-[2rem]">
-          <div className="grid md:grid-cols-[300px_1fr]">
-            <div className="grid min-h-72 place-items-center bg-gradient-to-br from-primary-fixed/70 via-surface-container-low to-tertiary-fixed/50 p-8">
-              <div className="grid size-36 place-items-center rounded-full border border-white/70 bg-white/75 shadow-sm">
-                <span className="material-symbols-outlined text-7xl text-primary">
-                  person
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 md:p-8">
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-                Character Visual Hub
-              </p>
-              <h1 className="mt-2 text-3xl font-extrabold text-on-surface md:text-4xl">
-                {character.name}
-              </h1>
-              <p className="mt-2 font-bold text-on-surface-variant">
-                {character.subtype || "Karakter"}
-              </p>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-on-surface-variant">
-                {character.originConcept ||
-                  "Bu karakterin temel görsel kimliği, görünüm varyantları ve hikâyelere bağlı görsel setleri burada yönetilecek."}
-              </p>
-
-              <div className="mt-6 grid grid-cols-3 gap-3 sm:max-w-xl">
-                <div className="rounded-2xl bg-surface-container-low p-4">
-                  <p className="text-2xl font-black text-on-surface">
-                    {storyCards.length}
-                  </p>
-                  <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                    Hikâye
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-surface-container-low p-4">
-                  <p className="text-2xl font-black text-on-surface">—</p>
-                  <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                    Outfit
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-surface-container-low p-4">
-                  <span className="material-symbols-outlined text-2xl text-primary">
-                    photo_library
-                  </span>
-                  <p className="mt-1 text-xs font-bold text-on-surface-variant">
-                    Görsel kimlik
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <CharacterIdentityHeaderServer
+          character={character}
+          householdId={household.id}
+          parentId={parent.id}
+          storyCount={storyCards.length}
+        />
 
         <section className="rounded-[1.5rem] border border-outline-variant/70 bg-white/90 p-5 shadow-sm md:p-6">
           <CharacterVisualManager

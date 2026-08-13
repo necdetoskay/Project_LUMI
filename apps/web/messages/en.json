@@ -84,5 +84,44 @@
     "nextStepSetup": "Once universe and profile setup are complete, you can move on to character and story preparation.",
     "continueWithProfile": "Continue with profile",
     "continueSetup": "Continue setup"
+  },
+  "assets": {
+    "libraryTitle": "Visual Library",
+    "manageCharacterVisuals": "Manage character visuals",
+    "libraryIntro": "Choose a character first. Open the character's visual identity and stories here; manage item, environment, and scene visuals inside each story's own visual workspace.",
+    "returnHome": "Return to family home",
+    "flowTitle": "Visual flow",
+    "flowText": "Character → Stories → Story Visuals. Items, environments, and scenes are managed in the related story workspace.",
+    "characters": "Characters",
+    "chooseCharacter": "Choose the character whose visual world you want to manage",
+    "characterCount": "{count} characters",
+    "noHouseholdText": "Create your family space first; character and story visuals will then be collected here.",
+    "prepareHousehold": "Prepare family space",
+    "noCharacterTitle": "No characters yet",
+    "noCharacterText": "When you create a character, its visual identity and stories will appear here as a card.",
+    "createCharacter": "Create character",
+    "location": "Location",
+    "locationPending": "Location is being prepared",
+    "story": "Story",
+    "appearance": "Appearance",
+    "status": "Status",
+    "selectedImageAlt": "Selected character image for {name}",
+    "characterTypes": {
+      "child": "Child character",
+      "human": "Human character",
+      "animal": "Animal character",
+      "fantasy": "Fantasy character",
+      "generic": "Character"
+    },
+    "detail": {
+      "hubTitle": "Character Visual Center",
+      "back": "Return to Visual Library",
+      "location": "Location",
+      "locationPending": "Location is being prepared",
+      "story": "Story",
+      "appearance": "Appearance",
+      "visualIdentity": "Visual identity",
+      "selectedImageAlt": "Selected character image for {name}"
+    }
   }
 }
