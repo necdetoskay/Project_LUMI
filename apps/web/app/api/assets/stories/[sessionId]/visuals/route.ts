@@ -46,12 +46,18 @@ export async function POST(
       const action = inputSchema.parse(await request.json());
       const household = await getOwnedHousehold(parent.id);
       if (!household) {
-        return NextResponse.json({ error: "HOUSEHOLD_NOT_FOUND" }, { status: 404 });
+        return NextResponse.json(
+          { error: "HOUSEHOLD_NOT_FOUND" },
+          { status: 404 },
+        );
       }
 
       const session = await getSessionById(sessionId);
       if (!session || session.householdId !== household.id) {
-        return NextResponse.json({ error: "STORY_SESSION_FORBIDDEN" }, { status: 403 });
+        return NextResponse.json(
+          { error: "STORY_SESSION_FORBIDDEN" },
+          { status: 403 },
+        );
       }
 
       const scope = {
@@ -59,7 +65,9 @@ export async function POST(
         childProfileId: session.childProfileId,
         worldId: session.worldId,
       };
-      const repository = new DrizzleStoryVisualWorkspaceRepository(getMediaDb());
+      const repository = new DrizzleStoryVisualWorkspaceRepository(
+        getMediaDb(),
+      );
       let storyId = session.id;
       let workspace = await loadStoryVisualWorkspace({
         repository,

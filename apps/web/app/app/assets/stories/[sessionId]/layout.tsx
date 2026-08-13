@@ -24,7 +24,9 @@ export default async function StoryVisualWorkspaceLayout({
               Eksikleri üret veya hikâye stilini değiştir.
             </p>
           </div>
-          <span className="material-symbols-outlined text-primary">palette</span>
+          <span className="material-symbols-outlined text-primary">
+            palette
+          </span>
         </div>
         <StoryVisualActions sessionId={sessionId} />
       </aside>

@@ -91,7 +91,10 @@ class MemoryRepository implements StoryVisualWorkspaceRepositoryPort {
   }
   async updateRender(
     renderId: string,
-    patch: { assetId?: string | null; status?: PersistedStoryVisualRender["status"] },
+    patch: {
+      assetId?: string | null;
+      status?: PersistedStoryVisualRender["status"];
+    },
   ) {
     const render = this.renders.find((entry) => entry.id === renderId);
     if (!render) return null;

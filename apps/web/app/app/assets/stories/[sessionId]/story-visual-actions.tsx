@@ -23,12 +23,14 @@ export function StoryVisualActions({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<"generate" | "style" | null>(null);
-  const [styleId, setStyleId] = useState<(typeof styles)[number][0]>(
-    "lumi-storybook",
-  );
+  const [styleId, setStyleId] =
+    useState<(typeof styles)[number][0]>("lumi-storybook");
   const [message, setMessage] = useState<string | null>(null);
 
-  async function run(body: Record<string, unknown>, kind: "generate" | "style") {
+  async function run(
+    body: Record<string, unknown>,
+    kind: "generate" | "style",
+  ) {
     setPending(kind);
     setMessage(null);
     try {
@@ -58,7 +60,9 @@ export function StoryVisualActions({
       }
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "İşlem başarısız oldu");
+      setMessage(
+        error instanceof Error ? error.message : "İşlem başarısız oldu",
+      );
     } finally {
       setPending(null);
     }
@@ -101,7 +105,9 @@ export function StoryVisualActions({
           onClick={() => run({ action: "change-style", styleId }, "style")}
           type="button"
         >
-          {pending === "style" ? "Stil değiştiriliyor…" : "Görsel stilini değiştir"}
+          {pending === "style"
+            ? "Stil değiştiriliyor…"
+            : "Görsel stilini değiştir"}
         </button>
       </div>
 

@@ -1,5 +1,8 @@
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
-import type { StoryVisualGenerationJob, StoryVisualGenerationPort } from "@lumi/media/application";
+import type {
+  StoryVisualGenerationJob,
+  StoryVisualGenerationPort,
+} from "@lumi/media/application";
 import {
   getOwnedHousehold,
   registerManagedAssetMetadata,

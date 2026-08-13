@@ -98,9 +98,7 @@ function entityPrompt(
     `NAME: ${entity.identity.displayName}`,
     `CATEGORY: ${entity.identity.category}`,
     ...entity.identity.identityTraits,
-    ...(variant
-      ? [`VARIANT: ${variant.label}`, ...variant.traits]
-      : []),
+    ...(variant ? [`VARIANT: ${variant.label}`, ...variant.traits] : []),
     ...(state ? [`STATE: ${state.label}`] : []),
   ];
 
