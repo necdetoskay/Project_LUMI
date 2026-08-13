@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { getCharacterVisualCanon } from "@lumi/profiles/application";
+import { getCharacterVisualPresentationAsset } from "@lumi/profiles/visual-presentation";
 import { getCharacterCurrentLocation } from "@lumi/world/application";
 import { CharacterIdentityHeader } from "./character-identity-header";
 
@@ -35,8 +35,13 @@ export async function CharacterIdentityHeaderServer({
   };
   storyCount: number;
 }) {
-  const [canon, currentLocation, t] = await Promise.all([
-    getCharacterVisualCanon(parentId, householdId, character.id),
+  const [fullBodyAsset, currentLocation, t] = await Promise.all([
+    getCharacterVisualPresentationAsset(
+      parentId,
+      householdId,
+      character.id,
+      "full_body_front",
+    ),
     getCharacterCurrentLocation(character.id),
     getTranslations("assets"),
   ]);
@@ -50,15 +55,15 @@ export async function CharacterIdentityHeaderServer({
     currentLocation?.displayName?.trim() ||
     (hasSafeStartingLocation ? startingLocation : null) ||
     t("detail.locationPending");
-  const selectedImageUrl = canon?.selectedAssetId
-    ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(canon.selectedAssetId)}?householdId=${encodeURIComponent(householdId)}`
+  const selectedImageUrl = fullBodyAsset
+    ? `/api/assets/characters/${encodeURIComponent(character.id)}/content/${encodeURIComponent(fullBodyAsset.id)}?householdId=${encodeURIComponent(householdId)}`
     : null;
 
   console.warn("[LUMI_ASSETS_SERVER]", {
     marker: "assets-runtime-diag-2026-08-13-v1",
     route: "/app/assets/characters/[characterId]::identity-header",
     characterTypeKey: typeKey(character.subtype),
-    hasSelectedAsset: Boolean(canon?.selectedAssetId),
+    hasSelectedAsset: Boolean(fullBodyAsset),
     hasCanonicalLocation,
     hasSafeStartingLocation,
     storyCount,
