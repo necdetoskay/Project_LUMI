@@ -1,7 +1,7 @@
 name: ULTEF S45 Memory Lifecycle
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 

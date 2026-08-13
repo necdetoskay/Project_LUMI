@@ -1,7 +1,7 @@
 name: ULTEF S51 Demo Manifest
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 

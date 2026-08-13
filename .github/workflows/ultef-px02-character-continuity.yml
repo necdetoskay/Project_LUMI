@@ -1,7 +1,7 @@
 name: ULTEF PX-02 Character Continuity
 
 on:
-  pull_request:
+  push:
     branches: [main]
   workflow_dispatch:
 
