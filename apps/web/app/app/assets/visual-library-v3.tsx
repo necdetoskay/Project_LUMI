@@ -19,12 +19,16 @@ const TURKISH_CHARACTER_TYPES: Record<string, string> = {
 
 function localizeCharacterType(subtype: string) {
   const normalized = subtype.trim().toLocaleLowerCase("tr-TR");
-  return TURKISH_CHARACTER_TYPES[normalized] ?? subtype.trim() ?? "Karakter";
+  return (
+    TURKISH_CHARACTER_TYPES[normalized] ?? subtype.trim() ?? "Karakter"
+  );
 }
 
 function localizeCharacterSummary(originConcept: string, subtype: string) {
   const value = originConcept?.trim();
-  if (!value) return `${localizeCharacterType(subtype)} için görsel kimlik oluşturuluyor.`;
+  if (!value) {
+    return `${localizeCharacterType(subtype)} için görsel kimlik oluşturuluyor.`;
+  }
 
   return value
     .replace(/\bchild\b/gi, "çocuk")
