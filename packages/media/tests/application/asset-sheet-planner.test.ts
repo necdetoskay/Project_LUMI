@@ -67,9 +67,7 @@ describe("story visual asset sheet planner", () => {
     expect(plans).toHaveLength(2);
     expect(plans[0]?.compatibilityKey).toBe("item:item-icon");
     expect(plans[0]?.cells).toHaveLength(2);
-    expect(plans[1]?.compatibilityKey).toBe(
-      "environment:environment-render",
-    );
+    expect(plans[1]?.compatibilityKey).toBe("environment:environment-render");
     expect(plans[1]?.cells).toHaveLength(3);
     expect(plans.flatMap((plan) => plan.cells)).not.toEqual(
       expect.arrayContaining([

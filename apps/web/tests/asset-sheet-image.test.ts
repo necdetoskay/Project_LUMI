@@ -55,9 +55,9 @@ describe("asset sheet image splitter", () => {
     });
 
     expect(tiles).toHaveLength(4);
-    expect(tiles.every((tile) => tile.width === 300 && tile.height === 300)).toBe(
-      true,
-    );
+    expect(
+      tiles.every((tile) => tile.width === 300 && tile.height === 300),
+    ).toBe(true);
 
     const expected = [
       [255, 0, 0],

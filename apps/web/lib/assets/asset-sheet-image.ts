@@ -108,8 +108,7 @@ export function splitAssetSheetImage(input: {
   mimeType: string;
 }): SplitAssetSheetTile[] {
   const source = decodeImage(input.bytesBase64, input.mimeType);
-  const mimeType =
-    input.mimeType === "image/png" ? "image/png" : "image/jpeg";
+  const mimeType = input.mimeType === "image/png" ? "image/png" : "image/jpeg";
   const cellWidth = Math.floor(source.width / input.plan.columns);
   const cellHeight = Math.floor(source.height / input.plan.rows);
   if (cellWidth < 1 || cellHeight < 1) {
