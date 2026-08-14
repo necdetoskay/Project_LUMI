@@ -35,6 +35,16 @@ export type {
   UpdateChildPersonalizationInput,
 } from "./child-profile-personalization.service";
 export {
+  buildGenerationContext,
+} from "./generation-context.service";
+export type {
+  BuildGenerationContextInput,
+  GenerationContext,
+  GenerationContextProfile,
+  GenerationChildContext,
+  GenerationCreationContext,
+} from "./generation-context.service";
+export {
   getPolicy,
   updatePolicy,
   appendPolicyAudit,
