@@ -42,7 +42,10 @@ describe("CharacterTypeStepClient", () => {
     expect(screen.getByRole("button", { name: /Hayvan/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Fantastik/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Sentetik/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Devam et/ })).toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: /Devam et/ }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
 
     await waitFor(() => {
       expect(screen.getByText("Lina")).toBeTruthy();
@@ -57,7 +60,10 @@ describe("CharacterTypeStepClient", () => {
 
     fireEvent.click(human);
     expect(human.getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("button", { name: /Devam et/ })).not.toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: /Devam et/ }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
 
     fireEvent.click(fantastic);
     expect(human.getAttribute("aria-pressed")).toBe("false");
@@ -89,9 +95,14 @@ describe("CharacterTypeStepClient", () => {
   it("exposes the current step for assistive technology and a dashboard cancel link", () => {
     render(<CharacterTypeStepClient childProfileId="profile-1" />);
 
-    expect(screen.getByText("Karakter Tipi").closest("li")?.getAttribute("aria-current")).toBe("step");
-    expect(screen.getByRole("link", { name: "Vazgeç" }).getAttribute("href")).toBe(
-      "/app/profiles/profile-1",
-    );
+    expect(
+      screen
+        .getByText("Karakter Tipi")
+        .closest("li")
+        ?.getAttribute("aria-current"),
+    ).toBe("step");
+    expect(
+      screen.getByRole("link", { name: "Vazgeç" }).getAttribute("href"),
+    ).toBe("/app/profiles/profile-1");
   });
 });
