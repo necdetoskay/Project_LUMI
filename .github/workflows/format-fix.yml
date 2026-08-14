@@ -37,9 +37,6 @@ jobs:
       - name: Format repository
         run: pnpm exec prettier --write .
 
-      - name: Verify formatting
-        run: pnpm format:check
-
       - name: Commit formatting changes
         shell: bash
         run: |
@@ -52,3 +49,6 @@ jobs:
           git add .
           git commit -m "chore: format repository with prettier"
           git push origin HEAD:${{ inputs.branch }}
+
+      - name: Verify formatting
+        run: pnpm format:check
