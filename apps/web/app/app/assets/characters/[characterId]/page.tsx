@@ -102,6 +102,10 @@ export default async function CharacterVisualHubPage({
           <CharacterVisualManager
             characterId={character.id}
             characterName={character.name}
+            characterSummary={
+              character.originConcept?.trim() ||
+              `${character.name} için otomatik karakter özeti hazırlanıyor.`
+            }
             householdId={household.id}
           />
         </section>

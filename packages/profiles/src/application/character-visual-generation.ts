@@ -10,6 +10,11 @@ export type CharacterVisualGenerationRequest = {
   resolution: "1K";
 };
 
+export type CharacterVisualBagItem = {
+  id: string;
+  displayName: string;
+};
+
 export const CHARACTER_VISUAL_VARIANTS = [
   "body-front",
   "body-three-quarter",
@@ -58,6 +63,7 @@ export type CharacterVisualStorageInput = {
 
 export interface CharacterVisualStoragePort {
   store(input: CharacterVisualStorageInput): Promise<{ storageRef: string }>;
+  delete?(storageRef: string): Promise<void>;
 }
 
 export type CharacterVisualDerivative = {
@@ -79,6 +85,7 @@ export interface CharacterVisualDerivativePort {
 export function renderCharacterVisualPrompt(
   brief: CharacterVisualBrief,
   mode: "portrait" | "reference-sheet" = "portrait",
+  options?: { bagItems?: CharacterVisualBagItem[] },
 ): string {
   const preferences = Object.keys(brief.preferenceHints).length
     ? ` Visual preference hints: ${JSON.stringify(brief.preferenceHints)}.`
@@ -101,5 +108,10 @@ export function renderCharacterVisualPrompt(
     composition,
     `Prioritize stable identity features that can be reused in later scenes. Avoid text, logos, watermarks, horror, violence, sexualized styling, or age-inappropriate presentation.`,
     `Safety constraints: ${JSON.stringify(brief.safetyConstraints)}.${preferences}`,
+    ...(options?.bagItems?.length
+      ? [
+          `Character bag items to include naturally in the reference sheet: ${options.bagItems.map((item) => item.displayName).join(", ")}. Keep these items recognizable and consistent across views without adding extra props.`,
+        ]
+      : []),
   ].join(" ");
 }

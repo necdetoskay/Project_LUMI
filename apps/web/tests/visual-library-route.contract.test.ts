@@ -38,5 +38,10 @@ describe("Visual Library canonical route contract", () => {
     expect(routeSource).toContain('action: z.literal("commit")');
     expect(routeSource).toContain("previewCharacterVisualCandidates");
     expect(routeSource).toContain("commitCharacterVisualPreview");
+    expect(managerSource).toContain("styleInfoOpen");
+    expect(managerSource).toContain("selectedBagItemIds");
+    expect(managerSource).toContain("setGenerationOpen(true)");
+    expect(routeSource).toContain("listInventory");
+    expect(routeSource).toContain("bagItemIds");
   });
 });

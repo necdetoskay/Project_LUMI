@@ -101,6 +101,7 @@ export {
 } from "./character-visual-generation";
 export type {
   CharacterVisualDerivative,
+  CharacterVisualBagItem,
   CharacterVisualDerivativePort,
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,

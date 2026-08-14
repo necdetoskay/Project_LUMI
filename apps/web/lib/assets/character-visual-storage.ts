@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 
 import type { CharacterVisualStoragePort } from "@lumi/profiles/application";
@@ -137,6 +137,19 @@ export class LocalCharacterVisualStorageAdapter
     await writeFile(absolute, Buffer.from(input.bytesBase64, "base64"));
     return { storageRef: `${LOCAL_STORAGE_PREFIX}${relative}` };
   }
+
+  async delete(storageRef: string): Promise<void> {
+    if (!storageRef.startsWith(LOCAL_STORAGE_PREFIX)) return;
+    const relative = storageRef.slice(LOCAL_STORAGE_PREFIX.length);
+    const root = storageRoot();
+    const absolute = resolve(root, relative);
+    if (absolute !== root && !absolute.startsWith(`${root}${sep}`)) {
+      throw new Error("INVALID_VISUAL_STORAGE_REF");
+    }
+    await unlink(absolute).catch((error: unknown) => {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    });
+  }
 }
 
 export class S3CompatibleCharacterVisualStorageAdapter
@@ -157,6 +170,10 @@ export class S3CompatibleCharacterVisualStorageAdapter
     return {
       storageRef: `${S3_STORAGE_PREFIX}${encodeURIComponent(this.config.bucket)}/${key}`,
     };
+  }
+
+  async delete(storageRef: string): Promise<void> {
+    await deleteCharacterVisual(storageRef);
   }
 }
 

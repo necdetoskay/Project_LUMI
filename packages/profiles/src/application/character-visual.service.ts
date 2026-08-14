@@ -17,6 +17,7 @@ import {
   renderCharacterVisualPrompt,
   type CharacterVisualGenerationPort,
   type CharacterVisualDerivativePort,
+  type CharacterVisualBagItem,
   type CharacterVisualStoragePort,
   type GeneratedImageCandidate,
 } from "./character-visual-generation";
@@ -29,12 +30,13 @@ export type GenerateCharacterVisualInput = {
   candidateCount?: number;
   aspectRatio?: "1:1" | "4:3" | "3:2" | "16:9" | "4:5" | "2:3" | "9:16";
   mode?: "portrait" | "reference-sheet";
+  bagItems?: CharacterVisualBagItem[];
 };
 
 export type PreviewCharacterVisualInput = Omit<
   GenerateCharacterVisualInput,
   "idempotencyKey"
->;
+> & { bagItems?: CharacterVisualBagItem[] };
 
 export type CommitCharacterVisualPreviewInput = GenerateCharacterVisualInput & {
   preview: CharacterVisualPreview;
@@ -54,6 +56,7 @@ export type CharacterVisualPreview = {
   model: string;
   providerRequestId?: string;
   candidates: GeneratedImageCandidate[];
+  bagItems?: CharacterVisualBagItem[];
   usageMetadata?: Record<string, unknown>;
   costMetadata?: Record<string, unknown>;
 };
@@ -183,7 +186,11 @@ export async function previewCharacterVisualCandidates(
   const generated = await deps.generationPort.generate({
     jobId: `preview-${crypto.randomUUID()}`,
     brief,
-    prompt: renderCharacterVisualPrompt(brief, input.mode),
+    prompt: renderCharacterVisualPrompt(
+      brief,
+      input.mode,
+      input.bagItems ? { bagItems: input.bagItems } : {},
+    ),
     model,
     candidateCount,
     aspectRatio:
@@ -205,6 +212,7 @@ export async function previewCharacterVisualCandidates(
       ? { providerRequestId: generated.providerRequestId }
       : {}),
     candidates: generated.candidates,
+    ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
     ...(generated.usageMetadata
       ? { usageMetadata: generated.usageMetadata }
       : {}),
@@ -277,7 +285,11 @@ export async function generateCharacterVisualCandidates(
     const generated = await deps.generationPort.generate({
       jobId,
       brief,
-      prompt: renderCharacterVisualPrompt(brief, input.mode),
+      prompt: renderCharacterVisualPrompt(
+        brief,
+        input.mode,
+        input.bagItems ? { bagItems: input.bagItems } : {},
+      ),
       model,
       candidateCount,
       aspectRatio:
@@ -522,6 +534,7 @@ export async function commitCharacterVisualPreview(
         crop: Record<string, number>;
       }>;
     }> = [];
+    const compositeStorageRefsToDelete: string[] = [];
 
     for (const candidate of input.preview.candidates) {
       const stored = await deps.storagePort.store({
@@ -560,6 +573,9 @@ export async function commitCharacterVisualPreview(
         });
       }
       persisted.push({ candidate, stored, derivatives: storedDerivatives });
+      if (input.mode === "reference-sheet" && storedDerivatives.length > 0) {
+        compositeStorageRefsToDelete.push(stored.storageRef);
+      }
     }
 
     await db.transaction(async (tx) => {
@@ -592,6 +608,7 @@ export async function commitCharacterVisualPreview(
             previewId: input.preview.previewId,
             providerRequestId: input.preview.providerRequestId ?? null,
             providerMetadata: candidate.providerMetadata ?? {},
+            ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
           },
         });
         for (const derivative of derivatives) {
@@ -617,8 +634,19 @@ export async function commitCharacterVisualPreview(
               previewId: input.preview.previewId,
               sourceCompositeAssetId,
               derivation: "deterministic-seven-view-crop-v2",
+              ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
             },
           });
+        }
+        if (input.mode === "reference-sheet" && derivatives.length > 0) {
+          await tx
+            .update(characterVisualAssets)
+            .set({
+              lifecycleState: "archived",
+              deletedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(characterVisualAssets.id, sourceCompositeAssetId));
         }
       }
       await tx
@@ -641,6 +669,13 @@ export async function commitCharacterVisualPreview(
         })
         .where(eq(characterVisualGenerationJobs.id, jobId));
     });
+    if (deps.storagePort.delete) {
+      await Promise.all(
+        compositeStorageRefsToDelete.map((storageRef) =>
+          deps.storagePort.delete!(storageRef),
+        ),
+      );
+    }
   } catch (error) {
     await db
       .update(characterVisualGenerationJobs)
@@ -836,8 +871,13 @@ export async function deleteCharacterVisualVariant(
     )
     .limit(1);
   if (!asset) throw new Error("VISUAL_ASSET_NOT_FOUND");
-  if (!asset.sourceCompositeAssetId) {
-    throw new Error("VISUAL_SOURCE_ASSET_NOT_DELETABLE");
+  const currentCanon = await getCharacterVisualCanon(
+    userId,
+    householdId,
+    characterId,
+  );
+  if (currentCanon?.selectedAssetId === assetId) {
+    throw new Error("CANNOT_DELETE_ACTIVE_CANON");
   }
   if (asset.deletedAt) return asset;
 

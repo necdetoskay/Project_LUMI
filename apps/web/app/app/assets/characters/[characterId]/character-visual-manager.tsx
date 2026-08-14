@@ -45,18 +45,23 @@ type VisualPreview = {
   model: string;
   providerRequestId?: string;
   candidates: VisualPreviewCandidate[];
+  bagItems?: Array<{ id: string; displayName: string }>;
   usageMetadata?: Record<string, unknown>;
   costMetadata?: Record<string, unknown>;
 };
+
+type BagItem = { id: string; displayName: string };
 
 export function CharacterVisualManager({
   householdId,
   characterId,
   characterName,
+  characterSummary,
 }: {
   householdId: string;
   characterId: string;
   characterName: string;
+  characterSummary: string;
 }) {
   const [state, setState] = useState<LibraryResponse>({
     canon: null,
@@ -71,6 +76,10 @@ export function CharacterVisualManager({
     null,
   );
   const [preview, setPreview] = useState<VisualPreview | null>(null);
+  const [generationOpen, setGenerationOpen] = useState(false);
+  const [styleInfoOpen, setStyleInfoOpen] = useState(false);
+  const [bagItems, setBagItems] = useState<BagItem[]>([]);
+  const [selectedBagItemIds, setSelectedBagItemIds] = useState<string[]>([]);
 
   const endpoint = `/api/assets/characters/${encodeURIComponent(characterId)}?householdId=${encodeURIComponent(householdId)}`;
 
@@ -103,6 +112,18 @@ export function CharacterVisualManager({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    void fetch(
+      `/api/inventory/list?householdId=${encodeURIComponent(householdId)}&ownerType=character&ownerId=${encodeURIComponent(characterId)}`,
+      { cache: "no-store" },
+    )
+      .then((response) => response.json())
+      .then((payload: { items?: BagItem[] }) =>
+        setBagItems(payload.items ?? []),
+      )
+      .catch(() => setBagItems([]));
+  }, [characterId, householdId]);
 
   const canonicalCandidate = useMemo(
     () =>
@@ -155,6 +176,7 @@ export function CharacterVisualManager({
           candidateCount,
           aspectRatio: "3:2",
           mode: "reference-sheet",
+          bagItemIds: selectedBagItemIds,
         }),
       });
       const payload = (await response.json()) as {
@@ -188,6 +210,7 @@ export function CharacterVisualManager({
           aspectRatio: "3:2",
           mode: "reference-sheet",
           preview,
+          bagItemIds: selectedBagItemIds,
         }),
       });
       const payload = (await response.json()) as { error?: string };
@@ -196,6 +219,7 @@ export function CharacterVisualManager({
       }
       const committedCount = preview.candidates.length;
       setPreview(null);
+      setGenerationOpen(false);
       await refresh();
       setMessage(`${committedCount} yeni karakter görseli hazırlandı.`);
     } catch (error) {
@@ -253,7 +277,7 @@ export function CharacterVisualManager({
           <button
             className="storybook-button"
             disabled={busy === "generate" || busy === "commit"}
-            onClick={() => void generatePreview()}
+            onClick={() => setGenerationOpen(true)}
             type="button"
           >
             {busy === "generate" ? "Üretiliyor..." : "Yeni aday üret"}
@@ -360,6 +384,18 @@ export function CharacterVisualManager({
                           CANON
                         </span>
                       ) : null}
+                      <button
+                        aria-label="Adayı sil"
+                        className="absolute left-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-on-surface shadow"
+                        disabled={busy === "delete"}
+                        onClick={() => setPendingDelete(candidate)}
+                        title="Adayı sil"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-base">
+                          delete
+                        </span>
+                      </button>
                     </div>
                     <div className="p-3">
                       <p className="truncate text-xs font-bold text-on-surface-variant">
@@ -437,6 +473,139 @@ export function CharacterVisualManager({
         ) : null}
       </section>
 
+      {generationOpen && !preview ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-6"
+          role="dialog"
+        >
+          <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-extrabold uppercase text-primary">
+                  Yeni görsel üret
+                </p>
+                <h3 className="mt-1 text-xl font-extrabold text-on-surface">
+                  {characterName} için aday sheet
+                </h3>
+              </div>
+              <button
+                aria-label="Üretim penceresini kapat"
+                className="grid size-9 place-items-center rounded-full bg-surface-container text-on-surface"
+                onClick={() => setGenerationOpen(false)}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-base">
+                  close
+                </span>
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-surface-container-low p-4">
+              <p className="text-sm font-extrabold text-on-surface">
+                Karakter hakkında
+              </p>
+              <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                {characterSummary}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-outline-variant p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold text-on-surface">
+                    Görsel stili
+                  </p>
+                  <p className="mt-1 text-xs text-on-surface-variant">
+                    LUMI hikâye illüstrasyonu
+                  </p>
+                </div>
+                <button
+                  aria-label="Stil örneğini göster"
+                  className="grid size-9 place-items-center rounded-full bg-primary-fixed text-primary"
+                  onClick={() => setStyleInfoOpen((value) => !value)}
+                  title="Stil örneğini göster"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-base">
+                    info
+                  </span>
+                </button>
+              </div>
+              {styleInfoOpen ? (
+                <div className="mt-3 rounded-xl bg-surface-container-low p-3 text-xs leading-5 text-on-surface-variant">
+                  Karakteri her görünümde tutarlı tutan, sıcak ve detaylı çocuk
+                  hikâyesi illüstrasyonu. Diğer stiller ileride ücretli seçenek
+                  olarak eklenebilir.
+                </div>
+              ) : null}
+            </div>
+
+            {bagItems.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-outline-variant p-4">
+                <label className="flex items-center gap-3 text-sm font-extrabold text-on-surface">
+                  <input
+                    checked={selectedBagItemIds.length > 0}
+                    className="size-4 accent-primary"
+                    onChange={(event) =>
+                      setSelectedBagItemIds(
+                        event.target.checked
+                          ? bagItems.map((item) => item.id)
+                          : [],
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  Çantadaki ürünleri görselde göster
+                </label>
+                {selectedBagItemIds.length > 0 ? (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {bagItems.map((item) => (
+                      <label
+                        className="flex items-center gap-2 text-sm text-on-surface-variant"
+                        key={item.id}
+                      >
+                        <input
+                          checked={selectedBagItemIds.includes(item.id)}
+                          className="size-4 accent-primary"
+                          onChange={(event) =>
+                            setSelectedBagItemIds((current) =>
+                              event.target.checked
+                                ? [...current, item.id]
+                                : current.filter((id) => id !== item.id),
+                            )
+                          }
+                          type="checkbox"
+                        />
+                        {item.displayName}
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                className="storybook-button-secondary"
+                onClick={() => setGenerationOpen(false)}
+                type="button"
+              >
+                İptal
+              </button>
+              <button
+                className="storybook-button"
+                disabled={busy === "generate"}
+                onClick={() => void generatePreview()}
+                type="button"
+              >
+                {busy === "generate" ? "Üretiliyor..." : "Üret"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {preview ? (
         <div
           aria-modal="true"
@@ -457,7 +626,10 @@ export function CharacterVisualManager({
                 aria-label="Önizlemeyi kapat"
                 className="grid size-9 place-items-center rounded-full bg-surface-container text-on-surface"
                 disabled={busy === "commit" || busy === "generate"}
-                onClick={() => setPreview(null)}
+                onClick={() => {
+                  setPreview(null);
+                  setGenerationOpen(false);
+                }}
                 type="button"
               >
                 <span className="material-symbols-outlined text-base">
@@ -488,7 +660,10 @@ export function CharacterVisualManager({
               <button
                 className="storybook-button-secondary"
                 disabled={busy === "commit" || busy === "generate"}
-                onClick={() => setPreview(null)}
+                onClick={() => {
+                  setPreview(null);
+                  setGenerationOpen(false);
+                }}
                 type="button"
               >
                 İptal

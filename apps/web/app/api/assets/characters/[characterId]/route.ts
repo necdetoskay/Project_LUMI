@@ -8,6 +8,7 @@ import {
   getCharacterVisualCanon,
   getOpenRouterApiKey,
   getOwnedHousehold,
+  listInventory,
   listCharacterVisualCandidates,
   deleteCharacterVisualVariant,
   previewCharacterVisualCandidates,
@@ -35,6 +36,10 @@ const previewSchema = z.object({
   model: z.string().min(1).max(160),
   providerRequestId: z.string().min(1).max(200).optional(),
   candidates: z.array(generatedCandidateSchema).min(1).max(4),
+  bagItems: z
+    .array(z.object({ id: z.string().uuid(), displayName: z.string().min(1) }))
+    .max(12)
+    .optional(),
   usageMetadata: z.record(z.string(), z.unknown()).optional(),
   costMetadata: z.record(z.string(), z.unknown()).optional(),
 });
@@ -47,6 +52,7 @@ const actionSchema = z.discriminatedUnion("action", [
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
     mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    bagItemIds: z.array(z.string().uuid()).max(12).default([]),
   }),
   z.object({
     action: z.literal("commit"),
@@ -55,6 +61,7 @@ const actionSchema = z.discriminatedUnion("action", [
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
     mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    bagItemIds: z.array(z.string().uuid()).max(12).default([]),
     preview: previewSchema,
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
@@ -71,6 +78,28 @@ async function requireHousehold(parentId: string, householdId: string | null) {
     throw new Error("HOUSEHOLD_FORBIDDEN");
   }
   return householdId;
+}
+
+async function resolveBagItems(
+  parentId: string,
+  householdId: string,
+  characterId: string,
+  itemIds: string[],
+) {
+  if (itemIds.length === 0) return [];
+  const inventory = await listInventory(
+    parentId,
+    householdId,
+    "character",
+    characterId,
+  );
+  const byId = new Map(inventory.map((item) => [item.id, item]));
+  const selected = itemIds.map((id) => byId.get(id));
+  if (selected.some((item) => !item)) throw new Error("BAG_ITEM_NOT_FOUND");
+  return selected.map((item) => ({
+    id: item!.id,
+    displayName: item!.displayName,
+  }));
 }
 
 export async function GET(
@@ -135,6 +164,12 @@ export async function POST(
             { status: 409 },
           );
         }
+        const bagItems = await resolveBagItems(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
+          action.bagItemIds,
+        );
         const preview = await previewCharacterVisualCandidates(
           parent.id,
           {
@@ -144,6 +179,7 @@ export async function POST(
             ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
             mode: action.mode,
             model: "krea/krea-2-medium-turbo",
+            ...(bagItems.length ? { bagItems } : {}),
           },
           {
             generationPort: new OpenRouterCharacterVisualGenerationAdapter({
@@ -157,6 +193,12 @@ export async function POST(
       if (action.action === "commit") {
         const { PureJsCharacterReferenceSheetDerivativeAdapter } = await import(
           "@/lib/assets/character-reference-sheet-derivative"
+        );
+        const bagItems = await resolveBagItems(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
+          action.bagItemIds,
         );
         const preview = {
           previewId: action.preview.previewId,
@@ -178,6 +220,7 @@ export async function POST(
               ? { providerMetadata: candidate.providerMetadata }
               : {}),
           })),
+          ...(bagItems.length ? { bagItems } : {}),
           ...(action.preview.providerRequestId
             ? { providerRequestId: action.preview.providerRequestId }
             : {}),
@@ -195,6 +238,7 @@ export async function POST(
             characterId: parsedParams.characterId,
             idempotencyKey: action.idempotencyKey,
             preview,
+            ...(bagItems.length ? { bagItems } : {}),
             ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
             mode: action.mode,
           },
