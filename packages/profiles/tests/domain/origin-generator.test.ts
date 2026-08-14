@@ -1,21 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockCallOpenRouter = vi.hoisted(() => vi.fn());
 const mockFindByIdForUser = vi.hoisted(() => vi.fn());
 const mockFindById = vi.hoisted(() => vi.fn());
 const mockFindByHousehold = vi.hoisted(() => vi.fn());
-const mockFindByUserAndHousehold = vi.hoisted(() => vi.fn());
-const mockFindByTaskType = vi.hoisted(() => vi.fn());
-
-vi.mock("../../src/application/llm-settings/openrouter-client", () => ({
-  callOpenRouter: mockCallOpenRouter,
-}));
-
-vi.mock("../../src/application/llm-settings/encryption", () => ({
-  decryptApiKey: vi.fn(() => "sk-or-v1-test-decrypted-key"),
-  encryptApiKey: vi.fn(() => "mock-encrypted"),
-  maskApiKey: vi.fn(() => "sk-or-v1...key"),
-}));
+const mockEnsureOriginPackagesPrompt = vi.hoisted(() => vi.fn());
+const mockResolveActivePrompt = vi.hoisted(() => vi.fn());
+const mockGenerateTextWithLlm = vi.hoisted(() => vi.fn());
+const mockRecordAiGenerationTrace = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/db", () => {
   function MockHouseholdRepo() {
@@ -27,35 +18,98 @@ vi.mock("../../src/db", () => {
   function MockPolicyRepo() {
     return { findByHousehold: mockFindByHousehold };
   }
-  function MockProviderRepo() {
-    return { findByUserAndHousehold: mockFindByUserAndHousehold };
-  }
-  function MockTaskRepo() {
-    return { findByTaskType: mockFindByTaskType };
-  }
   return {
-    getProfileDb: function () {
-      return {};
-    },
+    getProfileDb: () => ({}),
     DrizzleHouseholdRepository: MockHouseholdRepo,
     DrizzleChildProfileRepository: MockChildRepo,
     DrizzleParentPolicyRepository: MockPolicyRepo,
-    DrizzleLlmProviderSettingsRepository: MockProviderRepo,
-    DrizzleLlmTaskModelSettingsRepository: MockTaskRepo,
   };
 });
+
+vi.mock("../../src/application/prompt-bootstrap.service", () => ({
+  ensureOriginPackagesPrompt: mockEnsureOriginPackagesPrompt,
+}));
+
+vi.mock("../../src/application/prompt-runtime.service", () => ({
+  resolveActivePrompt: mockResolveActivePrompt,
+}));
+
+vi.mock("../../src/application/text-llm-gateway.service", () => ({
+  generateTextWithLlm: mockGenerateTextWithLlm,
+}));
+
+vi.mock("../../src/application/ai-generation-trace.service", () => ({
+  recordAiGenerationTrace: mockRecordAiGenerationTrace,
+}));
 
 import {
   generateOriginPackages,
   LlmGenerationError,
-  LlmConfigError,
 } from "../../src/application/llm-settings/origin-generator";
 
 const TEST_USER_ID = "user-001";
 const TEST_HOUSEHOLD_ID = "household-001";
 const TEST_CHILD_PROFILE_ID = "child-001";
 
-function setupValidMocks() {
+const outputSchema = {
+  type: "object",
+  required: ["packages"],
+  properties: {
+    packages: {
+      type: "array",
+      items: { type: "object" },
+    },
+  },
+};
+
+function packagePayload(
+  broadKind: "human" | "fantasy" | "animal" | "robot",
+  subtype: string,
+  originConcept: string,
+) {
+  return {
+    broadKind,
+    characterType: "explorer",
+    subtype,
+    originConcept,
+    startingRegionArchetype: `${subtype} bölgesi`,
+    startingLocation: `${subtype} başlangıcı`,
+    homeArchetype: `${subtype} evi`,
+    nearbyNpcSeed: `${subtype} dostu`,
+    firstMysterySeed: `${subtype} gizemi`,
+    toneVector: ["wonder", "curiosity"],
+    noveltyMarkers: [`${subtype} işareti`],
+  };
+}
+
+function successfulPayload() {
+  return {
+    packages: [
+      packagePayload(
+        "human",
+        "Ay Işığı Kütüphanecisi",
+        "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
+      ),
+      packagePayload(
+        "fantasy",
+        "Bulut Tamircisi",
+        "Bulutların üstünde uçan araçlarla bulutları onaran bir çocuk",
+      ),
+      packagePayload(
+        "animal",
+        "Zaman Bahçecisi",
+        "Zamanın yavaş aktığı gizli bir bahçede yaşayan bir bahçıvan",
+      ),
+      packagePayload(
+        "robot",
+        "Yıldız Habercisi",
+        "Yıldızlardan gelen mesajları çözen küçük bir robot",
+      ),
+    ],
+  };
+}
+
+function setupValidProfileMocks() {
   mockFindByIdForUser.mockResolvedValue({
     id: TEST_HOUSEHOLD_ID,
     name: "Test Household",
@@ -73,337 +127,205 @@ function setupValidMocks() {
   });
 }
 
-function setupFullLlmMocks(
-  modelId = "test-model",
-  temperature = 0.85,
-  maxTokens = 1800,
-) {
-  mockFindByTaskType.mockResolvedValue({
-    enabled: true,
-    modelId,
-    temperature,
-    maxOutputTokens: maxTokens,
-  });
-  mockFindByUserAndHousehold.mockResolvedValue({
-    encryptedApiKey: "dGVzdC1lbmNyeXB0ZWQta2V5",
-    enabled: true,
+function setupPromptRuntimeMock() {
+  mockEnsureOriginPackagesPrompt.mockResolvedValue(undefined);
+  mockResolveActivePrompt.mockResolvedValue({
+    promptKey: "character_onboarding.origin_packages",
+    promptVersion: 1,
+    system: "system prompt",
+    user: "user prompt",
+    outputSchema,
+    schemaVersion: 1,
+    providerOverride: null,
+    modelOverride: null,
+    generationConfig: { temperature: 0.85, maxOutputTokens: 1800 },
   });
 }
 
-function setupNoKeyMock() {
-  mockFindByTaskType.mockResolvedValue(null);
-  mockFindByUserAndHousehold.mockResolvedValue(null);
-}
-
-function setupDisabledProviderMock() {
-  mockFindByUserAndHousehold.mockResolvedValue({
-    encryptedApiKey: "dGVzdC1lbmNyeXB0ZWQta2V5",
-    enabled: false,
-  });
-  mockFindByTaskType.mockResolvedValue(null);
-}
-
-function setupDisabledTaskMock() {
-  mockFindByUserAndHousehold.mockResolvedValue({
-    encryptedApiKey: "dGVzdC1lbmNyeXB0ZWQta2V5",
-    enabled: true,
-  });
-  mockFindByTaskType.mockResolvedValue({
-    enabled: false,
-    modelId: "test-model",
-    temperature: 0.85,
-    maxOutputTokens: 1800,
-  });
-}
-
-function setupNoTaskMock() {
-  mockFindByUserAndHousehold.mockResolvedValue({
-    encryptedApiKey: "dGVzdC1lbmNyeXB0ZWQta2V5",
-    enabled: true,
-  });
-  mockFindByTaskType.mockResolvedValue(null);
-}
-
-function setupOpenRouterSuccess() {
-  mockCallOpenRouter.mockResolvedValue({
-    content: JSON.stringify({
-      packages: [
-        {
-          broadKind: "human",
-          characterType: "explorer",
-          subtype: "Ay Işığı Kütüphanecisi",
-          originConcept:
-            "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
-          startingRegionArchetype: "orman kenarı",
-          startingLocation: "Eski kütüphane girişi",
-          homeArchetype: "Kitaplarla dolu bir kulübe",
-          nearbyNpcSeed: "Bilge kitap kurdu",
-          firstMysterySeed: "Kayıp sayfaların sırrı",
-          toneVector: ["wonder", "curiosity"],
-          noveltyMarkers: [
-            "Ay ışığında parlayan gözlük",
-            "Kendi kendine açılan kitap",
-          ],
-        },
-        {
-          broadKind: "fantasy",
-          characterType: "explorer",
-          subtype: "Bulut Tamircisi",
-          originConcept:
-            "Bulutların üstünde uçan tamir araçlarıyla bulutları onaran bir çocuk",
-          startingRegionArchetype: "bulut adası",
-          startingLocation: "Bulut atölyesi",
-          homeArchetype: "Uçan tamir kulübesi",
-          nearbyNpcSeed: "Rüzgar ustası",
-          firstMysterySeed: "Konuşan bulutların mesajı",
-          toneVector: ["warmth", "humor"],
-          noveltyMarkers: [
-            "Bulutları şekillendiren anahtar",
-            "Onarılmış her buluttan çıkan melodi",
-          ],
-        },
-        {
-          broadKind: "animal",
-          characterType: "explorer",
-          subtype: "Zaman Bahçecisi",
-          originConcept:
-            "Zamanın yavaş aktığı gizli bir bahçede çiçeklerle dans eden bir bahçıvan",
-          startingRegionArchetype: "sessiz orman",
-          startingLocation: "Gizli bahçe kapısı",
-          homeArchetype: "Asma dallarından ev",
-          nearbyNpcSeed: "Konuşan kaplumbağa",
-          firstMysterySeed: "Hiç solmayan çiçeğin sırrı",
-          toneVector: ["mystery", "wonder"],
-          noveltyMarkers: [
-            "Zamanı durduran sulama kabı",
-            "Çiçeklerle iletişim kuran şapka",
-          ],
-        },
-        {
-          broadKind: "robot",
-          characterType: "explorer",
-          subtype: "Yıldız Habercisi",
-          originConcept: "Yıldızlardan gelen mesajları çözen küçük bir robot",
-          startingRegionArchetype: "gözlemevi",
-          startingLocation: "Yıldız gözlem kulesi",
-          homeArchetype: "Metalik bir yuva",
-          nearbyNpcSeed: "Bilge saatçi",
-          firstMysterySeed: "Yıldız haritasındaki gizemli işaret",
-          toneVector: ["courage", "wonder"],
-          noveltyMarkers: [
-            "Yıldız tozu üreten anten",
-            "Mesajları ışığa dönüştüren ekran",
-          ],
-        },
-      ],
-    }),
+function setupLlmSuccess() {
+  mockGenerateTextWithLlm.mockResolvedValue({
+    content: JSON.stringify(successfulPayload()),
+    provider: "openrouter",
     model: "test-model",
-    usage: { promptTokens: 100, completionTokens: 200, totalTokens: 300 },
+    promptTokens: 100,
+    completionTokens: 200,
+    totalTokens: 300,
+    latencyMs: 25,
+    cost: null,
   });
 }
 
-function setupOpenRouterFailure() {
-  mockCallOpenRouter.mockRejectedValue(new Error("Insufficient credits"));
+async function generate(
+  characterType = "explorer",
+  previousBatch?: { subtype: string; originConcept: string }[],
+) {
+  return generateOriginPackages(
+    TEST_USER_ID,
+    TEST_HOUSEHOLD_ID,
+    TEST_CHILD_PROFILE_ID,
+    characterType,
+    "auto",
+    { interests: ["uzay", "kitap"] },
+    previousBatch,
+  );
 }
 
 describe("origin-generator", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupValidMocks();
+    setupValidProfileMocks();
+    setupPromptRuntimeMock();
+    setupLlmSuccess();
+    mockRecordAiGenerationTrace.mockResolvedValue(undefined);
   });
 
-  describe("when LLM is fully configured and API works", () => {
-    beforeEach(() => {
-      setupFullLlmMocks();
-      setupOpenRouterSuccess();
-    });
+  it("generates four validated origin packages through the prompt runtime", async () => {
+    const result = await generate();
 
-    it("returns LLM-generated packages with source='llm'", async () => {
-      const result = await generateOriginPackages(
-        TEST_USER_ID,
-        TEST_HOUSEHOLD_ID,
-        TEST_CHILD_PROFILE_ID,
-        "explorer",
-        "auto",
-      );
-
-      expect(result.source).toBe("llm");
-      expect(result.modelId).toBe("test-model");
-      expect(result.candidates.length).toBeGreaterThan(0);
-    });
-
-    it("returns unique packages from LLM (not deterministic fallback pool)", async () => {
-      const result = await generateOriginPackages(
-        TEST_USER_ID,
-        TEST_HOUSEHOLD_ID,
-        TEST_CHILD_PROFILE_ID,
-        "explorer",
-        "auto",
-      );
-
-      const subtypes = result.candidates.map((c) => c.subtype);
-      expect(subtypes).toContain("Ay Işığı Kütüphanecisi");
-      expect(subtypes).toContain("Bulut Tamircisi");
-      expect(subtypes).toContain("Zaman Bahçecisi");
-    });
-
-    it("calls OpenRouter with correct parameters", async () => {
-      await generateOriginPackages(
-        TEST_USER_ID,
-        TEST_HOUSEHOLD_ID,
-        TEST_CHILD_PROFILE_ID,
-        "inventor",
-        "auto",
-      );
-
-      expect(mockCallOpenRouter).toHaveBeenCalledTimes(1);
-      const [, options] = mockCallOpenRouter.mock.calls[0] as [
-        string,
-        { model: string },
-      ];
-      expect(options.model).toBe("test-model");
-    });
+    expect(result.source).toBe("llm");
+    expect(result.modelId).toBe("test-model");
+    expect(result.candidates).toHaveLength(4);
+    expect(result.candidates.map((candidate) => candidate.subtype)).toEqual([
+      "Ay Işığı Kütüphanecisi",
+      "Bulut Tamircisi",
+      "Zaman Bahçecisi",
+      "Yıldız Habercisi",
+    ]);
   });
 
-  describe("when LLM is configured and call fails", () => {
-    beforeEach(() => {
-      setupFullLlmMocks();
-      setupOpenRouterFailure();
-    });
+  it("bootstraps and resolves the active origin prompt before generation", async () => {
+    await generate("inventor");
 
-    it("throws LlmGenerationError instead of silently falling back", async () => {
-      await expect(
-        generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        ),
-      ).rejects.toThrow(LlmGenerationError);
-    });
+    expect(mockEnsureOriginPackagesPrompt).toHaveBeenCalledTimes(1);
+    expect(mockResolveActivePrompt).toHaveBeenCalledTimes(1);
+    expect(mockResolveActivePrompt).toHaveBeenCalledWith(
+      "character_onboarding.origin_packages",
+      expect.objectContaining({
+        characterType: "inventor",
+        originMode: "auto",
+        packageCount: 4,
+        ageBand: "6-8",
+        locale: "tr-TR",
+        preferenceHints: { interests: ["uzay", "kitap"] },
+        contentBoundary: "moderate",
+        requireParentApprovalForAi: false,
+      }),
+    );
+  });
 
-    it("does not return any candidates on failure", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-        expect.unreachable("Should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(LlmGenerationError);
-        expect((e as LlmGenerationError).message).toBe("Insufficient credits");
-      }
+  it("passes the resolved prompt to the shared text LLM gateway", async () => {
+    await generate();
+
+    expect(mockGenerateTextWithLlm).toHaveBeenCalledWith({
+      userId: TEST_USER_ID,
+      householdId: TEST_HOUSEHOLD_ID,
+      taskType: "character_origin_generation",
+      system: "system prompt",
+      user: "user prompt",
+      modelOverride: null,
+      generationConfig: { temperature: 0.85, maxOutputTokens: 1800 },
     });
   });
 
-  describe("when OpenRouter API key is missing", () => {
-    beforeEach(setupNoKeyMock);
+  it("records a valid generation trace", async () => {
+    await generate();
 
-    it("throws LlmConfigError with LLM_KEY_MISSING code", async () => {
-      await expect(
-        generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        ),
-      ).rejects.toThrow(LlmConfigError);
-    });
-
-    it("throws error with code LLM_KEY_MISSING", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-        expect.unreachable("Should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(LlmConfigError);
-        expect((e as LlmConfigError).code).toBe("LLM_KEY_MISSING");
-      }
-    });
-
-    it("does not call OpenRouter when not configured", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-      } catch {
-        /* expected */
-      }
-      expect(mockCallOpenRouter).not.toHaveBeenCalled();
-    });
+    expect(mockRecordAiGenerationTrace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        householdId: TEST_HOUSEHOLD_ID,
+        childProfileId: TEST_CHILD_PROFILE_ID,
+        taskType: "character_origin_generation",
+        promptKey: "character_onboarding.origin_packages",
+        promptVersion: 1,
+        validationStatus: "valid",
+      }),
+    );
   });
 
-  describe("when provider is disabled", () => {
-    beforeEach(setupDisabledProviderMock);
-
-    it("throws LlmConfigError with LLM_PROVIDER_DISABLED code", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-        expect.unreachable("Should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(LlmConfigError);
-        expect((e as LlmConfigError).code).toBe("LLM_PROVIDER_DISABLED");
-      }
+  it("records invalid raw output and throws when schema validation fails", async () => {
+    mockGenerateTextWithLlm.mockResolvedValueOnce({
+      content: JSON.stringify({ invalid: true }),
+      provider: "openrouter",
+      model: "test-model",
+      promptTokens: 10,
+      completionTokens: 5,
+      totalTokens: 15,
+      latencyMs: 10,
+      cost: null,
     });
+
+    await expect(generate()).rejects.toThrow(LlmGenerationError);
+    expect(mockRecordAiGenerationTrace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        validationStatus: "invalid",
+        outputPayload: { raw: JSON.stringify({ invalid: true }) },
+      }),
+    );
   });
 
-  describe("when task model setting is missing", () => {
-    beforeEach(setupNoTaskMock);
+  it("retries once when the first generated batch has duplicate subtype titles", async () => {
+    const duplicatePayload = successfulPayload();
+    duplicatePayload.packages[1] = packagePayload(
+      "fantasy",
+      "Ay Işığı Kütüphanecisi",
+      "Tamamen farklı bir başlangıç fikri",
+    );
+    mockGenerateTextWithLlm
+      .mockResolvedValueOnce({
+        content: JSON.stringify(duplicatePayload),
+        provider: "openrouter",
+        model: "test-model",
+        promptTokens: 100,
+        completionTokens: 200,
+        totalTokens: 300,
+        latencyMs: 25,
+        cost: null,
+      })
+      .mockResolvedValueOnce({
+        content: JSON.stringify(successfulPayload()),
+        provider: "openrouter",
+        model: "test-model",
+        promptTokens: 100,
+        completionTokens: 200,
+        totalTokens: 300,
+        latencyMs: 25,
+        cost: null,
+      });
 
-    it("throws LlmConfigError with LLM_TASK_MISSING code", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-        expect.unreachable("Should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(LlmConfigError);
-        expect((e as LlmConfigError).code).toBe("LLM_TASK_MISSING");
-      }
-    });
+    const result = await generate();
+
+    expect(result.candidates).toHaveLength(4);
+    expect(mockGenerateTextWithLlm).toHaveBeenCalledTimes(2);
   });
 
-  describe("when task is disabled", () => {
-    beforeEach(setupDisabledTaskMock);
+  it("retries when the generated concepts are too similar to the previous batch", async () => {
+    const result = await generate([
+      {
+        subtype: "Ay Işığı Kütüphanecisi",
+        originConcept:
+          "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
+      },
+    ]);
 
-    it("throws LlmConfigError with LLM_TASK_DISABLED code", async () => {
-      try {
-        await generateOriginPackages(
-          TEST_USER_ID,
-          TEST_HOUSEHOLD_ID,
-          TEST_CHILD_PROFILE_ID,
-          "explorer",
-          "auto",
-        );
-        expect.unreachable("Should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(LlmConfigError);
-        expect((e as LlmConfigError).code).toBe("LLM_TASK_DISABLED");
-      }
-    });
+    expect(result.candidates).toHaveLength(4);
+    expect(mockGenerateTextWithLlm).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects access when the user is not a household member", async () => {
+    mockFindByIdForUser.mockResolvedValueOnce(null);
+
+    await expect(generate()).rejects.toThrow(
+      "User is not a member of this household",
+    );
+    expect(mockEnsureOriginPackagesPrompt).not.toHaveBeenCalled();
+  });
+
+  it("requires a parent policy before starting generation", async () => {
+    mockFindByHousehold.mockResolvedValueOnce(null);
+
+    await expect(generate()).rejects.toThrow(
+      "Parent policy must exist before character bootstrap",
+    );
+    expect(mockEnsureOriginPackagesPrompt).not.toHaveBeenCalled();
   });
 });
