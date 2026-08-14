@@ -61,6 +61,7 @@ export {
   listCharactersByHousehold,
   listCharactersByChildProfile,
   getCharacterById,
+  archiveCharacter,
 } from "./character-bootstrap.service";
 export type {
   CreateHandoffInput,

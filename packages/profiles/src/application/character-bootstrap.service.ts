@@ -902,4 +902,25 @@ export async function getCharacterById(
   };
 }
 
+export async function archiveCharacter(
+  userId: string,
+  householdId: string,
+  characterId: string,
+): Promise<{ archived: boolean }> {
+  const repos = getRepos();
+  const household = await repos.householdRepo.findByIdForUser(
+    householdId,
+    userId,
+  );
+  if (!household)
+    throw new AuthorizationError("User is not a member of this household");
+  const character = await repos.characterRepo.findById(
+    characterId,
+    householdId,
+  );
+  if (!character) return { archived: false };
+  await repos.characterRepo.softDelete(characterId, householdId);
+  return { archived: true };
+}
+
 export type { CharacterState, OriginPackage, FirstRunHandoffRecord };
