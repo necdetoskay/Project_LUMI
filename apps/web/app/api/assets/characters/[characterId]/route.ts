@@ -20,6 +20,11 @@ import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapt
 
 const paramsSchema = z.object({ characterId: z.string().uuid() });
 
+const emotionKeysSchema = z
+  .array(z.enum(["happy", "sad", "surprised", "scared"]))
+  .min(1)
+  .max(4);
+
 const generatedCandidateSchema = z.object({
   index: z.number().int().min(0).max(3),
   bytesBase64: z.string().min(1),
@@ -52,8 +57,16 @@ const actionSchema = z.discriminatedUnion("action", [
     aspectRatio: z
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
-    mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    mode: z
+      .enum(["portrait", "reference-sheet", "expression-sheet"])
+      .default("reference-sheet"),
     bagItemIds: z.array(z.string().uuid()).max(12).default([]),
+    emotionKeys: emotionKeysSchema.default([
+      "happy",
+      "sad",
+      "surprised",
+      "scared",
+    ]),
   }),
   z.object({
     action: z.literal("commit"),
@@ -61,8 +74,16 @@ const actionSchema = z.discriminatedUnion("action", [
     aspectRatio: z
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
-    mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    mode: z
+      .enum(["portrait", "reference-sheet", "expression-sheet"])
+      .default("reference-sheet"),
     bagItemIds: z.array(z.string().uuid()).max(12).default([]),
+    emotionKeys: emotionKeysSchema.default([
+      "happy",
+      "sad",
+      "surprised",
+      "scared",
+    ]),
     preview: previewSchema,
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
@@ -186,6 +207,9 @@ export async function POST(
             mode: action.mode,
             model: "krea/krea-2-medium-turbo",
             ...(bagItems.length ? { bagItems } : {}),
+            ...(action.emotionKeys.length
+              ? { emotionKeys: action.emotionKeys }
+              : {}),
           },
           {
             generationPort: new OpenRouterCharacterVisualGenerationAdapter({
@@ -227,6 +251,9 @@ export async function POST(
               : {}),
           })),
           ...(bagItems.length ? { bagItems } : {}),
+          ...(action.emotionKeys.length
+            ? { emotionKeys: action.emotionKeys }
+            : {}),
           ...(action.preview.providerRequestId
             ? { providerRequestId: action.preview.providerRequestId }
             : {}),
@@ -245,6 +272,9 @@ export async function POST(
             idempotencyKey: action.idempotencyKey,
             preview,
             ...(bagItems.length ? { bagItems } : {}),
+            ...(action.emotionKeys.length
+              ? { emotionKeys: action.emotionKeys }
+              : {}),
             ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
             mode: action.mode,
           },

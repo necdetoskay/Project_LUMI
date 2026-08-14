@@ -18,6 +18,7 @@ import {
   type CharacterVisualGenerationPort,
   type CharacterVisualDerivativePort,
   type CharacterVisualBagItem,
+  type CharacterVisualEmotion,
   type CharacterVisualStoragePort,
   type GeneratedImageCandidate,
 } from "./character-visual-generation";
@@ -29,8 +30,9 @@ export type GenerateCharacterVisualInput = {
   model?: string;
   candidateCount?: number;
   aspectRatio?: "1:1" | "4:3" | "3:2" | "16:9" | "4:5" | "2:3" | "9:16";
-  mode?: "portrait" | "reference-sheet";
+  mode?: "portrait" | "reference-sheet" | "expression-sheet";
   bagItems?: CharacterVisualBagItem[];
+  emotionKeys?: CharacterVisualEmotion[];
 };
 
 export type PreviewCharacterVisualInput = Omit<
@@ -57,6 +59,7 @@ export type CharacterVisualPreview = {
   providerRequestId?: string;
   candidates: GeneratedImageCandidate[];
   bagItems?: CharacterVisualBagItem[];
+  emotionKeys?: CharacterVisualEmotion[];
   usageMetadata?: Record<string, unknown>;
   costMetadata?: Record<string, unknown>;
 };
@@ -186,11 +189,10 @@ export async function previewCharacterVisualCandidates(
   const generated = await deps.generationPort.generate({
     jobId: `preview-${crypto.randomUUID()}`,
     brief,
-    prompt: renderCharacterVisualPrompt(
-      brief,
-      input.mode,
-      input.bagItems ? { bagItems: input.bagItems } : {},
-    ),
+    prompt: renderCharacterVisualPrompt(brief, input.mode, {
+      ...(input.bagItems ? { bagItems: input.bagItems } : {}),
+      ...(input.emotionKeys ? { emotions: input.emotionKeys } : {}),
+    }),
     model,
     candidateCount,
     aspectRatio:
@@ -213,6 +215,7 @@ export async function previewCharacterVisualCandidates(
       : {}),
     candidates: generated.candidates,
     ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
+    ...(input.emotionKeys?.length ? { emotionKeys: input.emotionKeys } : {}),
     ...(generated.usageMetadata
       ? { usageMetadata: generated.usageMetadata }
       : {}),
@@ -285,11 +288,10 @@ export async function generateCharacterVisualCandidates(
     const generated = await deps.generationPort.generate({
       jobId,
       brief,
-      prompt: renderCharacterVisualPrompt(
-        brief,
-        input.mode,
-        input.bagItems ? { bagItems: input.bagItems } : {},
-      ),
+      prompt: renderCharacterVisualPrompt(brief, input.mode, {
+        ...(input.bagItems ? { bagItems: input.bagItems } : {}),
+        ...(input.emotionKeys ? { emotions: input.emotionKeys } : {}),
+      }),
       model,
       candidateCount,
       aspectRatio:
@@ -322,12 +324,18 @@ export async function generateCharacterVisualCandidates(
         mimeType: candidate.mimeType,
       });
       const derivatives =
-        input.mode === "reference-sheet" && deps.derivativePort
-          ? await deps.derivativePort.splitReferenceSheet({
+        input.mode === "expression-sheet" &&
+        deps.derivativePort?.splitExpressionSheet
+          ? await deps.derivativePort.splitExpressionSheet({
               bytesBase64: candidate.bytesBase64,
               mimeType: candidate.mimeType,
             })
-          : [];
+          : input.mode === "reference-sheet" && deps.derivativePort
+            ? await deps.derivativePort.splitReferenceSheet({
+                bytesBase64: candidate.bytesBase64,
+                mimeType: candidate.mimeType,
+              })
+            : [];
       const storedDerivatives = [];
       for (const derivative of derivatives) {
         const derivativeStored = await deps.storagePort.store({
@@ -373,13 +381,18 @@ export async function generateCharacterVisualCandidates(
           assetKind:
             input.mode === "reference-sheet"
               ? "character_reference_sheet"
-              : "character_portrait",
+              : input.mode === "expression-sheet"
+                ? "character_expression_sheet"
+                : "character_portrait",
           lifecycleState: "candidate",
           provenance: {
             briefVersion: brief.version,
             briefFingerprint: fingerprint,
             providerRequestId: generated.providerRequestId ?? null,
             providerMetadata: candidate.providerMetadata ?? {},
+            ...(input.emotionKeys?.length
+              ? { emotionKeys: input.emotionKeys }
+              : {}),
           },
         });
         for (const derivative of derivatives) {
@@ -404,6 +417,9 @@ export async function generateCharacterVisualCandidates(
               briefFingerprint: fingerprint,
               sourceCompositeAssetId,
               derivation: "deterministic-seven-view-crop-v2",
+              ...(input.emotionKeys?.length
+                ? { emotionKeys: input.emotionKeys }
+                : {}),
             },
           });
         }
@@ -546,12 +562,18 @@ export async function commitCharacterVisualPreview(
         mimeType: candidate.mimeType,
       });
       const derivatives =
-        input.mode === "reference-sheet" && deps.derivativePort
-          ? await deps.derivativePort.splitReferenceSheet({
+        input.mode === "expression-sheet" &&
+        deps.derivativePort?.splitExpressionSheet
+          ? await deps.derivativePort.splitExpressionSheet({
               bytesBase64: candidate.bytesBase64,
               mimeType: candidate.mimeType,
             })
-          : [];
+          : input.mode === "reference-sheet" && deps.derivativePort
+            ? await deps.derivativePort.splitReferenceSheet({
+                bytesBase64: candidate.bytesBase64,
+                mimeType: candidate.mimeType,
+              })
+            : [];
       const storedDerivatives = [];
       for (const derivative of derivatives) {
         const derivativeStored = await deps.storagePort.store({
@@ -573,7 +595,11 @@ export async function commitCharacterVisualPreview(
         });
       }
       persisted.push({ candidate, stored, derivatives: storedDerivatives });
-      if (input.mode === "reference-sheet" && storedDerivatives.length > 0) {
+      if (
+        (input.mode === "reference-sheet" ||
+          input.mode === "expression-sheet") &&
+        storedDerivatives.length > 0
+      ) {
         compositeStorageRefsToDelete.push(stored.storageRef);
       }
     }
@@ -600,7 +626,9 @@ export async function commitCharacterVisualPreview(
           assetKind:
             input.mode === "reference-sheet"
               ? "character_reference_sheet"
-              : "character_portrait",
+              : input.mode === "expression-sheet"
+                ? "character_expression_sheet"
+                : "character_portrait",
           lifecycleState: "candidate",
           provenance: {
             briefVersion: brief.version,
@@ -609,6 +637,9 @@ export async function commitCharacterVisualPreview(
             providerRequestId: input.preview.providerRequestId ?? null,
             providerMetadata: candidate.providerMetadata ?? {},
             ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
+            ...(input.emotionKeys?.length
+              ? { emotionKeys: input.emotionKeys }
+              : {}),
           },
         });
         for (const derivative of derivatives) {
@@ -635,10 +666,17 @@ export async function commitCharacterVisualPreview(
               sourceCompositeAssetId,
               derivation: "deterministic-seven-view-crop-v2",
               ...(input.bagItems?.length ? { bagItems: input.bagItems } : {}),
+              ...(input.emotionKeys?.length
+                ? { emotionKeys: input.emotionKeys }
+                : {}),
             },
           });
         }
-        if (input.mode === "reference-sheet" && derivatives.length > 0) {
+        if (
+          (input.mode === "reference-sheet" ||
+            input.mode === "expression-sheet") &&
+          derivatives.length > 0
+        ) {
           await tx
             .update(characterVisualAssets)
             .set({

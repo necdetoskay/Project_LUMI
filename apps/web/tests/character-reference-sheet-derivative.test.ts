@@ -41,4 +41,24 @@ describe("PureJsCharacterReferenceSheetDerivativeAdapter", () => {
       height: 400,
     });
   });
+
+  it("splits emotion sheets into four expression variants", async () => {
+    const source = new PNG({ width: 800, height: 800 });
+    const adapter = new PureJsCharacterReferenceSheetDerivativeAdapter();
+
+    const parts = await adapter.splitExpressionSheet({
+      bytesBase64: PNG.sync.write(source).toString("base64"),
+      mimeType: "image/png",
+    });
+
+    expect(parts.map((part) => part.variant)).toEqual([
+      "expression-happy",
+      "expression-sad",
+      "expression-surprised",
+      "expression-scared",
+    ]);
+    expect(parts.map((part) => [part.width, part.height])).toEqual(
+      Array.from({ length: 4 }, () => [400, 400]),
+    );
+  });
 });

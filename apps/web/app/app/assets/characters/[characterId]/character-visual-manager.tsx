@@ -48,6 +48,7 @@ type VisualPreview = {
   providerRequestId?: string;
   candidates: VisualPreviewCandidate[];
   bagItems?: Array<{ id: string; displayName: string }>;
+  emotionKeys?: Array<"happy" | "sad" | "surprised" | "scared">;
   usageMetadata?: Record<string, unknown>;
   costMetadata?: Record<string, unknown>;
 };
@@ -84,6 +85,12 @@ export function CharacterVisualManager({
   const [styleInfoOpen, setStyleInfoOpen] = useState(false);
   const [bagItems, setBagItems] = useState<BagItem[]>([]);
   const [selectedBagItemIds, setSelectedBagItemIds] = useState<string[]>([]);
+  const [generationMode, setGenerationMode] = useState<
+    "reference-sheet" | "expression-sheet"
+  >("reference-sheet");
+  const [selectedEmotions, setSelectedEmotions] = useState<
+    Array<"happy" | "sad" | "surprised" | "scared">
+  >(["happy", "sad", "surprised", "scared"]);
 
   const endpoint = `/api/assets/characters/${encodeURIComponent(characterId)}?householdId=${encodeURIComponent(householdId)}`;
 
@@ -166,6 +173,12 @@ export function CharacterVisualManager({
         variant.sourceCompositeAssetId === state.canon?.selectedAssetId &&
         variant.assetKind === "head-front",
     );
+  const baseVariants = state.variants.filter(
+    (variant) => !variant.assetKind?.startsWith("expression-"),
+  );
+  const expressionVariants = state.variants.filter((variant) =>
+    variant.assetKind?.startsWith("expression-"),
+  );
 
   const contentUrl = (assetId: string) =>
     `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(assetId)}?householdId=${encodeURIComponent(householdId)}`;
@@ -205,8 +218,9 @@ export function CharacterVisualManager({
           action: "generate",
           candidateCount,
           aspectRatio: "3:2",
-          mode: "reference-sheet",
+          mode: generationMode,
           bagItemIds: selectedBagItemIds,
+          emotionKeys: selectedEmotions,
         }),
       });
       const payload = (await response.json()) as {
@@ -238,9 +252,10 @@ export function CharacterVisualManager({
           action: "commit",
           idempotencyKey: `visual-${characterId}-${newIdempotencyKey()}`,
           aspectRatio: "3:2",
-          mode: "reference-sheet",
+          mode: generationMode,
           preview,
           bagItemIds: selectedBagItemIds,
+          emotionKeys: selectedEmotions,
         }),
       });
       const payload = (await response.json()) as { error?: string };
@@ -521,13 +536,13 @@ export function CharacterVisualManager({
             </p>
           </div>
           <span className="rounded-full bg-surface-container px-3 py-1 text-xs font-extrabold text-on-surface-variant">
-            {state.variants.length}
+            {baseVariants.length}
           </span>
         </div>
 
-        {state.variants.length > 0 ? (
+        {baseVariants.length > 0 ? (
           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7">
-            {state.variants.map((variant) => (
+            {baseVariants.map((variant) => (
               <div
                 className="group relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
                 key={variant.id}
@@ -585,6 +600,66 @@ export function CharacterVisualManager({
         ) : null}
       </section>
 
+      <section className="rounded-2xl border border-outline-variant bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-extrabold uppercase text-primary">
+              Duygu ifadeleri
+            </p>
+            <p className="mt-1 text-sm text-on-surface-variant">
+              Karakterin hikâyedeki ruh hâline göre kullanılabilecek ifadeleri.
+            </p>
+          </div>
+          <span className="rounded-full bg-surface-container px-3 py-1 text-xs font-extrabold text-on-surface-variant">
+            {expressionVariants.length}
+          </span>
+        </div>
+        {expressionVariants.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {expressionVariants.map((variant) => (
+              <div
+                className="group relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
+                key={variant.id}
+              >
+                <Image
+                  alt={`${characterName} ${variant.assetKind?.replace("expression-", "") ?? "duygu"} ifadesi`}
+                  className="object-contain p-1"
+                  fill
+                  sizes="180px"
+                  src={contentUrl(variant.id)}
+                  unoptimized
+                />
+                <span className="absolute inset-x-1 bottom-1 rounded-lg bg-white/95 px-2 py-1 text-center text-[10px] font-extrabold text-on-surface shadow">
+                  {variant.assetKind === "expression-happy"
+                    ? "Neşeli"
+                    : variant.assetKind === "expression-sad"
+                      ? "Üzgün"
+                      : variant.assetKind === "expression-surprised"
+                        ? "Şaşkın"
+                        : "Korkmuş"}
+                </span>
+                <button
+                  aria-label="Duygu görselini sil"
+                  className="absolute right-1 top-1 grid size-7 place-items-center rounded-full bg-white/90 text-on-surface opacity-0 shadow transition group-hover:opacity-100 focus-visible:opacity-100"
+                  disabled={busy === "delete"}
+                  onClick={() => setPendingDelete(variant)}
+                  title="Duygu görselini sil"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    close
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-5 text-center text-sm text-on-surface-variant">
+            Henüz duygu ifadesi üretilmedi.
+          </p>
+        )}
+      </section>
+
       {generationOpen && !preview ? (
         <div
           aria-modal="true"
@@ -621,6 +696,60 @@ export function CharacterVisualManager({
                 {characterSummary}
               </p>
             </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-outline-variant p-2">
+              <button
+                className={`rounded-xl px-3 py-2 text-sm font-extrabold ${generationMode === "reference-sheet" ? "bg-primary text-on-primary" : "text-on-surface-variant"}`}
+                onClick={() => setGenerationMode("reference-sheet")}
+                type="button"
+              >
+                Temel görünüm
+              </button>
+              <button
+                className={`rounded-xl px-3 py-2 text-sm font-extrabold ${generationMode === "expression-sheet" ? "bg-primary text-on-primary" : "text-on-surface-variant"}`}
+                onClick={() => setGenerationMode("expression-sheet")}
+                type="button"
+              >
+                Duygu ifadeleri
+              </button>
+            </div>
+
+            {generationMode === "expression-sheet" ? (
+              <div className="mt-4 rounded-2xl border border-outline-variant p-4">
+                <p className="text-sm font-extrabold text-on-surface">
+                  Sheet içindeki duygular
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      ["happy", "Neşeli / gülümseyen"],
+                      ["sad", "Üzgün"],
+                      ["surprised", "Şaşkın"],
+                      ["scared", "Korkmuş"],
+                    ] as const
+                  ).map(([emotion, label]) => (
+                    <label
+                      className="flex items-center gap-2 text-sm text-on-surface-variant"
+                      key={emotion}
+                    >
+                      <input
+                        checked={selectedEmotions.includes(emotion)}
+                        className="size-4 accent-primary"
+                        onChange={(event) =>
+                          setSelectedEmotions((current) =>
+                            event.target.checked
+                              ? [...current, emotion]
+                              : current.filter((value) => value !== emotion),
+                          )
+                        }
+                        type="checkbox"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border border-outline-variant p-4">
               <div className="flex items-center justify-between gap-3">

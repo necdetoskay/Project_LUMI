@@ -43,5 +43,8 @@ describe("Visual Library canonical route contract", () => {
     expect(managerSource).toContain("setGenerationOpen(true)");
     expect(routeSource).toContain("listInventory");
     expect(routeSource).toContain("bagItemIds");
+    expect(managerSource).toContain("expression-sheet");
+    expect(managerSource).toContain("Duygu ifadeleri");
+    expect(routeSource).toContain("emotionKeys");
   });
 });
