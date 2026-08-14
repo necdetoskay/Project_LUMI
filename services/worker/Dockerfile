@@ -7,6 +7,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 RUN corepack enable
+RUN pnpm add --global tsx@4.23.12
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY services/worker/package.json services/worker/package.json
@@ -29,4 +30,4 @@ COPY packages/simulation packages/simulation
 COPY packages/story packages/story
 COPY packages/world packages/world
 
-CMD ["pnpm", "--filter", "@lumi/worker", "start"]
+CMD ["tsx", "services/worker/src/index.ts"]
