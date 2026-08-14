@@ -1,62 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { newIdempotencyKey } from "@/lib/new-id";
 import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
-import {
-  StorySessionList,
-  type StorySessionSummary,
-} from "@/components/story/story-session-list";
+import type { AdventureSummary } from "@/lib/stories/adventure-presentation";
 
-type StoryCatalogEntry = {
-  definition: {
-    id: string;
-    title: string;
-    storyType?: string;
-    sourceType?: string;
-  };
-  version: {
-    id: string;
-    versionNumber: number;
-    title: string;
-    storyMode?: string;
-    summary?: string | null;
-  } | null;
-};
-
-type StorySource = {
+type AdventureHubCharacter = {
   id: string;
-  kind: "world_state" | "inventory" | "origin";
-  title: string;
-  summary: string;
-  detail: string;
+  name: string;
 };
 
-type LaunchOption = {
-  character: {
-    id: string;
-    childProfileId: string;
-    name: string;
-    characterType: string;
-    subtype: string;
-  };
-  world: {
-    id: string;
-    lifecycleStatus: string;
-    label: string;
-  } | null;
-  storySources?: StorySource[];
+type AdventureHubResponse = {
+  character: AdventureHubCharacter | null;
+  ongoingAdventure: AdventureSummary | null;
+  pastAdventures: AdventureSummary[];
 };
 
 type StoriesResponse = {
-  sessions?: StorySessionSummary[];
-  catalog?: StoryCatalogEntry[];
-  launchOptions?: LaunchOption[];
-};
-
-type RankedStoryCatalogEntry = StoryCatalogEntry & {
-  recommendationScore: number;
+  adventureHub?: AdventureHubResponse;
+  message?: string;
 };
 
 export function ProfileStoriesSection({
@@ -65,18 +27,12 @@ export function ProfileStoriesSection({
   childProfileId: string;
 }) {
   const [householdId, setHouseholdId] = useState<string | null>(null);
-  const [sessions, setSessions] = useState<StorySessionSummary[]>([]);
-  const [catalog, setCatalog] = useState<StoryCatalogEntry[]>([]);
-  const [launchOptions, setLaunchOptions] = useState<LaunchOption[]>([]);
-  const [selectedStoryId, setSelectedStoryId] = useState("");
-  const [selectedCharacterId, setSelectedCharacterId] = useState("");
-  const [selectedSourceId, setSelectedSourceId] = useState("");
-  const [playbackMode, setPlaybackMode] = useState("reading");
+  const [adventureHub, setAdventureHub] = useState<AdventureHubResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [launchError, setLaunchError] = useState<string | null>(null);
-  const [launchOpen, setLaunchOpen] = useState(false);
+  const [newAdventureOpen, setNewAdventureOpen] = useState(false);
 
   const loadStories = useCallback(async () => {
     setLoading(true);
@@ -90,10 +46,9 @@ export function ProfileStoriesSection({
       const nextHouseholdId = onboardData.onboarding?.householdId ?? null;
 
       if (!nextHouseholdId) {
-        setError("Household bilgisi bulunamadi.");
-        setSessions([]);
-        setCatalog([]);
-        setLaunchOptions([]);
+        setHouseholdId(null);
+        setAdventureHub(null);
+        setError("Hikâyelere ulaşmak için önce aile alanı hazır olmalı.");
         return;
       }
 
@@ -105,38 +60,24 @@ export function ProfileStoriesSection({
           "/stories?householdId=" +
           encodeURIComponent(nextHouseholdId),
       );
-      const body = (await response.json()) as StoriesResponse & {
-        message?: string;
-      };
+      const body = (await response.json()) as StoriesResponse;
 
       if (!response.ok) {
-        setError(body.message ?? "Hikaye oturumlari yuklenemedi.");
-        setSessions([]);
-        setCatalog([]);
-        setLaunchOptions([]);
+        setAdventureHub(null);
+        setError(body.message ?? "Maceralar şu anda yüklenemedi.");
         return;
       }
 
-      const nextSessions = body.sessions ?? [];
-      const nextCatalog = (body.catalog ?? []).filter((entry) => entry.version);
-      const nextLaunchOptions = (body.launchOptions ?? []).filter(
-        (entry) => entry.world,
-      );
-
-      setSessions(nextSessions);
-      setCatalog(nextCatalog);
-      setLaunchOptions(nextLaunchOptions);
-      setSelectedStoryId(
-        (current) => current || nextCatalog[0]?.definition.id || "",
-      );
-      setSelectedCharacterId(
-        (current) => current || nextLaunchOptions[0]?.character.id || "",
+      setAdventureHub(
+        body.adventureHub ?? {
+          character: null,
+          ongoingAdventure: null,
+          pastAdventures: [],
+        },
       );
     } catch {
-      setError("Hikaye oturumlari yuklenirken bir hata olustu.");
-      setSessions([]);
-      setCatalog([]);
-      setLaunchOptions([]);
+      setAdventureHub(null);
+      setError("Maceralar yüklenirken beklenmeyen bir sorun oluştu.");
     } finally {
       setLoading(false);
     }
@@ -146,519 +87,338 @@ export function ProfileStoriesSection({
     void loadStories();
   }, [loadStories]);
 
-  const selectedLaunch = useMemo(
-    () =>
-      launchOptions.find(
-        (entry) => entry.character.id === selectedCharacterId,
-      ) ?? null,
-    [launchOptions, selectedCharacterId],
-  );
-  const selectedSource = useMemo(
-    () =>
-      selectedLaunch?.storySources?.find(
-        (source) => source.id === selectedSourceId,
-      ) ?? null,
-    [selectedLaunch, selectedSourceId],
-  );
-  const rankedCatalog = useMemo(
-    () => rankCatalogForSource(catalog, selectedSource),
-    [catalog, selectedSource],
-  );
-  const recommendedStoryIds = useMemo(
-    () =>
-      new Set(
-        rankedCatalog
-          .filter((entry) => entry.recommendationScore > 0)
-          .map((entry) => entry.definition.id),
-      ),
-    [rankedCatalog],
-  );
-  const selectedStory = useMemo(
-    () =>
-      rankedCatalog.find((entry) => entry.definition.id === selectedStoryId) ??
-      null,
-    [rankedCatalog, selectedStoryId],
-  );
-  const topRecommendation = rankedCatalog[0] ?? null;
-  const selectedStoryRecommendation =
-    selectedStory && selectedSource
-      ? getStorySourceFit(selectedStory, selectedSource)
-      : null;
-  const canLaunch = Boolean(
-    householdId &&
-      selectedStory?.version?.id &&
-      selectedLaunch?.world?.id &&
-      selectedLaunch.character.id,
-  );
+  if (loading) {
+    return <AdventureHubSkeleton />;
+  }
 
-  useEffect(() => {
-    const nextSourceId = selectedLaunch?.storySources?.[0]?.id ?? "";
-    setSelectedSourceId((current) =>
-      current &&
-      selectedLaunch?.storySources?.some((source) => source.id === current)
-        ? current
-        : nextSourceId,
+  if (error) {
+    return (
+      <section className="overflow-hidden rounded-[2rem] border border-outline-variant/70 bg-[#fffaf0] shadow-sm">
+        <div className="px-5 py-8 text-center sm:px-7 md:px-9">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container text-error">
+            <span className="material-symbols-outlined text-3xl">cloud_off</span>
+          </div>
+          <h2 className="mt-4 text-xl font-extrabold text-on-surface">
+            Maceralar biraz dinleniyor
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-on-surface-variant">
+            {error}
+          </p>
+          <button
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-on-primary"
+            onClick={() => void loadStories()}
+            type="button"
+          >
+            <span className="material-symbols-outlined text-lg">refresh</span>
+            Yeniden dene
+          </button>
+        </div>
+      </section>
     );
-  }, [selectedLaunch]);
+  }
 
-  useEffect(() => {
-    if (rankedCatalog.length === 0) {
-      if (selectedStoryId) {
-        setSelectedStoryId("");
-      }
-      return;
-    }
-
-    const hasCurrent = rankedCatalog.some(
-      (entry) => entry.definition.id === selectedStoryId,
-    );
-    if (!hasCurrent) {
-      setSelectedStoryId(rankedCatalog[0]?.definition.id ?? "");
-      return;
-    }
-
-    if (
-      selectedSource &&
-      selectedStoryId &&
-      !recommendedStoryIds.has(selectedStoryId) &&
-      recommendedStoryIds.size > 0
-    ) {
-      setSelectedStoryId(rankedCatalog[0]?.definition.id ?? selectedStoryId);
-    }
-  }, [rankedCatalog, recommendedStoryIds, selectedSource, selectedStoryId]);
-
-  const handleLaunch = useCallback(async () => {
-    if (
-      !householdId ||
-      !selectedStory?.version?.id ||
-      !selectedLaunch?.world?.id
-    ) {
-      return;
-    }
-
-    setSubmitting(true);
-    setLaunchError(null);
-
-    try {
-      const response = await fetch(
-        "/api/stories/" +
-          encodeURIComponent(selectedStory.definition.id) +
-          "/sessions",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            householdId,
-            childProfileId,
-            worldId: selectedLaunch.world.id,
-            storyVersionId: selectedStory.version.id,
-            characterId: selectedLaunch.character.id,
-            playbackMode,
-            idempotencyKey: newIdempotencyKey(),
-          }),
-        },
-      );
-      const body = (await response.json().catch(async () => {
-        const text = await response.text();
-        return { message: text || `HTTP ${response.status}` };
-      })) as {
-        message?: string;
-        session?: { session?: { id?: string } };
-      };
-
-      if (!response.ok) {
-        setLaunchError(body.message ?? "Hikaye baslatilamadi.");
-        return;
-      }
-
-      const sessionId = body.session?.session?.id;
-      if (!sessionId) {
-        setLaunchError("Oturum olustu ama session kimligi donmedi.");
-        return;
-      }
-
-      window.location.href = "/app/stories/" + encodeURIComponent(sessionId);
-    } catch (error) {
-      console.error("Hikaye baslatma hatasi:", error);
-      setLaunchError(
-        error instanceof Error
-          ? `Hikaye baslatilirken bir hata olustu (${error.message})`
-          : "Hikaye baslatilirken bir hata olustu.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }, [
-    childProfileId,
-    householdId,
-    playbackMode,
-    selectedLaunch,
-    selectedStory,
-  ]);
+  const character = adventureHub?.character ?? null;
+  const ongoingAdventure = adventureHub?.ongoingAdventure ?? null;
+  const pastAdventures = adventureHub?.pastAdventures ?? [];
+  const characterName = character?.name ?? "Karakterinin";
 
   return (
-    <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-on-surface">Hikayeler</h2>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Devam eden oturumlari surdurun ya da karakterin mevcut baglamindan
-            yeni bir hikaye baslatin.
-          </p>
-        </div>
-        <button
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:opacity-50"
-          type="button"
-          onClick={() => setLaunchOpen((current) => !current)}
-          disabled={
-            loading || catalog.length === 0 || launchOptions.length === 0
-          }
-        >
-          <span className="material-symbols-outlined text-[18px]">
-            auto_stories
-          </span>
-          {launchOpen ? "Kaynak secimini kapat" : "Yeni hikaye baslat"}
-        </button>
-      </div>
+    <section className="overflow-hidden rounded-[2rem] border border-outline-variant/70 bg-[#fffaf0] shadow-sm">
+      <div className="relative px-4 py-6 sm:px-6 md:px-8 md:py-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary-fixed/45 blur-2xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/3 top-0 h-24 w-24 rounded-full bg-tertiary-fixed/45 blur-2xl"
+        />
 
-      {!loading && !error && sessions.length > 0 ? (
-        <section className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px]">
+        <header className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+              <span className="material-symbols-outlined text-lg">auto_stories</span>
+              Hikâyeler
+            </div>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-on-surface md:text-4xl">
+              {characterName}
+              {character ? "’ın Maceraları" : " Maceraları"}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant md:text-base md:leading-7">
+              Devam eden maceranı sürdür ya da dünyanın sana hazırladığı yeni
+              bir macerayı keşfet.
+            </p>
+          </div>
+
+          <button
+            aria-expanded={newAdventureOpen}
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-start rounded-2xl bg-[#d68a24] px-5 text-sm font-extrabold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+            onClick={() => setNewAdventureOpen((current) => !current)}
+            type="button"
+          >
+            <span className="material-symbols-outlined text-xl">auto_awesome</span>
+            Yeni Macera
+          </button>
+        </header>
+
+        {newAdventureOpen ? (
+          <div
+            className="relative mt-5 rounded-2xl border border-[#ead7b6] bg-white/80 px-5 py-4 text-sm leading-6 text-on-surface-variant shadow-sm"
+            role="status"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tertiary-fixed text-on-tertiary-fixed">
+                <span className="material-symbols-outlined">explore</span>
+              </div>
+              <div>
+                <p className="font-extrabold text-on-surface">
+                  Yeni macera kapısı açılıyor
+                </p>
+                <p className="mt-1">
+                  Dünya olayları, söylentiler, çantandaki eşyalar ve dostlarından
+                  gelen çağrılar burada macera seçeneklerine dönüşecek.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="relative mt-7">
+          <div className="mb-3 flex items-center gap-2 text-sm font-extrabold text-on-surface">
+            <span className="material-symbols-outlined text-primary">
               play_circle
             </span>
-            Devam eden akislar
+            Devam Eden Macera
           </div>
-          <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-            Yarim kalan macerayi acmak genelde en hizli yoldur.
-          </p>
-          <StorySessionList sessions={sessions} />
-        </section>
-      ) : null}
 
-      {launchOpen ? (
-        <div className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5">
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-            <div className="space-y-4">
-              {selectedLaunch && householdId ? (
-                <CanonicalCharacterImage
-                  characterId={selectedLaunch.character.id}
-                  householdId={householdId}
-                  characterName={selectedLaunch.character.name}
-                  className="aspect-square w-full rounded-xl border border-outline-variant shadow-sm"
-                  sizes="220px"
-                  variant="head-three-quarter"
+          {ongoingAdventure ? (
+            <OngoingAdventureCard
+              adventure={ongoingAdventure}
+              character={character}
+              householdId={householdId}
+            />
+          ) : (
+            <EmptyAdventureCard onStart={() => setNewAdventureOpen(true)} />
+          )}
+        </div>
+
+        {pastAdventures.length > 0 ? (
+          <section className="relative mt-8" aria-labelledby="past-adventures">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <h3
+                  className="text-xl font-black text-on-surface"
+                  id="past-adventures"
+                >
+                  Geçmiş Maceralar
+                </h3>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Daha önce yaşadığın hikâyelere yeniden göz at.
+                </p>
+              </div>
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-3xl text-primary/60"
+              >
+                eco
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {pastAdventures.slice(0, 6).map((adventure, index) => (
+                <PastAdventureCard
+                  adventure={adventure}
+                  index={index}
+                  key={adventure.sessionId}
                 />
-              ) : null}
-              <label className="block text-sm font-semibold text-on-surface">
-                Karakter
-                <select
-                  className="mt-2 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm font-medium text-on-surface"
-                  value={selectedCharacterId}
-                  onChange={(event) =>
-                    setSelectedCharacterId(event.target.value)
-                  }
-                >
-                  {launchOptions.map((entry) => (
-                    <option key={entry.character.id} value={entry.character.id}>
-                      {entry.character.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block text-sm font-semibold text-on-surface">
-                Oynatim
-                <select
-                  className="mt-2 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm font-medium text-on-surface"
-                  value={playbackMode}
-                  onChange={(event) => setPlaybackMode(event.target.value)}
-                >
-                  <option value="reading">Okuma</option>
-                  <option value="narrated">Seslendirme</option>
-                  <option value="mixed">Karisik</option>
-                </select>
-              </label>
+              ))}
             </div>
-
-            <div>
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold text-on-surface">
-                  Hikaye kaynagi sec
-                </p>
-                <p className="text-sm leading-6 text-on-surface-variant">
-                  Kullaniciya bos bir form gostermek yerine, eldeki baglamdan
-                  bir cikis noktasi oneriyoruz.
-                </p>
-              </div>
-
-              {selectedLaunch?.storySources &&
-              selectedLaunch.storySources.length > 0 ? (
-                <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
-                  {selectedLaunch.storySources.map((source) => {
-                    const isSelected = source.id === selectedSourceId;
-                    return (
-                      <button
-                        key={source.id}
-                        type="button"
-                        onClick={() => setSelectedSourceId(source.id)}
-                        className={[
-                          "rounded-xl border bg-white p-4 text-left transition-colors",
-                          isSelected
-                            ? "border-primary ring-2 ring-primary/20"
-                            : "border-outline-variant hover:border-primary/30",
-                        ].join(" ")}
-                      >
-                        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-on-surface-variant">
-                          {sourceKindLabel(source.kind)}
-                        </p>
-                        <h3 className="mt-2 text-base font-bold text-on-surface">
-                          {source.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                          {source.summary}
-                        </p>
-                        <p className="mt-3 text-xs text-on-surface-variant">
-                          {source.detail}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="mt-4 rounded-xl border border-dashed border-outline-variant bg-white px-5 py-6 text-sm text-on-surface-variant">
-                  Bu karakter icin henuz dunya veya canta tabanli bir cikis
-                  noktasi derlenemedi.
-                </div>
-              )}
-
-              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-                <div className="rounded-xl border border-outline-variant bg-white p-4">
-                  <p className="text-sm font-semibold text-on-surface">
-                    Hikaye sec
-                  </p>
-                  {selectedSource && topRecommendation ? (
-                    <div className="mt-3 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                      <p className="font-semibold text-on-surface">
-                        Onerilen eslesme
-                      </p>
-                      <p className="mt-2">
-                        {topRecommendation.definition.title} secilen baglamla
-                        daha uyumlu gorunuyor.
-                      </p>
-                    </div>
-                  ) : null}
-                  <select
-                    className="mt-3 w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm font-medium text-on-surface"
-                    value={selectedStoryId}
-                    onChange={(event) => setSelectedStoryId(event.target.value)}
-                  >
-                    {rankedCatalog.map((entry) => (
-                      <option
-                        key={entry.definition.id}
-                        value={entry.definition.id}
-                      >
-                        {recommendedStoryIds.has(entry.definition.id)
-                          ? "Onerilen - "
-                          : ""}
-                        {entry.definition.title} - v
-                        {entry.version?.versionNumber}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedSource ? (
-                    <div className="mt-4 rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
-                      <p className="font-semibold text-on-surface">
-                        Secilen baglam
-                      </p>
-                      <p className="mt-2">{selectedSource.summary}</p>
-                      {selectedStoryRecommendation ? (
-                        <p className="mt-2 text-on-surface">
-                          {selectedStoryRecommendation.label}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-xl border border-outline-variant bg-white p-4">
-                  <p className="text-sm font-semibold text-on-surface">
-                    Baslatma ozeti
-                  </p>
-                  <div className="mt-3 space-y-2 text-sm text-on-surface-variant">
-                    <p>Karakter: {selectedLaunch?.character.name ?? "-"}</p>
-                    <p>Dunya: {selectedLaunch?.world?.label ?? "-"}</p>
-                    <p>Kaynak: {selectedSource?.title ?? "Baglam sec"}</p>
-                    <p>Hikaye: {selectedStory?.definition.title ?? "-"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {launchError ? (
-            <div className="mt-4 rounded-lg border border-error-container bg-white px-4 py-3 text-sm text-error">
-              {launchError}
-            </div>
-          ) : null}
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf] disabled:opacity-50"
-              type="button"
-              onClick={() => void handleLaunch()}
-              disabled={!canLaunch || submitting}
-            >
-              {submitting ? "Baslatiliyor..." : "Bu baglamdan hikaye baslat"}
-            </button>
-            <button
-              className="inline-flex h-10 items-center rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
-              type="button"
-              onClick={() => setLaunchOpen(false)}
-            >
-              Vazgec
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {loading ? (
-        <p className="mt-6 text-sm text-on-surface-variant">
-          Hikaye oturumlari yukleniyor...
-        </p>
-      ) : error ? (
-        <div className="mt-6 rounded-xl border border-error-container bg-white px-5 py-4 text-sm text-error">
-          {error}
-        </div>
-      ) : launchOptions.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-8 text-sm text-on-surface-variant">
-          Yeni hikaye baslatmak icin once bu profile bagli bir karakter ve dunya
-          hazir olmali.
-        </div>
-      ) : sessions.length === 0 && !launchOpen ? (
-        <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-8 text-sm text-on-surface-variant">
-          Bu profilde henuz aktif bir hikaye yok. Yeni hikaye baslat diyerek
-          karakterin mevcut baglamindan bir cikis noktasi sec.
-        </div>
-      ) : null}
+          </section>
+        ) : null}
+      </div>
     </section>
   );
 }
 
-function sourceKindLabel(kind: StorySource["kind"]): string {
-  switch (kind) {
-    case "world_state":
-      return "Dunya durumu";
-    case "inventory":
-      return "Canta ipucu";
-    case "origin":
-      return "Karakter izi";
-    default:
-      return "Baglam";
-  }
+function OngoingAdventureCard({
+  adventure,
+  character,
+  householdId,
+}: {
+  adventure: AdventureSummary;
+  character: AdventureHubCharacter | null;
+  householdId: string | null;
+}) {
+  const location = adventure.highlights.find(
+    (highlight) => highlight.kind === "location",
+  );
+  const secondaryHighlight = adventure.highlights.find(
+    (highlight) => highlight.kind !== "location",
+  );
+
+  return (
+    <article className="overflow-hidden rounded-[1.7rem] border border-[#dce8df] bg-white shadow-sm">
+      <div className="grid lg:grid-cols-[minmax(280px,.9fr)_minmax(0,1.1fr)]">
+        <div className="relative min-h-60 overflow-hidden bg-gradient-to-br from-[#d9eee1] via-[#dce9f7] to-[#f7e3ba] sm:min-h-72 lg:min-h-full">
+          {character && householdId ? (
+            <CanonicalCharacterImage
+              characterId={character.id}
+              householdId={householdId}
+              characterName={character.name}
+              className="absolute inset-0 h-full w-full object-cover"
+              sizes="(max-width: 1024px) 100vw, 40vw"
+              variant="head-three-quarter"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="material-symbols-outlined text-7xl text-primary/50">
+                forest
+              </span>
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
+          <div className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-on-surface shadow-sm backdrop-blur">
+            <span className="mr-1 align-middle material-symbols-outlined text-base text-primary">
+              auto_awesome
+            </span>
+            Macera devam ediyor
+          </div>
+        </div>
+
+        <div className="flex flex-col p-5 sm:p-6 md:p-7">
+          <h3 className="text-2xl font-black leading-tight text-on-surface md:text-3xl">
+            {adventure.title}
+          </h3>
+          <p className="mt-4 text-sm leading-7 text-on-surface-variant md:text-base">
+            {adventure.playerRecap}
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {location ? (
+              <AdventurePill icon="location_on" label={`En son: ${location.label}`} />
+            ) : adventure.currentSceneTitle ? (
+              <AdventurePill
+                icon="location_on"
+                label={`En son: ${adventure.currentSceneTitle}`}
+              />
+            ) : null}
+            {secondaryHighlight ? (
+              <AdventurePill
+                icon={
+                  secondaryHighlight.kind === "item" ? "backpack" : "group"
+                }
+                label={secondaryHighlight.label}
+              />
+            ) : null}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-extrabold text-on-primary shadow-sm transition-transform hover:-translate-y-0.5"
+              href={`/app/stories/${encodeURIComponent(adventure.sessionId)}`}
+            >
+              <span className="material-symbols-outlined text-xl">play_arrow</span>
+              Maceraya Devam Et
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
 }
 
-function rankCatalogForSource(
-  catalog: StoryCatalogEntry[],
-  source: StorySource | null,
-): RankedStoryCatalogEntry[] {
-  return [...catalog]
-    .map((entry) => ({
-      ...entry,
-      recommendationScore: source ? getStorySourceFit(entry, source).score : 0,
-    }))
-    .sort((left, right) => {
-      if (right.recommendationScore !== left.recommendationScore) {
-        return right.recommendationScore - left.recommendationScore;
-      }
-
-      return left.definition.title.localeCompare(right.definition.title, "tr");
-    });
+function AdventurePill({ icon, label }: { icon: string; label: string }) {
+  return (
+    <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[#eef7f0] px-3 text-xs font-bold text-on-surface-variant">
+      <span className="material-symbols-outlined text-base text-primary">
+        {icon}
+      </span>
+      {label}
+    </span>
+  );
 }
 
-function getStorySourceFit(
-  entry: StoryCatalogEntry,
-  source: StorySource,
-): { score: number; label: string } {
-  const storyType = entry.definition.storyType ?? "";
-  const storyMode = entry.version?.storyMode ?? "";
-  const haystack = [
-    entry.definition.title,
-    entry.version?.title ?? "",
-    entry.version?.summary ?? "",
-  ]
-    .join(" ")
-    .toLocaleLowerCase("tr");
-  const sourceText = [source.title, source.summary, source.detail]
-    .join(" ")
-    .toLocaleLowerCase("tr");
+function PastAdventureCard({
+  adventure,
+  index,
+}: {
+  adventure: AdventureSummary;
+  index: number;
+}) {
+  const icons = ["water", "pets", "air", "forest", "castle", "stars"];
+  const icon = icons[index % icons.length] ?? "auto_stories";
 
-  let score = 0;
-  const reasons: string[] = [];
-
-  if (source.kind === "world_state") {
-    if (storyType === "world_event") {
-      score += 4;
-      reasons.push("dunya olayi akisi");
-    }
-    if (storyType === "continuing") {
-      score += 2;
-      reasons.push("devam eden macera yapisi");
-    }
-  }
-
-  if (source.kind === "inventory") {
-    if (storyMode === "interactive") {
-      score += 3;
-      reasons.push("esya tetikli secim ritmi");
-    }
-    if (storyType === "interactive" || storyType === "continuing") {
-      score += 2;
-      reasons.push("hareketli ilerleme yapisi");
-    }
-  }
-
-  if (source.kind === "origin") {
-    if (storyType === "continuing") {
-      score += 3;
-      reasons.push("karakter yolculugunu surdurme");
-    }
-    if (storyType === "reflection" || storyType === "static") {
-      score += 2;
-      reasons.push("karakter kokenine yaslanan ton");
-    }
-  }
-
-  for (const token of tokenizeSourceText(sourceText)) {
-    if (token.length < 4) {
-      continue;
-    }
-    if (haystack.includes(token)) {
-      score += 1;
-      reasons.push(`"${token}" izi`);
-    }
-  }
-
-  if (reasons.length === 0) {
-    return {
-      score,
-      label: "Bu secim genel katalog akisiyla baslatilacak.",
-    };
-  }
-
-  return {
-    score,
-    label: `Bu hikaye secilen baglamla uyumlu: ${reasons.slice(0, 2).join(", ")}.`,
-  };
+  return (
+    <a
+      className="group overflow-hidden rounded-[1.4rem] border border-outline-variant/60 bg-white shadow-sm transition-transform hover:-translate-y-1"
+      href={`/app/stories/${encodeURIComponent(adventure.sessionId)}`}
+    >
+      <div className="flex h-36 items-center justify-center bg-gradient-to-br from-primary-fixed/60 via-tertiary-fixed/55 to-[#f8dfb6]">
+        <span className="material-symbols-outlined text-6xl text-primary/65 transition-transform group-hover:scale-110">
+          {icon}
+        </span>
+      </div>
+      <div className="p-4">
+        <h4 className="text-base font-black leading-6 text-on-surface">
+          {adventure.title}
+        </h4>
+        <p className="mt-2 line-clamp-3 text-sm leading-6 text-on-surface-variant">
+          {adventure.playerRecap}
+        </p>
+        <div className="mt-3 flex items-center gap-1 text-xs font-extrabold text-primary">
+          Hikâyeyi aç
+          <span className="material-symbols-outlined text-base">
+            arrow_forward
+          </span>
+        </div>
+      </div>
+    </a>
+  );
 }
 
-function tokenizeSourceText(value: string): string[] {
-  return Array.from(
-    new Set(
-      value
-        .split(/[^a-z0-9çğıöşü]+/i)
-        .map((token) => token.trim())
-        .filter(Boolean),
-    ),
+function EmptyAdventureCard({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="flex flex-col items-center rounded-[1.7rem] border border-dashed border-[#c8ddcf] bg-white/80 px-5 py-12 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-fixed text-primary">
+        <span className="material-symbols-outlined text-3xl">explore</span>
+      </div>
+      <h3 className="mt-4 text-xl font-black text-on-surface">
+        Yeni bir maceraya hazır mısın?
+      </h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
+        Dünya, çantandaki eşyalar ve tanıdığın kişiler sana yeni bir hikâye
+        başlangıcı sunabilir.
+      </p>
+      <button
+        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d68a24] px-5 text-sm font-extrabold text-white"
+        onClick={onStart}
+        type="button"
+      >
+        <span className="material-symbols-outlined">auto_awesome</span>
+        Yeni Macera
+      </button>
+    </div>
+  );
+}
+
+function AdventureHubSkeleton() {
+  return (
+    <section
+      aria-label="Maceralar yükleniyor"
+      className="animate-pulse overflow-hidden rounded-[2rem] border border-outline-variant/70 bg-[#fffaf0] p-5 sm:p-7 md:p-8"
+    >
+      <div className="h-4 w-28 rounded-full bg-surface-container" />
+      <div className="mt-3 h-10 w-64 max-w-full rounded-xl bg-surface-container" />
+      <div className="mt-3 h-5 w-full max-w-xl rounded-full bg-surface-container-low" />
+      <div className="mt-8 grid overflow-hidden rounded-[1.7rem] border border-outline-variant/50 bg-white lg:grid-cols-2">
+        <div className="min-h-64 bg-surface-container" />
+        <div className="space-y-4 p-6">
+          <div className="h-8 w-3/4 rounded-lg bg-surface-container" />
+          <div className="h-4 w-full rounded-full bg-surface-container-low" />
+          <div className="h-4 w-5/6 rounded-full bg-surface-container-low" />
+          <div className="h-11 w-44 rounded-xl bg-surface-container" />
+        </div>
+      </div>
+    </section>
   );
 }
