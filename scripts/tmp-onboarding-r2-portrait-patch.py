@@ -36,9 +36,7 @@ old_image = '''                        <Image
                           height={180}
                           className="h-full w-full object-cover"
                         />'''
-new_image = '''                        {/* Static system artwork is served from R2/CDN; local SVG remains a resilience fallback. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+new_image = '''                        <img
                           src={characterTypeVisuals[type.id]}
                           alt={`${type.title} karakter tipi illüstrasyonu`}
                           className="h-full w-full object-cover"
@@ -60,8 +58,7 @@ old_profile = '''                  <Image
                     height={80}
                     className="h-full w-full object-cover"
                   />'''
-new_profile = '''                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+new_profile = '''                  <img
                     src={characterTypeVisuals.human}
                     alt="Profil illüstrasyonu"
                     className="h-full w-full object-cover"
