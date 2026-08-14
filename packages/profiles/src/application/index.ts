@@ -1,4 +1,5 @@
 export * from "./character-creation-cycle.service";
+export * from "./prompt-runtime.service";
 export * from "./household.service";
 export * from "./child-profile.service";
 export * from "./child-profile-personalization.service";
