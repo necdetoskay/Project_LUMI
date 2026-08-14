@@ -1,8 +1,8 @@
-import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
 import { resolveActivePrompt } from "./prompt-runtime.service";
 import { generateTextWithLlm } from "./text-llm-gateway.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
 import { recordAiGenerationTrace } from "./ai-generation-trace.service";
+import { buildGenerationContext } from "./generation-context.service";
 
 export interface CharacterOriginSuggestion {
   key: string;
@@ -21,13 +21,12 @@ export async function generateCharacterOriginSuggestions(
   userId: string,
   input: { householdId: string; childProfileId: string },
 ): Promise<CharacterOriginSuggestionResult> {
-  const cycle = await getActiveCharacterCreationCycle(
-    userId,
-    input.householdId,
-    input.childProfileId,
-  );
-  if (!cycle) throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");
-  const summary = (cycle.latestSummary ?? {}) as Record<string, unknown>;
+  const generationContext = await buildGenerationContext(userId, {
+    householdId: input.householdId,
+    childProfileId: input.childProfileId,
+    profile: "character_onboarding",
+  });
+  const summary = generationContext.creation.previousSelections;
   if (
     typeof summary.worldFeeling !== "string" ||
     !summary.characterArchetype ||
@@ -38,6 +37,7 @@ export async function generateCharacterOriginSuggestions(
     worldFeeling: summary.worldFeeling,
     characterArchetype: summary.characterArchetype,
     characterIdentity: summary.characterIdentity,
+    child: generationContext.child,
     previousSelections: summary,
   };
   const prompt = await resolveActivePrompt(
@@ -64,7 +64,7 @@ export async function generateCharacterOriginSuggestions(
     await recordAiGenerationTrace({
       householdId: input.householdId,
       childProfileId: input.childProfileId,
-      creationCycleId: cycle.id,
+      creationCycleId: generationContext.creation.cycleId ?? undefined,
       taskType: "character_origin_suggestions",
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
@@ -78,7 +78,7 @@ export async function generateCharacterOriginSuggestions(
   await recordAiGenerationTrace({
     householdId: input.householdId,
     childProfileId: input.childProfileId,
-    creationCycleId: cycle.id,
+    creationCycleId: generationContext.creation.cycleId ?? undefined,
     taskType: "character_origin_suggestions",
     promptKey: prompt.promptKey,
     promptVersion: prompt.promptVersion,
