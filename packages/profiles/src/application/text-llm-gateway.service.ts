@@ -55,8 +55,8 @@ export async function generateTextWithLlm(
       { role: "system", content: input.system },
       { role: "user", content: input.user },
     ],
-    temperature,
-    maxTokens,
+    ...(temperature !== undefined ? { temperature } : {}),
+    ...(maxTokens !== undefined ? { maxTokens } : {}),
   });
   const promptTokens = result.usage?.promptTokens ?? null;
   const completionTokens = result.usage?.completionTokens ?? null;
