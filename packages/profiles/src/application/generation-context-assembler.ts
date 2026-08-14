@@ -71,7 +71,12 @@ export function assembleGenerationContext(
   const policy = getGenerationContextPolicy(context.profile);
   const sections = policy.sections.flatMap((sectionPolicy) => {
     const value = resolveSectionValue(context, sectionPolicy.section);
-    if (!hasMeaningfulValue(value) && sectionPolicy.priority !== "required") return [];
+    if (
+      !hasMeaningfulValue(value) &&
+      sectionPolicy.priority !== "required"
+    ) {
+      return [];
+    }
 
     return [
       {
