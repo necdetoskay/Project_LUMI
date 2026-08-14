@@ -67,10 +67,15 @@ export const POST = observeHandler(
   async (request: Request, { params }: { params: Promise<{ id: string }> }) =>
     withParent(async (parent) => {
       const parsedParams = paramsSchema.safeParse(await params);
-      const parsedBody = bodySchema.safeParse(await request.json().catch(() => null));
+      const parsedBody = bodySchema.safeParse(
+        await request.json().catch(() => null),
+      );
       if (!parsedParams.success || !parsedBody.success) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "Invalid adventure start request" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "Invalid adventure start request",
+          },
           { status: 400 },
         );
       }
@@ -173,8 +178,9 @@ export const POST = observeHandler(
       if (!activeSession) {
         const catalog = await ensureStarterStoriesForHousehold(householdId);
         const preferred =
-          catalog.find((entry) => entry.definition.storyType === candidateFamily) ??
-          catalog[0];
+          catalog.find(
+            (entry) => entry.definition.storyType === candidateFamily,
+          ) ?? catalog[0];
         if (!preferred?.version) {
           return NextResponse.json(
             { error: "NOT_FOUND", message: "No published story is ready" },
@@ -228,7 +234,9 @@ export const POST = observeHandler(
             StoryHookService["createHook"]
           >[0]["hookType"],
           sceneType: (HOOK_TO_SCENE[opportunityState.opportunityType] ??
-            "narrative") as Parameters<StoryHookService["createHook"]>[0]["sceneType"],
+            "narrative") as Parameters<
+            StoryHookService["createHook"]
+          >[0]["sceneType"],
           payload: hookPayloadFromEvidence(opportunityState.evidence),
           constraints: {},
         });

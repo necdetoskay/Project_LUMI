@@ -36,7 +36,10 @@ function rotateCandidates(
 ): AdventureHookCandidate[] {
   if (candidates.length <= 1) return candidates;
   const offset = page % candidates.length;
-  return [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(0, 6);
+  return [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(
+    0,
+    6,
+  );
 }
 
 export const GET = observeHandler(
@@ -51,7 +54,10 @@ export const GET = observeHandler(
 
       if (!parsedParams.success || !parsedQuery.success) {
         return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "Invalid adventure candidate request" },
+          {
+            error: "VALIDATION_ERROR",
+            message: "Invalid adventure candidate request",
+          },
           { status: 400 },
         );
       }
@@ -98,16 +104,18 @@ export const GET = observeHandler(
           getCharacterCurrentLocation(character.id).catch(() => null),
         ]);
 
-      const candidates: AdventureHookCandidate[] = opportunities.map((entry) => {
-        const state = entry.getState();
-        return projectOpportunityCandidate({
-          id: state.id,
-          type: state.opportunityType,
-          message: state.message,
-          sourceNpcId: state.sourceNpcId,
-          evidence: state.evidence,
-        });
-      });
+      const candidates: AdventureHookCandidate[] = opportunities.map(
+        (entry) => {
+          const state = entry.getState();
+          return projectOpportunityCandidate({
+            id: state.id,
+            type: state.opportunityType,
+            message: state.message,
+            sourceNpcId: state.sourceNpcId,
+            evidence: state.evidence,
+          });
+        },
+      );
 
       for (const item of continuity?.inventory ?? []) {
         candidates.push(

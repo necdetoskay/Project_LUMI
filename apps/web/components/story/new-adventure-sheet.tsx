@@ -72,7 +72,9 @@ export function NewAdventureSheet({
         );
         const body = (await response.json()) as CandidatesResponse;
         if (!response.ok) {
-          setError(body.message ?? "Yeni macera fikirleri şu anda yüklenemedi.");
+          setError(
+            body.message ?? "Yeni macera fikirleri şu anda yüklenemedi.",
+          );
           return;
         }
         setCandidates(body.candidates ?? []);
@@ -120,10 +122,14 @@ export function NewAdventureSheet({
       );
       const body = (await response.json()) as StartResponse;
       if (!response.ok || !body.sessionId) {
-        setError(body.message ?? "Macera başlatılamadı. Yeniden deneyebilirsin.");
+        setError(
+          body.message ?? "Macera başlatılamadı. Yeniden deneyebilirsin.",
+        );
         return;
       }
-      window.location.assign(`/app/stories/${encodeURIComponent(body.sessionId)}`);
+      window.location.assign(
+        `/app/stories/${encodeURIComponent(body.sessionId)}`,
+      );
     } catch {
       setError("Macera başlatılırken beklenmeyen bir sorun oluştu.");
     } finally {
@@ -159,8 +165,8 @@ export function NewAdventureSheet({
               Bugün maceran nereden başlasın?
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
-              Dünyandaki olaylardan, duyduğun söylentilerden, çantandaki eşyalardan
-              ya da tanıdığın birinden gelen çağrıdan birini seç.
+              Dünyandaki olaylardan, duyduğun söylentilerden, çantandaki
+              eşyalardan ya da tanıdığın birinden gelen çağrıdan birini seç.
             </p>
           </div>
           <button
@@ -194,7 +200,8 @@ export function NewAdventureSheet({
           ) : groupedCandidates.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {groupedCandidates.map((candidate) => {
-                const presentation = FAMILY_PRESENTATION[candidate.sourceFamily];
+                const presentation =
+                  FAMILY_PRESENTATION[candidate.sourceFamily];
                 const isStarting = startingId === candidate.id;
                 return (
                   <article
