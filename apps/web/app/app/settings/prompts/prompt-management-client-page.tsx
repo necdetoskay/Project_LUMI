@@ -1,0 +1,476 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import PromptPlayground from "./prompt-playground";
+
+const PROMPTS = [
+  {
+    key: "character_onboarding.world_character_suggestions",
+    label: "Dünya karakter önerileri",
+  },
+] as const;
+type PromptVersion = {
+  version: number;
+  status: "draft" | "active" | "archived";
+  systemTemplate: string;
+  userTemplate: string;
+  allowedVariables: string[];
+  requiredVariables: string[];
+  outputSchema: Record<string, unknown>;
+  providerOverride: string | null;
+  modelOverride: string | null;
+  generationConfig: Record<string, unknown>;
+};
+type DraftForm = {
+  systemTemplate: string;
+  userTemplate: string;
+  providerOverride: string;
+  modelOverride: string;
+};
+
+export default function PromptManagementClientPage() {
+  const [promptKey, setPromptKey] = useState<string>(PROMPTS[0].key);
+  const [versions, setVersions] = useState<PromptVersion[]>([]);
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [draft, setDraft] = useState<DraftForm | null>(null);
+  const [tab, setTab] = useState<"manage" | "playground">("manage");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  async function loadVersions(key = promptKey, preferred?: number) {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/settings/prompts?promptKey=${encodeURIComponent(key)}`,
+      );
+      const payload = await response.json();
+      if (!response.ok)
+        throw new Error(payload.message ?? "Promptlar yüklenemedi");
+      const next = (payload.data ?? []) as PromptVersion[];
+      setVersions(next);
+      setSelectedVersion(
+        preferred ??
+          next.find((item) => item.status === "active")?.version ??
+          next.at(-1)?.version ??
+          null,
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Promptlar yüklenemedi",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    void loadVersions(promptKey);
+  }, [promptKey]);
+  const selected = useMemo(
+    () => versions.find((item) => item.version === selectedVersion) ?? null,
+    [versions, selectedVersion],
+  );
+  async function mutate(action: string, version: number, reason?: string) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/settings/prompts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, promptKey, version, reason }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "İşlem başarısız");
+      const changed = payload.data as PromptVersion;
+      await loadVersions(promptKey, changed.version);
+      setNotice(
+        action === "clone"
+          ? `v${changed.version} draft oluşturuldu.`
+          : `v${changed.version} aktif sürüm oldu.`,
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "İşlem başarısız");
+    } finally {
+      setBusy(false);
+    }
+  }
+  function beginEdit(version: PromptVersion) {
+    setDraft({
+      systemTemplate: version.systemTemplate,
+      userTemplate: version.userTemplate,
+      providerOverride: version.providerOverride ?? "",
+      modelOverride: version.modelOverride ?? "",
+    });
+  }
+  async function saveDraft() {
+    if (!selected || !draft) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/settings/prompts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "create-draft",
+          promptKey,
+          reason: `Edited from v${selected.version}`,
+          draft: {
+            ...selected,
+            systemTemplate: draft.systemTemplate,
+            userTemplate: draft.userTemplate,
+            providerOverride: draft.providerOverride || null,
+            modelOverride: draft.modelOverride || null,
+          },
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok)
+        throw new Error(payload.message ?? "Draft kaydedilemedi");
+      const created = payload.data as PromptVersion;
+      setDraft(null);
+      await loadVersions(promptKey, created.version);
+      setNotice(`v${created.version} draft kaydedildi.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Draft kaydedilemedi");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function rollback(version: number) {
+    const reason = window.prompt(
+      "Rollback gerekçesi",
+      `v${version} sürümüne geri dönüş`,
+    );
+    if (!reason?.trim()) return;
+    await mutate("rollback", version, reason);
+  }
+  return (
+    <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <header className="mb-6 space-y-2">
+        <p className="text-sm font-medium text-violet-700">Settings / AI</p>
+        <h1 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
+          Onboarding AI Yönetimi
+        </h1>
+        <p className="max-w-3xl text-sm text-slate-600 sm:text-base">
+          Promptları versiyonlayın, production sürümünü koruyun ve Playground'da
+          karşılaştırın.
+        </p>
+      </header>
+      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Onboarding adımları
+          </p>
+          {PROMPTS.map((prompt) => (
+            <button
+              key={prompt.key}
+              type="button"
+              onClick={() => setPromptKey(prompt.key)}
+              className={`w-full rounded-xl px-3 py-3 text-left text-sm ${promptKey === prompt.key ? "bg-violet-50 font-semibold text-violet-900" : "text-slate-700 hover:bg-slate-50"}`}
+            >
+              <span className="block">{prompt.label}</span>
+              <span className="mt-1 block break-all text-xs font-normal text-slate-500">
+                {prompt.key}
+              </span>
+            </button>
+          ))}
+        </aside>
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          {loading ? (
+            <p className="text-sm text-slate-500">Yükleniyor…</p>
+          ) : null}
+          {error ? (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              {error}
+            </div>
+          ) : null}
+          {notice ? (
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              {notice}
+            </div>
+          ) : null}
+          {selected ? (
+            <div className="space-y-5">
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-slate-950">
+                      Version {selected.version}
+                    </h2>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      {selected.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{promptKey}</p>
+                </div>
+                <select
+                  value={selectedVersion ?? ""}
+                  onChange={(event) => {
+                    setSelectedVersion(Number(event.target.value));
+                    setDraft(null);
+                  }}
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                >
+                  {versions.map((item) => (
+                    <option key={item.version} value={item.version}>
+                      v{item.version} · {item.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 border-b border-slate-100">
+                <Tab active={tab === "manage"} onClick={() => setTab("manage")}>
+                  Yönetim
+                </Tab>
+                <Tab
+                  active={tab === "playground"}
+                  onClick={() => setTab("playground")}
+                >
+                  Playground
+                </Tab>
+              </div>
+              {tab === "playground" ? (
+                <PromptPlayground
+                  promptKey={promptKey}
+                  versions={versions}
+                  selectedVersion={selected.version}
+                />
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <ActionButton
+                      disabled={busy}
+                      onClick={() => void mutate("clone", selected.version)}
+                    >
+                      Clone draft
+                    </ActionButton>
+                    <ActionButton
+                      disabled={busy}
+                      onClick={() => beginEdit(selected)}
+                    >
+                      Düzenle
+                    </ActionButton>
+                    {selected.status === "draft" ? (
+                      <ActionButton
+                        disabled={busy}
+                        onClick={() =>
+                          void mutate("activate", selected.version)
+                        }
+                      >
+                        Activate
+                      </ActionButton>
+                    ) : null}
+                    {selected.status === "archived" ? (
+                      <ActionButton
+                        disabled={busy}
+                        onClick={() => void rollback(selected.version)}
+                      >
+                        Rollback
+                      </ActionButton>
+                    ) : null}
+                  </div>
+                  {draft ? (
+                    <div className="space-y-4 rounded-2xl border border-violet-200 bg-violet-50/40 p-4">
+                      <h3 className="font-semibold text-slate-900">
+                        Yeni draft düzenle
+                      </h3>
+                      <Editor
+                        label="System template"
+                        value={draft.systemTemplate}
+                        onChange={(value) =>
+                          setDraft({ ...draft, systemTemplate: value })
+                        }
+                      />
+                      <Editor
+                        label="User template"
+                        value={draft.userTemplate}
+                        onChange={(value) =>
+                          setDraft({ ...draft, userTemplate: value })
+                        }
+                      />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <TextInput
+                          label="Provider override"
+                          value={draft.providerOverride}
+                          onChange={(value) =>
+                            setDraft({ ...draft, providerOverride: value })
+                          }
+                        />
+                        <TextInput
+                          label="Model override"
+                          value={draft.modelOverride}
+                          onChange={(value) =>
+                            setDraft({ ...draft, modelOverride: value })
+                          }
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <ActionButton
+                          disabled={busy}
+                          onClick={() => void saveDraft()}
+                        >
+                          Yeni draft olarak kaydet
+                        </ActionButton>
+                        <ActionButton
+                          disabled={busy}
+                          onClick={() => setDraft(null)}
+                        >
+                          Vazgeç
+                        </ActionButton>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <PromptField
+                        title="System template"
+                        value={selected.systemTemplate}
+                      />
+                      <PromptField
+                        title="User template"
+                        value={selected.userTemplate}
+                      />
+                    </>
+                  )}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <InfoCard title="İzin verilen değişkenler">
+                      <div className="flex flex-wrap gap-2">
+                        {selected.allowedVariables.map((variable) => (
+                          <code
+                            key={variable}
+                            className="rounded-md bg-slate-100 px-2 py-1 text-xs"
+                          >{`{{${variable}}}`}</code>
+                        ))}
+                      </div>
+                    </InfoCard>
+                    <InfoCard title="Model / Provider">
+                      <p className="text-sm text-slate-700">
+                        {selected.providerOverride ?? "Default provider"} ·{" "}
+                        {selected.modelOverride ?? "Default model"}
+                      </p>
+                    </InfoCard>
+                  </div>
+                  <InfoCard title="Output JSON Schema">
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs text-slate-700">
+                      {JSON.stringify(selected.outputSchema, null, 2)}
+                    </pre>
+                  </InfoCard>
+                </>
+              )}
+            </div>
+          ) : null}
+        </section>
+      </div>
+    </main>
+  );
+}
+function Tab({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border-b-2 px-3 py-2 text-sm font-semibold ${active ? "border-violet-600 text-violet-800" : "border-transparent text-slate-500"}`}
+    >
+      {children}
+    </button>
+  );
+}
+function ActionButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+    >
+      {children}
+    </button>
+  );
+}
+function PromptField({ title, value }: { title: string; value: string }) {
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-slate-800">{title}</p>
+      <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-800">
+        {value}
+      </pre>
+    </div>
+  );
+}
+function Editor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-semibold text-slate-800">
+        {label}
+      </span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={10}
+        className="w-full rounded-xl border border-slate-300 bg-white p-3 font-mono text-sm leading-6"
+      />
+    </label>
+  );
+}
+function TextInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-semibold text-slate-800">
+        {label}
+      </span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+      />
+    </label>
+  );
+}
+function InfoCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="mb-3 text-sm font-semibold text-slate-800">{title}</p>
+      {children}
+    </div>
+  );
+}
