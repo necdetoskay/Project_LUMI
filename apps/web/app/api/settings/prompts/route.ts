@@ -27,28 +27,40 @@ export const POST = observeHandler(async (request: Request) => {
   return withParent(async (parent) => {
     const body = (await readRequestBody(request)) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "";
-    const promptKey = typeof body.promptKey === "string" ? body.promptKey.trim() : "";
-    if (!action || !promptKey) return validation("action and promptKey are required");
+    const promptKey =
+      typeof body.promptKey === "string" ? body.promptKey.trim() : "";
+    if (!action || !promptKey)
+      return validation("action and promptKey are required");
     const reason = typeof body.reason === "string" ? body.reason : null;
     const context = { actorUserId: parent.id, reason };
 
     try {
       if (action === "create-draft") {
         const draft = body.draft as PromptDraftInput | undefined;
-        if (!draft || typeof draft !== "object") return validation("draft is required");
-        return NextResponse.json({ data: await createPromptDraft(promptKey, draft, context) });
+        if (!draft || typeof draft !== "object")
+          return validation("draft is required");
+        return NextResponse.json({
+          data: await createPromptDraft(promptKey, draft, context),
+        });
       }
       const version = Number(body.version);
-      if (!Number.isInteger(version) || version < 1) return validation("valid version is required");
+      if (!Number.isInteger(version) || version < 1)
+        return validation("valid version is required");
       if (action === "clone") {
-        return NextResponse.json({ data: await clonePromptVersion(promptKey, version, context) });
+        return NextResponse.json({
+          data: await clonePromptVersion(promptKey, version, context),
+        });
       }
       if (action === "activate") {
-        return NextResponse.json({ data: await activatePromptVersion(promptKey, version, context) });
+        return NextResponse.json({
+          data: await activatePromptVersion(promptKey, version, context),
+        });
       }
       if (action === "rollback") {
         if (!reason?.trim()) return validation("reason is required for rollback");
-        return NextResponse.json({ data: await rollbackPrompt(promptKey, version, context) });
+        return NextResponse.json({
+          data: await rollbackPrompt(promptKey, version, context),
+        });
       }
       return validation(`Unknown action: ${action}`);
     } catch (error) {
@@ -58,7 +70,10 @@ export const POST = observeHandler(async (request: Request) => {
 }, "/api/settings/prompts");
 
 function validation(message: string) {
-  return NextResponse.json({ error: "VALIDATION_ERROR", message }, { status: 400 });
+  return NextResponse.json(
+    { error: "VALIDATION_ERROR", message },
+    { status: 400 },
+  );
 }
 
 function handleError(error: unknown): NextResponse {
@@ -66,5 +81,8 @@ function handleError(error: unknown): NextResponse {
   if (message.startsWith("PROMPT_") || message.includes("VALIDATION")) {
     return validation(message);
   }
-  return NextResponse.json({ error: "INTERNAL_ERROR", message }, { status: 500 });
+  return NextResponse.json(
+    { error: "INTERNAL_ERROR", message },
+    { status: 500 },
+  );
 }
