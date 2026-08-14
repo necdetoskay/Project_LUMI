@@ -8,6 +8,7 @@ export const LLM_TASK_TYPES = [
   "character_origin_generation",
   "character_world_suggestions",
   "world_character_suggestions",
+  "character_identity_suggestions",
   "story_outline_generation",
   "story_turn_generation",
   "safety_review",
@@ -25,7 +26,7 @@ export const llmTaskModelSettings = profileSchema.table("llm_task_model_settings
 }, (table) => [
   uniqueIndex("uq_llm_task_model_settings_user_household_provider_task").on(table.userId, table.householdId, table.provider, table.taskType), index("llm_task_model_settings_household_idx").on(table.householdId), index("llm_task_model_settings_task_type_idx").on(table.taskType),
   check("llm_task_model_settings_provider_check", sql`${table.provider} IN ('openrouter')`),
-  check("llm_task_model_settings_task_type_check", sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`),
+  check("llm_task_model_settings_task_type_check", sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`),
   check("llm_task_model_settings_reasoning_check", sql`${table.reasoningLevel} IN ('low', 'medium', 'high')`), check("llm_task_model_settings_temp_check", sql`${table.temperature} >= 0 AND ${table.temperature} <= 2`), check("llm_task_model_settings_tokens_check", sql`${table.maxOutputTokens} >= 256 AND ${table.maxOutputTokens} <= 8000`),
 ]);
 export type LlmTaskModelSettingsRecord = typeof llmTaskModelSettings.$inferSelect;
