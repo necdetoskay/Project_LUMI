@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
-import { generateText } from "@/lib/ai/text-generation/gateway";
 import { validateJsonSchema } from "@/lib/prompts/json-schema-validation";
 import { previewPrompt } from "@/lib/prompts/prompt-preview";
-import { listPromptVersions } from "@lumi/profiles/application";
+import {
+  generateTextWithLlm,
+  getOwnedHousehold,
+  listPromptVersions,
+  recordAiGenerationTrace,
+} from "@lumi/profiles/application";
 
 export async function POST(request: Request) {
   const parent = await getParentFromSessionToken(
@@ -12,6 +16,14 @@ export async function POST(request: Request) {
   );
   if (!parent)
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  const household = await getOwnedHousehold(parent.id);
+  if (!household)
+    return NextResponse.json(
+      { message: "Owned household not found" },
+      { status: 404 },
+    );
+
   const body = (await request.json()) as {
     promptKey?: string;
     version?: number;
@@ -28,6 +40,7 @@ export async function POST(request: Request) {
       { message: "Invalid run request" },
       { status: 400 },
     );
+
   const versions = await listPromptVersions(body.promptKey);
   const target = versions.find((item) => item.version === body.version);
   if (!target)
@@ -35,6 +48,7 @@ export async function POST(request: Request) {
       { message: "Prompt version not found" },
       { status: 404 },
     );
+
   const preview = previewPrompt(
     {
       systemTemplate: target.systemTemplate,
@@ -63,25 +77,61 @@ export async function POST(request: Request) {
       { message: "Bu prompt sürümü için model seçilmemiş." },
       { status: 422 },
     );
+
   try {
-    const result = await generateText({
-      purpose: body.promptKey,
+    const generated = await generateTextWithLlm({
+      userId: parent.id,
+      householdId: household.id,
+      taskType: body.promptKey,
       system: preview.system,
       user: preview.user,
-      provider: target.providerOverride || "openrouter",
-      model: target.modelOverride,
+      modelOverride: target.modelOverride,
       generationConfig: target.generationConfig,
-      outputSchema: target.outputSchema,
     });
+    let parsedJson: unknown | null = null;
+    try {
+      parsedJson = JSON.parse(generated.content) as unknown;
+    } catch {
+      parsedJson = null;
+    }
     const schemaValidation =
-      result.parsedJson === null
+      parsedJson === null
         ? { valid: false, errors: ["$: output is not valid JSON"] }
-        : validateJsonSchema(result.parsedJson, target.outputSchema);
+        : validateJsonSchema(parsedJson, target.outputSchema);
+    const outputPayload =
+      parsedJson && typeof parsedJson === "object" && !Array.isArray(parsedJson)
+        ? (parsedJson as Record<string, unknown>)
+        : { rawOutput: generated.content };
+
+    await recordAiGenerationTrace({
+      householdId: household.id,
+      taskType: `prompt_playground:${body.promptKey}`,
+      promptKey: body.promptKey,
+      promptVersion: target.version,
+      inputContext: body.context,
+      outputPayload,
+      validationStatus: schemaValidation.valid ? "valid" : "invalid",
+      generated,
+    });
+
     return NextResponse.json({
       data: {
         version: target.version,
         status: target.status,
-        ...result,
+        output: generated.content,
+        parsedJson,
+        provider: generated.provider,
+        model: generated.model,
+        usage: {
+          inputTokens: generated.promptTokens,
+          outputTokens: generated.completionTokens,
+          totalTokens: generated.totalTokens,
+        },
+        latencyMs: generated.latencyMs,
+        estimatedCostUsd:
+          generated.cost === null
+            ? null
+            : generated.cost.estimatedCostUsdMicros / 1_000_000,
         schemaValidation,
       },
     });

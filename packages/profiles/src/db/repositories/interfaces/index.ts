@@ -10,3 +10,4 @@ export type { InventoryRepository } from "./inventory.repository";
 export type { LlmProviderSettingsRepository } from "./llm-provider-settings.repository";
 export type { LlmTaskModelSettingsRepository } from "./llm-task-model-settings.repository";
 export type { ArchetypeSuggestionBatchRepository } from "./archetype-suggestion-batch.repository";
+export type { AiGenerationTraceRepository } from "./ai-generation-trace.repository";

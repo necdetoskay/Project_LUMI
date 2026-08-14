@@ -11,6 +11,7 @@ export type {
   LlmProviderSettingsRepository,
   LlmTaskModelSettingsRepository,
   ArchetypeSuggestionBatchRepository,
+  AiGenerationTraceRepository,
 } from "./interfaces";
 
 export {
@@ -26,4 +27,5 @@ export {
   DrizzleLlmProviderSettingsRepository,
   DrizzleLlmTaskModelSettingsRepository,
   DrizzleArchetypeSuggestionBatchRepository,
+  DrizzleAiGenerationTraceRepository,
 } from "./drizzle";

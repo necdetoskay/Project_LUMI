@@ -1,4 +1,4 @@
-import { aiGenerationTraces } from "../db/schema/profile";
+import { DrizzleAiGenerationTraceRepository } from "../db/repositories";
 import { getProfileDb } from "./db";
 import type { TextLlmGatewayResult } from "./text-llm-gateway.service";
 
@@ -18,6 +18,7 @@ export interface RecordAiGenerationTraceInput {
 export async function recordAiGenerationTrace(
   input: RecordAiGenerationTraceInput,
 ) {
+  const repository = new DrizzleAiGenerationTraceRepository(getProfileDb());
   const costFields = input.generated.cost
     ? {
         estimatedCostUsdMicros: input.generated.cost.estimatedCostUsdMicros,
@@ -26,25 +27,22 @@ export async function recordAiGenerationTrace(
       }
     : {};
 
-  await getProfileDb()
-    .insert(aiGenerationTraces)
-    .values({
-      id: crypto.randomUUID(),
-      householdId: input.householdId,
-      childProfileId: input.childProfileId ?? null,
-      creationCycleId: input.creationCycleId ?? null,
-      taskType: input.taskType,
-      promptKey: input.promptKey,
-      promptVersion: input.promptVersion,
-      provider: input.generated.provider,
-      modelId: input.generated.model,
-      inputContext: input.inputContext,
-      outputPayload: input.outputPayload,
-      validationStatus: input.validationStatus,
-      promptTokens: input.generated.promptTokens,
-      completionTokens: input.generated.completionTokens,
-      totalTokens: input.generated.totalTokens,
-      ...costFields,
-      latencyMs: input.generated.latencyMs,
-    });
+  return repository.create({
+    householdId: input.householdId,
+    childProfileId: input.childProfileId ?? null,
+    creationCycleId: input.creationCycleId ?? null,
+    taskType: input.taskType,
+    promptKey: input.promptKey,
+    promptVersion: input.promptVersion,
+    provider: input.generated.provider,
+    modelId: input.generated.model,
+    inputContext: input.inputContext,
+    outputPayload: input.outputPayload,
+    validationStatus: input.validationStatus,
+    promptTokens: input.generated.promptTokens,
+    completionTokens: input.generated.completionTokens,
+    totalTokens: input.generated.totalTokens,
+    ...costFields,
+    latencyMs: input.generated.latencyMs,
+  });
 }

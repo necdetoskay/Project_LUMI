@@ -10,3 +10,4 @@ export { DrizzleInventoryRepository } from "./drizzle-inventory.repository";
 export { DrizzleLlmProviderSettingsRepository } from "./drizzle-llm-provider-settings.repository";
 export { DrizzleLlmTaskModelSettingsRepository } from "./drizzle-llm-task-model-settings.repository";
 export { DrizzleArchetypeSuggestionBatchRepository } from "./drizzle-archetype-suggestion-batch.repository";
+export { DrizzleAiGenerationTraceRepository } from "./drizzle-ai-generation-trace.repository";
