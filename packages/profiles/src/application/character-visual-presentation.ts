@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 import { characterVisualAssets } from "../db/schema/profile";
 import { getProfileDb } from "./db";
@@ -46,6 +46,7 @@ export async function getCharacterVisualPresentationAsset(
         eq(characterVisualAssets.characterId, characterId),
         eq(characterVisualAssets.sourceCompositeAssetId, canon.selectedAssetId),
         eq(characterVisualAssets.assetKind, variant),
+        ne(characterVisualAssets.lifecycleState, "deleted"),
       ),
     )
     .limit(1);
@@ -60,6 +61,7 @@ export async function getCharacterVisualPresentationAsset(
         eq(characterVisualAssets.id, canon.selectedAssetId),
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
+        ne(characterVisualAssets.lifecycleState, "deleted"),
       ),
     )
     .limit(1);

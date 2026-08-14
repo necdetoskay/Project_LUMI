@@ -102,6 +102,7 @@ export const characterVisualAssets = profileSchema.table(
     provenance: jsonb("provenance").$type<Record<string, unknown>>().notNull(),
     rejectedAt: timestamp("rejected_at", { withTimezone: true }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestampColumns,
   },
   (table) => [
@@ -111,7 +112,7 @@ export const characterVisualAssets = profileSchema.table(
     ),
     check(
       "character_visual_assets_lifecycle_check",
-      sql`${table.lifecycleState} IN ('candidate', 'canonical', 'rejected', 'archived')`,
+      sql`${table.lifecycleState} IN ('candidate', 'canonical', 'rejected', 'archived', 'deleted')`,
     ),
     check(
       "character_visual_assets_candidate_index_check",

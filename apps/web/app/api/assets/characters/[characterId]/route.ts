@@ -9,6 +9,7 @@ import {
   getOpenRouterApiKey,
   getOwnedHousehold,
   listCharacterVisualCandidates,
+  deleteCharacterVisualVariant,
   rejectCharacterVisualCandidate,
   selectCharacterVisualCanon,
 } from "@lumi/profiles/application";
@@ -28,6 +29,7 @@ const actionSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("reject"), assetId: z.string().uuid() }),
+  z.object({ action: z.literal("delete"), assetId: z.string().uuid() }),
 ]);
 
 async function requireHousehold(parentId: string, householdId: string | null) {
@@ -139,6 +141,16 @@ export async function POST(
           action.assetId,
         );
         return NextResponse.json({ canon });
+      }
+
+      if (action.action === "delete") {
+        const candidate = await deleteCharacterVisualVariant(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
+          action.assetId,
+        );
+        return NextResponse.json({ candidate });
       }
 
       const candidate = await rejectCharacterVisualCandidate(

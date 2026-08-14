@@ -118,6 +118,17 @@ export function CharacterVisualManager({
   const contentUrl = (assetId: string) =>
     `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(assetId)}?householdId=${encodeURIComponent(householdId)}`;
 
+  async function deleteVariant(variantId: string) {
+    const confirmed = window.confirm(
+      "Bu görünüm varyantını silmek istediğine emin misin? Silinen varyant kullanıldığı yerlerde placeholder ile gösterilir.",
+    );
+    if (!confirmed) return;
+    await act(
+      { action: "delete", assetId: variantId },
+      "Görünüm varyantı silindi.",
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -322,7 +333,7 @@ export function CharacterVisualManager({
           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7">
             {state.variants.map((variant) => (
               <div
-                className="relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
+                className="group relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
                 key={variant.id}
               >
                 <Image
@@ -333,6 +344,18 @@ export function CharacterVisualManager({
                   src={contentUrl(variant.id)}
                   unoptimized
                 />
+                <button
+                  aria-label="Varyantı sil"
+                  className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-white/90 text-on-surface opacity-0 shadow transition group-hover:opacity-100 focus-visible:opacity-100"
+                  disabled={busy === "delete"}
+                  onClick={() => void deleteVariant(variant.id)}
+                  title="Varyantı sil"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    close
+                  </span>
+                </button>
               </div>
             ))}
           </div>

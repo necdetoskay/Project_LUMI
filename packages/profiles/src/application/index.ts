@@ -188,6 +188,7 @@ export {
   getCharacterVisualCanon,
   selectCharacterVisualCanon,
   rejectCharacterVisualCandidate,
+  deleteCharacterVisualVariant,
 } from "./character-visual.service";
 export type {
   GenerateCharacterVisualInput,

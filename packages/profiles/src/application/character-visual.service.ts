@@ -1,4 +1,4 @@
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, asc, eq, ne, or } from "drizzle-orm";
 
 import {
   characterVisualAssets,
@@ -117,6 +117,7 @@ export async function listCharacterVisualCandidates(
       and(
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
+        ne(characterVisualAssets.lifecycleState, "deleted"),
       ),
     )
     .orderBy(
@@ -515,6 +516,49 @@ export async function rejectCharacterVisualCandidate(
           eq(characterVisualAssets.id, assetId),
           eq(characterVisualAssets.sourceCompositeAssetId, assetId),
         ),
+        eq(characterVisualAssets.householdId, householdId),
+        eq(characterVisualAssets.characterId, characterId),
+      ),
+    )
+    .returning();
+  if (updated.length === 0) throw new Error("VISUAL_ASSET_NOT_FOUND");
+  return updated[0];
+}
+
+export async function deleteCharacterVisualVariant(
+  userId: string,
+  householdId: string,
+  characterId: string,
+  assetId: string,
+) {
+  await loadOwnedCharacterRecord(userId, householdId, characterId);
+  const [asset] = await getProfileDb()
+    .select()
+    .from(characterVisualAssets)
+    .where(
+      and(
+        eq(characterVisualAssets.id, assetId),
+        eq(characterVisualAssets.householdId, householdId),
+        eq(characterVisualAssets.characterId, characterId),
+      ),
+    )
+    .limit(1);
+  if (!asset) throw new Error("VISUAL_ASSET_NOT_FOUND");
+  if (!asset.sourceCompositeAssetId) {
+    throw new Error("VISUAL_SOURCE_ASSET_NOT_DELETABLE");
+  }
+  if (asset.lifecycleState === "deleted") return asset;
+
+  const updated = await getProfileDb()
+    .update(characterVisualAssets)
+    .set({
+      lifecycleState: "deleted",
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(characterVisualAssets.id, assetId),
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
       ),
