@@ -1,4 +1,6 @@
 import { callOpenRouter, getOpenRouterApiKey, getTaskModelSetting } from "./llm-settings";
+import { estimateLlmCost, type LlmCostEstimate } from "./llm-cost";
+import { resolveOpenRouterPricingSnapshot } from "./openrouter-pricing.service";
 
 export interface TextLlmGatewayInput {
   userId: string;
@@ -18,6 +20,7 @@ export interface TextLlmGatewayResult {
   completionTokens: number | null;
   totalTokens: number | null;
   latencyMs: number;
+  cost: LlmCostEstimate | null;
 }
 
 export async function generateTextWithLlm(input: TextLlmGatewayInput): Promise<TextLlmGatewayResult> {
@@ -31,5 +34,9 @@ export async function generateTextWithLlm(input: TextLlmGatewayInput): Promise<T
   const maxTokens = typeof cfg.maxOutputTokens === "number" ? cfg.maxOutputTokens : taskSetting?.maxOutputTokens;
   const started = Date.now();
   const result = await callOpenRouter(apiKey, { model, messages: [{ role: "system", content: input.system }, { role: "user", content: input.user }], temperature, maxTokens });
-  return { content: result.content, provider: "openrouter", model: result.model, promptTokens: result.usage?.promptTokens ?? null, completionTokens: result.usage?.completionTokens ?? null, totalTokens: result.usage?.totalTokens ?? null, latencyMs: Date.now() - started };
+  const promptTokens = result.usage?.promptTokens ?? null;
+  const completionTokens = result.usage?.completionTokens ?? null;
+  const pricing = await resolveOpenRouterPricingSnapshot(result.model);
+  const cost = estimateLlmCost({ promptTokens, completionTokens }, pricing);
+  return { content: result.content, provider: "openrouter", model: result.model, promptTokens, completionTokens, totalTokens: result.usage?.totalTokens ?? null, latencyMs: Date.now() - started, cost };
 }
