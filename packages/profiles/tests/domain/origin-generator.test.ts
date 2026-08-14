@@ -111,6 +111,46 @@ function successfulPayload() {
   };
 }
 
+function freshPayload() {
+  return {
+    packages: [
+      packagePayload(
+        "human",
+        "Mercan Haritacısı",
+        "Renk değiştiren mercan yollarını çizerek kayıp koyları bulan genç bir haritacı",
+      ),
+      packagePayload(
+        "fantasy",
+        "Rüzgar Dokumacısı",
+        "Uçan adalar arasında güvenli yollar açmak için rüzgar şeritleri ören bir gezgin",
+      ),
+      packagePayload(
+        "animal",
+        "Kutup Işığı İzleyicisi",
+        "Buz ovalarında gökyüzündeki renkli işaretleri takip eden meraklı bir tilki",
+      ),
+      packagePayload(
+        "robot",
+        "Melodi Arşivcisi",
+        "Unutulmuş şehirlerin seslerini toplayıp yeni melodilere dönüştüren küçük bir robot",
+      ),
+    ],
+  };
+}
+
+function llmResponse(payload: unknown) {
+  return {
+    content: JSON.stringify(payload),
+    provider: "openrouter",
+    model: "test-model",
+    promptTokens: 100,
+    completionTokens: 200,
+    totalTokens: 300,
+    latencyMs: 25,
+    cost: null,
+  };
+}
+
 function setupValidProfileMocks() {
   mockFindByIdForUser.mockResolvedValue({
     id: TEST_HOUSEHOLD_ID,
@@ -145,16 +185,7 @@ function setupPromptRuntimeMock() {
 }
 
 function setupLlmSuccess() {
-  mockGenerateTextWithLlm.mockResolvedValue({
-    content: JSON.stringify(successfulPayload()),
-    provider: "openrouter",
-    model: "test-model",
-    promptTokens: 100,
-    completionTokens: 200,
-    totalTokens: 300,
-    latencyMs: 25,
-    cost: null,
-  });
+  mockGenerateTextWithLlm.mockResolvedValue(llmResponse(successfulPayload()));
 }
 
 async function generate(
@@ -244,8 +275,8 @@ describe("origin-generator", () => {
     );
   });
 
-  it("records invalid raw output and throws when schema validation fails", async () => {
-    mockGenerateTextWithLlm.mockResolvedValueOnce({
+  it("records invalid raw output and throws when schema validation fails twice", async () => {
+    const invalidResponse = {
       content: JSON.stringify({ invalid: true }),
       provider: "openrouter",
       model: "test-model",
@@ -254,10 +285,13 @@ describe("origin-generator", () => {
       totalTokens: 15,
       latencyMs: 10,
       cost: null,
-    });
+    };
+    mockGenerateTextWithLlm.mockResolvedValue(invalidResponse);
 
     await expect(generate()).rejects.toThrow(LlmGenerationError);
-    expect(mockRecordAiGenerationTrace).toHaveBeenCalledWith(
+    expect(mockGenerateTextWithLlm).toHaveBeenCalledTimes(2);
+    expect(mockRecordAiGenerationTrace).toHaveBeenCalledTimes(2);
+    expect(mockRecordAiGenerationTrace).toHaveBeenLastCalledWith(
       expect.objectContaining({
         validationStatus: "invalid",
         outputPayload: { raw: JSON.stringify({ invalid: true }) },
@@ -273,26 +307,8 @@ describe("origin-generator", () => {
       "Tamamen farklı bir başlangıç fikri",
     );
     mockGenerateTextWithLlm
-      .mockResolvedValueOnce({
-        content: JSON.stringify(duplicatePayload),
-        provider: "openrouter",
-        model: "test-model",
-        promptTokens: 100,
-        completionTokens: 200,
-        totalTokens: 300,
-        latencyMs: 25,
-        cost: null,
-      })
-      .mockResolvedValueOnce({
-        content: JSON.stringify(successfulPayload()),
-        provider: "openrouter",
-        model: "test-model",
-        promptTokens: 100,
-        completionTokens: 200,
-        totalTokens: 300,
-        latencyMs: 25,
-        cost: null,
-      });
+      .mockResolvedValueOnce(llmResponse(duplicatePayload))
+      .mockResolvedValueOnce(llmResponse(successfulPayload()));
 
     const result = await generate();
 
@@ -308,9 +324,14 @@ describe("origin-generator", () => {
           "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
       },
     ];
+    mockGenerateTextWithLlm
+      .mockResolvedValueOnce(llmResponse(successfulPayload()))
+      .mockResolvedValueOnce(llmResponse(freshPayload()));
+
     const result = await generate("explorer", previousBatch);
 
     expect(result.candidates).toHaveLength(4);
+    expect(result.candidates[0]?.subtype).toBe("Mercan Haritacısı");
     expect(mockGenerateTextWithLlm).toHaveBeenCalledTimes(2);
   });
 
