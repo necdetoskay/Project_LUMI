@@ -144,7 +144,9 @@ export function buildPlayerRecap(
   const sceneTitle = cleanNarrative(input.currentScene?.title);
   if (sceneTitle) return sceneTitle;
 
-  return cleanNarrative(input.definition?.title ?? input.version?.title) || "Story";
+  return (
+    cleanNarrative(input.definition?.title ?? input.version?.title) || "Story"
+  );
 }
 
 export function projectAdventureSummary(
