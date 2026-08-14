@@ -39,6 +39,17 @@ const HOOK_TO_SCENE: Record<string, string> = {
   information_share: "narrative",
 };
 
+type OpportunityState = {
+  id: string;
+  householdId: string;
+  childProfileId: string;
+  sourceNpcId: string;
+  opportunityType: string;
+  message: string;
+  evidence: Record<string, unknown>;
+  status: string;
+};
+
 function hookPayloadFromEvidence(
   evidence: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -101,11 +112,12 @@ export const POST = observeHandler(
       }
 
       let candidateTitle = "Yeni macera";
-      let candidateFamily: "world_event" | "rumor" | "inventory_item" | "npc_call" =
-        "world_event";
-      let opportunityState: ReturnType<
-        Awaited<ReturnType<DrizzleOpportunityInboxRepository["findById"]>>["getState"]
-      > | null = null;
+      let candidateFamily:
+        | "world_event"
+        | "rumor"
+        | "inventory_item"
+        | "npc_call" = "world_event";
+      let opportunityState: OpportunityState | null = null;
 
       if (candidateId.startsWith("opportunity:")) {
         const opportunityId = candidateId.slice("opportunity:".length);
