@@ -61,3 +61,6 @@ export const aiGenerationTraces = profileSchema.table("ai_generation_traces", {
     .notNull()
     .defaultNow(),
 });
+
+export type AiGenerationTraceRecord = typeof aiGenerationTraces.$inferSelect;
+export type NewAiGenerationTraceRecord = typeof aiGenerationTraces.$inferInsert;
