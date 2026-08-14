@@ -1,0 +1,25 @@
+import { resolveActivePrompt } from "./prompt-runtime.service";
+import { generateTextWithLlm } from "./text-llm-gateway.service";
+import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
+
+export interface WorldCharacterSuggestion { key: string; name: string; description: string; fitReason: string; }
+export interface WorldCharacterSuggestionResult { suggestions: WorldCharacterSuggestion[]; trace: { promptKey: string; promptVersion: number; provider: string; model: string; promptTokens: number | null; completionTokens: number | null; totalTokens: number | null; latencyMs: number; }; }
+
+function parseSuggestions(raw: string): WorldCharacterSuggestion[] {
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  let value: unknown; try { value = JSON.parse(cleaned); } catch { throw new Error("LLM_OUTPUT_INVALID_JSON"); }
+  if (!value || typeof value !== "object" || !Array.isArray((value as { suggestions?: unknown }).suggestions)) throw new Error("LLM_OUTPUT_SCHEMA_INVALID");
+  const rows = (value as { suggestions: unknown[] }).suggestions;
+  if (rows.length !== 4) throw new Error("LLM_OUTPUT_SCHEMA_INVALID");
+  return rows.map((row) => { if (!row || typeof row !== "object") throw new Error("LLM_OUTPUT_SCHEMA_INVALID"); const r=row as Record<string,unknown>; for(const k of ["key","name","description","fitReason"]) if(typeof r[k]!=="string" || !(r[k] as string).trim()) throw new Error("LLM_OUTPUT_SCHEMA_INVALID"); return { key:String(r.key), name:String(r.name), description:String(r.description), fitReason:String(r.fitReason) }; });
+}
+
+export async function generateWorldCharacterSuggestions(userId: string, input: { householdId: string; childProfileId: string }): Promise<WorldCharacterSuggestionResult> {
+  const cycle = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
+  if (!cycle || cycle.startDirection !== "world_first") throw new Error("WORLD_FIRST_CYCLE_REQUIRED");
+  const summary = (cycle.latestSummary ?? {}) as Record<string, unknown>; const worldFeeling = summary.worldFeeling;
+  if (typeof worldFeeling !== "string") throw new Error("WORLD_FEELING_REQUIRED");
+  const prompt = await resolveActivePrompt("character_onboarding.world_character_suggestions", { worldFeeling, previousSelections: summary });
+  const generated = await generateTextWithLlm({ userId, householdId: input.householdId, taskType: "world_character_suggestions", system: prompt.system, user: prompt.user, modelOverride: prompt.modelOverride, generationConfig: prompt.generationConfig });
+  return { suggestions: parseSuggestions(generated.content), trace: { promptKey: prompt.promptKey, promptVersion: prompt.promptVersion, provider: generated.provider, model: generated.model, promptTokens: generated.promptTokens, completionTokens: generated.completionTokens, totalTokens: generated.totalTokens, latencyMs: generated.latencyMs } };
+}
