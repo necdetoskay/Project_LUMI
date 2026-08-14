@@ -43,6 +43,17 @@ export type {
   GenerationCreationContext,
 } from "./generation-context.service";
 export {
+  assertGenerationContextPolicy,
+  getGenerationContextPolicy,
+  getGenerationContextSectionPolicy,
+} from "./generation-context-policy";
+export type {
+  GenerationContextPolicy,
+  GenerationContextPriority,
+  GenerationContextSection,
+  GenerationContextSectionPolicy,
+} from "./generation-context-policy";
+export {
   getPolicy,
   updatePolicy,
   appendPolicyAudit,
