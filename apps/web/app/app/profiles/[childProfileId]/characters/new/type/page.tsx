@@ -8,7 +8,10 @@ const FALLBACK_VISUALS = {
 } as const;
 
 function characterTypeVisuals() {
-  const publicBaseUrl = process.env.OBJECT_STORAGE_PUBLIC_URL?.replace(/\/$/, "");
+  const publicBaseUrl = process.env.OBJECT_STORAGE_PUBLIC_URL?.replace(
+    /\/$/,
+    "",
+  );
 
   if (!publicBaseUrl) return FALLBACK_VISUALS;
 
