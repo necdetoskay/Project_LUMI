@@ -27,7 +27,9 @@ function context(profile: GenerationContext["profile"]): GenerationContext {
 
 describe("generation context assembler", () => {
   it("assembles only sections allowed by the onboarding policy", () => {
-    const assembled = assembleGenerationContext(context("character_onboarding"));
+    const assembled = assembleGenerationContext(
+      context("character_onboarding"),
+    );
 
     expect(assembled.maxContextTokens).toBe(1800);
     expect(assembled.sections.map((entry) => entry.section)).toEqual([
@@ -46,7 +48,10 @@ describe("generation context assembler", () => {
       "child_personalization",
       "character_state",
     ]);
-    expect(assembled.sections.find((entry) => entry.section === "character_state")?.value).toBeNull();
+    expect(
+      assembled.sections.find((entry) => entry.section === "character_state")
+        ?.value,
+    ).toBeNull();
   });
 
   it("converts assembled sections into stable prompt context keys", () => {
