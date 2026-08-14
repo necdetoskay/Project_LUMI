@@ -11,6 +11,25 @@ text = text.replace('    image: "/onboarding/character-types/animal.svg",\n', ''
 text = text.replace('    image: "/onboarding/character-types/fantastic.svg",\n', '')
 text = text.replace('    image: "/onboarding/character-types/synthetic.svg",\n', '')
 
+anchor = '''type ProfileContext = {
+  displayName: string;
+};
+'''
+default_visuals = '''type ProfileContext = {
+  displayName: string;
+};
+
+const DEFAULT_CHARACTER_TYPE_VISUALS: Record<CharacterKind, string> = {
+  human: "/onboarding/character-types/human.svg",
+  animal: "/onboarding/character-types/animal.svg",
+  fantastic: "/onboarding/character-types/fantastic.svg",
+  synthetic: "/onboarding/character-types/synthetic.svg",
+};
+'''
+if anchor not in text:
+    raise SystemExit('profile context anchor not found')
+text = text.replace(anchor, default_visuals, 1)
+
 old_signature = '''export default function CharacterTypeStepClient({
   childProfileId,
 }: {
@@ -18,12 +37,12 @@ old_signature = '''export default function CharacterTypeStepClient({
 }) {'''
 new_signature = '''export default function CharacterTypeStepClient({
   childProfileId,
-  characterTypeVisuals,
-  fallbackCharacterTypeVisuals,
+  characterTypeVisuals = DEFAULT_CHARACTER_TYPE_VISUALS,
+  fallbackCharacterTypeVisuals = DEFAULT_CHARACTER_TYPE_VISUALS,
 }: {
   childProfileId: string;
-  characterTypeVisuals: Record<CharacterKind, string>;
-  fallbackCharacterTypeVisuals: Record<CharacterKind, string>;
+  characterTypeVisuals?: Record<CharacterKind, string>;
+  fallbackCharacterTypeVisuals?: Record<CharacterKind, string>;
 }) {'''
 if old_signature not in text:
     raise SystemExit('signature not found')
