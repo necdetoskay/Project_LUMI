@@ -257,6 +257,20 @@ export {
 export type { WorldFeelingKey } from "./character-creation-cycle.service";
 export { resolveActivePrompt } from "./prompt-runtime.service";
 export type { PromptContext } from "./prompt-runtime.service";
+export {
+  listPromptVersions,
+  createPromptDraft,
+  clonePromptVersion,
+  activatePromptVersion,
+  rollbackPrompt,
+  toPromptDraftInput,
+} from "./prompt-management.service";
+export type {
+  PromptDraftInput,
+  PromptMutationContext,
+} from "./prompt-management.service";
+export { validatePromptDraft } from "./prompt-management.validation";
+export type { PromptDraftValidationInput } from "./prompt-management.validation";
 export { generateTextWithLlm } from "./text-llm-gateway.service";
 export type {
   TextLlmGatewayInput,
