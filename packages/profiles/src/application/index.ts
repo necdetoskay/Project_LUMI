@@ -34,9 +34,7 @@ export type {
   ChildPersonalizationResult,
   UpdateChildPersonalizationInput,
 } from "./child-profile-personalization.service";
-export {
-  buildGenerationContext,
-} from "./generation-context.service";
+export { buildGenerationContext } from "./generation-context.service";
 export type {
   BuildGenerationContextInput,
   GenerationContext,
