@@ -3,14 +3,23 @@ import { and, eq } from "drizzle-orm";
 import { characterVisualAssets } from "../db/schema/profile";
 import { getProfileDb } from "./db";
 import { getCharacterVisualCanon } from "./character-visual.service";
+import {
+  resolveVariantForRole,
+  type CharacterVisualSemanticRole,
+} from "./character-visual-derivative-resolver";
 
-export const CHARACTER_VISUAL_PRESENTATION_ROLES = {
-  portrait_primary: "head-front",
-  full_body_front: "body-front",
-} as const;
+export type CharacterVisualPresentationRole = Extract<
+  CharacterVisualSemanticRole,
+  "portrait_primary" | "full_body_front"
+>;
 
-export type CharacterVisualPresentationRole =
-  keyof typeof CHARACTER_VISUAL_PRESENTATION_ROLES;
+export const CHARACTER_VISUAL_PRESENTATION_ROLES: Record<
+  CharacterVisualPresentationRole,
+  string
+> = {
+  portrait_primary: resolveVariantForRole("portrait_primary"),
+  full_body_front: resolveVariantForRole("full_body_front"),
+};
 
 export function getCharacterVisualVariantForRole(
   role: CharacterVisualPresentationRole,
