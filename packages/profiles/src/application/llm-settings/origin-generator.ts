@@ -183,7 +183,9 @@ async function attemptLlmGeneration(
       generated,
     });
     throw new LlmGenerationError(
-      error instanceof Error ? error.message : "Origin package validation failed",
+      error instanceof Error
+        ? error.message
+        : "Origin package validation failed",
     );
   }
 
