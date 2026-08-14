@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import { generateText } from "@/lib/ai/text-generation/gateway";
+import { validateJsonSchema } from "@/lib/prompts/json-schema-validation";
 import { previewPrompt } from "@/lib/prompts/prompt-preview";
 import { listPromptVersions } from "@lumi/profiles/application/prompt-management.service";
 
@@ -18,7 +19,8 @@ export async function POST(request: Request) {
   if (!target.modelOverride?.trim()) return NextResponse.json({ message: "Bu prompt sürümü için model seçilmemiş." }, { status: 422 });
   try {
     const result = await generateText({ purpose: body.promptKey, system: preview.system, user: preview.user, provider: target.providerOverride || "openrouter", model: target.modelOverride, generationConfig: target.generationConfig, outputSchema: target.outputSchema });
-    return NextResponse.json({ data: { version: target.version, status: target.status, ...result } });
+    const schemaValidation = result.parsedJson === null ? { valid: false, errors: ["$: output is not valid JSON"] } : validateJsonSchema(result.parsedJson, target.outputSchema);
+    return NextResponse.json({ data: { version: target.version, status: target.status, ...result, schemaValidation } });
   } catch (cause) {
     return NextResponse.json({ message: cause instanceof Error ? cause.message : "Model execution failed" }, { status: 502 });
   }
