@@ -276,6 +276,8 @@ export type {
   TextLlmGatewayInput,
   TextLlmGatewayResult,
 } from "./text-llm-gateway.service";
+export { recordAiGenerationTrace } from "./ai-generation-trace.service";
+export type { RecordAiGenerationTraceInput } from "./ai-generation-trace.service";
 export { generateWorldCharacterSuggestions } from "./world-character-suggestion.service";
 export type {
   WorldCharacterSuggestion,
