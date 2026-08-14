@@ -122,7 +122,6 @@ export function ProfileStoriesSection({
   const character = adventureHub?.character ?? null;
   const ongoingAdventure = adventureHub?.ongoingAdventure ?? null;
   const pastAdventures = adventureHub?.pastAdventures ?? [];
-  const characterName = character?.name ?? "Karakterinin";
   const adventureHeading = character
     ? turkishPossessiveAdventureTitle(character.name)
     : "Karakterinin Maceraları";
