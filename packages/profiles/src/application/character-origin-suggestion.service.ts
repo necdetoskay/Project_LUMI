@@ -1,4 +1,91 @@
-import {getProfileDb} from "./db";import {aiGenerationTraces} from "../db/schema/profile";import {getActiveCharacterCreationCycle} from "./character-creation-cycle.service";import {resolveActivePrompt} from "./prompt-runtime.service";import {generateTextWithLlm} from "./text-llm-gateway.service";
-export interface CharacterOriginSuggestion{key:string;title:string;origin:string;home:string;formativeExperience:string;storyHook:string}
-function parse(raw:string):CharacterOriginSuggestion[]{const cleaned=raw.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");let value:unknown;try{value=JSON.parse(cleaned)}catch{throw new Error("LLM_OUTPUT_INVALID_JSON")}const rows=(value as {suggestions?:unknown})?.suggestions;if(!Array.isArray(rows)||rows.length!==4)throw new Error("LLM_OUTPUT_SCHEMA_INVALID");return rows.map(row=>{if(!row||typeof row!=="object")throw new Error("LLM_OUTPUT_SCHEMA_INVALID");const r=row as Record<string,unknown>;for(const k of ["key","title","origin","home","formativeExperience","storyHook"])if(typeof r[k]!=="string"||!(r[k] as string).trim())throw new Error("LLM_OUTPUT_SCHEMA_INVALID");return {key:String(r.key),title:String(r.title),origin:String(r.origin),home:String(r.home),formativeExperience:String(r.formativeExperience),storyHook:String(r.storyHook)}})}
-export async function generateCharacterOriginSuggestions(userId:string,input:{householdId:string;childProfileId:string}){const cycle=await getActiveCharacterCreationCycle(userId,input.householdId,input.childProfileId);if(!cycle)throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");const summary=(cycle.latestSummary??{}) as Record<string,unknown>;if(typeof summary.worldFeeling!=="string"||!summary.characterArchetype||!summary.characterIdentity)throw new Error("CHARACTER_ORIGIN_CONTEXT_REQUIRED");const context={worldFeeling:summary.worldFeeling,characterArchetype:summary.characterArchetype,characterIdentity:summary.characterIdentity,previousSelections:summary};const prompt=await resolveActivePrompt("character_onboarding.character_origin_suggestions",context);const generated=await generateTextWithLlm({userId,householdId:input.householdId,taskType:"character_origin_suggestions",system:prompt.system,user:prompt.user,modelOverride:prompt.modelOverride,generationConfig:prompt.generationConfig});let suggestions:CharacterOriginSuggestion[];try{suggestions=parse(generated.content)}catch(error){await getProfileDb().insert(aiGenerationTraces).values({id:crypto.randomUUID(),householdId:input.householdId,childProfileId:input.childProfileId,creationCycleId:cycle.id,taskType:"character_origin_suggestions",promptKey:prompt.promptKey,promptVersion:prompt.promptVersion,provider:generated.provider,modelId:generated.model,inputContext:context,outputPayload:{raw:generated.content},validationStatus:"invalid",promptTokens:generated.promptTokens,completionTokens:generated.completionTokens,totalTokens:generated.totalTokens,latencyMs:generated.latencyMs});throw error}await getProfileDb().insert(aiGenerationTraces).values({id:crypto.randomUUID(),householdId:input.householdId,childProfileId:input.childProfileId,creationCycleId:cycle.id,taskType:"character_origin_suggestions",promptKey:prompt.promptKey,promptVersion:prompt.promptVersion,provider:generated.provider,modelId:generated.model,inputContext:context,outputPayload:{suggestions},validationStatus:"valid",promptTokens:generated.promptTokens,completionTokens:generated.completionTokens,totalTokens:generated.totalTokens,latencyMs:generated.latencyMs});return {suggestions,trace:{promptKey:prompt.promptKey,promptVersion:prompt.promptVersion,provider:generated.provider,model:generated.model,promptTokens:generated.promptTokens,completionTokens:generated.completionTokens,totalTokens:generated.totalTokens,latencyMs:generated.latencyMs}}}
+import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
+import { resolveActivePrompt } from "./prompt-runtime.service";
+import { generateTextWithLlm } from "./text-llm-gateway.service";
+import { parseAndValidatePromptOutput } from "./prompt-output-validator";
+import { recordAiGenerationTrace } from "./ai-generation-trace.service";
+
+export interface CharacterOriginSuggestion {
+  key: string;
+  title: string;
+  origin: string;
+  home: string;
+  formativeExperience: string;
+  storyHook: string;
+}
+
+export interface CharacterOriginSuggestionResult {
+  suggestions: CharacterOriginSuggestion[];
+}
+
+export async function generateCharacterOriginSuggestions(
+  userId: string,
+  input: { householdId: string; childProfileId: string },
+): Promise<CharacterOriginSuggestionResult> {
+  const cycle = await getActiveCharacterCreationCycle(
+    userId,
+    input.householdId,
+    input.childProfileId,
+  );
+  if (!cycle) throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");
+  const summary = (cycle.latestSummary ?? {}) as Record<string, unknown>;
+  if (
+    typeof summary.worldFeeling !== "string" ||
+    !summary.characterArchetype ||
+    !summary.characterIdentity
+  )
+    throw new Error("CHARACTER_ORIGIN_CONTEXT_REQUIRED");
+  const context = {
+    worldFeeling: summary.worldFeeling,
+    characterArchetype: summary.characterArchetype,
+    characterIdentity: summary.characterIdentity,
+    previousSelections: summary,
+  };
+  const prompt = await resolveActivePrompt(
+    "character_onboarding.character_origin_suggestions",
+    context,
+  );
+  const generated = await generateTextWithLlm({
+    userId,
+    householdId: input.householdId,
+    taskType: "character_origin_suggestions",
+    system: prompt.system,
+    user: prompt.user,
+    modelOverride: prompt.modelOverride,
+    generationConfig: prompt.generationConfig,
+  });
+  let suggestions: CharacterOriginSuggestion[];
+  try {
+    const value = parseAndValidatePromptOutput(
+      generated.content,
+      prompt.outputSchema,
+    ) as { suggestions: CharacterOriginSuggestion[] };
+    suggestions = value.suggestions;
+  } catch (error) {
+    await recordAiGenerationTrace({
+      householdId: input.householdId,
+      childProfileId: input.childProfileId,
+      creationCycleId: cycle.id,
+      taskType: "character_origin_suggestions",
+      promptKey: prompt.promptKey,
+      promptVersion: prompt.promptVersion,
+      inputContext: context,
+      outputPayload: { raw: generated.content },
+      validationStatus: "invalid",
+      generated,
+    });
+    throw error;
+  }
+  await recordAiGenerationTrace({
+    householdId: input.householdId,
+    childProfileId: input.childProfileId,
+    creationCycleId: cycle.id,
+    taskType: "character_origin_suggestions",
+    promptKey: prompt.promptKey,
+    promptVersion: prompt.promptVersion,
+    inputContext: context,
+    outputPayload: { suggestions },
+    validationStatus: "valid",
+    generated,
+  });
+  return { suggestions };
+}
