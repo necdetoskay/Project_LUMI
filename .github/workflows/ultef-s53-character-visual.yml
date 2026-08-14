@@ -65,6 +65,7 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
       AUTH_COOKIE_SECURE: "false"
       LUMI_SETTINGS_ENCRYPTION_KEY: "ultef-s53-compose-only-not-production"
+      DATABASE_URL: ${{ secrets.LUMI_DEV_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Ensure fresh Compose volume
@@ -82,7 +83,7 @@ jobs:
           test "${exit_code}" = "0"
           check_table() {
             table="$1"
-            result="$(docker compose exec -T postgres psql -U lumi -d lumi -tAc "SELECT to_regclass('${table}') IS NOT NULL")"
+            result="$(docker compose run --rm --no-deps schema-migrate psql "${DATABASE_URL}" -tAc "SELECT to_regclass('${table}') IS NOT NULL")"
             echo "${table}: ${result}"
             test "${result}" = "t"
           }
@@ -119,7 +120,7 @@ jobs:
         working-directory: infra/compose
         run: |
           docker compose ps -a || true
-          docker compose logs --no-color postgres schema-migrate web worker || true
+          docker compose logs --no-color schema-migrate web worker || true
       - name: Tear down
         if: always()
         working-directory: infra/compose
