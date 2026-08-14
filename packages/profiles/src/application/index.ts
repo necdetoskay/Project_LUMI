@@ -48,4 +48,6 @@ export { generateTextWithLlm } from "./text-llm-gateway.service";
 export type { TextLlmGatewayInput, TextLlmGatewayResult } from "./text-llm-gateway.service";
 export { generateWorldCharacterSuggestions } from "./world-character-suggestion.service";
 export type { WorldCharacterSuggestion, WorldCharacterSuggestionResult } from "./world-character-suggestion.service";
+export { generateCharacterIdentitySuggestions } from "./character-identity-suggestion.service";
+export type { CharacterIdentitySuggestion, CharacterIdentitySuggestionResult } from "./character-identity-suggestion.service";
 export * from "./llm-settings";
