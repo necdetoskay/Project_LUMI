@@ -3,6 +3,10 @@ import { generateTextWithLlm } from "./text-llm-gateway.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
 import { recordAiGenerationTrace } from "./ai-generation-trace.service";
 import { buildGenerationContext } from "./generation-context.service";
+import {
+  assembleGenerationContext,
+  toPromptGenerationContext,
+} from "./generation-context-assembler";
 
 export interface WorldCharacterSuggestion {
   key: string;
@@ -32,10 +36,10 @@ export async function generateWorldCharacterSuggestions(
   if (typeof worldFeeling !== "string")
     throw new Error("WORLD_FEELING_REQUIRED");
 
+  const assembledContext = assembleGenerationContext(generationContext);
   const context = {
+    ...toPromptGenerationContext(assembledContext),
     worldFeeling,
-    child: generationContext.child,
-    previousSelections: summary,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.world_character_suggestions",
