@@ -1,0 +1,46 @@
+name: tmp-format-character-onboarding-v2
+
+on:
+  push:
+    branches:
+      - feat/character-onboarding-v2-type
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/character-onboarding-v2-type
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format onboarding files
+        run: |
+          pnpm exec prettier --write \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/character/page.tsx' \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/type/character-type-step-client.tsx' \
+            'apps/web/tests/character-onboarding-type-step.test.tsx'
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo 'No formatting changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/character/page.tsx' \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/type/character-type-step-client.tsx' \
+            'apps/web/tests/character-onboarding-type-step.test.tsx'
+          git commit -m 'style(onboarding): format character type step'
+          git push origin HEAD:feat/character-onboarding-v2-type
