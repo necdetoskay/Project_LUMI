@@ -1,0 +1,40 @@
+name: Temporary Format PR156
+
+on:
+  push:
+    branches:
+      - feat/character-visual-variant-soft-delete
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: ${{ !contains(github.event.head_commit.message, '[format-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/character-visual-variant-soft-delete
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format failing file
+        run: pnpm exec prettier --write apps/web/components/character/profile-character-detail-section.tsx
+      - name: Commit formatter output
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/components/character/profile-character-detail-section.tsx
+          git commit -m "chore(format): apply prettier to character detail [format-bot]"
+          git push origin HEAD:feat/character-visual-variant-soft-delete
