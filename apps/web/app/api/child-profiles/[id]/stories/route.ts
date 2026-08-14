@@ -120,6 +120,7 @@ export const GET = observeHandler(
                 return {
                   character,
                   world: null,
+                  currentLocation: null,
                   storySources: inventoryItems.slice(0, 2).map((item) => ({
                     id: `inventory:${item.id}`,
                     kind: "inventory",
@@ -252,8 +253,7 @@ export const GET = observeHandler(
           }))
           .sort(
             (left, right) =>
-              new Date(right.updatedAt).getTime() -
-              new Date(left.updatedAt).getTime(),
+              right.updatedAt.getTime() - left.updatedAt.getTime(),
           );
 
         const ongoingAdventure =
