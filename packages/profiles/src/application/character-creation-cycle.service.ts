@@ -4,6 +4,8 @@ import { DrizzleHouseholdRepository } from "../db/repositories/drizzle/drizzle-h
 import { characterCreationCycles, characterCreationSelections, childProfiles, type CharacterCreationDirection } from "../db/schema/profile";
 import { AuthorizationError } from "../domain/errors";
 
+export type WorldFeelingKey = "oceanic" | "sky_islands" | "enchanted_forest" | "crystal_caverns" | "desert_ruins" | "living_city";
+
 async function assertScope(userId: string, householdId: string, childProfileId: string) {
   const db = getProfileDb();
   const household = await new DrizzleHouseholdRepository(db).findByIdForUser(householdId, userId);
@@ -25,13 +27,19 @@ export async function chooseCharacterCreationDirection(userId: string, input: { 
   const existing = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
   const nextStep = input.direction === "character_first" ? "character_type" : "world_feeling";
   const cycleId = existing?.id ?? crypto.randomUUID();
-
-  if (existing) {
-    await db.update(characterCreationCycles).set({ startDirection: input.direction, currentStep: nextStep, latestSummary: { startDirection: input.direction }, updatedAt: new Date() }).where(eq(characterCreationCycles.id, existing.id));
-  } else {
-    await db.insert(characterCreationCycles).values({ id: cycleId, childProfileId: input.childProfileId, householdId: input.householdId, startDirection: input.direction, currentStep: nextStep, latestSummary: { startDirection: input.direction } });
-  }
-
+  if (existing) await db.update(characterCreationCycles).set({ startDirection: input.direction, currentStep: nextStep, latestSummary: { ...(existing.latestSummary ?? {}), startDirection: input.direction }, updatedAt: new Date() }).where(eq(characterCreationCycles.id, existing.id));
+  else await db.insert(characterCreationCycles).values({ id: cycleId, childProfileId: input.childProfileId, householdId: input.householdId, startDirection: input.direction, currentStep: nextStep, latestSummary: { startDirection: input.direction } });
   await db.insert(characterCreationSelections).values({ id: crypto.randomUUID(), cycleId, childProfileId: input.childProfileId, householdId: input.householdId, stepKey: "start", selectionKey: input.direction, selectionPayload: { direction: input.direction }, selectedBy: "user" });
   return { id: cycleId, startDirection: input.direction, currentStep: nextStep };
+}
+
+export async function chooseWorldFeeling(userId: string, input: { householdId: string; childProfileId: string; feeling: WorldFeelingKey }) {
+  await assertScope(userId, input.householdId, input.childProfileId);
+  const db = getProfileDb();
+  const cycle = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
+  if (!cycle || cycle.startDirection !== "world_first") throw new Error("World-first creation cycle is required");
+  const latestSummary = { ...(cycle.latestSummary ?? {}), worldFeeling: input.feeling };
+  await db.update(characterCreationCycles).set({ currentStep: "world_character_suggestions", latestSummary, updatedAt: new Date() }).where(eq(characterCreationCycles.id, cycle.id));
+  await db.insert(characterCreationSelections).values({ id: crypto.randomUUID(), cycleId: cycle.id, childProfileId: input.childProfileId, householdId: input.householdId, stepKey: "world_feeling", selectionKey: input.feeling, selectionPayload: { feeling: input.feeling }, selectedBy: "user" });
+  return { id: cycle.id, startDirection: cycle.startDirection, currentStep: "world_character_suggestions", latestSummary };
 }
