@@ -62,7 +62,7 @@ export async function generateWorldCharacterSuggestions(
     await recordAiGenerationTrace({
       householdId: input.householdId,
       childProfileId: input.childProfileId,
-      creationCycleId: generationContext.creation.cycleId ?? undefined,
+      creationCycleId: generationContext.creation.cycleId,
       taskType: "world_character_suggestions",
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
@@ -77,7 +77,7 @@ export async function generateWorldCharacterSuggestions(
   await recordAiGenerationTrace({
     householdId: input.householdId,
     childProfileId: input.childProfileId,
-    creationCycleId: generationContext.creation.cycleId ?? undefined,
+    creationCycleId: generationContext.creation.cycleId,
     taskType: "world_character_suggestions",
     promptKey: prompt.promptKey,
     promptVersion: prompt.promptVersion,
