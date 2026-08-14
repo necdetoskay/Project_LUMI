@@ -3,8 +3,6 @@ import {
   DrizzleHouseholdRepository,
   DrizzleChildProfileRepository,
   DrizzleParentPolicyRepository,
-  DrizzleLlmProviderSettingsRepository,
-  DrizzleLlmTaskModelSettingsRepository,
 } from "../../db";
 import {
   AuthorizationError,
@@ -15,6 +13,17 @@ import {
   validateOriginDisplaySubtype,
   validateUniverseSeed,
 } from "../../domain";
+import type {
+  BroadCharacterKind,
+  CharacterType,
+  OriginMode,
+  ToneVector,
+} from "../../domain/types";
+import { ensureOriginPackagesPrompt } from "../prompt-bootstrap.service";
+import { resolveActivePrompt } from "../prompt-runtime.service";
+import { generateTextWithLlm } from "../text-llm-gateway.service";
+import { parseAndValidatePromptOutput } from "../prompt-output-validator";
+import { recordAiGenerationTrace } from "../ai-generation-trace.service";
 
 export class LlmGenerationError extends Error {
   constructor(message: string) {
@@ -35,16 +44,6 @@ export class LlmConfigError extends Error {
     this.code = code;
   }
 }
-
-import {
-  type BroadCharacterKind,
-  type CharacterType,
-  type OriginMode,
-  type ToneVector,
-} from "../../domain/types";
-import { decryptApiKey } from "./encryption";
-import { callOpenRouter } from "./openrouter-client";
-import { parseAndValidateLlmOutput } from "./llm-output-parser";
 
 export interface GenerationResult {
   candidates: GeneratedOriginPackage[];
@@ -89,13 +88,25 @@ export interface GenerationParams {
   };
 }
 
+type OriginPackagePayload = {
+  broadKind: string;
+  characterType: string;
+  subtype: string;
+  originConcept: string;
+  startingRegionArchetype: string;
+  startingLocation: string;
+  homeArchetype: string;
+  nearbyNpcSeed: string;
+  firstMysterySeed: string;
+  toneVector: string[];
+  noveltyMarkers: string[];
+};
+
 function getRepos(db: ReturnType<typeof getProfileDb> = getProfileDb()) {
   return {
     householdRepo: new DrizzleHouseholdRepository(db),
     childRepo: new DrizzleChildProfileRepository(db),
     policyRepo: new DrizzleParentPolicyRepository(db),
-    providerRepo: new DrizzleLlmProviderSettingsRepository(db),
-    taskRepo: new DrizzleLlmTaskModelSettingsRepository(db),
   };
 }
 
@@ -117,117 +128,67 @@ function deterministicHashedSeed(...parts: string[]): string {
   return `lumi-${prefix}-${hex}`.slice(0, 118);
 }
 
-function buildLlmPrompt(params: {
-  characterType: string;
-  originMode: string;
-  ageBand: string;
-  preferenceHints: Record<string, unknown> | undefined;
-  contentBoundary: string;
-  requireParentApprovalForAi: boolean;
-  locale: string;
-  generationNonce: string;
-  selectedArchetype?: {
-    title: string;
-    description: string;
-    personalityHook: string;
-    storyPromise: string;
-    themeTags: string[];
-  };
-}): string {
-  const packageCount = params.originMode === "auto" ? 4 : 1;
-  const archInfo = params.selectedArchetype
-    ? `\nSeçilen karakter arketipi:\n- Başlık: ${params.selectedArchetype.title}\n- Açıklama: ${params.selectedArchetype.description}\n- Kişilik ipucu: ${params.selectedArchetype.personalityHook}\n- Hikaye vaadi: ${params.selectedArchetype.storyPromise}\n- Temalar: ${params.selectedArchetype.themeTags.join(", ")}\n\nBu arketipin konseptine ve vaadine uygun origin paketleri üret. Arketipin kişiliğini ve hikaye vaadini yansıtan öneriler yap.`
-    : "";
-
-  return `Sen Project LUMI için karakter köken paketleri üreten bir AI asistanısın.
-
-Görev: Çocuk kullanıcılar için yaratıcı, güvenli ve yaşa uygun karakter başlangıç konseptleri üret.
-
-Kısıtlamalar:
-- Korku, şiddet, yetişkin teması KESİNLİKLE yasak.
-- ${params.ageBand} yaş grubuna uygun.
-- Her öneri birbirinden belirgin şekilde farklı olmalı.
-- İçerik sınırı: ${params.contentBoundary}.
-- Ebeveyn onayı gerekiyor: ${params.requireParentApprovalForAi ? "evet" : "hayır"}.
-- Dil: Türkçe.
-- Sadece geçerli JSON çıktısı ver, ek metin ekleme.
-- Generation nonce (her çağrıda farklı üretim için): ${params.generationNonce}
-
-Karakter tipi: ${params.characterType}
-Origin modu: ${params.originMode} (auto=${packageCount} öneri, manual=1 öneri)
-${params.preferenceHints ? `Tercih ipuçları: ${JSON.stringify(params.preferenceHints)}` : ""}
-${archInfo}
-
-JSON şeması (kesinlikle uy):
-{
-  "packages": [
-    {
-      "broadKind": "human|animal|fantasy|robot|sea_creature|sky_creature",
-      "characterType": "${params.characterType}",
-      "subtype": "yaratıcı alt tür adı (1-80 karakter)",
-      "originConcept": "kısa güvenli konsept (1-500 karakter)",
-      "startingRegionArchetype": "bölge arketipi",
-      "startingLocation": "güvenli başlangıç yeri",
-      "homeArchetype": "ev arketipi",
-      "nearbyNpcSeed": "nazik NPC tohumu",
-      "firstMysterySeed": "küçük gizem tohumu",
-      "toneVector": ["wonder|warmth|mystery|humor|courage|curiosity", "..."],
-      "noveltyMarkers": ["2 benzersiz yenilik işareti"]
-    }
-  ]
-}
-
-broadKind şunlardan biri olmalı: human, animal, fantasy, robot, sea_creature, sky_creature.
-toneVector her biri şunlardan olmalı: wonder, warmth, mystery, humor, courage, curiosity.
-Her öneri farklı bir broadKind kullanmalı (mümkünse).`;
-}
-
-async function attemptLlmGeneration(
-  params: GenerationParams,
-  apiKey: string,
-  modelId: string,
-  temperature: number,
-  maxTokens: number,
-): Promise<GenerationResult> {
-  const prompt = buildLlmPrompt({
+function buildContext(params: GenerationParams): Record<string, unknown> {
+  return {
     characterType: params.characterType,
     originMode: params.originMode,
+    packageCount: params.originMode === "auto" ? 4 : 1,
     ageBand: params.ageBand,
-    preferenceHints: params.preferenceHints,
+    preferenceHints: params.preferenceHints ?? {},
     contentBoundary: params.contentBoundary,
     requireParentApprovalForAi: params.requireParentApprovalForAi,
     locale: params.locale,
     generationNonce: params.generationNonce,
-    ...(params.selectedArchetype
-      ? { selectedArchetype: params.selectedArchetype }
-      : {}),
+    selectedArchetype: params.selectedArchetype ?? {},
+  };
+}
+
+async function attemptLlmGeneration(
+  userId: string,
+  params: GenerationParams,
+): Promise<GenerationResult> {
+  await ensureOriginPackagesPrompt();
+  const context = buildContext(params);
+  const prompt = await resolveActivePrompt(
+    "character_onboarding.origin_packages",
+    context,
+  );
+  const generated = await generateTextWithLlm({
+    userId,
+    householdId: params.householdId,
+    taskType: "character_origin_generation",
+    system: prompt.system,
+    user: prompt.user,
+    modelOverride: prompt.modelOverride,
+    generationConfig: prompt.generationConfig,
   });
 
-  const response = await callOpenRouter(apiKey, {
-    model: modelId,
-    messages: [
-      {
-        role: "system",
-        content:
-          "Sen çocuk hikayeleri için karakter konseptleri üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
-      },
-      { role: "user", content: prompt },
-    ],
-    temperature,
-    maxTokens,
-  });
-
-  const parsed = parseAndValidateLlmOutput(response.content);
-
-  if (parsed.packages.length === 0) {
+  let packages: OriginPackagePayload[];
+  try {
+    const parsed = parseAndValidatePromptOutput(
+      generated.content,
+      prompt.outputSchema,
+    ) as { packages: OriginPackagePayload[] };
+    packages = parsed.packages;
+  } catch (error) {
+    await recordAiGenerationTrace({
+      householdId: params.householdId,
+      childProfileId: params.childProfileId,
+      taskType: "character_origin_generation",
+      promptKey: prompt.promptKey,
+      promptVersion: prompt.promptVersion,
+      inputContext: context,
+      outputPayload: { raw: generated.content },
+      validationStatus: "invalid",
+      generated,
+    });
     throw new LlmGenerationError(
-      `LLM output validation failed: ${parsed.errors.join("; ")}`,
+      error instanceof Error ? error.message : "Origin package validation failed",
     );
   }
 
   const hType = params.characterType as CharacterType;
-
-  const candidates: GeneratedOriginPackage[] = parsed.packages.map((pkg) => {
+  const candidates: GeneratedOriginPackage[] = packages.map((pkg) => {
     const broadKind = validateBroadCharacterKind(pkg.broadKind);
     const subtype = validateOriginDisplaySubtype(pkg.subtype);
     const originConcept = validateOriginConcept(pkg.originConcept);
@@ -239,13 +200,12 @@ async function attemptLlmGeneration(
         params.generationNonce,
       ),
     );
-    const tones = (pkg.toneVector as ToneVector[]).filter((t) =>
+    const tones = (pkg.toneVector as ToneVector[]).filter((tone) =>
       ["wonder", "warmth", "mystery", "humor", "courage", "curiosity"].includes(
-        t,
+        tone,
       ),
     );
     if (tones.length === 0) tones.push("wonder", "curiosity");
-
     return {
       id: crypto.randomUUID(),
       broadKind,
@@ -264,11 +224,19 @@ async function attemptLlmGeneration(
     };
   });
 
-  return {
-    candidates,
-    source: "llm",
-    modelId: response.model,
-  };
+  await recordAiGenerationTrace({
+    householdId: params.householdId,
+    childProfileId: params.childProfileId,
+    taskType: "character_origin_generation",
+    promptKey: prompt.promptKey,
+    promptVersion: prompt.promptVersion,
+    inputContext: context,
+    outputPayload: { packages },
+    validationStatus: "valid",
+    generated,
+  });
+
+  return { candidates, source: "llm", modelId: generated.model };
 }
 
 function hasSimilarConceptToPrevious(
@@ -279,94 +247,66 @@ function hasSimilarConceptToPrevious(
     (incoming.subtype + " " + incoming.originConcept)
       .toLowerCase()
       .split(/\s+/)
-      .filter((w) => w.length > 3),
+      .filter((word) => word.length > 3),
   );
   if (incomingWords.size === 0) return false;
-  for (const prev of previousBatch) {
-    const prevWords = new Set(
-      (prev.subtype + " " + prev.originConcept)
+  for (const previous of previousBatch) {
+    const previousWords = new Set(
+      (previous.subtype + " " + previous.originConcept)
         .toLowerCase()
         .split(/\s+/)
-        .filter((w) => w.length > 3),
+        .filter((word) => word.length > 3),
     );
     const intersection = new Set(
-      [...incomingWords].filter((w) => prevWords.has(w)),
+      [...incomingWords].filter((word) => previousWords.has(word)),
     );
     const ratio =
-      intersection.size / Math.min(incomingWords.size, prevWords.size);
+      intersection.size / Math.min(incomingWords.size, previousWords.size);
     if (ratio > 0.4) return true;
   }
   return false;
 }
 
 async function executeWithRetry(
+  userId: string,
   params: GenerationParams,
-  apiKey: string,
-  modelId: string,
-  temperature: number,
-  maxTokens: number,
   previousBatch?: { subtype: string; originConcept: string }[],
 ): Promise<GenerationResult> {
   const attempt = async (nonce: string): Promise<GenerationResult> => {
-    const attemptParams: GenerationParams = {
+    const result = await attemptLlmGeneration(userId, {
       ...params,
       generationNonce: nonce,
-    };
-    const result = await attemptLlmGeneration(
-      attemptParams,
-      apiKey,
-      modelId,
-      temperature,
-      maxTokens,
-    );
-
+    });
     const expectedCount = params.originMode === "auto" ? 4 : 1;
-    if (result.candidates.length !== expectedCount) {
+    if (result.candidates.length !== expectedCount)
       throw new LlmGenerationError(
         `Expected ${expectedCount} packages from LLM, got ${result.candidates.length}`,
       );
-    }
 
-    const titles = result.candidates.map((c) => c.subtype.toLowerCase());
-    const uniqueSet = new Set(titles);
-    if (uniqueSet.size !== titles.length) {
+    const titles = result.candidates.map((candidate) =>
+      candidate.subtype.toLowerCase(),
+    );
+    if (new Set(titles).size !== titles.length)
       throw new LlmGenerationError("Duplicate subtype titles in LLM response");
-    }
 
-    if (previousBatch && previousBatch.length > 0) {
-      const similarToPrev = result.candidates.some((c) =>
-        hasSimilarConceptToPrevious(previousBatch, {
-          subtype: c.subtype,
-          originConcept: c.originConcept,
-        }),
-      );
-      if (!similarToPrev) {
-        return result;
-      }
+    if (
+      previousBatch?.length &&
+      result.candidates.some((candidate) =>
+        hasSimilarConceptToPrevious(previousBatch, candidate),
+      )
+    )
       throw new LlmGenerationError(
         "Similar concepts to previous batch detected",
       );
-    }
-
     return result;
   };
 
-  const nonce1 = params.generationNonce;
   try {
-    return await attempt(nonce1);
-  } catch (firstErr) {
-    if (!(firstErr instanceof LlmGenerationError)) throw firstErr;
+    return await attempt(params.generationNonce);
+  } catch (firstError) {
+    if (!(firstError instanceof LlmGenerationError)) throw firstError;
   }
-
-  const nonce2 = crypto.randomUUID();
-  try {
-    return await attempt(nonce2);
-  } catch (secondErr) {
-    if (secondErr instanceof LlmGenerationError) throw secondErr;
-    throw new LlmGenerationError(
-      (secondErr as Error).message ?? "LLM retry call failed",
-    );
-  }
+  return attempt(crypto.randomUUID());
 }
 
 export async function generateOriginPackages(
@@ -386,37 +326,31 @@ export async function generateOriginPackages(
   },
 ): Promise<GenerationResult> {
   const repos = getRepos();
-
   const household = await repos.householdRepo.findByIdForUser(
     householdId,
     userId,
   );
-  if (!household) {
+  if (!household)
     throw new AuthorizationError("User is not a member of this household");
-  }
 
   const profile = await repos.childRepo.findById(childProfileId, householdId);
-  if (!profile) {
-    throw new NotFoundError("ChildProfile", childProfileId);
-  }
-  if (profile.deletedAt) {
+  if (!profile) throw new NotFoundError("ChildProfile", childProfileId);
+  if (profile.deletedAt)
     throw new ValidationError(
       "PROFILE_ARCHIVED",
       "Character bootstrap cannot be started from an archived child profile",
       "childProfileId",
     );
-  }
 
   const policy = await repos.policyRepo.findByHousehold(householdId, userId);
-  if (!policy) {
+  if (!policy)
     throw new ValidationError(
       "MISSING_PARENT_POLICY",
       "Parent policy must exist before character bootstrap",
       "householdId",
     );
-  }
 
-  const genParams: GenerationParams = {
+  const params: GenerationParams = {
     characterType: handoffCharacterType || "explorer",
     originMode: handoffOriginMode || "auto",
     ageBand: profile.ageBand,
@@ -430,61 +364,13 @@ export async function generateOriginPackages(
     ...(selectedArchetype ? { selectedArchetype } : {}),
   };
 
-  const llmSettings = await repos.taskRepo.findByTaskType(
-    userId,
-    householdId,
-    "character_origin_generation",
-  );
-  const providerSettings = await repos.providerRepo.findByUserAndHousehold(
-    userId,
-    householdId,
-    "openrouter",
-  );
-
-  if (!providerSettings?.encryptedApiKey) {
-    throw new LlmConfigError(
-      "LLM_KEY_MISSING",
-      "OpenRouter API key not configured. Go to Settings > AI Bağlantısı to add your key.",
-    );
-  }
-  if (!providerSettings.enabled) {
-    throw new LlmConfigError(
-      "LLM_PROVIDER_DISABLED",
-      "OpenRouter provider is disabled. Enable it in Settings > AI Bağlantısı.",
-    );
-  }
-  if (!llmSettings) {
-    throw new LlmConfigError(
-      "LLM_TASK_MISSING",
-      "Character origin generation task not configured. Ensure your API key is saved in Settings.",
-    );
-  }
-  if (!llmSettings.enabled) {
-    throw new LlmConfigError(
-      "LLM_TASK_DISABLED",
-      "Character origin generation task is disabled. Enable it in Settings.",
-    );
-  }
-
-  let apiKey: string;
   try {
-    apiKey = decryptApiKey(providerSettings.encryptedApiKey);
-  } catch {
-    throw new LlmGenerationError("API key decryption failed");
-  }
-
-  try {
-    return await executeWithRetry(
-      genParams,
-      apiKey,
-      llmSettings.modelId,
-      llmSettings.temperature,
-      llmSettings.maxOutputTokens,
-      previousBatchConcepts,
+    return await executeWithRetry(userId, params, previousBatchConcepts);
+  } catch (error) {
+    if (error instanceof LlmConfigError) throw error;
+    if (error instanceof LlmGenerationError) throw error;
+    throw new LlmGenerationError(
+      error instanceof Error ? error.message : "LLM call failed",
     );
-  } catch (err) {
-    if (err instanceof LlmConfigError) throw err;
-    if (err instanceof LlmGenerationError) throw err;
-    throw new LlmGenerationError((err as Error).message ?? "LLM call failed");
   }
 }
