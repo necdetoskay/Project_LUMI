@@ -135,6 +135,14 @@ export const characterVisualCanons = profileSchema.table(
       () => characterVisualAssets.id,
       { onDelete: "set null" },
     ),
+    selectedFullBodyAssetId: uuid("selected_full_body_asset_id").references(
+      () => characterVisualAssets.id,
+      { onDelete: "set null" },
+    ),
+    selectedHalfBodyAssetId: uuid("selected_half_body_asset_id").references(
+      () => characterVisualAssets.id,
+      { onDelete: "set null" },
+    ),
     visualBriefVersion: varchar("visual_brief_version", {
       length: 40,
     }).notNull(),

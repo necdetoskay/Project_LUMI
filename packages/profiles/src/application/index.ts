@@ -190,6 +190,7 @@ export {
   getCharacterVisualCanon,
   previewCharacterVisualCandidates,
   selectCharacterVisualCanon,
+  selectCharacterVisualRepresentation,
   rejectCharacterVisualCandidate,
   deleteCharacterVisualVariant,
 } from "./character-visual.service";

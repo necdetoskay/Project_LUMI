@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 
 import { characterVisualAssets } from "../db/schema/profile";
 import { getProfileDb } from "./db";
@@ -34,7 +34,11 @@ export async function getCharacterVisualPresentationAsset(
   role: CharacterVisualPresentationRole,
 ) {
   const canon = await getCharacterVisualCanon(userId, householdId, characterId);
-  if (!canon?.selectedAssetId) return null;
+  const selectedAssetId =
+    role === "full_body_front"
+      ? (canon?.selectedFullBodyAssetId ?? canon?.selectedAssetId)
+      : (canon?.selectedHalfBodyAssetId ?? canon?.selectedAssetId);
+  if (!selectedAssetId) return null;
 
   const variant = getCharacterVisualVariantForRole(role);
   const [derivative] = await getProfileDb()
@@ -44,7 +48,10 @@ export async function getCharacterVisualPresentationAsset(
       and(
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
-        eq(characterVisualAssets.sourceCompositeAssetId, canon.selectedAssetId),
+        or(
+          eq(characterVisualAssets.sourceCompositeAssetId, selectedAssetId),
+          eq(characterVisualAssets.id, selectedAssetId),
+        ),
         eq(characterVisualAssets.assetKind, variant),
         isNull(characterVisualAssets.deletedAt),
       ),
@@ -58,7 +65,7 @@ export async function getCharacterVisualPresentationAsset(
     .from(characterVisualAssets)
     .where(
       and(
-        eq(characterVisualAssets.id, canon.selectedAssetId),
+        eq(characterVisualAssets.id, selectedAssetId),
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
         isNull(characterVisualAssets.deletedAt),

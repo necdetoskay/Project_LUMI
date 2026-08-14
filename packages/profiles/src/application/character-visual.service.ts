@@ -814,6 +814,80 @@ export async function selectCharacterVisualCanon(
   return getCharacterVisualCanon(userId, householdId, characterId);
 }
 
+export async function selectCharacterVisualRepresentation(
+  userId: string,
+  householdId: string,
+  characterId: string,
+  role: "full_body" | "half_body",
+  assetId: string,
+) {
+  await loadOwnedCharacterRecord(userId, householdId, characterId);
+  const db = getProfileDb();
+  const [asset] = await db
+    .select()
+    .from(characterVisualAssets)
+    .where(
+      and(
+        eq(characterVisualAssets.id, assetId),
+        eq(characterVisualAssets.householdId, householdId),
+        eq(characterVisualAssets.characterId, characterId),
+        isNull(characterVisualAssets.deletedAt),
+      ),
+    )
+    .limit(1);
+  if (!asset || asset.lifecycleState === "rejected") {
+    throw new Error("VISUAL_ASSET_NOT_SELECTABLE");
+  }
+  const validKind =
+    role === "full_body"
+      ? asset.assetKind.startsWith("body-")
+      : asset.assetKind.startsWith("head-");
+  if (!validKind) throw new Error("VISUAL_ASSET_ROLE_MISMATCH");
+
+  const current = await getCharacterVisualCanon(
+    userId,
+    householdId,
+    characterId,
+  );
+  const field =
+    role === "full_body"
+      ? "selectedFullBodyAssetId"
+      : "selectedHalfBodyAssetId";
+  if (current?.[field] === assetId) return current;
+
+  if (current) {
+    await db
+      .update(characterVisualCanons)
+      .set({ [field]: assetId, updatedAt: new Date() })
+      .where(eq(characterVisualCanons.id, current.id));
+  } else {
+    const brief = asset.generationJobId
+      ? await db
+          .select()
+          .from(characterVisualGenerationJobs)
+          .where(eq(characterVisualGenerationJobs.id, asset.generationJobId))
+          .limit(1)
+      : [];
+    const job = brief[0];
+    if (!job) throw new Error("VISUAL_JOB_NOT_FOUND");
+    const visualBrief = job.visualBrief as unknown as CharacterVisualBrief;
+    await db.insert(characterVisualCanons).values({
+      id: crypto.randomUUID(),
+      householdId,
+      characterId,
+      [field]: assetId,
+      visualBriefVersion: job.visualBriefVersion,
+      visualBriefFingerprint: job.visualBriefFingerprint,
+      appearanceTraits: visualBrief.appearanceAnchors,
+      styleProfile: visualBrief.artDirection,
+      safetyConstraints: visualBrief.safetyConstraints,
+      status: "selected",
+      selectedAt: new Date(),
+    });
+  }
+  return getCharacterVisualCanon(userId, householdId, characterId);
+}
+
 export async function rejectCharacterVisualCandidate(
   userId: string,
   householdId: string,

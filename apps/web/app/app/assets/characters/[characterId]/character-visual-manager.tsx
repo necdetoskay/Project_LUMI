@@ -18,6 +18,8 @@ type VisualCandidate = {
 
 type VisualCanon = {
   selectedAssetId: string | null;
+  selectedFullBodyAssetId: string | null;
+  selectedHalfBodyAssetId: string | null;
   version: number;
   selectedAt: string | null;
 } | null;
@@ -57,11 +59,13 @@ export function CharacterVisualManager({
   characterId,
   characterName,
   characterSummary,
+  latestStorySummary,
 }: {
   householdId: string;
   characterId: string;
   characterName: string;
   characterSummary: string;
+  latestStorySummary: string | null;
 }) {
   const [state, setState] = useState<LibraryResponse>({
     canon: null,
@@ -136,6 +140,32 @@ export function CharacterVisualManager({
   const activeCandidates = state.candidates.filter(
     (candidate) => candidate.lifecycleState !== "rejected",
   );
+
+  const representationRole = (assetKind?: string) =>
+    assetKind?.startsWith("body-")
+      ? "full_body"
+      : assetKind?.startsWith("head-")
+        ? "half_body"
+        : null;
+
+  const activeFullBody =
+    state.variants.find(
+      (variant) => variant.id === state.canon?.selectedFullBodyAssetId,
+    ) ??
+    state.variants.find(
+      (variant) =>
+        variant.sourceCompositeAssetId === state.canon?.selectedAssetId &&
+        variant.assetKind === "body-front",
+    );
+  const activeHalfBody =
+    state.variants.find(
+      (variant) => variant.id === state.canon?.selectedHalfBodyAssetId,
+    ) ??
+    state.variants.find(
+      (variant) =>
+        variant.sourceCompositeAssetId === state.canon?.selectedAssetId &&
+        variant.assetKind === "head-front",
+    );
 
   const contentUrl = (assetId: string) =>
     `/api/assets/characters/${encodeURIComponent(characterId)}/content/${encodeURIComponent(assetId)}?householdId=${encodeURIComponent(householdId)}`;
@@ -292,7 +322,7 @@ export function CharacterVisualManager({
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+        <section className="hidden rounded-2xl border border-outline-variant bg-surface-container-low p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-extrabold uppercase text-primary">
@@ -334,7 +364,7 @@ export function CharacterVisualManager({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-outline-variant bg-white p-4">
+        <section className="hidden rounded-2xl border border-outline-variant bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-extrabold uppercase text-primary">
@@ -425,6 +455,61 @@ export function CharacterVisualManager({
         </section>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+          <p className="text-xs font-extrabold uppercase text-primary">
+            Aktif görünüm
+          </p>
+          <h3 className="mt-1 font-extrabold text-on-surface">
+            {activeFullBody
+              ? "Boydan temsil görseli"
+              : "Henüz boydan görsel seçilmedi"}
+          </h3>
+          <div className="relative mt-4 aspect-[3/4] overflow-hidden rounded-2xl border border-outline-variant bg-white">
+            {activeFullBody ? (
+              <Image
+                alt={`${characterName} boydan aktif görünüm`}
+                className="object-contain p-3"
+                fill
+                sizes="(min-width: 1024px) 35vw, 100vw"
+                src={contentUrl(activeFullBody.id)}
+                unoptimized
+              />
+            ) : (
+              <div className="grid h-full place-items-center text-center text-on-surface-variant">
+                <span className="material-symbols-outlined text-6xl text-primary">
+                  person
+                </span>
+              </div>
+            )}
+          </div>
+          <p className="mt-3 text-xs leading-5 text-on-surface-variant">
+            Yarım portre: {activeHalfBody ? "seçildi" : "henüz seçilmedi"}
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-outline-variant bg-white p-5">
+          <p className="text-xs font-extrabold uppercase text-primary">
+            Karakter özeti
+          </p>
+          <h3 className="mt-1 text-xl font-extrabold text-on-surface">
+            {characterName}
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+            {characterSummary}
+          </p>
+          <div className="mt-6 border-t border-outline-variant pt-5">
+            <p className="text-xs font-extrabold uppercase text-primary">
+              Son hikâye
+            </p>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+              {latestStorySummary ??
+                "Bu karakter için henüz tamamlanmış veya devam eden bir hikâye özeti yok."}
+            </p>
+          </div>
+        </section>
+      </div>
+
       <section className="rounded-2xl border border-outline-variant bg-white p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -455,6 +540,33 @@ export function CharacterVisualManager({
                   src={contentUrl(variant.id)}
                   unoptimized
                 />
+                {representationRole(variant.assetKind) ? (
+                  <button
+                    className="absolute inset-x-1 bottom-1 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-extrabold text-on-surface shadow"
+                    disabled={busy === "selectRepresentation"}
+                    onClick={() =>
+                      void act(
+                        {
+                          action: "selectRepresentation",
+                          assetId: variant.id,
+                          role: representationRole(variant.assetKind),
+                        },
+                        representationRole(variant.assetKind) === "full_body"
+                          ? "Boydan temsil görseli seçildi."
+                          : "Yarım portre temsil görseli seçildi.",
+                      )
+                    }
+                    type="button"
+                  >
+                    {representationRole(variant.assetKind) === "full_body"
+                      ? variant.id === state.canon?.selectedFullBodyAssetId
+                        ? "Boydan seçili"
+                        : "Boydan seç"
+                      : variant.id === state.canon?.selectedHalfBodyAssetId
+                        ? "Yarım seçili"
+                        : "Yarım seç"}
+                  </button>
+                ) : null}
                 <button
                   aria-label="Varyantı sil"
                   className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-white/90 text-on-surface opacity-0 shadow transition group-hover:opacity-100 focus-visible:opacity-100"
