@@ -16,9 +16,9 @@ function render(
   for (const key of required)
     if (!(key in context) || context[key] == null)
       throw new Error(`PROMPT_CONTEXT_MISSING:${key}`);
-  const variables = [...template.matchAll(/{{\s*([A-Za-z0-9_.-]+)\s*}}/g)].map(
-    (m) => m[1],
-  );
+  const variables = [...template.matchAll(/{{\s*([A-Za-z0-9_.-]+)\s*}}/g)]
+    .map((m) => m[1])
+    .filter((key): key is string => key !== undefined);
   for (const key of variables)
     if (!allowed.includes(key))
       throw new Error(`PROMPT_VARIABLE_NOT_ALLOWED:${key}`);
