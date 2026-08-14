@@ -96,7 +96,9 @@ export function ProfileStoriesSection({
       <section className="overflow-hidden rounded-[2rem] border border-outline-variant/70 bg-[#fffaf0] shadow-sm">
         <div className="px-5 py-8 text-center sm:px-7 md:px-9">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container text-error">
-            <span className="material-symbols-outlined text-3xl">cloud_off</span>
+            <span className="material-symbols-outlined text-3xl">
+              cloud_off
+            </span>
           </div>
           <h2 className="mt-4 text-xl font-extrabold text-on-surface">
             Maceralar biraz dinleniyor
@@ -121,6 +123,9 @@ export function ProfileStoriesSection({
   const ongoingAdventure = adventureHub?.ongoingAdventure ?? null;
   const pastAdventures = adventureHub?.pastAdventures ?? [];
   const characterName = character?.name ?? "Karakterinin";
+  const adventureHeading = character
+    ? turkishPossessiveAdventureTitle(character.name)
+    : "Karakterinin Maceraları";
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-outline-variant/70 bg-[#fffaf0] shadow-sm">
@@ -137,12 +142,13 @@ export function ProfileStoriesSection({
         <header className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-              <span className="material-symbols-outlined text-lg">auto_stories</span>
+              <span className="material-symbols-outlined text-lg">
+                auto_stories
+              </span>
               Hikâyeler
             </div>
             <h2 className="mt-2 text-3xl font-black tracking-tight text-on-surface md:text-4xl">
-              {characterName}
-              {character ? "’ın Maceraları" : " Maceraları"}
+              {adventureHeading}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant md:text-base md:leading-7">
               Devam eden maceranı sürdür ya da dünyanın sana hazırladığı yeni
@@ -156,7 +162,12 @@ export function ProfileStoriesSection({
             onClick={() => setNewAdventureOpen((current) => !current)}
             type="button"
           >
-            <span className="material-symbols-outlined text-xl">auto_awesome</span>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined text-xl"
+            >
+              auto_awesome
+            </span>
             Yeni Macera
           </button>
         </header>
@@ -175,8 +186,9 @@ export function ProfileStoriesSection({
                   Yeni macera kapısı açılıyor
                 </p>
                 <p className="mt-1">
-                  Dünya olayları, söylentiler, çantandaki eşyalar ve dostlarından
-                  gelen çağrılar burada macera seçeneklerine dönüşecek.
+                  Dünya olayları, söylentiler, çantandaki eşyalar ve
+                  dostlarından gelen çağrılar burada macera seçeneklerine
+                  dönüşecek.
                 </p>
               </div>
             </div>
@@ -295,7 +307,10 @@ function OngoingAdventureCard({
 
           <div className="mt-5 flex flex-wrap gap-2">
             {location ? (
-              <AdventurePill icon="location_on" label={`En son: ${location.label}`} />
+              <AdventurePill
+                icon="location_on"
+                label={`En son: ${location.label}`}
+              />
             ) : adventure.currentSceneTitle ? (
               <AdventurePill
                 icon="location_on"
@@ -304,9 +319,7 @@ function OngoingAdventureCard({
             ) : null}
             {secondaryHighlight ? (
               <AdventurePill
-                icon={
-                  secondaryHighlight.kind === "item" ? "backpack" : "group"
-                }
+                icon={secondaryHighlight.kind === "item" ? "backpack" : "group"}
                 label={secondaryHighlight.label}
               />
             ) : null}
@@ -317,7 +330,9 @@ function OngoingAdventureCard({
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-extrabold text-on-primary shadow-sm transition-transform hover:-translate-y-0.5"
               href={`/app/stories/${encodeURIComponent(adventure.sessionId)}`}
             >
-              <span className="material-symbols-outlined text-xl">play_arrow</span>
+              <span className="material-symbols-outlined text-xl">
+                play_arrow
+              </span>
               Maceraya Devam Et
             </a>
           </div>
@@ -399,6 +414,25 @@ function EmptyAdventureCard({ onStart }: { onStart: () => void }) {
       </button>
     </div>
   );
+}
+
+function turkishPossessiveAdventureTitle(name: string): string {
+  const lower = name.toLocaleLowerCase("tr-TR");
+  const vowels = [...lower].filter((character) =>
+    "aeıioöuü".includes(character),
+  );
+  const lastVowel = vowels.at(-1) ?? "a";
+  const suffix =
+    lastVowel === "e" || lastVowel === "i"
+      ? "in"
+      : lastVowel === "ö" || lastVowel === "ü"
+        ? "ün"
+        : lastVowel === "o" || lastVowel === "u"
+          ? "un"
+          : "ın";
+  const buffer = "aeıioöuü".includes(lower.at(-1) ?? "") ? "n" : "";
+
+  return `${name}’${buffer}${suffix} Maceraları`;
 }
 
 function AdventureHubSkeleton() {

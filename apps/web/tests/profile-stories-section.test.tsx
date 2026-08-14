@@ -82,7 +82,7 @@ describe("ProfileStoriesSection", () => {
     render(<ProfileStoriesSection childProfileId="child-1" />);
 
     await waitFor(() => {
-      expect(screen.getByText("Lina’ın Maceraları")).toBeTruthy();
+      expect(screen.getByText("Lina’nın Maceraları")).toBeTruthy();
     });
 
     expect(screen.getByText("Fısıldayan Ormandaki İlk Işık")).toBeTruthy();
@@ -93,7 +93,9 @@ describe("ProfileStoriesSection", () => {
     ).toBeTruthy();
     expect(screen.getByText("En son: Eski Meşe Ağacı")).toBeTruthy();
     expect(screen.getByText("Ay Işığı Gölünün Sırrı")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Maceraya Devam Et/i })).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /Maceraya Devam Et/i }),
+    ).toBeTruthy();
 
     expect(screen.queryByText(/Durum:/i)).toBeNull();
     expect(screen.queryByText(/Mod:/i)).toBeNull();
