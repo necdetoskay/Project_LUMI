@@ -51,6 +51,8 @@ const TEST_USER_ID = "user-001";
 const TEST_HOUSEHOLD_ID = "household-001";
 const TEST_CHILD_PROFILE_ID = "child-001";
 
+type PreviousBatch = { subtype: string; originConcept: string }[];
+
 const outputSchema = {
   type: "object",
   required: ["packages"],
@@ -157,7 +159,7 @@ function setupLlmSuccess() {
 
 async function generate(
   characterType = "explorer",
-  previousBatch?: { subtype: string; originConcept: string }[],
+  previousBatch?: PreviousBatch,
 ) {
   return generateOriginPackages(
     TEST_USER_ID,
@@ -299,13 +301,14 @@ describe("origin-generator", () => {
   });
 
   it("retries when the generated concepts are too similar to the previous batch", async () => {
-    const result = await generate([
+    const previousBatch: PreviousBatch = [
       {
         subtype: "Ay Işığı Kütüphanecisi",
         originConcept:
           "Geceleri ay ışığında kitap okuyan küçük bir kütüphaneci",
       },
-    ]);
+    ];
+    const result = await generate("explorer", previousBatch);
 
     expect(result.candidates).toHaveLength(4);
     expect(mockGenerateTextWithLlm).toHaveBeenCalledTimes(2);
