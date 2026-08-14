@@ -1,0 +1,47 @@
+name: Temporary Lint Fix PR171
+
+on:
+  push:
+    branches:
+      - feat/stories-ux-v2-adventure-hub
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, '[lint-fix-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/stories-ux-v2-adventure-hub
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Remove unused heading variable
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('apps/web/components/story/profile-stories-section.tsx')
+          source = path.read_text(encoding='utf-8')
+          source = source.replace('  const characterName = character?.name ?? "Karakterinin";\n', '')
+          path.write_text(source, encoding='utf-8')
+          PY
+      - run: pnpm exec prettier --write apps/web/components/story/profile-stories-section.tsx
+      - run: pnpm --filter @lumi/web exec eslint components/story/profile-stories-section.tsx --max-warnings=0
+      - run: pnpm --filter @lumi/web exec vitest run tests/profile-stories-section.test.tsx
+      - name: Commit lint fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/components/story/profile-stories-section.tsx
+          git commit -m "fix(stories): remove unused heading variable [lint-fix-bot]"
+          git push origin HEAD:feat/stories-ux-v2-adventure-hub
