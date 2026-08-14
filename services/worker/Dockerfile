@@ -7,7 +7,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 RUN corepack enable
-RUN pnpm add --global tsx@4.23.12
+RUN npm install --global tsx@4.23.12
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY services/worker/package.json services/worker/package.json
