@@ -32,5 +32,6 @@ export * from "./inventory-domain-events";
 export * from "./inventory-idempotency-ledger";
 export * from "./llm-provider-settings";
 export * from "./llm-task-model-settings";
+export * from "./ai-prompt-versions";
 export * from "./archetype-suggestion-batches";
 export * from "./relations";
