@@ -157,9 +157,12 @@ export default function CharacterTypeStepClient({
             <span className="material-symbols-outlined text-3xl text-[#c2862b]">
               emoji_nature
             </span>
-            <p className="mt-3 font-extrabold text-[#3b3028]">Yeni bir başlangıç</p>
+            <p className="mt-3 font-extrabold text-[#3b3028]">
+              Yeni bir başlangıç
+            </p>
             <p className="mt-1 text-sm leading-6 text-[#65584d]">
-              Seçimlerin dünyayı, kökeni ve uzun hikâye yolculuğunu birlikte şekillendirecek.
+              Seçimlerin dünyayı, kökeni ve uzun hikâye yolculuğunu birlikte
+              şekillendirecek.
             </p>
           </div>
         </aside>
@@ -169,10 +172,15 @@ export default function CharacterTypeStepClient({
             href={dashboardHref}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-[#16786f]"
           >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+            <span
+              className="material-symbols-outlined text-[20px]"
+              aria-hidden="true"
+            >
               arrow_back
             </span>
-            {profile?.displayName ? `${profile.displayName}'nın alanına dön` : "Çocuk alanına dön"}
+            {profile?.displayName
+              ? `${profile.displayName}'nın alanına dön`
+              : "Çocuk alanına dön"}
           </Link>
 
           <header className="mt-5">
@@ -250,13 +258,19 @@ export default function CharacterTypeStepClient({
                     >
                       {isSelected ? (
                         <span className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#16786f] text-white">
-                          <span className="material-symbols-outlined text-[19px]" aria-hidden="true">
+                          <span
+                            className="material-symbols-outlined text-[19px]"
+                            aria-hidden="true"
+                          >
                             check
                           </span>
                         </span>
                       ) : null}
                       <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-[linear-gradient(145deg,#edf5ea,#fff0d6)] text-[#16786f] shadow-inner">
-                        <span className="material-symbols-outlined text-[48px]" aria-hidden="true">
+                        <span
+                          className="material-symbols-outlined text-[48px]"
+                          aria-hidden="true"
+                        >
                           {type.icon}
                         </span>
                       </div>
@@ -281,19 +295,35 @@ export default function CharacterTypeStepClient({
               <section className="rounded-[28px] border border-[#e4d8c7] bg-[#fffdf7] p-6 shadow-[0_10px_30px_rgba(89,70,45,0.06)]">
                 <div className="flex items-center gap-3">
                   <span className="grid h-10 w-10 place-items-center rounded-full bg-[#eaf3e9] text-[#16786f]">
-                    <span className="material-symbols-outlined" aria-hidden="true">
+                    <span
+                      className="material-symbols-outlined"
+                      aria-hidden="true"
+                    >
                       auto_awesome
                     </span>
                   </span>
                   <h2 className="text-xl font-black">Seçim etkisi</h2>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-[#65584d]">
-                  Seçtiğin karakter tipi, sana sunulan dünyaları, kökenleri ve ana hikâye hedeflerini etkiler.
+                  Seçtiğin karakter tipi, sana sunulan dünyaları, kökenleri ve
+                  ana hikâye hedeflerini etkiler.
                 </p>
                 <div className="mt-5 space-y-4">
-                  <ImpactRow icon="public" title="Dünyalar" text="Uygun dünyalar karakter tipine göre değerlendirilir." />
-                  <ImpactRow icon="eco" title="Kökenler" text="Dünya ve karakterle uyumlu kökenler hazırlanır." />
-                  <ImpactRow icon="track_changes" title="Hikâye Hedefleri" text="Core Saga seçenekleri bu temelden şekillenir." />
+                  <ImpactRow
+                    icon="public"
+                    title="Dünyalar"
+                    text="Uygun dünyalar karakter tipine göre değerlendirilir."
+                  />
+                  <ImpactRow
+                    icon="eco"
+                    title="Kökenler"
+                    text="Dünya ve karakterle uyumlu kökenler hazırlanır."
+                  />
+                  <ImpactRow
+                    icon="track_changes"
+                    title="Hikâye Hedefleri"
+                    text="Core Saga seçenekleri bu temelden şekillenir."
+                  />
                 </div>
               </section>
 
@@ -324,11 +354,17 @@ export default function CharacterTypeStepClient({
               onClick={continueToCharacterStep}
               className="inline-flex h-12 min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-[#16786f] px-6 font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
             >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-[20px]"
+                aria-hidden="true"
+              >
                 auto_awesome
               </span>
               Devam et
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-[20px]"
+                aria-hidden="true"
+              >
                 arrow_forward
               </span>
             </button>
@@ -359,7 +395,10 @@ function SidebarLink({
           : "text-[#5d5147] hover:bg-[#f2eee6]"
       }`}
     >
-      <span className="material-symbols-outlined text-[21px]" aria-hidden="true">
+      <span
+        className="material-symbols-outlined text-[21px]"
+        aria-hidden="true"
+      >
         {icon}
       </span>
       {label}
@@ -379,7 +418,10 @@ function ImpactRow({
   return (
     <div className="flex gap-3">
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#edf5ea] text-[#16786f]">
-        <span className="material-symbols-outlined text-[19px]" aria-hidden="true">
+        <span
+          className="material-symbols-outlined text-[19px]"
+          aria-hidden="true"
+        >
           {icon}
         </span>
       </span>

@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CharacterTypeStepClient from "@/app/app/profiles/[childProfileId]/characters/new/type/character-type-step-client";
@@ -37,7 +43,9 @@ describe("CharacterTypeStepClient", () => {
   it("renders the four approved character types and keeps Continue disabled initially", async () => {
     render(<CharacterTypeStepClient childProfileId="profile-1" />);
 
-    expect(screen.getByRole("heading", { name: "Nasıl bir karakter olsun?" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Nasıl bir karakter olsun?" }),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: /İnsan/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Hayvan/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Fantastik/ })).toBeTruthy();

@@ -22,7 +22,8 @@ export default async function CharacterCandidateBoundaryPage({
         </h1>
         <p className="mt-4 text-base leading-7 text-[#65584d]">
           İlk adım başarıyla tamamlandı. Seçilen karakter tipi
-          {characterType ? `: ${characterType}` : ""}. Bu ekran Phase 2'de gerçek aday üretimiyle tamamlanacak.
+          {characterType ? `: ${characterType}` : ""}. Bu ekran Phase 2'de
+          gerçek aday üretimiyle tamamlanacak.
         </p>
         <Link
           href={typeHref}
