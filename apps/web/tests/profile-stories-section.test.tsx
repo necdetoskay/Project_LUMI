@@ -77,7 +77,8 @@ function stubAdventureHubFetch() {
               id: "opportunity:rumor-1",
               sourceFamily: "rumor",
               title: "Ormandaki Mavi Işıklar",
-              teaser: "Gece olduğunda ağaçların arasında mavi ışıklar görülüyor.",
+              teaser:
+                "Gece olduğunda ağaçların arasında mavi ışıklar görülüyor.",
               ctaKey: "investigateRumor",
               image: null,
             },
@@ -160,7 +161,9 @@ describe("ProfileStoriesSection", () => {
     fireEvent.click(button);
 
     expect(
-      await screen.findByRole("dialog", { name: "Bugün maceran nereden başlasın?" }),
+      await screen.findByRole("dialog", {
+        name: "Bugün maceran nereden başlasın?",
+      }),
     ).toBeTruthy();
     expect(await screen.findByText("Ormandaki Mavi Işıklar")).toBeTruthy();
     expect(screen.getByText("Bir Söylenti Duydun")).toBeTruthy();
