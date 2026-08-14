@@ -1,0 +1,28 @@
+name: Temporary Sync PR156
+
+on:
+  push:
+    branches:
+      - feat/character-visual-variant-soft-delete
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    if: ${{ !contains(github.event.head_commit.message, '[sync-main-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/character-visual-variant-soft-delete
+          fetch-depth: 0
+      - name: Merge current main into PR branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+          git commit --amend -m "merge: sync current main into visual branch [sync-main-bot]" || true
+          git push origin HEAD:feat/character-visual-variant-soft-delete
