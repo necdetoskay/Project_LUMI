@@ -3,6 +3,10 @@ import { generateTextWithLlm } from "./text-llm-gateway.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
 import { recordAiGenerationTrace } from "./ai-generation-trace.service";
 import { buildGenerationContext } from "./generation-context.service";
+import {
+  assembleGenerationContext,
+  toPromptGenerationContext,
+} from "./generation-context-assembler";
 
 export interface CharacterOriginSuggestion {
   key: string;
@@ -33,12 +37,13 @@ export async function generateCharacterOriginSuggestions(
     !summary.characterIdentity
   )
     throw new Error("CHARACTER_ORIGIN_CONTEXT_REQUIRED");
+
+  const assembledContext = assembleGenerationContext(generationContext);
   const context = {
+    ...toPromptGenerationContext(assembledContext),
     worldFeeling: summary.worldFeeling,
     characterArchetype: summary.characterArchetype,
     characterIdentity: summary.characterIdentity,
-    child: generationContext.child,
-    previousSelections: summary,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.character_origin_suggestions",
