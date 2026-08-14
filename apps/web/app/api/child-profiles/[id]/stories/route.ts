@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
+import { projectAdventureSummary } from "@/lib/stories/adventure-presentation";
 import {
   findChildProfileForUser,
   getHouseholdForUser,
@@ -119,6 +120,7 @@ export const GET = observeHandler(
                 return {
                   character,
                   world: null,
+                  currentLocation: null,
                   storySources: inventoryItems.slice(0, 2).map((item) => ({
                     id: `inventory:${item.id}`,
                     kind: "inventory",
@@ -187,6 +189,12 @@ export const GET = observeHandler(
                   lifecycleStatus: world.lifecycleStatus,
                   label: getWorldLabel(world),
                 },
+                currentLocation: currentLocation
+                  ? {
+                      id: currentLocation.id,
+                      displayName: currentLocation.displayName,
+                    }
+                  : null,
                 storySources: worldSources,
               };
             } catch {
@@ -195,6 +203,7 @@ export const GET = observeHandler(
               return {
                 character,
                 world: null,
+                currentLocation: null,
                 storySources: inventoryItems.slice(0, 2).map((item) => ({
                   id: `inventory:${item.id}`,
                   kind: "inventory",
@@ -207,7 +216,69 @@ export const GET = observeHandler(
           }),
         );
 
-        return NextResponse.json({ sessions, catalog, launchOptions });
+        const primaryLaunch = launchOptions[0] ?? null;
+        const projectedSessions = sessions
+          .map((entry) => ({
+            updatedAt: entry.session.updatedAt,
+            summary: projectAdventureSummary({
+              session: {
+                id: entry.session.id,
+                sessionStatus: entry.session.sessionStatus,
+              },
+              definition: entry.definition
+                ? { title: entry.definition.title }
+                : null,
+              version: entry.version
+                ? {
+                    title: entry.version.title,
+                    summary: entry.version.summary,
+                  }
+                : null,
+              currentScene: entry.currentScene
+                ? {
+                    id: entry.currentScene.id,
+                    title: entry.currentScene.title,
+                    narrativeText: entry.currentScene.narrativeText,
+                  }
+                : null,
+              location:
+                entry.session.sessionStatus === "active" ||
+                entry.session.sessionStatus === "paused"
+                  ? (primaryLaunch?.currentLocation ?? null)
+                  : null,
+              image: entry.currentScene
+                ? { kind: "story_scene", subjectId: entry.currentScene.id }
+                : null,
+            }),
+          }))
+          .sort(
+            (left, right) =>
+              right.updatedAt.getTime() - left.updatedAt.getTime(),
+          );
+
+        const ongoingAdventure =
+          projectedSessions.find(
+            (entry) => entry.summary.semanticState === "ongoing",
+          )?.summary ?? null;
+        const pastAdventures = projectedSessions
+          .filter((entry) => entry.summary.semanticState !== "ongoing")
+          .map((entry) => entry.summary);
+
+        return NextResponse.json({
+          sessions,
+          catalog,
+          launchOptions,
+          adventureHub: {
+            character: primaryLaunch
+              ? {
+                  id: primaryLaunch.character.id,
+                  name: primaryLaunch.character.name,
+                }
+              : null,
+            ongoingAdventure,
+            pastAdventures,
+          },
+        });
       } catch (error) {
         const err = error as Error & { code?: string };
         const message = err.message ?? "Unknown error";
