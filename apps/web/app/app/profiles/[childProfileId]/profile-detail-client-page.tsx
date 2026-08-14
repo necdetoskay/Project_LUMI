@@ -164,6 +164,12 @@ export default function ProfileDetailClientPage({
     }
   }, [childProfileId, householdId, editDisplayName, editAgeBand]);
 
+  const handleCharacterArchived = useCallback((characterId: string) => {
+    setCharacters((current) =>
+      current.filter((item) => item.id !== characterId),
+    );
+  }, []);
+
   const firstCharacter = useMemo(
     () => (characters.length > 0 ? characters[0] : null),
     [characters],
@@ -345,6 +351,7 @@ export default function ProfileDetailClientPage({
           loading={charactersLoading}
           childProfileId={childProfileId}
           householdId={householdId}
+          onArchived={handleCharacterArchived}
         />
       )}
       {activeTab === "stories" && (
@@ -553,13 +560,43 @@ function CharactersSection({
   loading,
   childProfileId,
   householdId,
+  onArchived,
 }: {
   characters: CharacterInfo[];
   loading: boolean;
   childProfileId: string;
   householdId: string | null;
+  onArchived: (characterId: string) => void;
 }) {
   const firstCharacter = characters[0] ?? null;
+  const [deleteTarget, setDeleteTarget] = useState<CharacterInfo | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const confirmArchive = useCallback(async () => {
+    if (!deleteTarget || !householdId) return;
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+    try {
+      const response = await fetch(
+        `/api/characters/${encodeURIComponent(deleteTarget.id)}?householdId=${encodeURIComponent(householdId)}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        setDeleteError(body?.message ?? "Karakter silinemedi.");
+        return;
+      }
+      const archivedId = deleteTarget.id;
+      setDeleteTarget(null);
+      onArchived(archivedId);
+    } catch {
+      setDeleteError("Karakter silinirken beklenmeyen bir sorun oluştu.");
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }, [deleteTarget, householdId, onArchived]);
   if (loading) {
     return (
       <section className="rounded-2xl border border-outline-variant bg-white p-6 md:p-8">
@@ -672,6 +709,22 @@ function CharactersSection({
                 </span>
                 Karakter detayi
               </a>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-error/30 bg-white px-4 text-sm font-semibold text-error"
+                type="button"
+                onClick={() => {
+                  setDeleteError(null);
+                  setDeleteTarget(character);
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-[18px]"
+                >
+                  delete
+                </span>
+                Karakteri sil
+              </button>
               <a
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
                 href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
@@ -685,6 +738,53 @@ function CharactersSection({
           </article>
         ))}
       </div>
+      {deleteTarget ? (
+        <div
+          aria-labelledby="delete-character-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3
+              className="text-xl font-bold text-on-surface"
+              id="delete-character-title"
+            >
+              Karakteri silmek istiyor musunuz?
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+              <strong>{deleteTarget.name}</strong> artık aktif karakterler
+              arasında görünmeyecek. Geçmiş verileri korunacak.
+            </p>
+            {deleteError ? (
+              <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-sm text-error">
+                {deleteError}
+              </p>
+            ) : null}
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="h-10 rounded-lg border border-outline-variant px-4 text-sm font-semibold"
+                disabled={deleteSubmitting}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteError(null);
+                }}
+                type="button"
+              >
+                Vazgeç
+              </button>
+              <button
+                className="h-10 rounded-lg bg-error px-4 text-sm font-semibold text-on-error disabled:opacity-50"
+                disabled={deleteSubmitting}
+                onClick={() => void confirmArchive()}
+                type="button"
+              >
+                {deleteSubmitting ? "Siliniyor…" : "Karakteri sil"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

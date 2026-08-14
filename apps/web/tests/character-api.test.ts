@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 
 const mockGetCharacterDomain = vi.fn();
 const mockGetCharacterById = vi.fn();
+const mockArchiveCharacter = vi.fn();
 const mockApplyTraitDeltas = vi.fn();
 const mockUpdateEmotions = vi.fn();
 const mockUpdateNeeds = vi.fn();
@@ -17,6 +18,7 @@ const mockListCharactersByHousehold = vi.fn();
 vi.mock("@lumi/profiles/application", () => ({
   getCharacterDomain: (...args: unknown[]) => mockGetCharacterDomain(...args),
   getCharacterById: (...args: unknown[]) => mockGetCharacterById(...args),
+  archiveCharacter: (...args: unknown[]) => mockArchiveCharacter(...args),
   applyTraitDeltas: (...args: unknown[]) => mockApplyTraitDeltas(...args),
   updateEmotions: (...args: unknown[]) => mockUpdateEmotions(...args),
   updateNeeds: (...args: unknown[]) => mockUpdateNeeds(...args),
@@ -49,6 +51,10 @@ type RouteModule = {
     ctx: { params: Promise<{ id: string }> },
   ) => Promise<Response>;
   POST?: (
+    request: Request,
+    ctx: { params: Promise<{ id: string }> },
+  ) => Promise<Response>;
+  DELETE?: (
     request: Request,
     ctx: { params: Promise<{ id: string }> },
   ) => Promise<Response>;
@@ -113,6 +119,27 @@ describe("S06 - Character API Contract", () => {
       expect(res.status).toBe(403);
       const body = await res.json();
       expect(body.error).toBe("FORBIDDEN");
+    });
+  });
+
+  describe("DELETE /api/characters/[id]", () => {
+    it("archives idempotently", async () => {
+      mockArchiveCharacter.mockResolvedValueOnce({ archived: true });
+      const route = (await import(
+        "@/app/api/characters/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/characters/${CHARACTER_ID}?householdId=h1`,
+        { method: "DELETE" },
+      );
+      const ctx = { params: Promise.resolve({ id: CHARACTER_ID }) };
+      const res = await route.DELETE!(req, ctx);
+      expect(res.status).toBe(204);
+      expect(mockArchiveCharacter).toHaveBeenCalledWith(
+        "parent-user-id",
+        "h1",
+        CHARACTER_ID,
+      );
     });
   });
 
