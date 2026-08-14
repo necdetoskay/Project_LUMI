@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
+import { NewAdventureSheet } from "@/components/story/new-adventure-sheet";
 import type { AdventureSummary } from "@/lib/stories/adventure-presentation";
 
 type AdventureHubCharacter = {
@@ -171,27 +172,13 @@ export function ProfileStoriesSection({
           </button>
         </header>
 
-        {newAdventureOpen ? (
-          <div
-            className="relative mt-5 rounded-2xl border border-[#ead7b6] bg-white/80 px-5 py-4 text-sm leading-6 text-on-surface-variant shadow-sm"
-            role="status"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tertiary-fixed text-on-tertiary-fixed">
-                <span className="material-symbols-outlined">explore</span>
-              </div>
-              <div>
-                <p className="font-extrabold text-on-surface">
-                  Yeni macera kapısı açılıyor
-                </p>
-                <p className="mt-1">
-                  Dünya olayları, söylentiler, çantandaki eşyalar ve
-                  dostlarından gelen çağrılar burada macera seçeneklerine
-                  dönüşecek.
-                </p>
-              </div>
-            </div>
-          </div>
+        {newAdventureOpen && householdId ? (
+          <NewAdventureSheet
+            childProfileId={childProfileId}
+            householdId={householdId}
+            onClose={() => setNewAdventureOpen(false)}
+            open={newAdventureOpen}
+          />
         ) : null}
 
         <div className="relative mt-7">
