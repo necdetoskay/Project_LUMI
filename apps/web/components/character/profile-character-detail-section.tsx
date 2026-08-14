@@ -81,7 +81,9 @@ export function ProfileCharacterDetailSection({
 
   const ensureLocationVisual = useCallback(
     async (
-      location: NonNullable<NonNullable<WorldResponse["world"]>["currentLocation"]>,
+      location: NonNullable<
+        NonNullable<WorldResponse["world"]>["currentLocation"]
+      >,
       regionName: string | null,
       householdId: string,
     ) => {
@@ -131,7 +133,8 @@ export function ProfileCharacterDetailSection({
               allowGrid: false,
             }),
           });
-          if (!generation.ok) throw new Error("LOCATION_VISUAL_GENERATION_FAILED");
+          if (!generation.ok)
+            throw new Error("LOCATION_VISUAL_GENERATION_FAILED");
           const generated = (await generation.json()) as {
             candidates?: Array<{ id: string }>;
           };
