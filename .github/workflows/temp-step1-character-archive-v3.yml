@@ -1,0 +1,95 @@
+name: Temporary Step1 Character Archive V3
+
+on:
+  push:
+    branches:
+      - feat/fresh-start-step1-character-archive
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: ${{ !contains(github.event.head_commit.message, '[step1-v3-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/fresh-start-step1-character-archive
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Patch implementation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('packages/profiles/src/application/character-bootstrap.service.ts'); s=p.read_text()
+          if 'export async function archiveCharacter(' not in s:
+              s=s.replace('\nexport type { CharacterState, OriginPackage, FirstRunHandoffRecord };\n','''\nexport async function archiveCharacter(userId: string, householdId: string, characterId: string): Promise<{ archived: boolean }> {\n  const repos = getRepos();\n  const household = await repos.householdRepo.findByIdForUser(householdId, userId);\n  if (!household) throw new AuthorizationError("User is not a member of this household");\n  const character = await repos.characterRepo.findById(characterId, householdId);\n  if (!character) return { archived: false };\n  await repos.characterRepo.softDelete(characterId, householdId);\n  return { archived: true };\n}\n\nexport type { CharacterState, OriginPackage, FirstRunHandoffRecord };\n''')
+          p.write_text(s)
+          p=Path('packages/profiles/src/application/index.ts'); s=p.read_text(); s=s.replace('  getCharacterById,\n} from "./character-bootstrap.service";','  getCharacterById,\n  archiveCharacter,\n} from "./character-bootstrap.service";'); p.write_text(s)
+          p=Path('apps/web/app/api/characters/[id]/route.ts'); s=p.read_text(); s=s.replace('  getCharacterById,\n  getCharacterDomain,','  archiveCharacter,\n  getCharacterById,\n  getCharacterDomain,')
+          if 'export const DELETE' not in s:
+              s+='''\n\nexport const DELETE = observeHandler(\n  (request: Request, ctx: { params: Promise<{ id: string }> }) =>\n    withParent(async (parent) => {\n      const householdId = new URL(request.url).searchParams.get("householdId");\n      const { id } = await ctx.params;\n      if (!householdId) return NextResponse.json({ error: "VALIDATION_ERROR", message: "householdId query parameter is required" }, { status: 400 });\n      try {\n        await archiveCharacter(parent.id, householdId, id);\n        return new NextResponse(null, { status: 204 });\n      } catch (error) {\n        const err = error as Error;\n        const message = err.message ?? "Unknown error";\n        if (err.name === "AuthorizationError" || message.includes("not a member")) return NextResponse.json({ error: "FORBIDDEN", message }, { status: 403 });\n        return NextResponse.json({ error: "INTERNAL_ERROR", message: "Failed to archive character" }, { status: 500 });\n      }\n    }),\n  "/api/characters/{id}",\n);\n'''
+          p.write_text(s)
+          p=Path('apps/web/app/app/profiles/[childProfileId]/profile-detail-client-page.tsx'); s=p.read_text()
+          s=s.replace('  const firstCharacter = useMemo(\n','  const handleCharacterArchived = useCallback((characterId: string) => {\n    setCharacters((current) => current.filter((item) => item.id !== characterId));\n  }, []);\n\n  const firstCharacter = useMemo(\n',1)
+          s=s.replace('          householdId={householdId}\n        />','          householdId={householdId}\n          onArchived={handleCharacterArchived}\n        />',1)
+          s=s.replace('  householdId,\n}: {\n  characters: CharacterInfo[];\n  loading: boolean;\n  childProfileId: string;\n  householdId: string | null;\n}) {\n  const firstCharacter = characters[0] ?? null;','''  householdId,\n  onArchived,\n}: {\n  characters: CharacterInfo[];\n  loading: boolean;\n  childProfileId: string;\n  householdId: string | null;\n  onArchived: (characterId: string) => void;\n}) {\n  const firstCharacter = characters[0] ?? null;\n  const [deleteTarget, setDeleteTarget] = useState<CharacterInfo | null>(null);\n  const [deleteSubmitting, setDeleteSubmitting] = useState(false);\n  const [deleteError, setDeleteError] = useState<string | null>(null);\n  const confirmArchive = useCallback(async () => {\n    if (!deleteTarget || !householdId) return;\n    setDeleteSubmitting(true); setDeleteError(null);\n    try {\n      const response = await fetch(`/api/characters/${encodeURIComponent(deleteTarget.id)}?householdId=${encodeURIComponent(householdId)}`, { method: "DELETE" });\n      if (!response.ok) { const body = (await response.json().catch(() => null)) as { message?: string } | null; setDeleteError(body?.message ?? "Karakter silinemedi."); return; }\n      const archivedId = deleteTarget.id; setDeleteTarget(null); onArchived(archivedId);\n    } catch { setDeleteError("Karakter silinirken beklenmeyen bir sorun oluştu."); } finally { setDeleteSubmitting(false); }\n  }, [deleteTarget, householdId, onArchived]);''')
+          s=s.replace('              <a\n                className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"\n                href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}\n              >','''              <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-error/30 bg-white px-4 text-sm font-semibold text-error" type="button" onClick={() => { setDeleteError(null); setDeleteTarget(character); }}>\n                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">delete</span>Karakteri sil\n              </button>\n              <a\n                className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"\n                href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}\n              >''')
+          marker='''      </div>\n    </section>\n  );\n}\n\nfunction PreferencesSection()'''
+          if 'delete-character-title' not in s:
+              s=s.replace(marker,'''      </div>\n      {deleteTarget ? (\n        <div aria-labelledby="delete-character-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4" role="dialog">\n          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">\n            <h3 className="text-xl font-bold text-on-surface" id="delete-character-title">Karakteri silmek istiyor musunuz?</h3>\n            <p className="mt-2 text-sm leading-6 text-on-surface-variant"><strong>{deleteTarget.name}</strong> artık aktif karakterler arasında görünmeyecek. Geçmiş verileri korunacak.</p>\n            {deleteError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-sm text-error">{deleteError}</p> : null}\n            <div className="mt-6 flex justify-end gap-3">\n              <button className="h-10 rounded-lg border border-outline-variant px-4 text-sm font-semibold" disabled={deleteSubmitting} onClick={() => { setDeleteTarget(null); setDeleteError(null); }} type="button">Vazgeç</button>\n              <button className="h-10 rounded-lg bg-error px-4 text-sm font-semibold text-on-error disabled:opacity-50" disabled={deleteSubmitting} onClick={() => void confirmArchive()} type="button">{deleteSubmitting ? "Siliniyor…" : "Karakteri sil"}</button>\n            </div>\n          </div>\n        </div>\n      ) : null}\n    </section>\n  );\n}\n\nfunction PreferencesSection()''')
+          p.write_text(s)
+          p=Path('apps/web/tests/character-api.test.ts'); s=p.read_text(); s=s.replace('const mockGetCharacterById = vi.fn();\n','const mockGetCharacterById = vi.fn();\nconst mockArchiveCharacter = vi.fn();\n'); s=s.replace('  getCharacterById: (...args: unknown[]) => mockGetCharacterById(...args),\n','  getCharacterById: (...args: unknown[]) => mockGetCharacterById(...args),\n  archiveCharacter: (...args: unknown[]) => mockArchiveCharacter(...args),\n'); s=s.replace('  PATCH?: (\n','  DELETE?: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response>;\n  PATCH?: (\n')
+          if 'describe("DELETE /api/characters/[id]"' not in s:
+              s=s.replace('  describe("PATCH /api/characters/[id]/traits", () => {','''  describe("DELETE /api/characters/[id]", () => {\n    it("archives idempotently", async () => {\n      mockArchiveCharacter.mockResolvedValueOnce({ archived: true });\n      const route = (await import("@/app/api/characters/[id]/route")) as RouteModule;\n      const req = makeRequest(`http://localhost/api/characters/${CHARACTER_ID}?householdId=h1`, { method: "DELETE" });\n      const ctx = { params: Promise.resolve({ id: CHARACTER_ID }) };\n      const res = await route.DELETE!(req, ctx);\n      expect(res.status).toBe(204);\n      expect(mockArchiveCharacter).toHaveBeenCalledWith("parent-user-id", "h1", CHARACTER_ID);\n    });\n  });\n\n  describe("PATCH /api/characters/[id]/traits", () => {''')
+          p.write_text(s)
+          PY
+      - name: Add UI test
+        run: |
+          cat > apps/web/tests/profile-character-archive.test.tsx <<'EOF'
+          import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+          import { describe, expect, it, vi } from "vitest";
+          import ProfileDetailClientPage from "@/app/app/profiles/[childProfileId]/profile-detail-client-page";
+          vi.mock("@/components/assets/canonical-character-image", () => ({ CanonicalCharacterImage: ({ characterName }: { characterName: string }) => <div>{characterName}</div> }));
+          vi.mock("@/components/story/profile-stories-section", () => ({ ProfileStoriesSection: () => <div>stories</div> }));
+          const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+          describe("character archive UI", () => {
+            it("uses modal confirmation and removes archived character from active list", async () => {
+              const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+                const url = String(input);
+                if (url === "/api/onboarding") return Promise.resolve(json({ onboarding: { hasHousehold: true, householdId: "h1" } }));
+                if (url === "/api/child-profiles/cp1?householdId=h1") return Promise.resolve(json({ profile: { id: "cp1", householdId: "h1", displayName: "Ada", ageBand: "6-8", locale: "tr", createdAt: "2026-08-14T00:00:00.000Z" } }));
+                if (url === "/api/characters?householdId=h1&childProfileId=cp1") return Promise.resolve(json({ characters: [{ id: "char1", name: "Lina", broadKind: "human", characterType: "explorer", subtype: "Gezgin", createdAt: "2026-08-14T00:00:00.000Z" }] }));
+                if (url === "/api/characters/char1?householdId=h1" && init?.method === "DELETE") return Promise.resolve(new Response(null, { status: 204 }));
+                return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+              });
+              vi.stubGlobal("fetch", fetchMock);
+              render(<ProfileDetailClientPage childProfileId="cp1" />);
+              fireEvent.click(await screen.findByRole("button", { name: "Karakterler (1)" }));
+              fireEvent.click(await screen.findByRole("button", { name: "Karakteri sil" }));
+              const dialog = screen.getByRole("dialog");
+              fireEvent.click(within(dialog).getByRole("button", { name: "Karakteri sil" }));
+              await waitFor(() => expect(screen.getByText("Henuz karakter yok")).toBeTruthy());
+              expect(fetchMock).toHaveBeenCalledWith("/api/characters/char1?householdId=h1", { method: "DELETE" });
+            });
+          });
+          EOF
+      - run: pnpm exec prettier --write packages/profiles/src/application/character-bootstrap.service.ts packages/profiles/src/application/index.ts apps/web/app/api/characters/'[id]'/route.ts apps/web/app/app/profiles/'[childProfileId]'/profile-detail-client-page.tsx apps/web/tests/character-api.test.ts apps/web/tests/profile-character-archive.test.tsx
+      - run: pnpm --filter @lumi/web exec eslint app/api/characters/'[id]'/route.ts app/app/profiles/'[childProfileId]'/profile-detail-client-page.tsx tests/character-api.test.ts tests/profile-character-archive.test.tsx --max-warnings=0
+      - run: pnpm --filter @lumi/web typecheck
+      - run: pnpm --filter @lumi/web exec vitest run tests/character-api.test.ts tests/profile-character-archive.test.tsx
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/profiles/src/application/character-bootstrap.service.ts packages/profiles/src/application/index.ts apps/web/app/api/characters/'[id]'/route.ts apps/web/app/app/profiles/'[childProfileId]'/profile-detail-client-page.tsx apps/web/tests/character-api.test.ts apps/web/tests/profile-character-archive.test.tsx
+          git commit -m "feat(characters): archive active character from profile UI [step1-v3-bot]"
+          git push origin HEAD:feat/fresh-start-step1-character-archive
