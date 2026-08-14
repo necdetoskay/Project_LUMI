@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,36 +10,38 @@ type ProfileContext = {
   displayName: string;
 };
 
+const DEFAULT_CHARACTER_TYPE_VISUALS: Record<CharacterKind, string> = {
+  human: "/onboarding/character-types/human.svg",
+  animal: "/onboarding/character-types/animal.svg",
+  fantastic: "/onboarding/character-types/fantastic.svg",
+  synthetic: "/onboarding/character-types/synthetic.svg",
+};
+
 const CHARACTER_TYPES: Array<{
   id: CharacterKind;
   title: string;
   description: string;
-  image: string;
   note?: string;
 }> = [
   {
     id: "human",
     title: "İnsan",
     description: "Tıpkı senin gibi bir insan karakter.",
-    image: "/onboarding/character-types/human.svg",
   },
   {
     id: "animal",
     title: "Hayvan",
     description: "Sevimli veya vahşi bir hayvan.",
-    image: "/onboarding/character-types/animal.svg",
   },
   {
     id: "fantastic",
     title: "Fantastik",
     description: "Büyülü varlıklar dünyasından biri.",
-    image: "/onboarding/character-types/fantastic.svg",
   },
   {
     id: "synthetic",
     title: "Sentetik",
     description: "Yapay veya teknoloji tabanlı bir varlık.",
-    image: "/onboarding/character-types/synthetic.svg",
     note: "Bazı dünyalarda açıklama gerektirir",
   },
 ];
@@ -59,8 +60,12 @@ const STEPS = [
 
 export default function CharacterTypeStepClient({
   childProfileId,
+  characterTypeVisuals = DEFAULT_CHARACTER_TYPE_VISUALS,
+  fallbackCharacterTypeVisuals = DEFAULT_CHARACTER_TYPE_VISUALS,
 }: {
   childProfileId: string;
+  characterTypeVisuals?: Record<CharacterKind, string>;
+  fallbackCharacterTypeVisuals?: Record<CharacterKind, string>;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<CharacterKind | null>(null);
@@ -280,12 +285,20 @@ export default function CharacterTypeStepClient({
                         </span>
                       ) : null}
                       <div className="mx-auto h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-[linear-gradient(145deg,#edf5ea,#fff0d6)] shadow-[0_8px_24px_rgba(69,70,48,0.14)] sm:h-36 sm:w-36">
-                        <Image
-                          src={type.image}
+                        <img
+                          src={characterTypeVisuals[type.id]}
                           alt={`${type.title} karakter tipi illüstrasyonu`}
-                          width={180}
-                          height={180}
                           className="h-full w-full object-cover"
+                          onError={(event) => {
+                            const fallback =
+                              fallbackCharacterTypeVisuals[type.id];
+                            if (
+                              event.currentTarget.src !==
+                              new URL(fallback, window.location.origin).href
+                            ) {
+                              event.currentTarget.src = fallback;
+                            }
+                          }}
                         />
                       </div>
                       <h3 className="mt-5 font-serif text-2xl font-black text-[#176d65]">
@@ -351,12 +364,19 @@ export default function CharacterTypeStepClient({
 
               <section className="flex items-center gap-4 rounded-[24px] border border-[#e4d8c7] bg-[#fff9ed] p-5 shadow-sm">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-[#edf5ea] shadow-sm">
-                  <Image
-                    src="/onboarding/character-types/human.svg"
+                  <img
+                    src={characterTypeVisuals.human}
                     alt="Profil illüstrasyonu"
-                    width={80}
-                    height={80}
                     className="h-full w-full object-cover"
+                    onError={(event) => {
+                      const fallback = fallbackCharacterTypeVisuals.human;
+                      if (
+                        event.currentTarget.src !==
+                        new URL(fallback, window.location.origin).href
+                      ) {
+                        event.currentTarget.src = fallback;
+                      }
+                    }}
                   />
                 </div>
                 <div className="min-w-0">
