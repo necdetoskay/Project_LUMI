@@ -1,9 +1,4 @@
-export {
-  createHousehold,
-  getOwnedHousehold,
-  getHouseholdForUser,
-  assertHouseholdOwnership,
-} from "./household.service";
+export { createHousehold, getOwnedHousehold, getHouseholdForUser, assertHouseholdOwnership } from "./household.service";
 export type { CreateHouseholdInput, HouseholdResult } from "./household.service";
 export { createChildProfile, listChildProfiles, updateChildProfile, archiveChildProfile, findChildProfileForUser, getChildProfilePreferences } from "./child-profile.service";
 export type { CreateChildProfileInput, UpdateChildProfileInput, ChildProfileResult, ChildPreferenceResult } from "./child-profile.service";
@@ -51,4 +46,6 @@ export { resolveActivePrompt } from "./prompt-runtime.service";
 export type { PromptContext } from "./prompt-runtime.service";
 export { generateTextWithLlm } from "./text-llm-gateway.service";
 export type { TextLlmGatewayInput, TextLlmGatewayResult } from "./text-llm-gateway.service";
+export { generateWorldCharacterSuggestions } from "./world-character-suggestion.service";
+export type { WorldCharacterSuggestion, WorldCharacterSuggestionResult } from "./world-character-suggestion.service";
 export * from "./llm-settings";
