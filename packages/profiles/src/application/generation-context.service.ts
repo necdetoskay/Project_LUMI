@@ -39,7 +39,7 @@ export async function buildGenerationContext(
   input: BuildGenerationContextInput,
 ): Promise<GenerationContext> {
   const [child, personalization, cycle] = await Promise.all([
-    findChildProfileForUser(userId, input.childProfileId, input.householdId),
+    findChildProfileForUser(input.childProfileId, userId, input.householdId),
     getChildPersonalization(userId, input.childProfileId, input.householdId),
     getActiveCharacterCreationCycle(
       userId,
