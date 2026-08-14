@@ -10,7 +10,11 @@ export type GenerationContextSection =
   | "recent_story_state"
   | "relevant_memories";
 
-export type GenerationContextPriority = "required" | "high" | "medium" | "low";
+export type GenerationContextPriority =
+  | "required"
+  | "high"
+  | "medium"
+  | "low";
 
 export interface GenerationContextSectionPolicy {
   section: GenerationContextSection;
@@ -30,7 +34,11 @@ const POLICIES: Record<GenerationContextProfile, GenerationContextPolicy> = {
     maxContextTokens: 1800,
     sections: [
       { section: "child_identity", priority: "required", maxTokens: 180 },
-      { section: "child_personalization", priority: "required", maxTokens: 420 },
+      {
+        section: "child_personalization",
+        priority: "required",
+        maxTokens: 420,
+      },
       { section: "creation_direction", priority: "required", maxTokens: 180 },
       { section: "creation_selections", priority: "high", maxTokens: 720 },
     ],
@@ -40,7 +48,11 @@ const POLICIES: Record<GenerationContextProfile, GenerationContextPolicy> = {
     maxContextTokens: 3200,
     sections: [
       { section: "child_identity", priority: "required", maxTokens: 180 },
-      { section: "child_personalization", priority: "required", maxTokens: 420 },
+      {
+        section: "child_personalization",
+        priority: "required",
+        maxTokens: 420,
+      },
       { section: "creation_direction", priority: "high", maxTokens: 180 },
       { section: "creation_selections", priority: "high", maxTokens: 620 },
       { section: "character_state", priority: "medium", maxTokens: 600 },
@@ -52,7 +64,11 @@ const POLICIES: Record<GenerationContextProfile, GenerationContextPolicy> = {
     maxContextTokens: 5200,
     sections: [
       { section: "child_identity", priority: "required", maxTokens: 180 },
-      { section: "child_personalization", priority: "required", maxTokens: 420 },
+      {
+        section: "child_personalization",
+        priority: "required",
+        maxTokens: 420,
+      },
       { section: "character_state", priority: "required", maxTokens: 900 },
       { section: "world_state", priority: "high", maxTokens: 1000 },
       { section: "recent_story_state", priority: "high", maxTokens: 1200 },
@@ -71,12 +87,18 @@ export function getGenerationContextSectionPolicy(
   profile: GenerationContextProfile,
   section: GenerationContextSection,
 ): GenerationContextSectionPolicy | null {
-  return POLICIES[profile].sections.find((entry) => entry.section === section) ?? null;
+  return (
+    POLICIES[profile].sections.find((entry) => entry.section === section) ?? null
+  );
 }
 
-export function assertGenerationContextPolicy(policy: GenerationContextPolicy): void {
+export function assertGenerationContextPolicy(
+  policy: GenerationContextPolicy,
+): void {
   if (!Number.isInteger(policy.maxContextTokens) || policy.maxContextTokens <= 0) {
-    throw new Error("Generation context maxContextTokens must be a positive integer");
+    throw new Error(
+      "Generation context maxContextTokens must be a positive integer",
+    );
   }
 
   const seen = new Set<GenerationContextSection>();
@@ -89,7 +111,9 @@ export function assertGenerationContextPolicy(policy: GenerationContextPolicy): 
     seen.add(section.section);
 
     if (!Number.isInteger(section.maxTokens) || section.maxTokens <= 0) {
-      throw new Error(`Invalid token budget for generation context section: ${section.section}`);
+      throw new Error(
+        `Invalid token budget for generation context section: ${section.section}`,
+      );
     }
     allocatedTokens += section.maxTokens;
   }
