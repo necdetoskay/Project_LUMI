@@ -81,9 +81,9 @@ export async function createPromptDraft(
       })
       .returning();
     if (!created) throw new Error("PROMPT_DRAFT_CREATE_FAILED");
-    await tx.insert(aiPromptAuditLog).values(
-      auditValues(promptKey, version, "draft_created", context),
-    );
+    await tx
+      .insert(aiPromptAuditLog)
+      .values(auditValues(promptKey, version, "draft_created", context));
     return created;
   });
 }
@@ -180,7 +180,9 @@ export async function rollbackPrompt(
   return setActivePromptVersion(promptKey, version, "rollback", context);
 }
 
-export function toPromptDraftInput(record: AiPromptVersionRecord): PromptDraftInput {
+export function toPromptDraftInput(
+  record: AiPromptVersionRecord,
+): PromptDraftInput {
   return {
     systemTemplate: record.systemTemplate,
     userTemplate: record.userTemplate,
