@@ -46,5 +46,9 @@ describe("Visual Library canonical route contract", () => {
     expect(managerSource).toContain("expression-sheet");
     expect(managerSource).toContain("Duygu ifadeleri");
     expect(routeSource).toContain("emotionKeys");
+    expect(routeSource).toContain('action: z.literal("selectHeader")');
+    expect(managerSource).toContain("selectedHeaderAssetId");
+    expect(managerSource).toContain("Karakter kartında göster");
+    expect(managerSource).toContain("ring-2");
   });
 });

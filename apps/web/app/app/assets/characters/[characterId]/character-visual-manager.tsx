@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { newIdempotencyKey } from "@/lib/new-id";
@@ -20,6 +21,7 @@ type VisualCanon = {
   selectedAssetId: string | null;
   selectedFullBodyAssetId: string | null;
   selectedHalfBodyAssetId: string | null;
+  selectedHeaderAssetId: string | null;
   version: number;
   selectedAt: string | null;
 } | null;
@@ -91,6 +93,7 @@ export function CharacterVisualManager({
   const [selectedEmotions, setSelectedEmotions] = useState<
     Array<"happy" | "sad" | "surprised" | "scared">
   >(["happy", "sad", "surprised", "scared"]);
+  const router = useRouter();
 
   const endpoint = `/api/assets/characters/${encodeURIComponent(characterId)}?householdId=${encodeURIComponent(householdId)}`;
 
@@ -154,6 +157,12 @@ export function CharacterVisualManager({
       : assetKind?.startsWith("head-")
         ? "half_body"
         : null;
+  const canShowOnHeader = (assetKind?: string) =>
+    assetKind?.startsWith("head-") || assetKind?.startsWith("expression-");
+  const isSelectedVisual = (variant: VisualCandidate) =>
+    variant.id === state.canon?.selectedFullBodyAssetId ||
+    variant.id === state.canon?.selectedHalfBodyAssetId ||
+    variant.id === state.canon?.selectedHeaderAssetId;
 
   const activeFullBody =
     state.variants.find(
@@ -197,6 +206,7 @@ export function CharacterVisualManager({
         throw new Error(payload.error ?? "İşlem tamamlanamadı.");
       }
       await refresh();
+      router.refresh();
       setMessage(successText);
     } catch (error) {
       setMessage(
@@ -544,7 +554,7 @@ export function CharacterVisualManager({
           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7">
             {baseVariants.map((variant) => (
               <div
-                className="group relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
+                className={`group relative aspect-square overflow-hidden rounded-xl border bg-surface-container-low ${isSelectedVisual(variant) ? "border-primary ring-2 ring-primary/30" : "border-outline-variant"}`}
                 key={variant.id}
               >
                 <Image
@@ -555,9 +565,63 @@ export function CharacterVisualManager({
                   src={contentUrl(variant.id)}
                   unoptimized
                 />
+                <div className="absolute bottom-1 left-1 flex gap-1">
+                  {representationRole(variant.assetKind) ? (
+                    <button
+                      aria-label="Temsil görseli olarak seç"
+                      className={`grid size-8 place-items-center rounded-full shadow ${variant.id === state.canon?.selectedFullBodyAssetId || variant.id === state.canon?.selectedHalfBodyAssetId ? "bg-primary text-on-primary" : "bg-white/95 text-on-surface"}`}
+                      disabled={busy === "selectRepresentation"}
+                      onClick={() =>
+                        void act(
+                          {
+                            action: "selectRepresentation",
+                            assetId: variant.id,
+                            role: representationRole(variant.assetKind),
+                          },
+                          representationRole(variant.assetKind) === "full_body"
+                            ? "Boydan temsil görseli seçildi."
+                            : "Yarım portre temsil görseli seçildi.",
+                        )
+                      }
+                      title={
+                        representationRole(variant.assetKind) === "full_body"
+                          ? "Boydan temsil görseli olarak seç"
+                          : "Yarım portre olarak seç"
+                      }
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-base">
+                        {representationRole(variant.assetKind) === "full_body"
+                          ? "accessibility"
+                          : "face"}
+                      </span>
+                    </button>
+                  ) : null}
+                  {canShowOnHeader(variant.assetKind) ? (
+                    <button
+                      aria-label="Karakter kartında göster"
+                      className={`grid size-8 place-items-center rounded-full shadow ${variant.id === state.canon?.selectedHeaderAssetId ? "bg-secondary text-on-secondary" : "bg-white/95 text-on-surface"}`}
+                      disabled={busy === "selectHeader"}
+                      onClick={() =>
+                        void act(
+                          { action: "selectHeader", assetId: variant.id },
+                          "Karakter kartı görseli güncellendi.",
+                        )
+                      }
+                      title="Karakter kartında göster"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-base">
+                        {variant.id === state.canon?.selectedHeaderAssetId
+                          ? "check_circle"
+                          : "photo"}
+                      </span>
+                    </button>
+                  ) : null}
+                </div>
                 {representationRole(variant.assetKind) ? (
                   <button
-                    className="absolute inset-x-1 bottom-1 rounded-lg bg-white/95 px-2 py-1 text-[10px] font-extrabold text-on-surface shadow"
+                    className="hidden"
                     disabled={busy === "selectRepresentation"}
                     onClick={() =>
                       void act(
@@ -618,7 +682,7 @@ export function CharacterVisualManager({
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {expressionVariants.map((variant) => (
               <div
-                className="group relative aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
+                className={`group relative aspect-square overflow-hidden rounded-xl border bg-surface-container-low ${isSelectedVisual(variant) ? "border-secondary ring-2 ring-secondary/30" : "border-outline-variant"}`}
                 key={variant.id}
               >
                 <Image
@@ -638,6 +702,25 @@ export function CharacterVisualManager({
                         ? "Şaşkın"
                         : "Korkmuş"}
                 </span>
+                <button
+                  aria-label="Karakter kartında göster"
+                  className={`absolute left-1 top-1 grid size-8 place-items-center rounded-full shadow ${variant.id === state.canon?.selectedHeaderAssetId ? "bg-secondary text-on-secondary" : "bg-white/95 text-on-surface"}`}
+                  disabled={busy === "selectHeader"}
+                  onClick={() =>
+                    void act(
+                      { action: "selectHeader", assetId: variant.id },
+                      "Karakter kartı görseli güncellendi.",
+                    )
+                  }
+                  title="Karakter kartında göster"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-base">
+                    {variant.id === state.canon?.selectedHeaderAssetId
+                      ? "check_circle"
+                      : "photo"}
+                  </span>
+                </button>
                 <button
                   aria-label="Duygu görselini sil"
                   className="absolute right-1 top-1 grid size-7 place-items-center rounded-full bg-white/90 text-on-surface opacity-0 shadow transition group-hover:opacity-100 focus-visible:opacity-100"

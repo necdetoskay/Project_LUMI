@@ -197,6 +197,7 @@ export {
   previewCharacterVisualCandidates,
   selectCharacterVisualCanon,
   selectCharacterVisualRepresentation,
+  selectCharacterVisualHeaderAsset,
   rejectCharacterVisualCandidate,
   deleteCharacterVisualVariant,
 } from "./character-visual.service";

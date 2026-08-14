@@ -15,6 +15,7 @@ import {
   rejectCharacterVisualCandidate,
   selectCharacterVisualCanon,
   selectCharacterVisualRepresentation,
+  selectCharacterVisualHeaderAsset,
 } from "@lumi/profiles/application";
 import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapters";
 
@@ -92,6 +93,7 @@ const actionSchema = z.discriminatedUnion("action", [
     assetId: z.string().uuid(),
     role: z.enum(["full_body", "half_body"]),
   }),
+  z.object({ action: z.literal("selectHeader"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("reject"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("delete"), assetId: z.string().uuid() }),
 ]);
@@ -305,6 +307,16 @@ export async function POST(
           householdId,
           parsedParams.characterId,
           action.role,
+          action.assetId,
+        );
+        return NextResponse.json({ canon });
+      }
+
+      if (action.action === "selectHeader") {
+        const canon = await selectCharacterVisualHeaderAsset(
+          parent.id,
+          householdId,
+          parsedParams.characterId,
           action.assetId,
         );
         return NextResponse.json({ canon });
