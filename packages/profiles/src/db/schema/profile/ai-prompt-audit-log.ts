@@ -1,18 +1,8 @@
-import {
-  integer,
-  jsonb,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { integer, jsonb, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { primaryId } from "../common";
 import { profileSchema } from "../schemas";
 
-export type AiPromptAuditAction =
-  | "draft_created"
-  | "activated"
-  | "rollback";
+export type AiPromptAuditAction = "draft_created" | "activated" | "rollback";
 
 export const aiPromptAuditLog = profileSchema.table("ai_prompt_audit_log", {
   id: primaryId(),
@@ -27,5 +17,7 @@ export const aiPromptAuditLog = profileSchema.table("ai_prompt_audit_log", {
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
