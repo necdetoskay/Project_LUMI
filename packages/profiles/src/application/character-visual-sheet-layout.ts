@@ -18,6 +18,13 @@ export const SEVEN_VIEW_REGIONS: readonly SheetRegion[] = [
   { left: 2 / 3, top: 0.5, width: 1 / 3, height: 0.5 },
 ];
 
+export const EXPRESSION_SHEET_REGIONS: readonly SheetRegion[] = [
+  { left: 0, top: 0, width: 0.5, height: 0.5 },
+  { left: 0.5, top: 0, width: 0.5, height: 0.5 },
+  { left: 0, top: 0.5, width: 0.5, height: 0.5 },
+  { left: 0.5, top: 0.5, width: 0.5, height: 0.5 },
+];
+
 export function getSevenViewSheetLayout(): {
   version: typeof CHARACTER_VISUAL_SHEET_LAYOUT_VERSION;
   regions: readonly SheetRegion[];

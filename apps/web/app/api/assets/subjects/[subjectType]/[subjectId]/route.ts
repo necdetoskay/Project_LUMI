@@ -9,6 +9,7 @@ import {
   getManagedAssetCanon,
   getOpenRouterApiKey,
   listManagedAssets,
+  selectManagedAssetCanon,
   type ImageGenerationBudgetPolicy,
 } from "@lumi/profiles/application";
 import { OpenRouterImageGenerationAdapter } from "@lumi/profiles/adapters";
@@ -19,6 +20,10 @@ const paramsSchema = z.object({
 });
 
 const actionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("select"),
+    assetId: z.string().uuid(),
+  }),
   z.object({
     action: z.literal("generate"),
     assetKind: z.string().min(1).max(64),
@@ -141,6 +146,22 @@ export async function POST(
         );
       }
       const action = actionSchema.parse(await request.json());
+      const authorizationPort = new WebManagedAssetAuthorizationAdapter();
+
+      if (action.action === "select") {
+        const canon = await selectManagedAssetCanon(
+          parent.id,
+          {
+            householdId,
+            subjectType: parsed.subjectType,
+            subjectId: parsed.subjectId,
+          },
+          action.assetId,
+          { authorizationPort },
+        );
+        return NextResponse.json({ canon });
+      }
+
       const apiKey = await getOpenRouterApiKey(parent.id, householdId);
       if (!apiKey) {
         return NextResponse.json(
@@ -149,7 +170,6 @@ export async function POST(
         );
       }
 
-      const authorizationPort = new WebManagedAssetAuthorizationAdapter();
       const result = await generateManagedImageCandidates(
         parent.id,
         {

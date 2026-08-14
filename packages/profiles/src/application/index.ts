@@ -97,10 +97,16 @@ export type {
 
 export {
   CHARACTER_VISUAL_VARIANTS,
+  CHARACTER_VISUAL_EMOTIONS,
+  CHARACTER_VISUAL_EMOTION_VARIANTS,
   renderCharacterVisualPrompt,
 } from "./character-visual-generation";
 export type {
   CharacterVisualDerivative,
+  CharacterVisualBagItem,
+  CharacterVisualEmotion,
+  CharacterVisualEmotionVariant,
+  CharacterVisualDerivativeVariant,
   CharacterVisualDerivativePort,
   CharacterVisualGenerationPort,
   CharacterVisualGenerationRequest,
@@ -114,6 +120,7 @@ export type {
 export {
   CHARACTER_VISUAL_SHEET_LAYOUT_VERSION,
   SEVEN_VIEW_REGIONS,
+  EXPRESSION_SHEET_REGIONS,
   getSevenViewSheetLayout,
 } from "./character-visual-sheet-layout";
 export type { SheetRegion } from "./character-visual-sheet-layout";
@@ -183,14 +190,22 @@ export type {
 } from "./image-generation.service";
 
 export {
+  commitCharacterVisualPreview,
   generateCharacterVisualCandidates,
   listCharacterVisualCandidates,
   getCharacterVisualCanon,
+  previewCharacterVisualCandidates,
   selectCharacterVisualCanon,
+  selectCharacterVisualRepresentation,
+  selectCharacterVisualHeaderAsset,
   rejectCharacterVisualCandidate,
+  deleteCharacterVisualVariant,
 } from "./character-visual.service";
 export type {
+  CharacterVisualPreview,
   GenerateCharacterVisualInput,
+  PreviewCharacterVisualInput,
+  CommitCharacterVisualPreviewInput,
   CharacterVisualServiceDeps,
 } from "./character-visual.service";
 

@@ -40,7 +40,7 @@ export async function CharacterIdentityHeaderServer({
       parentId,
       householdId,
       character.id,
-      "full_body_front",
+      "header_card",
     ),
     getCharacterCurrentLocation(character.id),
     getTranslations("assets"),

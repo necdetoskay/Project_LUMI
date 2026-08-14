@@ -66,6 +66,11 @@ export default async function CharacterVisualHubPage({
     storyCount: storyCards.length,
   };
 
+  const latestStory = storyCards.at(-1);
+  const latestStorySummary = latestStory
+    ? `${latestStory.definition?.title || latestStory.version?.title || "Son hikâye"}: ${latestStory.version?.summary || "Hikâye özeti henüz eklenmedi."}`
+    : null;
+
   console.warn("[LUMI_ASSETS_SERVER]", {
     marker: "assets-runtime-diag-2026-08-13-v1",
     route: "/app/assets/characters/[characterId]",
@@ -102,6 +107,11 @@ export default async function CharacterVisualHubPage({
           <CharacterVisualManager
             characterId={character.id}
             characterName={character.name}
+            characterSummary={
+              character.originConcept?.trim() ||
+              `${character.name} için otomatik karakter özeti hazırlanıyor.`
+            }
+            latestStorySummary={latestStorySummary}
             householdId={household.id}
           />
         </section>

@@ -183,3 +183,13 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Not: DB seviyesi unique-index migration EKLENMEDİ — idempotency kod seviyesinde (mevcut derivative kontrolü). Race durumu varsa ayrı migration fazı gerekir.
 - PR #155 (main'e alındığında): PR #154'ün `character-visual-presentation.ts` rol eşlemesi tek canonical kaynağa indirildi — `character-visual-derivative-resolver.ts` (`SEMANTIC_ROLE_BY_VARIANT` + `resolveVariantForRole`); presentation `Extract<CharacterVisualSemanticRole, "portrait_primary" | "full_body_front">` üzerinden türer. Closes #153.
 - Docker compose notu: `cd infra/compose && docker compose up` çalıştırırken compose `.env`'i cwd'den okur — root `.env` görünmez. `infra/compose/.env` kopyası ayrıca tutulmalı veya root'tan `pnpm infra:up` (`--env-file .env`) kullanılmalı.
+
+### Character visual variant soft delete + placeholder fallback (2026-08-14, PR #157)
+
+- Kullanıcı isteği: "Görünüm varyantları" kısmından resim silinebilmeli; silinen resim kullanıldığı yerde placeholder gösterilmeli. Yaklaşım: **soft delete** (`lifecycleState → "deleted"` + `deleted_at`).
+- Migration `0056_character_visual_soft_delete.sql`: `character_visual_assets.deleted_at` kolonu + lifecycle check constraint'e `'deleted'` eklendi (drop+re-add).
+- `@lumi/profiles`: `deleteCharacterVisualVariant(userId, householdId, characterId, assetId)` — ownership guard, source sheet (`sourceCompositeAssetId` yok) silinemez (`VISUAL_SOURCE_ASSET_NOT_DELETABLE`), idempotent; `listCharacterVisualCandidates` artık `deleted`'ları dönmez; `getCharacterVisualPresentationAsset` hem derivative hem source fallback sorgusunda `lifecycleState != deleted` filtresi — silinen derivative → null → UI placeholder.
+- Web: `POST /api/assets/characters/[characterId]`'e `action: "delete"` eklendi; `character-visual-manager.tsx` varyant kartlarında hover silme butonu (`window.confirm` onaylı) — `act` busy state'i ile `disabled`.
+- Testler: guarded `apps/web/tests/ultef-visual-variant-delete.integration.test.ts` (`ULTEF_S53_VISUAL_ENABLE=true` ile çalışır; source silinemez + soft delete + presentation null + diğer varyant görünür). `@lumi/profiles` 249 unit green; lint/typecheck/build/mojibake/format green.
+- Kapsam dışı: storage binary silme (S3/local) ve Issue #153 "source sheet retention cleanup" ayrı faz olarak backlog'ta.
+- Branch: `feat/character-visual-variant-soft-delete` (PR #155'ten ayrı).

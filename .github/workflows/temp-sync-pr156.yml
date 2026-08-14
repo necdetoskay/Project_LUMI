@@ -1,0 +1,40 @@
+name: Temporary Sync PR156
+
+on:
+  push:
+    branches:
+      - feat/character-visual-variant-soft-delete
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    if: ${{ !contains(github.event.head_commit.message, '[sync-main-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/character-visual-variant-soft-delete
+          fetch-depth: 0
+      - name: Merge current main into PR branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if ! git merge --no-edit origin/main; then
+            git checkout --ours AGENTS.md
+            git checkout --ours apps/web/lib/assets/character-visual-sheet-splitter.ts
+            git checkout --ours packages/profiles/src/application/character-visual-presentation.ts
+            git checkout --ours packages/profiles/src/application/character-visual-sheet-layout.ts
+            git checkout --ours packages/profiles/src/application/index.ts
+            git add AGENTS.md \
+              apps/web/lib/assets/character-visual-sheet-splitter.ts \
+              packages/profiles/src/application/character-visual-presentation.ts \
+              packages/profiles/src/application/character-visual-sheet-layout.ts \
+              packages/profiles/src/application/index.ts
+            test -z "$(git diff --name-only --diff-filter=U)"
+            git commit -m "merge: sync current main into visual branch [sync-main-bot]"
+          fi
+          git push origin HEAD:feat/character-visual-variant-soft-delete
