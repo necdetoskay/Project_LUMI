@@ -40,7 +40,7 @@ export { createItemDefinition, acquireItem, transferItem, consumeItem, archiveIt
 export type { InventorySummary } from "./inventory.service";
 export { STORY_REWARD_SYSTEM_AUTHORITY, grantStoryRewardAsSystem } from "./system-inventory-grant.service";
 export type { InventorySystemAuthority, StoryRewardSystemGrantInput, StoryRewardSystemGrantResult } from "./system-inventory-grant.service";
-export { getActiveCharacterCreationCycle, chooseCharacterCreationDirection, chooseWorldFeeling } from "./character-creation-cycle.service";
+export { getActiveCharacterCreationCycle, chooseCharacterCreationDirection, chooseWorldFeeling, chooseWorldCharacterSuggestion } from "./character-creation-cycle.service";
 export type { WorldFeelingKey } from "./character-creation-cycle.service";
 export { resolveActivePrompt } from "./prompt-runtime.service";
 export type { PromptContext } from "./prompt-runtime.service";
