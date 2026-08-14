@@ -37,6 +37,7 @@ type OnboardingPayload = {
 
 type WorldResponse = {
   world?: {
+    id: string;
     currentLocation: {
       id: string;
       displayName: string;
@@ -55,6 +56,12 @@ type WorldResponse = {
   } | null;
 };
 
+type ManagedLocationVisual = {
+  assetId: string;
+  imageUrl: string;
+  loading: boolean;
+};
+
 export function ProfileCharacterDetailSection({
   childProfileId,
   characterId,
@@ -66,9 +73,90 @@ export function ProfileCharacterDetailSection({
     useState<CharacterResponse["character"]>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [world, setWorld] = useState<WorldResponse["world"]>(null);
+  const [locationVisual, setLocationVisual] =
+    useState<ManagedLocationVisual | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const ensureLocationVisual = useCallback(
+    async (
+      location: NonNullable<NonNullable<WorldResponse["world"]>["currentLocation"]>,
+      regionName: string | null,
+      householdId: string,
+    ) => {
+      setLocationVisual({ assetId: "", imageUrl: "", loading: true });
+      const baseUrl = `/api/assets/subjects/location/${encodeURIComponent(location.id)}`;
+      const query = `?householdId=${encodeURIComponent(householdId)}&assetKind=location-background`;
+
+      try {
+        const response = await fetch(`${baseUrl}${query}`);
+        if (!response.ok) throw new Error("LOCATION_VISUAL_LOAD_FAILED");
+        const body = (await response.json()) as {
+          assets?: Array<{ id: string; lifecycleState: string }>;
+          canon?: { selectedAssetId: string | null } | null;
+        };
+        let assetId = body.canon?.selectedAssetId ?? null;
+        const candidate = body.assets?.find(
+          (asset) => asset.lifecycleState !== "rejected",
+        );
+        if (!assetId && candidate) {
+          assetId = candidate.id;
+          await fetch(`${baseUrl}${query}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "select", assetId }),
+          });
+        }
+
+        if (!assetId) {
+          const generation = await fetch(`${baseUrl}${query}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "generate",
+              assetKind: "location-background",
+              idempotencyKey: `location-background:${location.id}:v1`,
+              prompt: [
+                `A warm, child-friendly establishing illustration of ${location.displayName}.`,
+                `Location type: ${location.locationType}.`,
+                regionName ? `Region: ${regionName}.` : "",
+                "Storybook fantasy environment, clear readable shapes, inviting atmosphere, no characters, no text, landscape composition.",
+              ]
+                .filter(Boolean)
+                .join(" "),
+              candidateCount: 1,
+              aspectRatio: "16:9",
+              requestMaxCostUsd: 0.1,
+              allowGrid: false,
+            }),
+          });
+          if (!generation.ok) throw new Error("LOCATION_VISUAL_GENERATION_FAILED");
+          const generated = (await generation.json()) as {
+            candidates?: Array<{ id: string }>;
+          };
+          assetId = generated.candidates?.[0]?.id ?? null;
+          if (assetId) {
+            await fetch(`${baseUrl}${query}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "select", assetId }),
+            });
+          }
+        }
+
+        if (!assetId) throw new Error("LOCATION_VISUAL_NOT_READY");
+        setLocationVisual({
+          assetId,
+          imageUrl: `${baseUrl}/content/${encodeURIComponent(assetId)}${query}`,
+          loading: false,
+        });
+      } catch {
+        setLocationVisual(null);
+      }
+    },
+    [],
+  );
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -84,6 +172,7 @@ export function ProfileCharacterDetailSection({
         setCharacter(null);
         setInventory([]);
         setWorld(null);
+        setLocationVisual(null);
         return;
       }
 
@@ -99,6 +188,7 @@ export function ProfileCharacterDetailSection({
         setCharacter(null);
         setInventory([]);
         setWorld(null);
+        setLocationVisual(null);
         return;
       }
 
@@ -124,19 +214,32 @@ export function ProfileCharacterDetailSection({
 
       if (worldResult.status === "fulfilled" && worldResult.value.ok) {
         const worldBody = (await worldResult.value.json()) as WorldResponse;
-        setWorld(worldBody.world ?? null);
+        const nextWorld = worldBody.world ?? null;
+        setWorld(nextWorld);
+        if (nextWorld?.currentLocation) {
+          const region = nextWorld.regions.find((item) => item.isCurrentRegion);
+          void ensureLocationVisual(
+            nextWorld.currentLocation,
+            region?.displayName ?? null,
+            householdId,
+          );
+        } else {
+          setLocationVisual(null);
+        }
       } else {
         setWorld(null);
+        setLocationVisual(null);
       }
     } catch {
       setError("Karakterin dünyası şu anda yüklenemedi.");
       setCharacter(null);
       setInventory([]);
       setWorld(null);
+      setLocationVisual(null);
     } finally {
       setLoading(false);
     }
-  }, [characterId, childProfileId]);
+  }, [characterId, childProfileId, ensureLocationVisual]);
 
   useEffect(() => {
     void loadDetail();
@@ -257,7 +360,18 @@ export function ProfileCharacterDetailSection({
               </div>
             </div>
 
-            <div className="relative min-h-[360px] overflow-hidden">
+            <div className="relative min-h-[360px] overflow-hidden bg-[#dbe8dc]">
+              {locationVisual?.imageUrl ? (
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 scale-105 bg-cover bg-center blur-[2px]"
+                  style={{ backgroundImage: `url(${locationVisual.imageUrl})` }}
+                />
+              ) : null}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-br from-[#1f3d2d]/45 via-[#315943]/20 to-[#f4c98b]/40"
+              />
               <CanonicalCharacterImage
                 characterId={characterId}
                 characterName={character.name}
@@ -297,7 +411,7 @@ export function ProfileCharacterDetailSection({
             <StoryPanel
               eyebrow="Yanında"
               title="Yolculukta seninle olanlar"
-              description="Burada yalnızca karaktere gerçekten bağlı görünen eşyaları gösteriyoruz."
+              description="Çantanda bu yolculukta seninle kalan şeyleri görebilirsin."
             >
               <div className="relative mb-5 min-h-52 overflow-hidden rounded-[1.6rem] border border-outline-variant/60 bg-surface-container-low sm:min-h-64">
                 <CanonicalBagImage
@@ -307,6 +421,14 @@ export function ProfileCharacterDetailSection({
                   householdId={householdId}
                   variant="bag-open"
                 />
+                <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/70 bg-white/85 px-4 py-3 shadow-sm backdrop-blur-sm">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">
+                    Yolculuk çantası
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-on-surface">
+                    Yanında taşıdıkların burada saklanır.
+                  </p>
+                </div>
               </div>
               {inventory.length > 0 ? (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -349,7 +471,7 @@ export function ProfileCharacterDetailSection({
             <StoryPanel
               eyebrow="Geçmişinden"
               title="Buraya nasıl geldin?"
-              description="Karakterin ilk oluşumunda kanona giren başlangıç bilgileri burada sade bir hatırlatma olarak kalır."
+              description="Karakterinin nereden geldiğini ve ilk izlerini burada hatırlayabilirsin."
             >
               {character.originConcept ? (
                 <p className="text-base leading-7 text-on-surface">
@@ -360,12 +482,12 @@ export function ProfileCharacterDetailSection({
               )}
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <QuietFact
-                  label="İlk bilinen yer"
-                  value={character.startingLocation ?? "Henüz kayıtlı değil"}
+                  label="İlk hatıra"
+                  value={presentWorldValue(character.startingLocation)}
                 />
                 <QuietFact
-                  label="Yuva"
-                  value={character.homeArchetype ?? "Henüz kayıtlı değil"}
+                  label="Sıcak yuvası"
+                  value={presentWorldValue(character.homeArchetype)}
                 />
               </div>
             </StoryPanel>
@@ -563,4 +685,22 @@ function conditionSentence(conditionStatus: string): string {
     default:
       return "Durumu dünyada kayıtlı.";
   }
+}
+
+function presentWorldValue(value: string | null): string {
+  if (!value) return "Henüz kayıtlı değil";
+
+  const knownLabels: Record<string, string> = {
+    "isik-vadisi-gezgini": "Işık Vadisi'nin gezgini",
+    "fisildayan-orman": "Fısıldayan Orman",
+    cottage: "Sıcak bir kır evi",
+  };
+  const normalized = value.trim().toLowerCase();
+  if (knownLabels[normalized]) return knownLabels[normalized];
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (first) => first.toLocaleUpperCase("tr-TR"));
 }

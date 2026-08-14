@@ -612,25 +612,26 @@ function CharactersSection({
             Bu profilde aktif olan karakterler ve temel rolleri.
           </p>
         </div>
-        {firstCharacter ? (
+        <div className="flex flex-wrap gap-2">
+          {firstCharacter ? (
+            <a
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(firstCharacter.id)}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                open_in_new
+              </span>
+              Karakteri ac
+            </a>
+          ) : null}
           <a
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
-            href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/${encodeURIComponent(firstCharacter.id)}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              open_in_new
-            </span>
-            Karakteri ac
-          </a>
-        ) : (
-          <a
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:bg-[#4c29cf]"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-outline-variant bg-white px-4 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low"
             href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            Yeni karakter baslat
+            Yeni karakter ekle
           </a>
-        )}
+        </div>
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {characters.map((character) => (

@@ -4,6 +4,9 @@ import {
   getOwnedHousehold,
   type ManagedAssetAuthorizationPort,
 } from "@lumi/profiles/application";
+import { getWorldDb } from "@lumi/world/db/client";
+import { worlds, worldLocations } from "@lumi/world/db/schema/world";
+import { and, eq } from "drizzle-orm";
 
 export class WebManagedAssetAuthorizationAdapter
   implements ManagedAssetAuthorizationPort
@@ -33,6 +36,22 @@ export class WebManagedAssetAuthorizationAdapter
         input.subjectId,
       );
       if (!item) throw new Error("MANAGED_ASSET_SUBJECT_NOT_FOUND");
+      return;
+    }
+
+    if (input.subjectType === "location") {
+      const [location] = await getWorldDb()
+        .select({ id: worldLocations.id })
+        .from(worldLocations)
+        .innerJoin(worlds, eq(worlds.id, worldLocations.worldId))
+        .where(
+          and(
+            eq(worldLocations.id, input.subjectId),
+            eq(worlds.householdId, input.householdId),
+          ),
+        )
+        .limit(1);
+      if (!location) throw new Error("MANAGED_ASSET_SUBJECT_NOT_FOUND");
       return;
     }
 
