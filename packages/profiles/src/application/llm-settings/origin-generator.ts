@@ -20,7 +20,10 @@ import type {
   ToneVector,
 } from "../../domain/types";
 import { ensureOriginPackagesPrompt } from "../prompt-bootstrap.service";
-import { resolveActivePrompt } from "../prompt-runtime.service";
+import {
+  resolveActivePrompt,
+  type PromptContext,
+} from "../prompt-runtime.service";
 import { generateTextWithLlm } from "../text-llm-gateway.service";
 import { parseAndValidatePromptOutput } from "../prompt-output-validator";
 import { recordAiGenerationTrace } from "../ai-generation-trace.service";
@@ -128,7 +131,7 @@ function deterministicHashedSeed(...parts: string[]): string {
   return `lumi-${prefix}-${hex}`.slice(0, 118);
 }
 
-function buildContext(params: GenerationParams): Record<string, unknown> {
+function buildContext(params: GenerationParams): PromptContext {
   return {
     characterType: params.characterType,
     originMode: params.originMode,
