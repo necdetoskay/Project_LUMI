@@ -4,12 +4,13 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { createCharacterVisualStorageAdapter } from "@/lib/assets/character-visual-storage";
 import {
-  generateCharacterVisualCandidates,
+  commitCharacterVisualPreview,
   getCharacterVisualCanon,
   getOpenRouterApiKey,
   getOwnedHousehold,
   listCharacterVisualCandidates,
   deleteCharacterVisualVariant,
+  previewCharacterVisualCandidates,
   rejectCharacterVisualCandidate,
   selectCharacterVisualCanon,
 } from "@lumi/profiles/application";
@@ -17,15 +18,44 @@ import { OpenRouterCharacterVisualGenerationAdapter } from "@lumi/profiles/adapt
 
 const paramsSchema = z.object({ characterId: z.string().uuid() });
 
+const generatedCandidateSchema = z.object({
+  index: z.number().int().min(0).max(3),
+  bytesBase64: z.string().min(1),
+  mimeType: z.string().min(1).max(120),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  providerMetadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const previewSchema = z.object({
+  previewId: z.string().uuid(),
+  visualBriefVersion: z.string().min(1).max(40),
+  visualBriefFingerprint: z.string().min(1).max(128),
+  provider: z.string().min(1).max(80),
+  model: z.string().min(1).max(160),
+  providerRequestId: z.string().min(1).max(200).optional(),
+  candidates: z.array(generatedCandidateSchema).min(1).max(4),
+  usageMetadata: z.record(z.string(), z.unknown()).optional(),
+  costMetadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 const actionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("generate"),
-    idempotencyKey: z.string().min(1).max(160),
     candidateCount: z.number().int().min(1).max(4).default(1),
     aspectRatio: z
       .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
       .optional(),
     mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+  }),
+  z.object({
+    action: z.literal("commit"),
+    idempotencyKey: z.string().min(1).max(160),
+    aspectRatio: z
+      .enum(["1:1", "4:3", "3:2", "16:9", "4:5", "2:3", "9:16"])
+      .optional(),
+    mode: z.enum(["portrait", "reference-sheet"]).default("reference-sheet"),
+    preview: previewSchema,
   }),
   z.object({ action: z.literal("select"), assetId: z.string().uuid() }),
   z.object({ action: z.literal("reject"), assetId: z.string().uuid() }),
@@ -98,9 +128,6 @@ export async function POST(
       const action = actionSchema.parse(await request.json());
 
       if (action.action === "generate") {
-        const { PureJsCharacterReferenceSheetDerivativeAdapter } = await import(
-          "@/lib/assets/character-reference-sheet-derivative"
-        );
         const apiKey = await getOpenRouterApiKey(parent.id, householdId);
         if (!apiKey) {
           return NextResponse.json(
@@ -108,12 +135,11 @@ export async function POST(
             { status: 409 },
           );
         }
-        const result = await generateCharacterVisualCandidates(
+        const preview = await previewCharacterVisualCandidates(
           parent.id,
           {
             householdId,
             characterId: parsedParams.characterId,
-            idempotencyKey: action.idempotencyKey,
             candidateCount: action.candidateCount,
             ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
             mode: action.mode,
@@ -123,6 +149,56 @@ export async function POST(
             generationPort: new OpenRouterCharacterVisualGenerationAdapter({
               apiKey,
             }),
+          },
+        );
+        return NextResponse.json({ preview }, { status: 201 });
+      }
+
+      if (action.action === "commit") {
+        const { PureJsCharacterReferenceSheetDerivativeAdapter } = await import(
+          "@/lib/assets/character-reference-sheet-derivative"
+        );
+        const preview = {
+          previewId: action.preview.previewId,
+          visualBriefVersion: action.preview.visualBriefVersion,
+          visualBriefFingerprint: action.preview.visualBriefFingerprint,
+          provider: action.preview.provider,
+          model: action.preview.model,
+          candidates: action.preview.candidates.map((candidate) => ({
+            index: candidate.index,
+            bytesBase64: candidate.bytesBase64,
+            mimeType: candidate.mimeType,
+            ...(typeof candidate.width === "number"
+              ? { width: candidate.width }
+              : {}),
+            ...(typeof candidate.height === "number"
+              ? { height: candidate.height }
+              : {}),
+            ...(candidate.providerMetadata
+              ? { providerMetadata: candidate.providerMetadata }
+              : {}),
+          })),
+          ...(action.preview.providerRequestId
+            ? { providerRequestId: action.preview.providerRequestId }
+            : {}),
+          ...(action.preview.usageMetadata
+            ? { usageMetadata: action.preview.usageMetadata }
+            : {}),
+          ...(action.preview.costMetadata
+            ? { costMetadata: action.preview.costMetadata }
+            : {}),
+        };
+        const result = await commitCharacterVisualPreview(
+          parent.id,
+          {
+            householdId,
+            characterId: parsedParams.characterId,
+            idempotencyKey: action.idempotencyKey,
+            preview,
+            ...(action.aspectRatio ? { aspectRatio: action.aspectRatio } : {}),
+            mode: action.mode,
+          },
+          {
             storagePort: createCharacterVisualStorageAdapter(),
             derivativePort:
               new PureJsCharacterReferenceSheetDerivativeAdapter(),

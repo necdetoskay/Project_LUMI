@@ -4,6 +4,14 @@ import { describe, expect, it } from "vitest";
 
 const assetsRoutePath = path.resolve(__dirname, "../app/app/assets");
 const pagePath = path.join(assetsRoutePath, "page.tsx");
+const characterManagerPath = path.resolve(
+  __dirname,
+  "../app/app/assets/characters/[characterId]/character-visual-manager.tsx",
+);
+const characterAssetRoutePath = path.resolve(
+  __dirname,
+  "../app/api/assets/characters/[characterId]/route.ts",
+);
 
 describe("Visual Library canonical route contract", () => {
   it("uses one unversioned visual library implementation", () => {
@@ -16,5 +24,19 @@ describe("Visual Library canonical route contract", () => {
     expect(routeFiles).not.toContain("assets-client-page.tsx");
     expect(pageSource).toContain('from "./visual-library"');
     expect(pageSource).not.toMatch(/visual-library-v\d+/);
+  });
+
+  it("keeps character visual generation behind preview approval", () => {
+    const managerSource = fs.readFileSync(characterManagerPath, "utf8");
+    const routeSource = fs.readFileSync(characterAssetRoutePath, "utf8");
+
+    expect(managerSource).not.toContain("window.confirm");
+    expect(managerSource).toContain("setPendingDelete");
+    expect(managerSource).toContain("commitPreview");
+    expect(managerSource).toContain("Yeniden oluştur");
+    expect(routeSource).toContain('action: z.literal("generate")');
+    expect(routeSource).toContain('action: z.literal("commit")');
+    expect(routeSource).toContain("previewCharacterVisualCandidates");
+    expect(routeSource).toContain("commitCharacterVisualPreview");
   });
 });

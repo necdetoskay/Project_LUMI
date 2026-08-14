@@ -183,15 +183,20 @@ export type {
 } from "./image-generation.service";
 
 export {
+  commitCharacterVisualPreview,
   generateCharacterVisualCandidates,
   listCharacterVisualCandidates,
   getCharacterVisualCanon,
+  previewCharacterVisualCandidates,
   selectCharacterVisualCanon,
   rejectCharacterVisualCandidate,
   deleteCharacterVisualVariant,
 } from "./character-visual.service";
 export type {
+  CharacterVisualPreview,
   GenerateCharacterVisualInput,
+  PreviewCharacterVisualInput,
+  CommitCharacterVisualPreviewInput,
   CharacterVisualServiceDeps,
 } from "./character-visual.service";
 

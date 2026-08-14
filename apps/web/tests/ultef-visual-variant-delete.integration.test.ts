@@ -116,7 +116,7 @@ describeVisualDelete("character visual variant soft delete", () => {
       headFront!.id,
     );
     expect(deleted).toBeDefined();
-    expect(deleted!.lifecycleState).toBe("deleted");
+    expect(deleted!.lifecycleState).toBe("archived");
     expect(deleted!.deletedAt).toBeInstanceOf(Date);
 
     const presentation = await getCharacterVisualPresentationAsset(

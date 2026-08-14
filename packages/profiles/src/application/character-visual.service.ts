@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, or } from "drizzle-orm";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
 
 import {
   characterVisualAssets,
@@ -31,10 +31,31 @@ export type GenerateCharacterVisualInput = {
   mode?: "portrait" | "reference-sheet";
 };
 
+export type PreviewCharacterVisualInput = Omit<
+  GenerateCharacterVisualInput,
+  "idempotencyKey"
+>;
+
+export type CommitCharacterVisualPreviewInput = GenerateCharacterVisualInput & {
+  preview: CharacterVisualPreview;
+};
+
 export type CharacterVisualServiceDeps = {
   generationPort: CharacterVisualGenerationPort;
   storagePort: CharacterVisualStoragePort;
   derivativePort?: CharacterVisualDerivativePort;
+};
+
+export type CharacterVisualPreview = {
+  previewId: string;
+  visualBriefVersion: string;
+  visualBriefFingerprint: string;
+  provider: string;
+  model: string;
+  providerRequestId?: string;
+  candidates: GeneratedImageCandidate[];
+  usageMetadata?: Record<string, unknown>;
+  costMetadata?: Record<string, unknown>;
 };
 
 async function loadOwnedCharacterRecord(
@@ -117,7 +138,7 @@ export async function listCharacterVisualCandidates(
       and(
         eq(characterVisualAssets.householdId, householdId),
         eq(characterVisualAssets.characterId, characterId),
-        ne(characterVisualAssets.lifecycleState, "deleted"),
+        isNull(characterVisualAssets.deletedAt),
       ),
     )
     .orderBy(
@@ -143,6 +164,52 @@ export async function getCharacterVisualCanon(
     )
     .limit(1);
   return canon ?? null;
+}
+
+export async function previewCharacterVisualCandidates(
+  userId: string,
+  input: PreviewCharacterVisualInput,
+  deps: Pick<CharacterVisualServiceDeps, "generationPort">,
+): Promise<CharacterVisualPreview> {
+  const character = await loadOwnedCharacterRecord(
+    userId,
+    input.householdId,
+    input.characterId,
+  );
+  const brief = toBrief(character);
+  const fingerprint = fingerprintCharacterVisualBrief(brief);
+  const model = input.model ?? "krea/krea-2-medium-turbo";
+  const candidateCount = Math.max(1, Math.min(input.candidateCount ?? 1, 4));
+  const generated = await deps.generationPort.generate({
+    jobId: `preview-${crypto.randomUUID()}`,
+    brief,
+    prompt: renderCharacterVisualPrompt(brief, input.mode),
+    model,
+    candidateCount,
+    aspectRatio:
+      input.aspectRatio ?? (input.mode === "reference-sheet" ? "3:2" : "1:1"),
+    resolution: "1K",
+  });
+
+  if (generated.candidates.length === 0) {
+    throw new Error("VISUAL_PROVIDER_RETURNED_NO_CANDIDATES");
+  }
+
+  return {
+    previewId: crypto.randomUUID(),
+    visualBriefVersion: brief.version,
+    visualBriefFingerprint: fingerprint,
+    provider: generated.provider,
+    model: generated.model,
+    ...(generated.providerRequestId
+      ? { providerRequestId: generated.providerRequestId }
+      : {}),
+    candidates: generated.candidates,
+    ...(generated.usageMetadata
+      ? { usageMetadata: generated.usageMetadata }
+      : {}),
+    ...(generated.costMetadata ? { costMetadata: generated.costMetadata } : {}),
+  };
 }
 
 export async function generateCharacterVisualCandidates(
@@ -373,6 +440,231 @@ export async function generateCharacterVisualCandidates(
   return { job, candidates: await listJobCandidates(jobId), replayed: false };
 }
 
+export async function commitCharacterVisualPreview(
+  userId: string,
+  input: CommitCharacterVisualPreviewInput,
+  deps: Omit<CharacterVisualServiceDeps, "generationPort">,
+) {
+  const character = await loadOwnedCharacterRecord(
+    userId,
+    input.householdId,
+    input.characterId,
+  );
+  const db = getProfileDb();
+  const existing = await getExistingJob(
+    input.householdId,
+    input.characterId,
+    input.idempotencyKey,
+  );
+  if (existing) {
+    return {
+      job: existing,
+      candidates: await listJobCandidates(existing.id),
+      replayed: true,
+    };
+  }
+
+  const brief = toBrief(character);
+  const fingerprint = fingerprintCharacterVisualBrief(brief);
+  if (
+    input.preview.visualBriefVersion !== brief.version ||
+    input.preview.visualBriefFingerprint !== fingerprint
+  ) {
+    throw new Error("VISUAL_PREVIEW_STALE");
+  }
+
+  const jobId = crypto.randomUUID();
+  const candidateCount = Math.max(
+    1,
+    Math.min(input.preview.candidates.length, 4),
+  );
+  const inserted = await db
+    .insert(characterVisualGenerationJobs)
+    .values({
+      id: jobId,
+      householdId: input.householdId,
+      characterId: input.characterId,
+      idempotencyKey: input.idempotencyKey,
+      visualBriefVersion: brief.version,
+      visualBriefFingerprint: fingerprint,
+      visualBrief: brief as unknown as Record<string, unknown>,
+      model: input.preview.model,
+      requestedCandidateCount: candidateCount,
+      status: "running",
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted.length === 0) {
+    const raced = await getExistingJob(
+      input.householdId,
+      input.characterId,
+      input.idempotencyKey,
+    );
+    if (!raced) throw new Error("VISUAL_JOB_IDEMPOTENCY_RACE");
+    return {
+      job: raced,
+      candidates: await listJobCandidates(raced.id),
+      replayed: true,
+    };
+  }
+
+  try {
+    const persisted: Array<{
+      candidate: GeneratedImageCandidate;
+      stored: { storageRef: string };
+      derivatives: Array<{
+        variant: string;
+        stored: { storageRef: string };
+        mimeType: string;
+        width: number;
+        height: number;
+        crop: Record<string, number>;
+      }>;
+    }> = [];
+
+    for (const candidate of input.preview.candidates) {
+      const stored = await deps.storagePort.store({
+        householdId: input.householdId,
+        characterId: input.characterId,
+        jobId,
+        candidateIndex: candidate.index,
+        bytesBase64: candidate.bytesBase64,
+        mimeType: candidate.mimeType,
+      });
+      const derivatives =
+        input.mode === "reference-sheet" && deps.derivativePort
+          ? await deps.derivativePort.splitReferenceSheet({
+              bytesBase64: candidate.bytesBase64,
+              mimeType: candidate.mimeType,
+            })
+          : [];
+      const storedDerivatives = [];
+      for (const derivative of derivatives) {
+        const derivativeStored = await deps.storagePort.store({
+          householdId: input.householdId,
+          characterId: input.characterId,
+          jobId,
+          candidateIndex: candidate.index,
+          bytesBase64: derivative.bytesBase64,
+          mimeType: derivative.mimeType,
+          variantKey: derivative.variant,
+        });
+        storedDerivatives.push({
+          variant: derivative.variant,
+          stored: derivativeStored,
+          mimeType: derivative.mimeType,
+          width: derivative.width,
+          height: derivative.height,
+          crop: derivative.crop,
+        });
+      }
+      persisted.push({ candidate, stored, derivatives: storedDerivatives });
+    }
+
+    await db.transaction(async (tx) => {
+      for (const { candidate, stored, derivatives } of persisted) {
+        const sourceCompositeAssetId = crypto.randomUUID();
+        await tx.insert(characterVisualAssets).values({
+          id: sourceCompositeAssetId,
+          householdId: input.householdId,
+          characterId: input.characterId,
+          generationJobId: jobId,
+          storageRef: stored.storageRef,
+          mimeType: candidate.mimeType,
+          ...(typeof candidate.width === "number"
+            ? { width: candidate.width }
+            : {}),
+          ...(typeof candidate.height === "number"
+            ? { height: candidate.height }
+            : {}),
+          provider: input.preview.provider,
+          model: input.preview.model,
+          candidateIndex: candidate.index,
+          assetKind:
+            input.mode === "reference-sheet"
+              ? "character_reference_sheet"
+              : "character_portrait",
+          lifecycleState: "candidate",
+          provenance: {
+            briefVersion: brief.version,
+            briefFingerprint: fingerprint,
+            previewId: input.preview.previewId,
+            providerRequestId: input.preview.providerRequestId ?? null,
+            providerMetadata: candidate.providerMetadata ?? {},
+          },
+        });
+        for (const derivative of derivatives) {
+          await tx.insert(characterVisualAssets).values({
+            id: crypto.randomUUID(),
+            householdId: input.householdId,
+            characterId: input.characterId,
+            generationJobId: jobId,
+            assetKind: derivative.variant,
+            storageRef: derivative.stored.storageRef,
+            mimeType: derivative.mimeType,
+            width: derivative.width,
+            height: derivative.height,
+            provider: input.preview.provider,
+            model: input.preview.model,
+            candidateIndex: candidate.index,
+            lifecycleState: "candidate",
+            sourceCompositeAssetId,
+            cropMetadata: derivative.crop,
+            provenance: {
+              briefVersion: brief.version,
+              briefFingerprint: fingerprint,
+              previewId: input.preview.previewId,
+              sourceCompositeAssetId,
+              derivation: "deterministic-seven-view-crop-v2",
+            },
+          });
+        }
+      }
+      await tx
+        .update(characterVisualGenerationJobs)
+        .set({
+          status: "succeeded",
+          provider: input.preview.provider,
+          model: input.preview.model,
+          ...(input.preview.providerRequestId
+            ? { providerRequestId: input.preview.providerRequestId }
+            : {}),
+          ...(input.preview.usageMetadata
+            ? { usageMetadata: input.preview.usageMetadata }
+            : {}),
+          ...(input.preview.costMetadata
+            ? { costMetadata: input.preview.costMetadata }
+            : {}),
+          completedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(characterVisualGenerationJobs.id, jobId));
+    });
+  } catch (error) {
+    await db
+      .update(characterVisualGenerationJobs)
+      .set({
+        status: "failed",
+        errorCode: "COMMIT_FAILED",
+        errorMessage:
+          error instanceof Error ? error.message.slice(0, 2000) : String(error),
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(characterVisualGenerationJobs.id, jobId));
+    throw error;
+  }
+
+  const job = await getExistingJob(
+    input.householdId,
+    input.characterId,
+    input.idempotencyKey,
+  );
+  if (!job) throw new Error("VISUAL_JOB_NOT_FOUND_AFTER_GENERATION");
+  return { job, candidates: await listJobCandidates(jobId), replayed: false };
+}
+
 export async function selectCharacterVisualCanon(
   userId: string,
   householdId: string,
@@ -547,12 +839,12 @@ export async function deleteCharacterVisualVariant(
   if (!asset.sourceCompositeAssetId) {
     throw new Error("VISUAL_SOURCE_ASSET_NOT_DELETABLE");
   }
-  if (asset.lifecycleState === "deleted") return asset;
+  if (asset.deletedAt) return asset;
 
   const updated = await getProfileDb()
     .update(characterVisualAssets)
     .set({
-      lifecycleState: "deleted",
+      lifecycleState: "archived",
       deletedAt: new Date(),
       updatedAt: new Date(),
     })
