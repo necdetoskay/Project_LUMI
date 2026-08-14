@@ -24,7 +24,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Fix Turkish possessive heading and regression test
+      - name: Fix Turkish possessive heading, accessible button name and regression test
         shell: bash
         run: |
           python - <<'PY'
@@ -39,6 +39,11 @@ jobs:
           source = source.replace(
               '              {characterName}\n              {character ? "’ın Maceraları" : " Maceraları"}\n',
               '              {adventureHeading}\n',
+          )
+          source = source.replace(
+              '<span className="material-symbols-outlined text-xl">auto_awesome</span>\n            Yeni Macera',
+              '<span aria-hidden="true" className="material-symbols-outlined text-xl">\n              auto_awesome\n            </span>\n            Yeni Macera',
+              1,
           )
           marker = '\nfunction AdventureHubSkeleton() {'
           helper = '''\nfunction turkishPossessiveAdventureTitle(name: string): string {\n  const lower = name.toLocaleLowerCase("tr-TR");\n  const vowels = [...lower].filter((character) =>\n    "aeıioöuü".includes(character),\n  );\n  const lastVowel = vowels.at(-1) ?? "a";\n  const suffix =\n    lastVowel === "e" || lastVowel === "i"\n      ? "in"\n      : lastVowel === "ö" || lastVowel === "ü"\n        ? "ün"\n        : lastVowel === "o" || lastVowel === "u"\n          ? "un"\n          : "ın";\n  const buffer = "aeıioöuü".includes(lower.at(-1) ?? "") ? "n" : "";\n\n  return `${name}’${buffer}${suffix} Maceraları`;\n}\n'''
