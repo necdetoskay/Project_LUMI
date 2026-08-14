@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import { previewPrompt } from "@/lib/prompts/prompt-preview";
-import { listPromptVersions } from "@lumi/profiles/application/prompt-management.service";
+import { listPromptVersions } from "@lumi/profiles/application";
 
 export async function POST(request: Request) {
   const parent = await getParentFromSessionToken(
