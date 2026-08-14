@@ -406,6 +406,7 @@ export default function ChildDashboardClientPage({
               suggestions={suggestions}
               inventory={data.inventory}
               currentLocation={data.world?.currentLocation?.displayName ?? null}
+              childProfileId={childProfileId}
               onOpenCharacters={() => setView("characters")}
               onOpenStories={() => setView("stories")}
               onOpenBag={() => setView("bag")}
@@ -434,6 +435,7 @@ export default function ChildDashboardClientPage({
 }
 
 function HomeView({
+  childProfileId,
   householdId,
   primaryCharacter,
   ongoingAdventure,
@@ -445,6 +447,7 @@ function HomeView({
   onOpenStories,
   onOpenBag,
 }: {
+  childProfileId: string;
   householdId: string | null;
   primaryCharacter: CharacterInfo | null;
   ongoingAdventure: AdventureSummary | null;
@@ -534,13 +537,12 @@ function HomeView({
               <p className="text-sm font-bold text-[#39806f]">Karakterler</p>
               <h2 className="mt-1 text-2xl font-black">Macera arkadaşların</h2>
             </div>
-            <button
-              type="button"
-              onClick={onOpenCharacters}
+            <Link
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/type`}
               className="rounded-2xl bg-[#6c42df] px-4 py-3 text-sm font-black text-white"
             >
               + Yeni Karakter Oluştur
-            </button>
+            </Link>
           </div>
           {primaryCharacter ? (
             <button
@@ -557,13 +559,13 @@ function HomeView({
               />
               <div className="p-5">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6c42df]">
-                  {primaryCharacter.characterType}
+                  {characterRoleLabel(primaryCharacter)}
                 </p>
                 <h3 className="mt-1 text-2xl font-black">
                   {primaryCharacter.name}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-[#6b5f55]">
-                  {primaryCharacter.subtype || primaryCharacter.broadKind}
+                  {characterKindLabel(primaryCharacter)}
                 </p>
               </div>
             </button>
@@ -648,7 +650,12 @@ function HomeView({
 
         <section className="rounded-[28px] border border-[#eadfce] bg-[#fffdf9] p-5 shadow-sm sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-black">🎒 Çanta Özeti</h2>
+            <h2 className="inline-flex items-center gap-2 text-xl font-black">
+              <span className="material-symbols-outlined text-[#6c42df]">
+                backpack
+              </span>
+              Çanta Özeti
+            </h2>
             <button
               type="button"
               onClick={onOpenBag}
@@ -664,7 +671,11 @@ function HomeView({
                   key={item.id}
                   className="rounded-[20px] border border-[#eadfce] bg-white p-4"
                 >
-                  <div className="text-2xl">{itemEmoji(item.category)}</div>
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#f3eee6] text-[#6c42df]">
+                    <span className="material-symbols-outlined">
+                      {itemIcon(item)}
+                    </span>
+                  </div>
                   <h3 className="mt-2 font-black">{item.displayName}</h3>
                   <p className="mt-1 text-xs text-[#76695e]">
                     Adet: {item.quantity}
@@ -702,7 +713,7 @@ function CharactersView({
           </h2>
         </div>
         <Link
-          href={`/app/character-onboarding?childProfileId=${encodeURIComponent(childProfileId)}`}
+          href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/type`}
           className="rounded-2xl bg-[#6c42df] px-5 py-3 font-black text-white"
         >
           + Yeni Karakter Oluştur
@@ -725,15 +736,14 @@ function CharactersView({
               />
               <div className="p-5">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6c42df]">
-                  {character.characterType}
+                  {characterRoleLabel(character)}
                 </p>
                 <h3 className="mt-1 text-2xl font-black">{character.name}</h3>
                 <p className="mt-2 text-sm text-[#6e6157]">
-                  {character.subtype || character.broadKind}
+                  {characterKindLabel(character)}
                 </p>
                 <p className="mt-4 text-xs leading-5 text-[#8a7c70]">
-                  Arşivleme/silme aksiyonu soft-delete PR’ı yeni shell’e
-                  taşındığında bu kartın sağ üstüne bağlanacak.
+                  Birlikte keşfettiğiniz yerler ve maceralar burada birikir.
                 </p>
               </div>
             </article>
@@ -764,10 +774,14 @@ function BagView({ inventory }: { inventory: InventoryItem[] }) {
               key={item.id}
               className="rounded-[22px] border border-[#eadfce] bg-white p-5"
             >
-              <div className="text-4xl">{itemEmoji(item.category)}</div>
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-[#f3eee6] text-[#6c42df]">
+                <span className="material-symbols-outlined">
+                  {itemIcon(item)}
+                </span>
+              </div>
               <h3 className="mt-3 text-lg font-black">{item.displayName}</h3>
               <p className="mt-1 text-sm text-[#74675d]">
-                {item.category} · {item.quantity} adet
+                {itemCategoryLabel(item.category)} · {item.quantity} adet
               </p>
             </article>
           ))}
@@ -799,9 +813,11 @@ function SuggestionCard({
           <p className={`text-sm font-black ${presentation.text}`}>
             {presentation.label}
           </p>
-          <h3 className="mt-1 font-black leading-5">{source.title}</h3>
+          <h3 className="mt-1 font-black leading-5">
+            {storySourceTitle(source)}
+          </h3>
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#6e6157]">
-            {source.summary}
+            {storySourceSummary(source)}
           </p>
           <button
             type="button"
@@ -913,14 +929,125 @@ function suggestionPresentation(kind: string) {
   };
 }
 
-function itemEmoji(category: string) {
-  const normalized = category.toLocaleLowerCase("tr-TR");
+function characterRoleLabel(character: CharacterInfo) {
+  const value =
+    `${character.characterType} ${character.subtype}`.toLocaleLowerCase(
+      "tr-TR",
+    );
+  if (
+    value.includes("explorer") ||
+    value.includes("kaşif") ||
+    value.includes("kasif")
+  )
+    return "Meraklı Kaşif";
+  if (value.includes("guardian") || value.includes("koruyucu"))
+    return "Cesur Koruyucu";
+  if (value.includes("inventor") || value.includes("mucit"))
+    return "Yaratıcı Mucit";
+  if (value.includes("storyteller") || value.includes("anlatıcı"))
+    return "Hikâye Anlatıcısı";
+  return "Macera Arkadaşı";
+}
+
+function characterKindLabel(character: CharacterInfo) {
+  const value = `${character.broadKind} ${character.subtype}`.toLocaleLowerCase(
+    "tr-TR",
+  );
+  if (value.includes("child")) return "Genç Maceracı";
+  if (value.includes("human") || value.includes("insan")) return "İnsan";
+  if (value.includes("animal") || value.includes("hayvan"))
+    return "Hayvan Dost";
+  if (
+    value.includes("fantasy") ||
+    value.includes("fantastic") ||
+    value.includes("fantastik")
+  )
+    return "Fantastik Karakter";
+  if (
+    value.includes("robot") ||
+    value.includes("synthetic") ||
+    value.includes("sentetik")
+  )
+    return "Robot Dost";
+  return "Özel Karakter";
+}
+
+function looksTechnical(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("tr-TR");
+  if (!normalized) return true;
+  return (
+    normalized.includes("_") ||
+    normalized.includes("-") ||
+    /\b(story|direct|inventory|origin|item|hook|child|explorer)\b/.test(
+      normalized,
+    ) ||
+    /\b(isik|esya|hikaye|dogrudan|gezgibi)\b/.test(normalized)
+  );
+}
+
+function storySourceTitle(source: StorySource) {
+  if (!looksTechnical(source.title)) return source.title;
+  if (source.kind === "inventory")
+    return "Çantandaki eşya seni bir yere çağırıyor";
+  if (source.kind === "origin") return "Geçmişten gelen eski bir iz";
+  return "Dünyada yeni bir iz belirdi";
+}
+
+function storySourceSummary(source: StorySource) {
+  if (!looksTechnical(source.summary)) return source.summary;
+  if (source.kind === "inventory")
+    return "Yanındaki eşyalardan biri yeni bir maceranın kapısını aralayabilir.";
+  if (source.kind === "origin")
+    return "Karakterinin geçmişinden gelen küçük bir ipucu yeniden ortaya çıktı.";
+  return "Dünyada olan bir değişiklik seni yeni bir keşfe davet ediyor.";
+}
+
+function itemIcon(item: InventoryItem) {
+  const normalized = `${item.category} ${item.displayName}`.toLocaleLowerCase(
+    "tr-TR",
+  );
   if (normalized.includes("compass") || normalized.includes("pusula"))
-    return "🧭";
-  if (normalized.includes("light") || normalized.includes("fener")) return "🏮";
-  if (normalized.includes("leaf") || normalized.includes("yaprak")) return "🍃";
-  if (normalized.includes("book") || normalized.includes("kitap")) return "📖";
-  return "🎒";
+    return "explore";
+  if (
+    normalized.includes("light") ||
+    normalized.includes("fener") ||
+    normalized.includes("lantern")
+  )
+    return "flashlight_on";
+  if (
+    normalized.includes("leaf") ||
+    normalized.includes("yaprak") ||
+    normalized.includes("plant")
+  )
+    return "eco";
+  if (
+    normalized.includes("book") ||
+    normalized.includes("kitap") ||
+    normalized.includes("scroll")
+  )
+    return "menu_book";
+  if (normalized.includes("key") || normalized.includes("anahtar"))
+    return "key";
+  if (
+    normalized.includes("gem") ||
+    normalized.includes("crystal") ||
+    normalized.includes("kristal")
+  )
+    return "diamond";
+  if (normalized.includes("toy") || normalized.includes("oyuncak"))
+    return "toys";
+  return "category";
+}
+
+function itemCategoryLabel(category: string) {
+  const normalized = category.toLocaleLowerCase("tr-TR");
+  if (normalized.includes("tool")) return "Araç";
+  if (normalized.includes("story") || normalized.includes("quest"))
+    return "Macera Eşyası";
+  if (normalized.includes("book")) return "Kitap";
+  if (normalized.includes("toy")) return "Oyuncak";
+  if (normalized.includes("collect")) return "Koleksiyon";
+  return "Eşya";
 }
 
 function ageLabel(value: string) {
