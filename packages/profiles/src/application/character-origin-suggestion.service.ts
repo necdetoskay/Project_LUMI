@@ -64,7 +64,7 @@ export async function generateCharacterOriginSuggestions(
     await recordAiGenerationTrace({
       householdId: input.householdId,
       childProfileId: input.childProfileId,
-      creationCycleId: generationContext.creation.cycleId ?? undefined,
+      creationCycleId: generationContext.creation.cycleId,
       taskType: "character_origin_suggestions",
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
@@ -78,7 +78,7 @@ export async function generateCharacterOriginSuggestions(
   await recordAiGenerationTrace({
     householdId: input.householdId,
     childProfileId: input.childProfileId,
-    creationCycleId: generationContext.creation.cycleId ?? undefined,
+    creationCycleId: generationContext.creation.cycleId,
     taskType: "character_origin_suggestions",
     promptKey: prompt.promptKey,
     promptVersion: prompt.promptVersion,
