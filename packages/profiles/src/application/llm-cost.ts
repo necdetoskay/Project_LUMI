@@ -22,7 +22,8 @@ export function estimateLlmCost(
   pricing: LlmPricingSnapshot | null,
 ): LlmCostEstimate | null {
   if (!pricing) return null;
-  if (usage.promptTokens === null || usage.completionTokens === null) return null;
+  if (usage.promptTokens === null || usage.completionTokens === null)
+    return null;
   if (
     pricing.promptUsdPerMillionTokens === undefined ||
     pricing.completionUsdPerMillionTokens === undefined

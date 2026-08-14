@@ -29,7 +29,8 @@ export async function generateWorldCharacterSuggestions(
 
   const summary = (cycle.latestSummary ?? {}) as Record<string, unknown>;
   const worldFeeling = summary.worldFeeling;
-  if (typeof worldFeeling !== "string") throw new Error("WORLD_FEELING_REQUIRED");
+  if (typeof worldFeeling !== "string")
+    throw new Error("WORLD_FEELING_REQUIRED");
 
   const context = { worldFeeling, previousSelections: summary };
   const prompt = await resolveActivePrompt(

@@ -3,18 +3,19 @@ import { resolveOpenRouterPricingSnapshot } from "./openrouter-pricing.service";
 
 describe("resolveOpenRouterPricingSnapshot", () => {
   it("converts OpenRouter per-token prices into per-million snapshot prices", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          data: [
-            {
-              id: "provider/model",
-              pricing: { prompt: "0.0000001", completion: "0.0000002" },
-            },
-          ],
-        }),
-        { status: 200 },
-      ),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "provider/model",
+                pricing: { prompt: "0.0000001", completion: "0.0000002" },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
     ) as unknown as typeof fetch;
 
     const snapshot = await resolveOpenRouterPricingSnapshot(
@@ -31,7 +32,9 @@ describe("resolveOpenRouterPricingSnapshot", () => {
   });
 
   it("does not fail generation concerns when pricing is unavailable", async () => {
-    const fetchImpl = vi.fn(async () => new Response("no", { status: 503 })) as unknown as typeof fetch;
+    const fetchImpl = vi.fn(
+      async () => new Response("no", { status: 503 }),
+    ) as unknown as typeof fetch;
     await expect(
       resolveOpenRouterPricingSnapshot("provider/model", fetchImpl),
     ).resolves.toBeNull();

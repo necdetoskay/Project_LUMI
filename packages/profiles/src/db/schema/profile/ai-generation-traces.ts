@@ -1,4 +1,12 @@
-import { bigint, integer, jsonb, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  integer,
+  jsonb,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { primaryId } from "../common";
 import { profileSchema } from "../schemas";
 import { households } from "./households";
