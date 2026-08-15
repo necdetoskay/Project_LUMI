@@ -14,7 +14,7 @@ import {
   type WorkingStoryItem,
 } from "@lumi/context";
 import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence";
-import { DrizzleWorldEventReader, getWorldDb } from "@lumi/world";
+import { DrizzleWorldEventReader, getDatabase } from "@lumi/world";
 
 export interface StoryContextRuntimeReaders {
   readWorkingStory: (
@@ -39,7 +39,7 @@ export function createProductionStoryContextComposer(
   const memoryRepository = new DrizzleCanonicalMemoryRepository();
   const memoryRetrieval = new CanonicalMemoryRetrievalAdapter(memoryRepository);
 
-  const worldEventReader = new DrizzleWorldEventReader(getWorldDb());
+  const worldEventReader = new DrizzleWorldEventReader(getDatabase());
   const worldRetrieval = new WorldEventRetrievalAdapter(worldEventReader);
 
   return createStoryGenerationContextComposer({
