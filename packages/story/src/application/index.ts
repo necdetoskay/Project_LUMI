@@ -206,3 +206,14 @@ export type {
   PersistGeneratedSceneAndAdvanceInput,
   PersistGeneratedSceneAndAdvanceResult,
 } from "./generated-scene-session.service";
+
+export {
+  listGenerationInspectionSessions,
+  listGenerationInspections,
+  getGenerationInspection,
+} from "./generation-inspection-query.service";
+export type {
+  GenerationInspectionSessionItem,
+  GenerationInspectionListItem,
+  GenerationInspectionDetail,
+} from "./generation-inspection-query.service";
