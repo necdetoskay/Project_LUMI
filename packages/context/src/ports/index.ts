@@ -31,3 +31,17 @@ export type {
   ContextFindingSeverity,
   ContextManifest,
 } from "./context-sources";
+
+export type {
+  RetrievalSourceKind,
+  RetrievalQuery,
+  RetrievalProvenance,
+  RetrievalCandidate,
+  RetrievalResult,
+  ContextRetrievalSource,
+} from "./retrieval";
+export {
+  MAX_RETRIEVAL_LIMIT,
+  normalizeRetrievalLimit,
+  normalizeRetrievalCandidates,
+} from "./retrieval";
