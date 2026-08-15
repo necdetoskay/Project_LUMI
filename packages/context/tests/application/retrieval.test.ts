@@ -21,10 +21,9 @@ describe("retrieval contracts", () => {
       candidate("event:2", 0.7),
     ];
 
-    expect(normalizeRetrievalCandidates(candidates, 10).map((item) => item.stableId)).toEqual([
-      "memory:1",
-      "event:2",
-    ]);
+    expect(
+      normalizeRetrievalCandidates(candidates, 10).map((item) => item.stableId),
+    ).toEqual(["memory:1", "event:2"]);
     expect(normalizeRetrievalCandidates(candidates, 10)[0]?.relevance).toBe(0.9);
   });
 
