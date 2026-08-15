@@ -14,6 +14,14 @@ type InspectionSession = {
   latestModelId: string;
 };
 
+type InspectionSectionSummary = {
+  name: string;
+  priority: number;
+  tokensUsed: number;
+  truncated: boolean;
+  itemCount: number;
+};
+
 type InspectionListItem = {
   inspectionId: string;
   storySessionId: string;
@@ -25,26 +33,17 @@ type InspectionListItem = {
   createdAt: string;
   tokenUsage: { used: number; budget: number };
   summary: Record<string, number>;
-  sections: Array<{
-    name: string;
-    priority: number;
-    tokensUsed: number;
-    truncated: boolean;
-    itemCount: number;
-  }>;
+  sections: InspectionSectionSummary[];
 };
 
-type InspectionDetail = InspectionListItem & {
+type InspectionDetailSection = InspectionSectionSummary & {
+  items?: Array<Record<string, unknown>>;
+};
+
+type InspectionDetail = Omit<InspectionListItem, "sections"> & {
   request: Record<string, unknown>;
   findings: Array<Record<string, unknown>>;
-  sections: Array<{
-    name: string;
-    priority: number;
-    tokensUsed: number;
-    truncated: boolean;
-    itemCount: number;
-    items?: Array<Record<string, unknown>>;
-  }>;
+  sections: InspectionDetailSection[];
 };
 
 export function ContextInspectorClientPage({
