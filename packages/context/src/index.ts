@@ -79,6 +79,9 @@ export {
   WorldEventRetrievalAdapter,
   RetrievalLongTermMemorySource,
   RetrievalWorldEventSource,
+  SystemSafetyPolicySource,
+  NoPersistedParentPolicySource,
+  NoCanonicalKnowledgeSource,
 } from "./adapters";
 export type {
   CanonicalMemoryReader,
