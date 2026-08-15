@@ -263,3 +263,51 @@ export async function chooseCharacterIdentity(
     });
   return { id: cycle.id, currentStep: "origin", latestSummary };
 }
+
+export async function chooseCharacterOrigin(
+  userId: string,
+  input: {
+    householdId: string;
+    childProfileId: string;
+    origin: {
+      key: string;
+      name: string;
+      description: string;
+      fitReason: string;
+    };
+  },
+) {
+  await assertScope(userId, input.householdId, input.childProfileId);
+  const db = getProfileDb();
+  const cycle = await getActiveCharacterCreationCycle(
+    userId,
+    input.householdId,
+    input.childProfileId,
+  );
+  if (!cycle) throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");
+  if (cycle.currentStep !== "origin")
+    throw new Error("CHARACTER_ORIGIN_STEP_REQUIRED");
+
+  const latestSummary = {
+    ...(cycle.latestSummary ?? {}),
+    characterOrigin: input.origin,
+  };
+
+  await db
+    .update(characterCreationCycles)
+    .set({ currentStep: "region", latestSummary, updatedAt: new Date() })
+    .where(eq(characterCreationCycles.id, cycle.id));
+
+  await db.insert(characterCreationSelections).values({
+    id: crypto.randomUUID(),
+    cycleId: cycle.id,
+    childProfileId: input.childProfileId,
+    householdId: input.householdId,
+    stepKey: "origin",
+    selectionKey: input.origin.key,
+    selectionPayload: input.origin,
+    selectedBy: "user",
+  });
+
+  return { id: cycle.id, currentStep: "region", latestSummary };
+}
