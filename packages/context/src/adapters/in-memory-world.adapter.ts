@@ -15,7 +15,7 @@ function worldToSemanticItems(world: WorldItem): ContextItem<WorldItem>[] {
     scope: "world_truth" as const,
   };
 
-  return [
+  const items: ContextItem<WorldItem>[] = [
     {
       ...base,
       id: "world:location",
@@ -24,66 +24,65 @@ function worldToSemanticItems(world: WorldItem): ContextItem<WorldItem>[] {
       priority: 0,
       relevance: 1,
     },
-    ...(world.activeHazards.length > 0
-      ? [
-          {
-            ...base,
-            id: "world:hazards",
-            type: "world-hazards",
-            text: `Active hazards: ${world.activeHazards.join("; ")}`,
-            priority: 1,
-            relevance: 0.95,
-          },
-        ]
-      : []),
-    ...(world.visibleChanges.length > 0
-      ? [
-          {
-            ...base,
-            id: "world:visible-changes",
-            type: "world-visible-changes",
-            text: `Visible changes: ${world.visibleChanges.join("; ")}`,
-            priority: 1,
-            relevance: 0.9,
-          },
-        ]
-      : []),
-    ...(world.worldFacts.length > 0
-      ? [
-          {
-            ...base,
-            id: "world:facts",
-            type: "world-facts",
-            text: `World facts: ${world.worldFacts.join("; ")}`,
-            priority: 2,
-            relevance: 0.9,
-          },
-        ]
-      : []),
-    {
-      ...base,
-      id: "world:environment",
-      type: "world-environment",
-      text: [
-        `Time of day: ${world.timeOfDay}`,
-        `Weather: ${world.weather ?? "unknown"}`,
-      ].join("\n"),
-      priority: 3,
-      relevance: 0.75,
-    },
-    ...(world.inaccessibleAreas.length > 0
-      ? [
-          {
-            ...base,
-            id: "world:inaccessible",
-            type: "world-inaccessible",
-            text: `Inaccessible areas: ${world.inaccessibleAreas.join("; ")}`,
-            priority: 3,
-            relevance: 0.7,
-          },
-        ]
-      : []),
   ];
+
+  if (world.activeHazards.length > 0) {
+    items.push({
+      ...base,
+      id: "world:hazards",
+      type: "world-hazards",
+      text: `Active hazards: ${world.activeHazards.join("; ")}`,
+      priority: 1,
+      relevance: 0.95,
+    });
+  }
+
+  if (world.visibleChanges.length > 0) {
+    items.push({
+      ...base,
+      id: "world:visible-changes",
+      type: "world-visible-changes",
+      text: `Visible changes: ${world.visibleChanges.join("; ")}`,
+      priority: 1,
+      relevance: 0.9,
+    });
+  }
+
+  if (world.worldFacts.length > 0) {
+    items.push({
+      ...base,
+      id: "world:facts",
+      type: "world-facts",
+      text: `World facts: ${world.worldFacts.join("; ")}`,
+      priority: 2,
+      relevance: 0.9,
+    });
+  }
+
+  items.push({
+    ...base,
+    id: "world:environment",
+    type: "world-environment",
+    text: [
+      `Time of day: ${world.timeOfDay}`,
+      `Weather: ${world.weather ?? "unknown"}`,
+    ].join("\n"),
+    priority: 3,
+    relevance: 0.75,
+  });
+
+  if (world.inaccessibleAreas.length > 0) {
+    items.push({
+      ...base,
+      id: "world:inaccessible",
+      type: "world-inaccessible",
+      text: `Inaccessible areas: ${world.inaccessibleAreas.join("; ")}`,
+      priority: 3,
+      relevance: 0.7,
+    });
+  }
+
+  return items;
 }
 
 export class InMemoryWorldAdapter implements WorldSource {
