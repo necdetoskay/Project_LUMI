@@ -1,4 +1,5 @@
 import type {
+  ContextRequest,
   ContextSourceResult,
   OriginPackageItem,
   OriginPackageSource,
@@ -27,19 +28,18 @@ export interface AcceptedOriginPackageReader {
 export class PersistedOriginPackageSource implements OriginPackageSource {
   constructor(private readonly reader: AcceptedOriginPackageReader) {}
 
-  async getOriginPackage(
-    householdId: string,
-    childProfileId: string,
+  async fetch(
+    request: ContextRequest,
   ): Promise<ContextSourceResult<OriginPackageItem>> {
     const record = await this.reader.findAcceptedByChildProfile(
-      childProfileId,
-      householdId,
+      request.childProfileId,
+      request.householdId,
     );
 
     if (!record) return { items: [] };
     if (
-      record.householdId !== householdId ||
-      record.childProfileId !== childProfileId
+      record.householdId !== request.householdId ||
+      record.childProfileId !== request.childProfileId
     ) {
       return { items: [] };
     }
