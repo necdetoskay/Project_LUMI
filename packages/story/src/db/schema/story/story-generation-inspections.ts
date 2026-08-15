@@ -27,7 +27,9 @@ export const storyGenerationInspections = storySchema.table(
     sourceHookId: uuid("source_hook_id"),
     modelId: varchar("model_id", { length: 200 }).notNull(),
     attempt: integer("attempt").notNull(),
-    contextContentHash: varchar("context_content_hash", { length: 128 }).notNull(),
+    contextContentHash: varchar("context_content_hash", {
+      length: 128,
+    }).notNull(),
     contextManifest: jsonb("context_manifest").notNull(),
     inspectorProjection: jsonb("inspector_projection").notNull(),
     schemaVersion: integer("schema_version").notNull().default(1),
