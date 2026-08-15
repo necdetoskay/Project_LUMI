@@ -101,10 +101,7 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row!;
   }
 
-  async findVersionById(
-    tx: { select: QueryExecutor["select"] },
-    id: string,
-  ) {
+  async findVersionById(tx: { select: QueryExecutor["select"] }, id: string) {
     const [row] = await tx
       .select()
       .from(storyVersions)
@@ -192,10 +189,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .orderBy(storyScenes.sequenceNumber);
   }
 
-  async findSceneById(
-    tx: { select: QueryExecutor["select"] },
-    id: string,
-  ) {
+  async findSceneById(tx: { select: QueryExecutor["select"] }, id: string) {
     const [row] = await tx
       .select()
       .from(storyScenes)
@@ -390,10 +384,7 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row!;
   }
 
-  async findSessionById(
-    tx: { select: QueryExecutor["select"] },
-    id: string,
-  ) {
+  async findSessionById(tx: { select: QueryExecutor["select"] }, id: string) {
     const [row] = await tx
       .select()
       .from(storySessions)

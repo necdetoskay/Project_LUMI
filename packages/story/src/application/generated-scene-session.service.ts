@@ -178,7 +178,8 @@ export async function persistGeneratedSceneAndAdvance(
       });
 
       if (input.generationInspection) {
-        const { modelId, attempt, contextManifest } = input.generationInspection;
+        const { modelId, attempt, contextManifest } =
+          input.generationInspection;
         await repo.createGenerationInspection(tx, {
           householdId: session.householdId,
           storySessionId: session.id,
@@ -188,7 +189,8 @@ export async function persistGeneratedSceneAndAdvance(
           attempt,
           contextContentHash: contextManifest.contentHash,
           contextManifest,
-          inspectorProjection: createContextInspectorProjection(contextManifest),
+          inspectorProjection:
+            createContextInspectorProjection(contextManifest),
           schemaVersion: 1,
         });
       }
