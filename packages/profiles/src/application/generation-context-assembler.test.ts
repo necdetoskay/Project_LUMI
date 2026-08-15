@@ -105,9 +105,9 @@ describe("generation context assembler", () => {
       maxContextTokens: requiredTokens,
     });
 
-    expect(assembled.sections.every((section) => section.priority === "required")).toBe(
-      true,
-    );
+    expect(
+      assembled.sections.every((section) => section.priority === "required"),
+    ).toBe(true);
     expect(assembled.droppedSections).toContain("creation_selections");
     expect(assembled.estimatedTokens).toBeLessThanOrEqual(requiredTokens);
   });
