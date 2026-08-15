@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assembleGenerationContext,
+  estimateGenerationContextTokens,
   toPromptGenerationContext,
 } from "./generation-context-assembler";
 import type { GenerationContext } from "./generation-context.service";
@@ -38,6 +39,8 @@ describe("generation context assembler", () => {
       "creation_direction",
       "creation_selections",
     ]);
+    expect(assembled.droppedSections).toEqual([]);
+    expect(assembled.estimatedTokens).toBeLessThanOrEqual(1800);
   });
 
   it("keeps required future sections visible while optional empty sections are omitted", () => {
@@ -76,5 +79,55 @@ describe("generation context assembler", () => {
       },
       creation_selections: { worldFeeling: "crystal_caves" },
     });
+  });
+
+  it("estimates tokens deterministically", () => {
+    const value = { interests: ["space", "crystals"], locale: "tr-TR" };
+
+    expect(estimateGenerationContextTokens(value)).toBe(
+      estimateGenerationContextTokens(value),
+    );
+    expect(estimateGenerationContextTokens(value)).toBeGreaterThan(0);
+  });
+
+  it("drops lower priority sections before required sections when budget is tight", () => {
+    const source = context("character_onboarding");
+    source.creation.previousSelections = {
+      worldFeeling: "crystal_caves",
+      flavor: "x".repeat(1200),
+    };
+
+    const baseline = assembleGenerationContext(source);
+    const requiredTokens = baseline.sections
+      .filter((section) => section.priority === "required")
+      .reduce((total, section) => total + section.estimatedTokens, 0);
+    const assembled = assembleGenerationContext(source, {
+      maxContextTokens: requiredTokens,
+    });
+
+    expect(assembled.sections.every((section) => section.priority === "required")).toBe(
+      true,
+    );
+    expect(assembled.droppedSections).toContain("creation_selections");
+    expect(assembled.estimatedTokens).toBeLessThanOrEqual(requiredTokens);
+  });
+
+  it("fails safely instead of silently dropping required context", () => {
+    expect(() =>
+      assembleGenerationContext(context("character_onboarding"), {
+        maxContextTokens: 1,
+      }),
+    ).toThrow(/GENERATION_CONTEXT_REQUIRED_BUDGET_EXCEEDED/);
+  });
+
+  it("produces the same budget decision for the same input", () => {
+    const first = assembleGenerationContext(context("character_onboarding"), {
+      maxContextTokens: 80,
+    });
+    const second = assembleGenerationContext(context("character_onboarding"), {
+      maxContextTokens: 80,
+    });
+
+    expect(second).toEqual(first);
   });
 });
