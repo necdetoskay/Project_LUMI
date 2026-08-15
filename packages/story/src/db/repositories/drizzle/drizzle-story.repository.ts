@@ -149,7 +149,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .where(
         and(
           eq(storyVersions.storyDefinitionId, storyDefinitionId),
-          eq(storyVersions.status, "published"),
+          eq(storyVersions.publicationStatus, "published"),
         ),
       )
       .orderBy(desc(storyVersions.versionNumber))
@@ -246,7 +246,8 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyChoicePoints)
-      .where(eq(storyChoicePoints.storySceneId, sceneId));
+      .where(eq(storyChoicePoints.sceneId, sceneId))
+      .orderBy(storyChoicePoints.sequenceNumber);
   }
 
   async findChoicePointsByVersion(
@@ -256,7 +257,8 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyChoicePoints)
-      .where(eq(storyChoicePoints.storyVersionId, storyVersionId));
+      .where(eq(storyChoicePoints.storyVersionId, storyVersionId))
+      .orderBy(storyChoicePoints.sequenceNumber);
   }
 
   async createChoiceOption(
@@ -287,7 +289,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyChoiceOptions)
       .where(eq(storyChoiceOptions.choicePointId, choicePointId))
-      .orderBy(storyChoiceOptions.optionOrder);
+      .orderBy(storyChoiceOptions.sequenceNumber);
   }
 
   async createCommittedChoice(
@@ -327,7 +329,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyCommittedChoices)
       .where(eq(storyCommittedChoices.storySessionId, storySessionId))
-      .orderBy(storyCommittedChoices.createdAt);
+      .orderBy(storyCommittedChoices.committedAt);
   }
 
   async createChoiceConsequence(
@@ -349,7 +351,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyChoiceConsequences)
       .where(eq(storyChoiceConsequences.storySessionId, storySessionId))
-      .orderBy(storyChoiceConsequences.createdAt);
+      .orderBy(storyChoiceConsequences.sequenceNumber);
   }
 
   async createOutcomeCandidate(
