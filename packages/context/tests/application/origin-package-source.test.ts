@@ -28,7 +28,7 @@ const request: ContextRequest = {
 };
 
 describe("PersistedOriginPackageSource", () => {
-  it("reads the accepted package in household/profile scope and maps the canonical fields", async () => {
+  it("reads the accepted package in household/profile scope and maps the canonical context item", async () => {
     const findAcceptedByChildProfile = vi
       .fn<AcceptedOriginPackageReader["findAcceptedByChildProfile"]>()
       .mockResolvedValue(accepted);
@@ -41,20 +41,22 @@ describe("PersistedOriginPackageSource", () => {
       "child-1",
       "house-1",
     );
-    expect(result).toEqual({
-      items: [
-        {
-          originConcept: accepted.originConcept,
-          startingLocation: accepted.startingLocation,
-          homeArchetype: accepted.homeArchetype,
-          nearbyNpcSeed: accepted.nearbyNpcSeed,
-          firstMysterySeed: accepted.firstMysterySeed,
-          universeSeed: accepted.universeSeed,
-          toneVector: accepted.toneVector,
-          noveltyMarkers: accepted.noveltyMarkers,
-        },
-      ],
+    expect(result.sourceRelevance).toBe(1);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      id: "origin-package:child-1",
+      type: "origin-package",
+      sourceEngine: "profiles/accepted-origin-package",
+      scope: "world_truth",
+      content: {
+        originType: accepted.originConcept,
+        dominantVectors: [...accepted.toneVector, ...accepted.noveltyMarkers],
+        startingHome: `${accepted.startingLocation} — ${accepted.homeArchetype}`,
+        nearbyNpcSeeds: [accepted.nearbyNpcSeed],
+        firstMystery: accepted.firstMysterySeed,
+      },
     });
+    expect(result.items[0]?.text).toContain(accepted.universeSeed);
   });
 
   it("returns no context when no accepted origin package exists", async () => {
@@ -64,7 +66,7 @@ describe("PersistedOriginPackageSource", () => {
 
     await expect(
       new PersistedOriginPackageSource(reader).fetch(request),
-    ).resolves.toEqual({ items: [] });
+    ).resolves.toEqual({ items: [], sourceRelevance: 0 });
   });
 
   it("fails closed when a reader returns a record outside the requested scope", async () => {
@@ -77,20 +79,20 @@ describe("PersistedOriginPackageSource", () => {
 
     await expect(
       new PersistedOriginPackageSource(reader).fetch(request),
-    ).resolves.toEqual({ items: [] });
+    ).resolves.toEqual({ items: [], sourceRelevance: 0 });
   });
 
-  it("returns defensive copies of array fields", async () => {
+  it("returns defensive copies of canonical array fields", async () => {
     const reader: AcceptedOriginPackageReader = {
       findAcceptedByChildProfile: async () => accepted,
     };
     const result = await new PersistedOriginPackageSource(reader).fetch(
       request,
     );
-    const item = result.items[0];
+    const content = result.items[0]?.content;
 
-    expect(item).toBeDefined();
-    expect(item?.toneVector).not.toBe(accepted.toneVector);
-    expect(item?.noveltyMarkers).not.toBe(accepted.noveltyMarkers);
+    expect(content).toBeDefined();
+    expect(content?.dominantVectors).not.toBe(accepted.toneVector);
+    expect(content?.nearbyNpcSeeds).not.toBeUndefined();
   });
 });
