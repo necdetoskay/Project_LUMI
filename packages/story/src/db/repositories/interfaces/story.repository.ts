@@ -37,6 +37,8 @@ import type {
   NewStoryOutboxRecord,
   StoryHookRecord,
   NewStoryHookRecord,
+  StoryGenerationInspectionRecord,
+  NewStoryGenerationInspectionRecord,
 } from "../../schema/story";
 import type { QueryExecutor } from "../../client";
 
@@ -298,4 +300,17 @@ export interface StoryRepository {
     tx: { select: QueryExecutor["select"] },
     opportunityId: string,
   ): Promise<StoryHookRecord | undefined>;
+
+  createGenerationInspection(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryGenerationInspectionRecord,
+  ): Promise<StoryGenerationInspectionRecord>;
+  findGenerationInspectionByScene(
+    tx: { select: QueryExecutor["select"] },
+    generatedSceneId: string,
+  ): Promise<StoryGenerationInspectionRecord | undefined>;
+  findGenerationInspectionsBySession(
+    tx: { select: QueryExecutor["select"] },
+    storySessionId: string,
+  ): Promise<StoryGenerationInspectionRecord[]>;
 }

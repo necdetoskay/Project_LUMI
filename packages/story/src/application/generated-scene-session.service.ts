@@ -1,3 +1,8 @@
+import {
+  createContextInspectorProjection,
+  type ContextManifest,
+} from "@lumi/context";
+
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
 import type { Database } from "../db/client";
 import type { SceneType } from "../domain/story-types";
@@ -20,6 +25,12 @@ function getDb(): Database {
   return testDb ?? getStoryDb();
 }
 
+export interface GenerationInspectionInput {
+  modelId: string;
+  attempt: number;
+  contextManifest: ContextManifest;
+}
+
 export interface PersistGeneratedSceneAndAdvanceInput {
   sessionId: string;
   expectedVersion: number;
@@ -29,6 +40,7 @@ export interface PersistGeneratedSceneAndAdvanceInput {
   sourceHookId?: string | null;
   actorUserId?: string | undefined;
   contextSnapshot?: Record<string, unknown> | undefined;
+  generationInspection?: GenerationInspectionInput | undefined;
   idempotencyKey?: string | undefined;
 }
 
@@ -156,7 +168,7 @@ export async function persistGeneratedSceneAndAdvance(
           generatedForSessionId: input.sessionId,
           sourceGeneratedSceneId: input.scene.sceneId,
           sourceHookId: input.sourceHookId ?? null,
-          modelId: input.modelId ?? null,
+          modelId: input.modelId ?? input.generationInspection?.modelId ?? null,
           setting: input.scene.setting,
           characters: input.scene.characters,
           moment: input.scene.moment,
@@ -164,6 +176,24 @@ export async function persistGeneratedSceneAndAdvance(
           usedContinuityKeys: input.scene.usedContinuityKeys ?? [],
         },
       });
+
+      if (input.generationInspection) {
+        const { modelId, attempt, contextManifest } =
+          input.generationInspection;
+        await repo.createGenerationInspection(tx, {
+          householdId: session.householdId,
+          storySessionId: session.id,
+          generatedSceneId,
+          sourceHookId: input.sourceHookId ?? null,
+          modelId,
+          attempt,
+          contextContentHash: contextManifest.contentHash,
+          contextManifest,
+          inspectorProjection:
+            createContextInspectorProjection(contextManifest),
+          schemaVersion: 1,
+        });
+      }
     });
   }
 

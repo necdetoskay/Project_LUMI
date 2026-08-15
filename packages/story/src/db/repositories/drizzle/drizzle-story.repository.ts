@@ -22,6 +22,7 @@ import {
   storyWorldVersions,
   storyOutbox,
   storyHooks,
+  storyGenerationInspections,
 } from "../../schema/story";
 import type {
   NewStoryDefinitionRecord,
@@ -43,6 +44,7 @@ import type {
   NewStoryWorldVersionRecord,
   NewStoryOutboxRecord,
   NewStoryHookRecord,
+  NewStoryGenerationInspectionRecord,
   StoryOutboxRecord,
 } from "../../schema/story";
 
@@ -74,7 +76,8 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyDefinitions)
-      .where(eq(storyDefinitions.householdId, householdId));
+      .where(eq(storyDefinitions.householdId, householdId))
+      .orderBy(desc(storyDefinitions.createdAt));
   }
 
   async updateDefinition(
@@ -115,7 +118,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyVersions)
       .where(eq(storyVersions.storyDefinitionId, storyDefinitionId))
-      .orderBy(storyVersions.versionNumber);
+      .orderBy(desc(storyVersions.versionNumber));
   }
 
   async findVersionByDefinitionAndNumber(
@@ -744,5 +747,40 @@ export class DrizzleStoryRepository implements StoryRepository {
       .where(eq(storyHooks.opportunityId, opportunityId))
       .limit(1);
     return row;
+  }
+
+  async createGenerationInspection(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryGenerationInspectionRecord,
+  ) {
+    const [row] = await tx
+      .insert(storyGenerationInspections)
+      .values(data)
+      .returning();
+    return row!;
+  }
+
+  async findGenerationInspectionByScene(
+    tx: { select: QueryExecutor["select"] },
+    generatedSceneId: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyGenerationInspections)
+      .where(eq(storyGenerationInspections.generatedSceneId, generatedSceneId))
+      .orderBy(desc(storyGenerationInspections.createdAt))
+      .limit(1);
+    return row;
+  }
+
+  async findGenerationInspectionsBySession(
+    tx: { select: QueryExecutor["select"] },
+    storySessionId: string,
+  ) {
+    return tx
+      .select()
+      .from(storyGenerationInspections)
+      .where(eq(storyGenerationInspections.storySessionId, storySessionId))
+      .orderBy(storyGenerationInspections.createdAt);
   }
 }

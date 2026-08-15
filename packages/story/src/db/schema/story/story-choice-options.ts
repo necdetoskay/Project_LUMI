@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   check,
   index,
@@ -7,11 +8,11 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
 
-export const storyChoiceOptions = storySchema.table(
+const storyChoiceOptionsTable = storySchema.table(
   "story_choice_options",
   {
     id: primaryId(),
@@ -33,6 +34,13 @@ export const storyChoiceOptions = storySchema.table(
     ),
   ],
 );
+
+// Keep the legacy repository property mapped to the canonical sequence column.
+// This prevents Drizzle from emitting an empty ORDER BY while callers migrate
+// to sequenceNumber.
+export const storyChoiceOptions = Object.assign(storyChoiceOptionsTable, {
+  optionOrder: storyChoiceOptionsTable.sequenceNumber,
+});
 
 export type StoryChoiceOptionRecord = typeof storyChoiceOptions.$inferSelect;
 export type NewStoryChoiceOptionRecord = typeof storyChoiceOptions.$inferInsert;

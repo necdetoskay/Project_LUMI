@@ -117,4 +117,10 @@ export type {
 export { storyHooks } from "./story-hooks";
 export type { StoryHookRecord, NewStoryHookRecord } from "./story-hooks";
 
+export { storyGenerationInspections } from "./story-generation-inspections";
+export type {
+  StoryGenerationInspectionRecord,
+  NewStoryGenerationInspectionRecord,
+} from "./story-generation-inspections";
+
 export * from "./relations";
