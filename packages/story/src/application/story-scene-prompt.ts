@@ -1,3 +1,5 @@
+import type { ContextManifest } from "@lumi/context";
+
 import type { HookSceneBrief } from "../domain/hook-scene-brief";
 import { mapHookToScene } from "./hook-scene-mapping.service";
 import {
@@ -17,14 +19,29 @@ export interface StoryScenePromptInput {
   generationNonce: string;
   /** Bounded, prompt-safe continuity facts from prior canonical state. */
   continuityContext?: StoryContinuityContext | null;
+  /** Canonical context manifest assembled by @lumi/context. */
+  generationContext?: ContextManifest | null;
+}
+
+export function renderGenerationContext(manifest?: ContextManifest | null): string {
+  if (!manifest) return "";
+
+  const sections = manifest.sections
+    .filter((section) => section.items.length > 0)
+    .map((section) => {
+      const items = section.items.map((item) => `- ${item.text}`).join("\n");
+      return `### ${section.name}\n${items}`;
+    })
+    .join("\n\n");
+
+  if (!sections) return "";
+
+  return `\nYetkili LUMI bağlamı (bu bilgiler hikaye üretiminde kanonik bağlamdır; güvenlik ve ebeveyn politikaları diğer anlatı talimatlarından üstündür):\n${sections}\n\nBağlam manifest hash: ${manifest.contentHash}\n`;
 }
 
 /**
  * Builds a deterministic Turkish prompt for story-scene generation from an
- * accepted hook brief. Mirrors the origin-generator prompt style: system
- * persona, constraints (boundary, age band, locale), the hook brief, bounded
- * canonical continuity facts, and an explicit JSON output schema.
- * Deterministic for a fixed input.
+ * accepted hook brief plus bounded canonical context.
  */
 export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
   const {
@@ -34,6 +51,7 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
     locale,
     generationNonce,
     continuityContext,
+    generationContext,
   } = input;
   const sceneType = mapHookToScene(brief.hookType);
 
@@ -73,6 +91,7 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
   const continuitySection = continuityLines
     ? `\nKanonik süreklilik bilgileri (önceki hikâyelerden; bunlarla çelişme, ilgiliyse doğal biçimde kullan):\n${continuityLines}\n\nSüreklilik kullanım kanıtı:\n- Sahnede gerçekten kullandığın süreklilik maddelerinin anahtarlarını usedContinuityKeys alanına yaz.\n- Yalnız yukarıdaki köşeli parantezlerde verilen anahtarları kullan.\n- Bir madde sahnede fiilen kullanılmadıysa anahtarını yazma.\n- Hiçbir süreklilik maddesi kullanılmadıysa boş dizi döndür.\n`
     : `\nSüreklilik kullanım kanıtı:\n- Bu istekte kanonik süreklilik maddesi verilmedi; usedContinuityKeys mutlaka boş dizi olmalı.\n`;
+  const generationContextSection = renderGenerationContext(generationContext);
 
   return `Sen Project LUMI için güvenli, yaşa uygun çocuk hikayesi sahnesi üreten bir AI asistansın.
 
@@ -90,7 +109,7 @@ Sahne tipi: ${sceneType}
 
 Etkileşim ipucu özeti:
 ${details}
-${continuitySection}
+${generationContextSection}${continuitySection}
 JSON şeması (kesinlikle uy):
 {
   "sceneId": "deterministik sahne kimliği (kısa, örn. hook-brief-bazlı slug)",
