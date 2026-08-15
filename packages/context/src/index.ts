@@ -82,10 +82,14 @@ export {
   SystemSafetyPolicySource,
   NoPersistedParentPolicySource,
   NoCanonicalKnowledgeSource,
+  RequestSnapshotWorkingStorySource,
+  PersistedEmotionalStateSource,
 } from "./adapters";
 export type {
   CanonicalMemoryReader,
   CanonicalMemoryRecord,
   WorldEventReader,
   WorldEventRecord,
+  WorkingStorySnapshotReader,
+  EmotionalStateSnapshotReader,
 } from "./adapters";
