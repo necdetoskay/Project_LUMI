@@ -7,23 +7,26 @@ import {
 } from "./generation-context-policy";
 
 describe("generation context policy", () => {
-  it("keeps character onboarding focused on child and current creation choices", () => {
-    const policy = getGenerationContextPolicy("character_onboarding");
+  it(
+    "keeps character onboarding focused on child and current creation choices",
+    () => {
+      const policy = getGenerationContextPolicy("character_onboarding");
 
-    expect(policy.maxContextTokens).toBe(1800);
-    expect(policy.sections.map((entry) => entry.section)).toEqual([
-      "child_identity",
-      "child_personalization",
-      "creation_direction",
-      "creation_selections",
-    ]);
-    expect(
-      getGenerationContextSectionPolicy(
-        "character_onboarding",
-        "world_state",
-      ),
-    ).toBeNull();
-  });
+      expect(policy.maxContextTokens).toBe(1800);
+      expect(policy.sections.map((entry) => entry.section)).toEqual([
+        "child_identity",
+        "child_personalization",
+        "creation_direction",
+        "creation_selections",
+      ]);
+      expect(
+        getGenerationContextSectionPolicy(
+          "character_onboarding",
+          "world_state",
+        ),
+      ).toBeNull();
+    },
+  );
 
   it("reserves richer continuity context for story generation", () => {
     const policy = getGenerationContextPolicy("story_generation");
