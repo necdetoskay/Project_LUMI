@@ -85,6 +85,8 @@ export type {
   GeneratedOriginPackage,
   GenerateAndPersistResult,
 } from "./character-bootstrap.service";
+export { getAcceptedOriginPackageContext } from "./accepted-origin-package.service";
+export type { AcceptedOriginPackageContext } from "./accepted-origin-package.service";
 export {
   getCharacterDomain,
   applyTraitDeltas,
