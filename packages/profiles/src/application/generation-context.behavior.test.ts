@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { assembleGenerationContext, toPromptGenerationContext } from "./generation-context-assembler";
-import { buildGenerationContext } from "./generation-context.service";
+import {
+  assembleGenerationContext,
+  toPromptGenerationContext,
+} from "./generation-context-assembler";
+import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
 import { findChildProfileForUser } from "./child-profile.service";
 import { getChildPersonalization } from "./child-profile-personalization.service";
-import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
+import { buildGenerationContext } from "./generation-context.service";
 
 vi.mock("./child-profile.service", () => ({
   findChildProfileForUser: vi.fn(),
