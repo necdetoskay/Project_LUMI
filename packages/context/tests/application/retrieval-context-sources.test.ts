@@ -78,7 +78,7 @@ describe("RetrievalLongTermMemorySource", () => {
 });
 
 describe("RetrievalWorldEventSource", () => {
-  it("requests only world events and exposes them as visible changes", async () => {
+  it("requests only world events and exposes them as canonical semantic items", async () => {
     const retrieve = vi
       .fn<ContextRetrievalSource["retrieve"]>()
       .mockResolvedValue({
@@ -122,8 +122,28 @@ describe("RetrievalWorldEventSource", () => {
       }),
     );
     expect(result.sourceRelevance).toBe(0.9);
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.content).toMatchObject({
+    expect(result.items.map((item) => item.id)).toEqual([
+      "world:location",
+      "world:visible-changes",
+      "world:environment",
+    ]);
+    expect(result.items.map((item) => item.type)).toEqual([
+      "world-location",
+      "world-visible-changes",
+      "world-environment",
+    ]);
+    expect(
+      result.items.every(
+        (item) => item.sourceEngine === "world-event-retrieval",
+      ),
+    ).toBe(true);
+    expect(result.items[1]?.text).toContain(
+      "A new crystal bridge appeared over the ravine.",
+    );
+    expect(result.items[1]?.text).toContain(
+      "The cave entrance now glows softly.",
+    );
+    expect(result.items[1]?.content).toMatchObject({
       worldFacts: [],
       location: "crystal cave",
       timeOfDay: "unknown",

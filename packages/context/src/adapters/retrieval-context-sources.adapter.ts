@@ -1,3 +1,4 @@
+import { worldToContextItems } from "../application/world-context-mapper";
 import type {
   ContextItem,
   ContextRetrievalSource,
@@ -32,7 +33,6 @@ export class RetrievalLongTermMemorySource implements LongTermMemorySource {
       limit: this.limit,
       sourceKinds: ["memory"],
     });
-
     return {
       items: result.candidates.map(memoryCandidateToContextItem),
       sourceRelevance: maxRelevance(result.candidates),
@@ -60,14 +60,11 @@ export class RetrievalWorldEventSource implements WorldSource {
       limit: this.limit,
       sourceKinds: ["world-event"],
     });
-
     const visibleChanges = result.candidates.map(
       (candidate) => candidate.summary,
     );
-    if (visibleChanges.length === 0) {
-      return { items: [], sourceRelevance: 0 };
-    }
-
+    if (visibleChanges.length === 0) return { items: [], sourceRelevance: 0 };
+    const relevance = maxRelevance(result.candidates);
     const content: WorldItem = {
       worldFacts: [],
       location: request.sceneFocus ?? "current-story-location",
@@ -76,23 +73,14 @@ export class RetrievalWorldEventSource implements WorldSource {
       visibleChanges,
       inaccessibleAreas: [],
     };
-
     return {
-      items: [
-        {
-          id: `world-events:${request.worldId}`,
-          type: "world-events",
-          content,
-          text: visibleChanges.join("\n"),
-          sourceEngine: "world-event-retrieval",
-          authority: 0.95,
-          confidence: 0.95,
-          scope: "world_truth",
-          priority: 2,
-          relevance: maxRelevance(result.candidates),
-        },
-      ],
-      sourceRelevance: maxRelevance(result.candidates),
+      items: worldToContextItems(content, {
+        sourceEngine: "world-event-retrieval",
+        authority: 0.95,
+        confidence: 0.95,
+        relevance,
+      }),
+      sourceRelevance: relevance,
     };
   }
 }
@@ -106,7 +94,6 @@ function memoryCandidateToContextItem(
     charactersInvolved: [],
     emotionalWeight: candidate.relevance,
   };
-
   return {
     id: candidate.stableId,
     type: "long-term-memory",
