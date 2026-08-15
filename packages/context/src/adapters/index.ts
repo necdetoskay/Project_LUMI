@@ -6,3 +6,13 @@ export { InMemoryLongTermMemoryAdapter } from "./in-memory-long-term-memory.adap
 export { InMemoryKnowledgeAdapter } from "./in-memory-knowledge.adapter";
 export { InMemoryWorldAdapter } from "./in-memory-world.adapter";
 export { InMemoryOriginPackageAdapter } from "./in-memory-origin-package.adapter";
+export {
+  CanonicalMemoryRetrievalAdapter,
+  type CanonicalMemoryReader,
+  type CanonicalMemoryRecord,
+} from "./canonical-memory-retrieval.adapter";
+export {
+  WorldEventRetrievalAdapter,
+  type WorldEventReader,
+  type WorldEventRecord,
+} from "./world-event-retrieval.adapter";
