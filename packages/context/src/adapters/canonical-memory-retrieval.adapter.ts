@@ -79,7 +79,8 @@ export class CanonicalMemoryRetrievalAdapter
 
     return {
       candidates,
-      truncated: memories.length > candidates.length || memories.length >= limit,
+      truncated:
+        memories.length > candidates.length || memories.length >= limit,
     };
   }
 }
