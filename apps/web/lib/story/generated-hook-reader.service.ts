@@ -124,8 +124,8 @@ export async function generateHookReaderTurn(
     fixedDecisions: [],
     mustInclude: [],
     mustExclude: [],
-    tone: null,
-    ageGuidance: null,
+    tone: "",
+    ageGuidance: [],
   };
 
   const contextComposer = createProductionStoryContextComposer({
