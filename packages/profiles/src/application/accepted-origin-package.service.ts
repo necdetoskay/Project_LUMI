@@ -1,7 +1,4 @@
-import {
-  DrizzleCharacterOriginPackageRepository,
-  getDatabase,
-} from "../db";
+import { DrizzleCharacterOriginPackageRepository, getDatabase } from "../db";
 
 export interface AcceptedOriginPackageContext {
   householdId: string;
