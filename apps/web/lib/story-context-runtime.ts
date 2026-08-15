@@ -42,7 +42,9 @@ export function createProductionStoryContextComposer(
   const databaseUrl =
     process.env.DATABASE_URL ??
     "postgresql://lumi:lumi_local_only@localhost:15432/lumi";
-  const worldEventReader = new DrizzleWorldEventReader(getDatabase(databaseUrl));
+  const worldEventReader = new DrizzleWorldEventReader(
+    getDatabase(databaseUrl),
+  );
   const worldRetrieval = new WorldEventRetrievalAdapter(worldEventReader);
 
   return createStoryGenerationContextComposer({
