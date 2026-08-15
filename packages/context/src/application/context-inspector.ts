@@ -77,10 +77,7 @@ export function createContextInspectorProjection(
     sections,
     summary: {
       sectionCount: sections.length,
-      itemCount: sections.reduce(
-        (sum, section) => sum + section.itemCount,
-        0,
-      ),
+      itemCount: sections.reduce((sum, section) => sum + section.itemCount, 0),
       truncatedSectionCount: sections.filter((section) => section.truncated)
         .length,
       warningCount: manifest.findings.filter(
