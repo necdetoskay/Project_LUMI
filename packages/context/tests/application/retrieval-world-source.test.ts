@@ -1,31 +1,36 @@
 import { describe, expect, it } from "vitest";
 
 import { RetrievalWorldEventSource } from "../../src/adapters";
-import type { ContextRetrievalSource } from "../../src/ports";
+import type { ContextRetrievalSource, RetrievalResult } from "../../src/ports";
 import { testRequest } from "../fixtures/contexts";
 
 describe("RetrievalWorldEventSource", () => {
   it("maps retrieved world events into canonical semantic items", async () => {
-    const retrieval: ContextRetrievalSource = {
-      retrieve: async () => ({
-        candidates: [
-          {
-            stableId: "event:storm",
+    const retrievalResult: RetrievalResult = {
+      candidates: [
+        {
+          stableId: "event:storm",
+          summary: "A crystal storm is approaching the floating islands.",
+          relevance: 0.92,
+          payload: {},
+          provenance: {
             sourceKind: "world-event",
-            summary: "A crystal storm is approaching the floating islands.",
-            relevance: 0.92,
-            provenance: {
-              authority: "world-event-store",
-              recordId: "event:storm",
-            },
+            sourceId: "event:storm",
+            authority: "world-event-store",
           },
-        ],
-      }),
+        },
+      ],
+      truncated: false,
     };
+    const retrieval: ContextRetrievalSource = {
+      retrieve: async () => retrievalResult,
+    };
+
     const result = await new RetrievalWorldEventSource(retrieval).fetch({
       ...testRequest,
       sceneFocus: "Crystal Islands",
     });
+
     expect(result.items.map((item) => item.id)).toEqual([
       "world:location",
       "world:visible-changes",
