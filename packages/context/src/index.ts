@@ -84,6 +84,7 @@ export {
   NoCanonicalKnowledgeSource,
   RequestSnapshotWorkingStorySource,
   PersistedEmotionalStateSource,
+  PersistedOriginPackageSource,
 } from "./adapters";
 export type {
   CanonicalMemoryReader,
@@ -92,4 +93,6 @@ export type {
   WorldEventRecord,
   WorkingStorySnapshotReader,
   EmotionalStateSnapshotReader,
+  AcceptedOriginPackageReader,
+  AcceptedOriginPackageRecord,
 } from "./adapters";
