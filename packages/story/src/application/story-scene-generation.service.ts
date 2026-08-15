@@ -1,3 +1,8 @@
+import type {
+  ContextManifest,
+  StoryGenerationContextComposer,
+} from "@lumi/context";
+
 import { buildHookSceneBrief } from "../domain/hook-scene-brief";
 import type { StoryHookState } from "../domain/story-types";
 import {
@@ -32,8 +37,6 @@ export interface OpenRouterCallResult {
   model: string;
 }
 
-/** Minimal provider-call shape so tests can inject a fake; web wires the real
- *  `@lumi/profiles` `callOpenRouter`. */
 export type OpenRouterCaller = (
   apiKey: string,
   input: OpenRouterCallInput,
@@ -41,16 +44,15 @@ export type OpenRouterCaller = (
 
 export interface StorySceneGenerationInput {
   hook: StoryHookState;
-  /** Injected settings boundary (resolves task/provider settings + key). */
   settingsPort: StorySceneLlmSettingsPort;
-  /** Optional bounded continuity source for prior canonical world/NPC state. */
   continuityPort?: StoryContinuityContextPort;
-  /** Optional branch scope used by continuity adapters. */
+  /** Canonical context composer. Production callers should provide this. */
+  contextComposer?: StoryGenerationContextComposer;
   childProfileId?: string | null;
   characterId?: string | null;
-  /** Injected LLM client (defaults to a caller that throws if not provided). */
+  /** Optional scene focus forwarded to context retrieval/ranking. */
+  sceneFocus?: string | undefined;
   callOpenRouter?: OpenRouterCaller;
-  /** Max generation attempts on invalid output (default 2). */
   maxAttempts?: number;
 }
 
@@ -58,14 +60,14 @@ export interface StorySceneGenerationResult {
   scene: GeneratedScene;
   modelId: string | null;
   attempt: number;
+  /** Exact canonical manifest consumed by the successful generation call. */
+  contextManifest: ContextManifest | null;
 }
 
 /**
- * Generates an LLM-rendered story scene from an accepted hook. Deterministic
- * prompt (hook brief → prompt builder), production LLM path through the
- * injected settings port + caller, optional bounded continuity context, JSON
- * parse + schema validation, and bounded retry with a fresh nonce on invalid
- * output. Pure orchestration: no DB writes.
+ * Generates an LLM-rendered story scene from an accepted hook. The canonical
+ * @lumi/context manifest is assembled once before retries and injected into
+ * every prompt, so retries cannot silently change world/memory/policy context.
  */
 export class StorySceneGenerationService {
   async generateSceneFromHook(
@@ -93,6 +95,25 @@ export class StorySceneGenerationService {
       continuityContext?.facts.map((fact) => fact.key) ?? [],
     );
 
+    const resolvedChildProfileId =
+      input.childProfileId ?? input.hook.childProfileId ?? null;
+    const generationContext =
+      input.contextComposer && resolvedChildProfileId
+        ? await input.contextComposer.build({
+            householdId: input.hook.householdId,
+            childProfileId: resolvedChildProfileId,
+            worldId: input.hook.worldId,
+            focalCharacterId: input.characterId ?? undefined,
+            sceneFocus: input.sceneFocus ?? brief.payloadSummary ?? undefined,
+            snapshot: {
+              hookId: input.hook.id,
+              hookType: input.hook.hookType,
+              sourceNpcId: input.hook.sourceNpcId ?? null,
+              targetNpcId: input.hook.targetNpcId ?? null,
+            },
+          })
+        : null;
+
     let lastError: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const generationNonce = crypto.randomUUID();
@@ -103,6 +124,7 @@ export class StorySceneGenerationService {
         locale: settings.locale,
         generationNonce,
         continuityContext,
+        generationContext,
       });
 
       let response: OpenRouterCallResult;
@@ -137,6 +159,7 @@ export class StorySceneGenerationService {
             scene: parsed.scene,
             modelId: response.model || null,
             attempt,
+            contextManifest: generationContext,
           };
         }
 

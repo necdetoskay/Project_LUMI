@@ -29,7 +29,10 @@ export type {
   ContextManifest,
 } from "./ports";
 
-export type { ContextBuilderDeps } from "./application";
+export type {
+  ContextBuilderDeps,
+  StoryGenerationContextRequest,
+} from "./application";
 
 export {
   ContextBuilder,
@@ -42,6 +45,10 @@ export {
   knowledgeToItems,
   worldToItems,
   originPackageToItems,
+  STORY_GENERATION_CONTEXT_TOKENS,
+  STORY_GENERATION_TOKEN_BUDGET,
+  StoryGenerationContextComposer,
+  createStoryGenerationContextComposer,
 } from "./application";
 
 export {
