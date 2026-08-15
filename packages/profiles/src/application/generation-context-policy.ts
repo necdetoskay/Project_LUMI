@@ -91,7 +91,10 @@ export function getGenerationContextSectionPolicy(
 export function assertGenerationContextPolicy(
   policy: GenerationContextPolicy,
 ): void {
-  if (!Number.isInteger(policy.maxContextTokens) || policy.maxContextTokens <= 0) {
+  if (
+    !Number.isInteger(policy.maxContextTokens) ||
+    policy.maxContextTokens <= 0
+  ) {
     throw new Error(
       "Generation context maxContextTokens must be a positive integer",
     );
