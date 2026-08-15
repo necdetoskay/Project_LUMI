@@ -25,3 +25,9 @@ export {
   NoPersistedParentPolicySource,
   NoCanonicalKnowledgeSource,
 } from "./production-policy-sources.adapter";
+export {
+  RequestSnapshotWorkingStorySource,
+  PersistedEmotionalStateSource,
+  type WorkingStorySnapshotReader,
+  type EmotionalStateSnapshotReader,
+} from "./request-snapshot-context-sources.adapter";
