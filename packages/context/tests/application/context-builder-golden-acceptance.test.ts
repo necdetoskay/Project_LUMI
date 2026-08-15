@@ -85,13 +85,6 @@ const relevantMemory: LongTermMemoryItem = {
   emotionalWeight: 0.95,
 };
 
-const irrelevantMemory: LongTermMemoryItem = {
-  memoryId: "red-boat-at-harbor",
-  summary: "Uc hafta once uzak limanda kirmizi bir tekne goruldu.",
-  charactersInvolved: ["harbor-master"],
-  emotionalWeight: 0.05,
-};
-
 const world: WorldItem = {
   worldFacts: [
     "Aeralis, gokyuzunde suzulen kara parcalarindan olusan bir dunyadir.",
@@ -105,21 +98,8 @@ const world: WorldItem = {
   inaccessibleAreas: ["Firtina gecene kadar kuzeydeki ada kapali."],
 };
 
-function buildGoldenContext() {
-  const longTermMemorySource = {
-    fetch: async () => ({
-      // This fixture represents the retrieval result: the relevant continuity
-      // memory wins and the unrelated harbor memory is filtered out upstream.
-      items: new InMemoryLongTermMemoryAdapter([relevantMemory]).fetch(request),
-      sourceRelevance: 1,
-    }),
-  };
-
-  return { longTermMemorySource };
-}
-
 describe("ContextBuilder golden acceptance", () => {
-  it("carries the child-tailored story, character, world and relevant continuity into the inspected context", async () => {
+  it("carries child-tailored story, character, world and relevant continuity into inspected context", async () => {
     const builder = new ContextBuilder(
       {
         safetyPolicySource: new InMemorySafetyPolicyAdapter(testSafetyPolicy),
@@ -131,6 +111,8 @@ describe("ContextBuilder golden acceptance", () => {
         emotionalStateSource: new InMemoryEmotionalStateAdapter([
           { ...testEmotionalState, characterId: "liora" },
         ]),
+        // This is the post-retrieval input: the relevant continuity memory wins;
+        // the unrelated red-boat harbor memory has already been filtered out.
         longTermMemorySource: new InMemoryLongTermMemoryAdapter([relevantMemory]),
         knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
         worldSource: new InMemoryWorldAdapter(world),
@@ -141,10 +123,10 @@ describe("ContextBuilder golden acceptance", () => {
 
     const manifest = await builder.build(request);
     const inspector = createContextInspectorProjection(manifest);
-    const allText = inspector.sections.flatMap((section) =>
-      section.items.map((item) => item.text),
-    );
-    const joinedText = allText.join("\n").toLocaleLowerCase("tr");
+    const joinedText = inspector.sections
+      .flatMap((section) => section.items.map((item) => item.text))
+      .join("\n")
+      .toLocaleLowerCase("tr");
 
     expect(manifest.contentHash).toMatch(/^[a-f0-9]{64}$/);
     expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(
@@ -165,14 +147,22 @@ describe("ContextBuilder golden acceptance", () => {
       (section) => section.name === "long-term-memory",
     );
     expect(memorySection).toBeDefined();
-    expect(memorySection?.items.some((item) => item.id.includes("blue-compass-promise"))).toBe(true);
-    expect(memorySection?.items.some((item) => item.id.includes("red-boat-at-harbor"))).toBe(false);
+    expect(
+      memorySection?.items.some((item) =>
+        item.id.includes("blue-compass-promise"),
+      ),
+    ).toBe(true);
+    expect(
+      memorySection?.items.some((item) => item.id.includes("red-boat-at-harbor")),
+    ).toBe(false);
 
     const worldSection = inspector.sections.find(
       (section) => section.name === "world",
     );
     expect(worldSection?.items.length).toBeGreaterThan(0);
-    expect(worldSection?.items.some((item) => item.sourceEngine.length > 0)).toBe(true);
+    expect(
+      worldSection?.items.some((item) => item.sourceEngine.length > 0),
+    ).toBe(true);
 
     expect(inspector.summary.sectionCount).toBeGreaterThanOrEqual(7);
     expect(inspector.summary.itemCount).toBeGreaterThan(0);
