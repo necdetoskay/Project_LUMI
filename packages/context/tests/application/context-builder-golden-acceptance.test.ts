@@ -40,7 +40,8 @@ const request: ContextRequest = {
 
 const workingStory: WorkingStoryItem = {
   mode: "continuation",
-  sceneGoal: "Liora, Arin'e verdigi sozu tutmak icin kirik mavi pusulayi arastirir.",
+  sceneGoal:
+    "Liora, Arin'e verdigi sozu tutmak icin kirik mavi pusulayi arastirir.",
   worldFacts: [
     "Kristal Adalar Aeralis goklerinde suzulur.",
     "Liora kristal magaralarinda yasayan kanatli bir kesifcidir.",
@@ -113,10 +114,14 @@ describe("ContextBuilder golden acceptance", () => {
         ]),
         // This is the post-retrieval input: the relevant continuity memory wins;
         // the unrelated red-boat harbor memory has already been filtered out.
-        longTermMemorySource: new InMemoryLongTermMemoryAdapter([relevantMemory]),
+        longTermMemorySource: new InMemoryLongTermMemoryAdapter([
+          relevantMemory,
+        ]),
         knowledgeSource: new InMemoryKnowledgeAdapter(testKnowledge),
         worldSource: new InMemoryWorldAdapter(world),
-        originPackageSource: new InMemoryOriginPackageAdapter(testOriginPackage),
+        originPackageSource: new InMemoryOriginPackageAdapter(
+          testOriginPackage,
+        ),
       },
       testBudget,
     );
@@ -153,7 +158,9 @@ describe("ContextBuilder golden acceptance", () => {
       ),
     ).toBe(true);
     expect(
-      memorySection?.items.some((item) => item.id.includes("red-boat-at-harbor")),
+      memorySection?.items.some((item) =>
+        item.id.includes("red-boat-at-harbor"),
+      ),
     ).toBe(false);
 
     const worldSection = inspector.sections.find(
