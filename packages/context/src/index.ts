@@ -75,4 +75,21 @@ export {
   InMemoryKnowledgeAdapter,
   InMemoryWorldAdapter,
   InMemoryOriginPackageAdapter,
+  CanonicalMemoryRetrievalAdapter,
+  WorldEventRetrievalAdapter,
+  RetrievalLongTermMemorySource,
+  RetrievalWorldEventSource,
+  SystemSafetyPolicySource,
+  NoPersistedParentPolicySource,
+  NoCanonicalKnowledgeSource,
+  RequestSnapshotWorkingStorySource,
+  PersistedEmotionalStateSource,
+} from "./adapters";
+export type {
+  CanonicalMemoryReader,
+  CanonicalMemoryRecord,
+  WorldEventReader,
+  WorldEventRecord,
+  WorkingStorySnapshotReader,
+  EmotionalStateSnapshotReader,
 } from "./adapters";

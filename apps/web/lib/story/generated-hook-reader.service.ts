@@ -1,3 +1,4 @@
+import type { EmotionalStateItem, WorkingStoryItem } from "@lumi/context";
 import {
   callOpenRouter,
   getCharacterBootstrapStatus,
@@ -12,7 +13,9 @@ import {
   StorySceneGenerationService,
 } from "@lumi/story/application";
 import { ValidationError } from "@lumi/story/domain";
+import { PersistedCharacterDecisionContextAdapter } from "../emotional-decision-runtime";
 import { NpcBeliefStoryContinuityContextAdapter } from "../story-continuity-context-runtime";
+import { createProductionStoryContextComposer } from "../story-context-runtime";
 import {
   readUsedContinuityKeysFromSceneMetadata,
   reinforceSceneMemoryUsage,
@@ -25,6 +28,12 @@ export interface GenerateHookReaderTurnInput {
   sessionId: string;
   hookId: string;
   expectedVersion: number;
+}
+
+function arousalFromUrgency(urgency: number): EmotionalStateItem["arousal"] {
+  if (urgency >= 0.67) return "high";
+  if (urgency >= 0.34) return "medium";
+  return "low";
 }
 
 export async function generateHookReaderTurn(
@@ -88,9 +97,6 @@ export async function generateHookReaderTurn(
     );
   }
 
-  // Resolve the canonical child character server-side. The client never gets to
-  // choose a character id for continuity retrieval, which keeps the prompt
-  // inside the authenticated household/profile boundary.
   const bootstrap = await getCharacterBootstrapStatus(
     input.userId,
     input.householdId,
@@ -104,14 +110,78 @@ export async function generateHookReaderTurn(
     childProfileId: session.childProfileId,
   });
   const continuityPort = new NpcBeliefStoryContinuityContextAdapter();
+  const decisionContext = new PersistedCharacterDecisionContextAdapter();
+
+  const workingStory: WorkingStoryItem = {
+    mode: session.playbackMode,
+    sceneGoal: `Resolve accepted story hook ${hook.id} (${hook.hookType}) within the current session.`,
+    worldFacts: [],
+    activeCharacterContexts: characterId
+      ? [
+          {
+            characterId,
+            currentState: [],
+            activeGoal: "",
+            relevantMemories: [],
+            relationshipNotes: [],
+            beliefNotes: [],
+            behaviorGuidance: [],
+          },
+        ]
+      : [],
+    playerKnownFacts: [],
+    hiddenFacts: [],
+    pendingEvents: [hook.hookType],
+    fixedDecisions: [],
+    mustInclude: [],
+    mustNotInclude: [],
+    tone: "",
+    ageGuidance: [],
+  };
+
+  const contextComposer = createProductionStoryContextComposer({
+    readWorkingStory: () => workingStory,
+    readEmotionalState: async () => {
+      if (!characterId) return [];
+      const vector = await decisionContext.resolve({
+        userId: input.userId,
+        householdId: input.householdId,
+        characterId,
+      });
+      const dominantEmotions = Object.entries(vector.emotions)
+        .filter(
+          (entry): entry is [string, number] => typeof entry[1] === "number",
+        )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([emotion, intensity]) => `${emotion}:${intensity.toFixed(2)}`);
+      const topGoal = vector.goals[0];
+      const topNeed = vector.needs[0];
+
+      return [
+        {
+          characterId,
+          dominantEmotions,
+          behaviorGuidance: [
+            topGoal ? `Prefer actions aligned with the active goal.` : null,
+            topNeed ? `Respect the character's strongest current need.` : null,
+          ].filter((value): value is string => Boolean(value)),
+          arousal: arousalFromUrgency(vector.urgency),
+        },
+      ];
+    },
+  });
+
   const generation =
     await new StorySceneGenerationService().generateSceneFromHook({
       hook,
       settingsPort,
       continuityPort,
+      contextComposer,
       callOpenRouter,
       childProfileId: session.childProfileId,
       characterId,
+      storySessionId: input.sessionId,
     });
 
   const persisted = await persistGeneratedSceneAndAdvance({
