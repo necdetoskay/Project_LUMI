@@ -84,7 +84,9 @@ describe("PersistedOriginPackageSource", () => {
     const reader: AcceptedOriginPackageReader = {
       findAcceptedByChildProfile: async () => accepted,
     };
-    const result = await new PersistedOriginPackageSource(reader).fetch(request);
+    const result = await new PersistedOriginPackageSource(reader).fetch(
+      request,
+    );
     const item = result.items[0];
 
     expect(item).toBeDefined();
