@@ -1,4 +1,8 @@
-export type RetrievalSourceKind = "memory" | "npc" | "world-state" | "world-event";
+export type RetrievalSourceKind =
+  | "memory"
+  | "npc"
+  | "world-state"
+  | "world-event";
 
 export interface RetrievalQuery {
   householdId: string;
