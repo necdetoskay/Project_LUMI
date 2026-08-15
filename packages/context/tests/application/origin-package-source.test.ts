@@ -5,6 +5,7 @@ import {
   type AcceptedOriginPackageReader,
   type AcceptedOriginPackageRecord,
 } from "../../src/adapters";
+import type { ContextRequest } from "../../src/ports";
 
 const accepted: AcceptedOriginPackageRecord = {
   householdId: "house-1",
@@ -19,6 +20,13 @@ const accepted: AcceptedOriginPackageRecord = {
   noveltyMarkers: ["singing-crystal", "glow-moth"],
 };
 
+const request: ContextRequest = {
+  householdId: "house-1",
+  childProfileId: "child-1",
+  worldId: "world-1",
+  generationIntent: "story_scene",
+};
+
 describe("PersistedOriginPackageSource", () => {
   it("reads the accepted package in household/profile scope and maps the canonical fields", async () => {
     const findAcceptedByChildProfile = vi
@@ -27,7 +35,7 @@ describe("PersistedOriginPackageSource", () => {
 
     const result = await new PersistedOriginPackageSource({
       findAcceptedByChildProfile,
-    }).getOriginPackage("house-1", "child-1");
+    }).fetch(request);
 
     expect(findAcceptedByChildProfile).toHaveBeenCalledWith(
       "child-1",
@@ -55,10 +63,7 @@ describe("PersistedOriginPackageSource", () => {
     };
 
     await expect(
-      new PersistedOriginPackageSource(reader).getOriginPackage(
-        "house-1",
-        "child-1",
-      ),
+      new PersistedOriginPackageSource(reader).fetch(request),
     ).resolves.toEqual({ items: [] });
   });
 
@@ -71,10 +76,7 @@ describe("PersistedOriginPackageSource", () => {
     };
 
     await expect(
-      new PersistedOriginPackageSource(reader).getOriginPackage(
-        "house-1",
-        "child-1",
-      ),
+      new PersistedOriginPackageSource(reader).fetch(request),
     ).resolves.toEqual({ items: [] });
   });
 
@@ -82,9 +84,7 @@ describe("PersistedOriginPackageSource", () => {
     const reader: AcceptedOriginPackageReader = {
       findAcceptedByChildProfile: async () => accepted,
     };
-    const result = await new PersistedOriginPackageSource(
-      reader,
-    ).getOriginPackage("house-1", "child-1");
+    const result = await new PersistedOriginPackageSource(reader).fetch(request);
     const item = result.items[0];
 
     expect(item).toBeDefined();
