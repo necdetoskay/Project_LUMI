@@ -12,6 +12,13 @@ export {
 } from "./context-builder";
 export type { ContextBuilderDeps } from "./context-builder";
 
+export { createContextInspectorProjection } from "./context-inspector";
+export type {
+  ContextInspectorItem,
+  ContextInspectorProjection,
+  ContextInspectorSection,
+} from "./context-inspector";
+
 export {
   STORY_GENERATION_CONTEXT_TOKENS,
   STORY_GENERATION_TOKEN_BUDGET,
