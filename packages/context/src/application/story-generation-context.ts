@@ -13,12 +13,12 @@ export const STORY_GENERATION_TOKEN_BUDGET: Readonly<TokenBudget> = {
   totalTokens: STORY_GENERATION_CONTEXT_TOKENS,
   safetyTokens: 780,
   parentPolicyTokens: 390,
-  workingStoryTokens: 1_560,
+  workingStoryTokens: 1_430,
   emotionalStateTokens: 520,
-  longTermMemoryTokens: 780,
+  longTermMemoryTokens: 650,
   knowledgeTokens: 390,
-  worldTokens: 780,
-  originPackageTokens: 0,
+  worldTokens: 650,
+  originPackageTokens: 390,
 };
 
 export interface StoryGenerationContextRequest
