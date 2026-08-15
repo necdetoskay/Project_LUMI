@@ -40,7 +40,7 @@ export class SystemSafetyPolicySource implements SafetyPolicySource {
           sourceEngine: "context/system-safety-baseline",
           authority: 1,
           confidence: 1,
-          scope: "system_policy",
+          scope: "narrative_instruction",
           priority: 1,
           relevance: 1,
         },
