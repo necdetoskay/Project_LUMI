@@ -3,6 +3,7 @@ import {
   NoCanonicalKnowledgeSource,
   NoPersistedParentPolicySource,
   PersistedEmotionalStateSource,
+  PersistedOriginPackageSource,
   RequestSnapshotWorkingStorySource,
   RetrievalLongTermMemorySource,
   RetrievalWorldEventSource,
@@ -14,6 +15,7 @@ import {
   type WorkingStoryItem,
 } from "@lumi/context";
 import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence";
+import { getAcceptedOriginPackageContext } from "@lumi/profiles/application";
 import { DrizzleWorldEventReader, getDatabase } from "@lumi/world";
 
 export interface StoryContextRuntimeReaders {
@@ -46,6 +48,9 @@ export function createProductionStoryContextComposer(
     getDatabase(databaseUrl),
   );
   const worldRetrieval = new WorldEventRetrievalAdapter(worldEventReader);
+  const originPackageSource = new PersistedOriginPackageSource({
+    findAcceptedByChildProfile: getAcceptedOriginPackageContext,
+  });
 
   return createStoryGenerationContextComposer({
     safetyPolicySource: new SystemSafetyPolicySource(),
@@ -59,5 +64,6 @@ export function createProductionStoryContextComposer(
     longTermMemorySource: new RetrievalLongTermMemorySource(memoryRetrieval),
     knowledgeSource: new NoCanonicalKnowledgeSource(),
     worldSource: new RetrievalWorldEventSource(worldRetrieval),
+    originPackageSource,
   });
 }
