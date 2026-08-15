@@ -50,6 +50,8 @@ export interface StorySceneGenerationInput {
   contextComposer?: StoryGenerationContextComposer;
   childProfileId?: string | null;
   characterId?: string | null;
+  /** Canonical story session scope forwarded to context retrieval. */
+  storySessionId?: string | undefined;
   /** Optional scene focus forwarded to context retrieval/ranking. */
   sceneFocus?: string | undefined;
   callOpenRouter?: OpenRouterCaller;
@@ -103,6 +105,7 @@ export class StorySceneGenerationService {
             householdId: input.hook.householdId,
             childProfileId: resolvedChildProfileId,
             worldId: input.hook.worldId,
+            storySessionId: input.storySessionId,
             focalCharacterId: input.characterId ?? undefined,
             sceneFocus: input.sceneFocus ?? brief.payloadSummary ?? undefined,
             snapshot: {
