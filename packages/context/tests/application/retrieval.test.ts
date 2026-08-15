@@ -22,9 +22,7 @@ describe("retrieval contracts", () => {
     ];
 
     expect(
-      normalizeRetrievalCandidates(candidates, 10).map(
-        (item) => item.stableId,
-      ),
+      normalizeRetrievalCandidates(candidates, 10).map((item) => item.stableId),
     ).toEqual(["memory:1", "event:2"]);
     expect(normalizeRetrievalCandidates(candidates, 10)[0]?.relevance).toBe(0.9);
   });
