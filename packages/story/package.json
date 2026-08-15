@@ -21,6 +21,7 @@
     "test:int": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
+    "@lumi/context": "workspace:*",
     "drizzle-orm": "^0.43.1",
     "pg": "^8.22.0",
     "postgres": "^3.4.5",
