@@ -20,3 +20,8 @@ export {
   RetrievalLongTermMemorySource,
   RetrievalWorldEventSource,
 } from "./retrieval-context-sources.adapter";
+export {
+  SystemSafetyPolicySource,
+  NoPersistedParentPolicySource,
+  NoCanonicalKnowledgeSource,
+} from "./production-policy-sources.adapter";
