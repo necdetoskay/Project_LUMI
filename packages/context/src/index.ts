@@ -32,6 +32,9 @@ export type {
 export type {
   ContextBuilderDeps,
   StoryGenerationContextRequest,
+  ContextInspectorItem,
+  ContextInspectorProjection,
+  ContextInspectorSection,
 } from "./application";
 
 export {
@@ -45,6 +48,7 @@ export {
   knowledgeToItems,
   worldToItems,
   originPackageToItems,
+  createContextInspectorProjection,
   STORY_GENERATION_CONTEXT_TOKENS,
   STORY_GENERATION_TOKEN_BUDGET,
   StoryGenerationContextComposer,
