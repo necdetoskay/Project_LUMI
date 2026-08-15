@@ -46,7 +46,9 @@ export class RetrievalWorldEventSource implements WorldSource {
     private readonly limit = DEFAULT_RETRIEVAL_LIMIT,
   ) {}
 
-  async fetch(request: ContextRequest): Promise<ContextSourceResult<WorldItem>> {
+  async fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<WorldItem>> {
     const result = await this.retrieval.retrieve({
       householdId: request.householdId,
       childProfileId: request.childProfileId,

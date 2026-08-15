@@ -18,22 +18,24 @@ const request: ContextRequest = {
 
 describe("RetrievalLongTermMemorySource", () => {
   it("preserves story scope and converts memory candidates", async () => {
-    const retrieve = vi.fn<ContextRetrievalSource["retrieve"]>().mockResolvedValue({
-      candidates: [
-        {
-          stableId: "memory:m1",
-          relevance: 0.84,
-          summary: "The character promised to protect the crystal cave.",
-          payload: {},
-          provenance: {
-            sourceKind: "memory",
-            sourceId: "outcome-1",
-            authority: "npc-intelligence/canonical-memory",
+    const retrieve = vi
+      .fn<ContextRetrievalSource["retrieve"]>()
+      .mockResolvedValue({
+        candidates: [
+          {
+            stableId: "memory:m1",
+            relevance: 0.84,
+            summary: "The character promised to protect the crystal cave.",
+            payload: {},
+            provenance: {
+              sourceKind: "memory",
+              sourceId: "outcome-1",
+              authority: "npc-intelligence/canonical-memory",
+            },
           },
-        },
-      ],
-      truncated: false,
-    });
+        ],
+        truncated: false,
+      });
 
     const result = await new RetrievalLongTermMemorySource({ retrieve }).fetch(
       request,
@@ -77,35 +79,39 @@ describe("RetrievalLongTermMemorySource", () => {
 
 describe("RetrievalWorldEventSource", () => {
   it("requests only world events and exposes them as visible changes", async () => {
-    const retrieve = vi.fn<ContextRetrievalSource["retrieve"]>().mockResolvedValue({
-      candidates: [
-        {
-          stableId: "world-event:e1",
-          relevance: 0.9,
-          summary: "A new crystal bridge appeared over the ravine.",
-          payload: {},
-          provenance: {
-            sourceKind: "world-event",
-            sourceId: "e1",
-            authority: "world/event-store",
+    const retrieve = vi
+      .fn<ContextRetrievalSource["retrieve"]>()
+      .mockResolvedValue({
+        candidates: [
+          {
+            stableId: "world-event:e1",
+            relevance: 0.9,
+            summary: "A new crystal bridge appeared over the ravine.",
+            payload: {},
+            provenance: {
+              sourceKind: "world-event",
+              sourceId: "e1",
+              authority: "world/event-store",
+            },
           },
-        },
-        {
-          stableId: "world-event:e2",
-          relevance: 0.7,
-          summary: "The cave entrance now glows softly.",
-          payload: {},
-          provenance: {
-            sourceKind: "world-event",
-            sourceId: "e2",
-            authority: "world/event-store",
+          {
+            stableId: "world-event:e2",
+            relevance: 0.7,
+            summary: "The cave entrance now glows softly.",
+            payload: {},
+            provenance: {
+              sourceKind: "world-event",
+              sourceId: "e2",
+              authority: "world/event-store",
+            },
           },
-        },
-      ],
-      truncated: false,
-    });
+        ],
+        truncated: false,
+      });
 
-    const result = await new RetrievalWorldEventSource({ retrieve }).fetch(request);
+    const result = await new RetrievalWorldEventSource({ retrieve }).fetch(
+      request,
+    );
 
     expect(retrieve).toHaveBeenCalledWith(
       expect.objectContaining({

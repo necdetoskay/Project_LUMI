@@ -138,8 +138,8 @@ export async function generateHookReaderTurn(
         characterId,
       });
       const dominantEmotions = Object.entries(vector.emotions)
-        .filter((entry): entry is [string, number] =>
-          typeof entry[1] === "number",
+        .filter(
+          (entry): entry is [string, number] => typeof entry[1] === "number",
         )
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)

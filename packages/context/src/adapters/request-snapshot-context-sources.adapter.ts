@@ -1,7 +1,4 @@
-import {
-  emotionalStateToItems,
-  workingStoryToItems,
-} from "../application";
+import { emotionalStateToItems, workingStoryToItems } from "../application";
 import type {
   ContextRequest,
   ContextSourceResult,
