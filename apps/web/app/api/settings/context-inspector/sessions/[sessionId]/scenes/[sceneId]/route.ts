@@ -18,9 +18,7 @@ const paramsSchema = z.object({
 export const GET = observeHandler(
   async (
     request: Request,
-    {
-      params,
-    }: { params: Promise<{ sessionId: string; sceneId: string }> },
+    { params }: { params: Promise<{ sessionId: string; sceneId: string }> },
   ) => {
     return withParent(async (parent) => {
       const { searchParams } = new URL(request.url);

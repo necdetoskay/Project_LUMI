@@ -182,7 +182,10 @@ export async function getGenerationInspection(input: {
     input.generatedSceneId,
   );
   if (!record || record.storySessionId !== input.storySessionId) {
-    throw new NotFoundError("StoryGenerationInspection", input.generatedSceneId);
+    throw new NotFoundError(
+      "StoryGenerationInspection",
+      input.generatedSceneId,
+    );
   }
 
   const projection = projectionOf(record);
