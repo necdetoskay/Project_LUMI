@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { storySchema } from "./schemas";
 
-export const storyCommittedChoices = storySchema.table(
+const storyCommittedChoicesTable = storySchema.table(
   "story_committed_choices",
   {
     id: primaryId(),
@@ -26,6 +26,13 @@ export const storyCommittedChoices = storySchema.table(
     ),
   ],
 );
+
+// Keep the legacy repository property mapped to the canonical commit timestamp.
+// This prevents Drizzle from emitting an empty ORDER BY while repository callers
+// migrate from createdAt to committedAt.
+export const storyCommittedChoices = Object.assign(storyCommittedChoicesTable, {
+  createdAt: storyCommittedChoicesTable.committedAt,
+});
 
 export type StoryCommittedChoiceRecord =
   typeof storyCommittedChoices.$inferSelect;
