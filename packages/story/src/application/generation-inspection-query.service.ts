@@ -1,7 +1,11 @@
 import type { ContextInspectorProjection } from "@lumi/context";
+import { desc, eq } from "drizzle-orm";
 
 import { DrizzleStoryRepository } from "../db/repositories/drizzle/drizzle-story.repository";
-import type { StoryGenerationInspectionRecord } from "../db/schema/story";
+import {
+  storyGenerationInspections,
+  type StoryGenerationInspectionRecord,
+} from "../db/schema/story";
 import { NotFoundError, ValidationError } from "../domain/errors";
 import { getStoryDb } from "./db";
 
@@ -24,6 +28,18 @@ export interface GenerationInspectionListItem {
     truncated: boolean;
     itemCount: number;
   }>;
+}
+
+export interface GenerationInspectionSessionItem {
+  storySessionId: string;
+  childProfileId: string;
+  worldId: string;
+  storyDefinitionId: string;
+  storyTitle: string | null;
+  sessionStatus: string;
+  inspectionCount: number;
+  latestInspectionAt: string;
+  latestModelId: string;
 }
 
 export interface GenerationInspectionDetail
@@ -78,6 +94,57 @@ function toListItem(
       itemCount: section.itemCount,
     })),
   };
+}
+
+export async function listGenerationInspectionSessions(input: {
+  householdId: string;
+}): Promise<GenerationInspectionSessionItem[]> {
+  const db = getStoryDb();
+  const repo = new DrizzleStoryRepository();
+  const records = await db
+    .select()
+    .from(storyGenerationInspections)
+    .where(eq(storyGenerationInspections.householdId, input.householdId))
+    .orderBy(desc(storyGenerationInspections.createdAt));
+
+  const grouped = new Map<
+    string,
+    { count: number; latest: StoryGenerationInspectionRecord }
+  >();
+  for (const record of records) {
+    const current = grouped.get(record.storySessionId);
+    if (current) {
+      current.count += 1;
+    } else {
+      grouped.set(record.storySessionId, { count: 1, latest: record });
+    }
+  }
+
+  const sessions = await Promise.all(
+    [...grouped.entries()].map(async ([storySessionId, group]) => {
+      const session = await repo.findSessionById(db, storySessionId);
+      if (!session || session.householdId !== input.householdId) return null;
+      const definition = await repo.findDefinitionById(
+        db,
+        session.storyDefinitionId,
+      );
+      return {
+        storySessionId,
+        childProfileId: session.childProfileId,
+        worldId: session.worldId,
+        storyDefinitionId: session.storyDefinitionId,
+        storyTitle: definition?.title ?? null,
+        sessionStatus: session.sessionStatus,
+        inspectionCount: group.count,
+        latestInspectionAt: group.latest.createdAt.toISOString(),
+        latestModelId: group.latest.modelId,
+      } satisfies GenerationInspectionSessionItem;
+    }),
+  );
+
+  return sessions.filter(
+    (session): session is GenerationInspectionSessionItem => session !== null,
+  );
 }
 
 export async function listGenerationInspections(input: {
