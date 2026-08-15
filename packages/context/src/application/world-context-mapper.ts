@@ -36,17 +36,55 @@ export function worldToContextItems(
   ];
 
   if (world.activeHazards.length > 0) {
-    items.push({ ...base, id: "world:hazards", type: "world-hazards", text: `Active hazards: ${world.activeHazards.join("; ")}`, priority: 1, relevance: Math.max(relevance, 0.9) });
+    items.push({
+      ...base,
+      id: "world:hazards",
+      type: "world-hazards",
+      text: `Active hazards: ${world.activeHazards.join("; ")}`,
+      priority: 1,
+      relevance: Math.max(relevance, 0.9),
+    });
   }
   if (world.visibleChanges.length > 0) {
-    items.push({ ...base, id: "world:visible-changes", type: "world-visible-changes", text: `Visible changes: ${world.visibleChanges.join("; ")}`, priority: 1, relevance: Math.max(relevance, 0.85) });
+    items.push({
+      ...base,
+      id: "world:visible-changes",
+      type: "world-visible-changes",
+      text: `Visible changes: ${world.visibleChanges.join("; ")}`,
+      priority: 1,
+      relevance: Math.max(relevance, 0.85),
+    });
   }
   if (world.worldFacts.length > 0) {
-    items.push({ ...base, id: "world:facts", type: "world-facts", text: `World facts: ${world.worldFacts.join("; ")}`, priority: 2, relevance });
+    items.push({
+      ...base,
+      id: "world:facts",
+      type: "world-facts",
+      text: `World facts: ${world.worldFacts.join("; ")}`,
+      priority: 2,
+      relevance,
+    });
   }
-  items.push({ ...base, id: "world:environment", type: "world-environment", text: [`Time of day: ${world.timeOfDay}`, `Weather: ${world.weather ?? "unknown"}`].join("\n"), priority: 3, relevance: Math.min(relevance, 0.8) });
+  items.push({
+    ...base,
+    id: "world:environment",
+    type: "world-environment",
+    text: [
+      `Time of day: ${world.timeOfDay}`,
+      `Weather: ${world.weather ?? "unknown"}`,
+    ].join("\n"),
+    priority: 3,
+    relevance: Math.min(relevance, 0.8),
+  });
   if (world.inaccessibleAreas.length > 0) {
-    items.push({ ...base, id: "world:inaccessible", type: "world-inaccessible", text: `Inaccessible areas: ${world.inaccessibleAreas.join("; ")}`, priority: 3, relevance: Math.min(relevance, 0.75) });
+    items.push({
+      ...base,
+      id: "world:inaccessible",
+      type: "world-inaccessible",
+      text: `Inaccessible areas: ${world.inaccessibleAreas.join("; ")}`,
+      priority: 3,
+      relevance: Math.min(relevance, 0.75),
+    });
   }
   return items;
 }
