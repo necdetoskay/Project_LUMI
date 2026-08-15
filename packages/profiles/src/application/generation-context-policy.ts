@@ -10,11 +10,7 @@ export type GenerationContextSection =
   | "recent_story_state"
   | "relevant_memories";
 
-export type GenerationContextPriority =
-  | "required"
-  | "high"
-  | "medium"
-  | "low";
+export type GenerationContextPriority = "required" | "high" | "medium" | "low";
 
 export interface GenerationContextSectionPolicy {
   section: GenerationContextSection;
