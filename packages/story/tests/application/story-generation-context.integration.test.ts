@@ -1,4 +1,7 @@
-import type { ContextManifest, StoryGenerationContextComposer } from "@lumi/context";
+import type {
+  ContextManifest,
+  StoryGenerationContextComposer,
+} from "@lumi/context";
 import { describe, expect, it, vi } from "vitest";
 
 import { StorySceneGenerationService } from "../../src/application/story-scene-generation.service";
@@ -126,28 +129,32 @@ describe("story generation canonical context integration", () => {
   it("injects assembled memory/world/policy context into the real LLM call", async () => {
     const manifest = makeManifest();
     const build = vi.fn().mockResolvedValue(manifest);
-    const contextComposer = { build } as unknown as StoryGenerationContextComposer;
+    const contextComposer = {
+      build,
+    } as unknown as StoryGenerationContextComposer;
     const caller = vi.fn().mockResolvedValue({
       model: "test-model",
       content: JSON.stringify({
         sceneId: "scene-context-1",
         setting: "Kristal magara girisi",
         characters: ["Lumi"],
-        narrative: "Lumi eski anahtari hatirladi ve kapali kuzey gecidinden uzak durdu.",
+        narrative:
+          "Lumi eski anahtari hatirladi ve kapali kuzey gecidinden uzak durdu.",
         moment: "Lumi dikkatli ve merakliydi.",
         nextPrompt: null,
         usedContinuityKeys: [],
       }),
     });
 
-    const result = await new StorySceneGenerationService().generateSceneFromHook({
-      hook: makeHook(),
-      settingsPort,
-      contextComposer,
-      characterId: "character-1",
-      sceneFocus: "Kristal magaradaki mavi isigin kaynagini arastir.",
-      callOpenRouter: caller,
-    });
+    const result =
+      await new StorySceneGenerationService().generateSceneFromHook({
+        hook: makeHook(),
+        settingsPort,
+        contextComposer,
+        characterId: "character-1",
+        sceneFocus: "Kristal magaradaki mavi isigin kaynagini arastir.",
+        callOpenRouter: caller,
+      });
 
     expect(build).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -159,8 +166,9 @@ describe("story generation canonical context integration", () => {
       }),
     );
 
-    const prompt = (caller.mock.calls[0]?.[1] as { messages: { content: string }[] })
-      .messages[1]?.content;
+    const prompt = (
+      caller.mock.calls[0]?.[1] as { messages: { content: string }[] }
+    ).messages[1]?.content;
     expect(prompt).toContain(
       "Lumi daha once kristal magarada Mira ile parlayan bir anahtar buldu.",
     );
@@ -175,7 +183,9 @@ describe("story generation canonical context integration", () => {
   it("assembles context once and reuses the same manifest across LLM retries", async () => {
     const manifest = makeManifest();
     const build = vi.fn().mockResolvedValue(manifest);
-    const contextComposer = { build } as unknown as StoryGenerationContextComposer;
+    const contextComposer = {
+      build,
+    } as unknown as StoryGenerationContextComposer;
     const caller = vi
       .fn()
       .mockResolvedValueOnce({ model: "test-model", content: "invalid-json" })
@@ -192,21 +202,24 @@ describe("story generation canonical context integration", () => {
         }),
       });
 
-    const result = await new StorySceneGenerationService().generateSceneFromHook({
-      hook: makeHook(),
-      settingsPort,
-      contextComposer,
-      characterId: "character-1",
-      callOpenRouter: caller,
-      maxAttempts: 2,
-    });
+    const result =
+      await new StorySceneGenerationService().generateSceneFromHook({
+        hook: makeHook(),
+        settingsPort,
+        contextComposer,
+        characterId: "character-1",
+        callOpenRouter: caller,
+        maxAttempts: 2,
+      });
 
     expect(build).toHaveBeenCalledTimes(1);
     expect(caller).toHaveBeenCalledTimes(2);
-    const firstPrompt = (caller.mock.calls[0]?.[1] as { messages: { content: string }[] })
-      .messages[1]?.content;
-    const secondPrompt = (caller.mock.calls[1]?.[1] as { messages: { content: string }[] })
-      .messages[1]?.content;
+    const firstPrompt = (
+      caller.mock.calls[0]?.[1] as { messages: { content: string }[] }
+    ).messages[1]?.content;
+    const secondPrompt = (
+      caller.mock.calls[1]?.[1] as { messages: { content: string }[] }
+    ).messages[1]?.content;
     expect(firstPrompt).toContain("ctx-hash-123");
     expect(secondPrompt).toContain("ctx-hash-123");
     expect(result.contextManifest?.contentHash).toBe("ctx-hash-123");

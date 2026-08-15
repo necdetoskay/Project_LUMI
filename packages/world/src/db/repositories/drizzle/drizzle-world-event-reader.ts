@@ -20,7 +20,10 @@ export interface WorldEventReadRecord {
 export class DrizzleWorldEventReader {
   constructor(private readonly db: QueryExecutor) {}
 
-  async listRecent(worldId: string, limit: number): Promise<WorldEventReadRecord[]> {
+  async listRecent(
+    worldId: string,
+    limit: number,
+  ): Promise<WorldEventReadRecord[]> {
     if (limit <= 0) return [];
 
     const rows = await this.db

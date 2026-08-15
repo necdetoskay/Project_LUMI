@@ -23,7 +23,9 @@ export interface StoryScenePromptInput {
   generationContext?: ContextManifest | null;
 }
 
-export function renderGenerationContext(manifest?: ContextManifest | null): string {
+export function renderGenerationContext(
+  manifest?: ContextManifest | null,
+): string {
   if (!manifest) return "";
 
   const sections = manifest.sections
