@@ -188,7 +188,8 @@ export async function persistGeneratedSceneAndAdvance(
           attempt,
           contextContentHash: contextManifest.contentHash,
           contextManifest,
-          inspectorProjection: createContextInspectorProjection(contextManifest),
+          inspectorProjection:
+            createContextInspectorProjection(contextManifest),
           schemaVersion: 1,
         });
       }
