@@ -16,3 +16,7 @@ export {
   type WorldEventReader,
   type WorldEventRecord,
 } from "./world-event-retrieval.adapter";
+export {
+  RetrievalLongTermMemorySource,
+  RetrievalWorldEventSource,
+} from "./retrieval-context-sources.adapter";
