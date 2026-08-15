@@ -113,7 +113,7 @@ export async function generateHookReaderTurn(
   const decisionContext = new PersistedCharacterDecisionContextAdapter();
 
   const workingStory: WorkingStoryItem = {
-    mode: session.mode,
+    mode: session.playbackMode,
     sceneGoal: `Resolve accepted story hook ${hook.id} (${hook.hookType}) within the current session.`,
     worldFacts: [],
     activeCharacterContexts: characterId
