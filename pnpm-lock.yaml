@@ -48,6 +48,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lumi/context':
+        specifier: workspace:*
+        version: link:../../packages/context
       '@lumi/logger':
         specifier: workspace:*
         version: link:../../packages/logger
