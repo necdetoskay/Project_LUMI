@@ -22,6 +22,7 @@ import {
   storyWorldVersions,
   storyOutbox,
   storyHooks,
+  storyGenerationInspections,
 } from "../../schema/story";
 import type {
   NewStoryDefinitionRecord,
@@ -43,6 +44,7 @@ import type {
   NewStoryWorldVersionRecord,
   NewStoryOutboxRecord,
   NewStoryHookRecord,
+  NewStoryGenerationInspectionRecord,
   StoryOutboxRecord,
 } from "../../schema/story";
 
@@ -74,7 +76,8 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyDefinitions)
-      .where(eq(storyDefinitions.householdId, householdId));
+      .where(eq(storyDefinitions.householdId, householdId))
+      .orderBy(desc(storyDefinitions.createdAt));
   }
 
   async updateDefinition(
@@ -98,7 +101,10 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row!;
   }
 
-  async findVersionById(tx: { select: QueryExecutor["select"] }, id: string) {
+  async findVersionById(
+    tx: { select: QueryExecutor["select"] },
+    id: string,
+  ) {
     const [row] = await tx
       .select()
       .from(storyVersions)
@@ -115,7 +121,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyVersions)
       .where(eq(storyVersions.storyDefinitionId, storyDefinitionId))
-      .orderBy(storyVersions.versionNumber);
+      .orderBy(desc(storyVersions.versionNumber));
   }
 
   async findVersionByDefinitionAndNumber(
@@ -146,7 +152,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .where(
         and(
           eq(storyVersions.storyDefinitionId, storyDefinitionId),
-          eq(storyVersions.publicationStatus, "published"),
+          eq(storyVersions.status, "published"),
         ),
       )
       .orderBy(desc(storyVersions.versionNumber))
@@ -186,7 +192,10 @@ export class DrizzleStoryRepository implements StoryRepository {
       .orderBy(storyScenes.sequenceNumber);
   }
 
-  async findSceneById(tx: { select: QueryExecutor["select"] }, id: string) {
+  async findSceneById(
+    tx: { select: QueryExecutor["select"] },
+    id: string,
+  ) {
     const [row] = await tx
       .select()
       .from(storyScenes)
@@ -243,8 +252,7 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyChoicePoints)
-      .where(eq(storyChoicePoints.sceneId, sceneId))
-      .orderBy(storyChoicePoints.sequenceNumber);
+      .where(eq(storyChoicePoints.storySceneId, sceneId));
   }
 
   async findChoicePointsByVersion(
@@ -254,8 +262,7 @@ export class DrizzleStoryRepository implements StoryRepository {
     return tx
       .select()
       .from(storyChoicePoints)
-      .where(eq(storyChoicePoints.storyVersionId, storyVersionId))
-      .orderBy(storyChoicePoints.sequenceNumber);
+      .where(eq(storyChoicePoints.storyVersionId, storyVersionId));
   }
 
   async createChoiceOption(
@@ -286,7 +293,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyChoiceOptions)
       .where(eq(storyChoiceOptions.choicePointId, choicePointId))
-      .orderBy(storyChoiceOptions.sequenceNumber);
+      .orderBy(storyChoiceOptions.optionOrder);
   }
 
   async createCommittedChoice(
@@ -326,7 +333,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyCommittedChoices)
       .where(eq(storyCommittedChoices.storySessionId, storySessionId))
-      .orderBy(storyCommittedChoices.committedAt);
+      .orderBy(storyCommittedChoices.createdAt);
   }
 
   async createChoiceConsequence(
@@ -348,7 +355,7 @@ export class DrizzleStoryRepository implements StoryRepository {
       .select()
       .from(storyChoiceConsequences)
       .where(eq(storyChoiceConsequences.storySessionId, storySessionId))
-      .orderBy(storyChoiceConsequences.sequenceNumber);
+      .orderBy(storyChoiceConsequences.createdAt);
   }
 
   async createOutcomeCandidate(
@@ -383,7 +390,10 @@ export class DrizzleStoryRepository implements StoryRepository {
     return row!;
   }
 
-  async findSessionById(tx: { select: QueryExecutor["select"] }, id: string) {
+  async findSessionById(
+    tx: { select: QueryExecutor["select"] },
+    id: string,
+  ) {
     const [row] = await tx
       .select()
       .from(storySessions)
@@ -744,5 +754,40 @@ export class DrizzleStoryRepository implements StoryRepository {
       .where(eq(storyHooks.opportunityId, opportunityId))
       .limit(1);
     return row;
+  }
+
+  async createGenerationInspection(
+    tx: { insert: QueryExecutor["insert"] },
+    data: NewStoryGenerationInspectionRecord,
+  ) {
+    const [row] = await tx
+      .insert(storyGenerationInspections)
+      .values(data)
+      .returning();
+    return row!;
+  }
+
+  async findGenerationInspectionByScene(
+    tx: { select: QueryExecutor["select"] },
+    generatedSceneId: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(storyGenerationInspections)
+      .where(eq(storyGenerationInspections.generatedSceneId, generatedSceneId))
+      .orderBy(desc(storyGenerationInspections.createdAt))
+      .limit(1);
+    return row;
+  }
+
+  async findGenerationInspectionsBySession(
+    tx: { select: QueryExecutor["select"] },
+    storySessionId: string,
+  ) {
+    return tx
+      .select()
+      .from(storyGenerationInspections)
+      .where(eq(storyGenerationInspections.storySessionId, storySessionId))
+      .orderBy(storyGenerationInspections.createdAt);
   }
 }
