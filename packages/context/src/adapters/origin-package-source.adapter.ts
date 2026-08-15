@@ -36,27 +36,38 @@ export class PersistedOriginPackageSource implements OriginPackageSource {
       request.householdId,
     );
 
-    if (!record) return { items: [] };
+    if (!record) return { items: [], sourceRelevance: 0 };
     if (
       record.householdId !== request.householdId ||
       record.childProfileId !== request.childProfileId
     ) {
-      return { items: [] };
+      return { items: [], sourceRelevance: 0 };
     }
+
+    const content: OriginPackageItem = {
+      originType: record.originConcept,
+      dominantVectors: [...record.toneVector, ...record.noveltyMarkers],
+      startingHome: `${record.startingLocation} — ${record.homeArchetype}`,
+      nearbyNpcSeeds: [record.nearbyNpcSeed],
+      firstMystery: record.firstMysterySeed,
+    };
 
     return {
       items: [
         {
-          originConcept: record.originConcept,
-          startingLocation: record.startingLocation,
-          homeArchetype: record.homeArchetype,
-          nearbyNpcSeed: record.nearbyNpcSeed,
-          firstMysterySeed: record.firstMysterySeed,
-          universeSeed: record.universeSeed,
-          toneVector: [...record.toneVector],
-          noveltyMarkers: [...record.noveltyMarkers],
+          id: `origin-package:${record.childProfileId}`,
+          type: "origin-package",
+          content,
+          text: JSON.stringify({ ...content, universeSeed: record.universeSeed }),
+          sourceEngine: "profiles/accepted-origin-package",
+          authority: 0.95,
+          confidence: 1,
+          scope: "world_truth",
+          priority: 2,
+          relevance: 1,
         },
       ],
+      sourceRelevance: 1,
     };
   }
 }
