@@ -113,17 +113,28 @@ export async function generateHookReaderTurn(
   const decisionContext = new PersistedCharacterDecisionContextAdapter();
 
   const workingStory: WorkingStoryItem = {
+    mode: session.mode,
     sceneGoal: `Resolve accepted story hook ${hook.id} (${hook.hookType}) within the current session.`,
     worldFacts: [],
-    activeCharacters: characterId
-      ? [{ characterId, role: "focal-character", currentIntent: null }]
+    activeCharacterContexts: characterId
+      ? [
+          {
+            characterId,
+            currentState: [],
+            activeGoal: "",
+            relevantMemories: [],
+            relationshipNotes: [],
+            beliefNotes: [],
+            behaviorGuidance: [],
+          },
+        ]
       : [],
-    knownFacts: [],
+    playerKnownFacts: [],
     hiddenFacts: [],
     pendingEvents: [hook.hookType],
     fixedDecisions: [],
     mustInclude: [],
-    mustExclude: [],
+    mustNotInclude: [],
     tone: "",
     ageGuidance: [],
   };
