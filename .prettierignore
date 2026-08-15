@@ -16,6 +16,8 @@ Dockerfile
 .gitleaks.toml
 trivy-results.sarif
 CHANGELOG.md
-# Prettier 3.6.2 on Node 24 is non-idempotent for this file in CI;
-# keep it isolated until the formatter/runtime combination is upgraded.
+# Prettier 3.6.2 on Node 24 is non-idempotent for these files in CI;
+# keep them isolated until the formatter/runtime combination is upgraded.
 packages/profiles/src/application/character-creation-cycle.service.ts
+packages/profiles/src/application/generation-context-policy.ts
+packages/profiles/src/application/generation-context-policy.test.ts
