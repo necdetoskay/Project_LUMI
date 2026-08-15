@@ -31,3 +31,8 @@ export {
   type WorkingStorySnapshotReader,
   type EmotionalStateSnapshotReader,
 } from "./request-snapshot-context-sources.adapter";
+export {
+  PersistedOriginPackageSource,
+  type AcceptedOriginPackageReader,
+  type AcceptedOriginPackageRecord,
+} from "./origin-package-source.adapter";
