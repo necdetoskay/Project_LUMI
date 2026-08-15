@@ -12,8 +12,9 @@ import { DEFAULT_SAFETY_BASELINE } from "../policy";
 
 export class SystemSafetyPolicySource implements SafetyPolicySource {
   async fetch(
-    _request: ContextRequest,
+    request: ContextRequest,
   ): Promise<ContextSourceResult<SafetyPolicyItem>> {
+    void request;
     const content: SafetyPolicyItem = {
       contentBoundary: DEFAULT_SAFETY_BASELINE.contentBoundary,
       requireParentApprovalForAi:
@@ -55,8 +56,9 @@ export class SystemSafetyPolicySource implements SafetyPolicySource {
  */
 export class NoPersistedParentPolicySource implements ParentPolicySource {
   async fetch(
-    _request: ContextRequest,
+    request: ContextRequest,
   ): Promise<ContextSourceResult<ParentPolicyItem>> {
+    void request;
     return { items: [], sourceRelevance: 0 };
   }
 }
@@ -68,8 +70,9 @@ export class NoPersistedParentPolicySource implements ParentPolicySource {
  */
 export class NoCanonicalKnowledgeSource implements KnowledgeSource {
   async fetch(
-    _request: ContextRequest,
+    request: ContextRequest,
   ): Promise<ContextSourceResult<KnowledgeItem>> {
+    void request;
     return { items: [], sourceRelevance: 0 };
   }
 }
