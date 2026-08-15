@@ -24,7 +24,9 @@ describe("retrieval contracts", () => {
     expect(
       normalizeRetrievalCandidates(candidates, 10).map((item) => item.stableId),
     ).toEqual(["memory:1", "event:2"]);
-    expect(normalizeRetrievalCandidates(candidates, 10)[0]?.relevance).toBe(0.9);
+    expect(normalizeRetrievalCandidates(candidates, 10)[0]?.relevance).toBe(
+      0.9,
+    );
   });
 
   it("clamps relevance, drops invalid candidates and returns deterministic ordering", () => {

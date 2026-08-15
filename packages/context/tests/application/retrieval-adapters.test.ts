@@ -54,13 +54,13 @@ describe("CanonicalMemoryRetrievalAdapter", () => {
     );
     expect(result.candidates[0]).toMatchObject({
       stableId: "memory:m1",
-      relevance: 0.72,
       provenance: {
         sourceKind: "memory",
         sourceId: "outcome-1",
         authority: "npc-intelligence/canonical-memory",
       },
     });
+    expect(result.candidates[0]?.relevance).toBeCloseTo(0.72, 10);
   });
 
   it("defensively rejects cross-scope records returned by an authority", async () => {

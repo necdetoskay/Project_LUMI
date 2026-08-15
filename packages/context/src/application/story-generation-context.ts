@@ -1,12 +1,5 @@
-import {
-  ContextBuilder,
-  type ContextBuilderDeps,
-} from "./context-builder";
-import type {
-  ContextManifest,
-  ContextRequest,
-  TokenBudget,
-} from "../ports";
+import { ContextBuilder, type ContextBuilderDeps } from "./context-builder";
+import type { ContextManifest, ContextRequest, TokenBudget } from "../ports";
 
 /**
  * Canonical prompt-context budget for story generation.
@@ -42,7 +35,9 @@ export class StoryGenerationContextComposer {
   private readonly builder: ContextBuilder;
 
   constructor(deps: ContextBuilderDeps) {
-    this.builder = new ContextBuilder(deps, { ...STORY_GENERATION_TOKEN_BUDGET });
+    this.builder = new ContextBuilder(deps, {
+      ...STORY_GENERATION_TOKEN_BUDGET,
+    });
   }
 
   build(request: StoryGenerationContextRequest): Promise<ContextManifest> {
