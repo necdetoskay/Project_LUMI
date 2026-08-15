@@ -31,18 +31,28 @@ beforeEach(() => {
     locale: "tr-TR",
   } as Awaited<ReturnType<typeof findChildProfileForUser>>);
   getPersonalization.mockResolvedValue({
+    childProfileId: "child-1",
     interests: ["space", "animals"],
     customInterests: ["crystals"],
     developmentGoals: ["curiosity"],
-  } as Awaited<ReturnType<typeof getChildPersonalization>>);
+  });
+  const now = new Date("2026-08-15T00:00:00.000Z");
   getCycle.mockResolvedValue({
     id: "cycle-1",
+    childProfileId: "child-1",
+    householdId: "household-1",
+    status: "active",
     startDirection: "world_first",
+    currentStep: "world_feeling",
     latestSummary: {
       worldFeeling: "crystal_caves",
       characterArchetype: "curious_explorer",
     },
-  } as Awaited<ReturnType<typeof getActiveCharacterCreationCycle>>);
+    completedAt: null,
+    abandonedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  });
 });
 
 describe("generation context behavior", () => {
