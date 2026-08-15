@@ -58,7 +58,10 @@ export class PersistedOriginPackageSource implements OriginPackageSource {
           id: `origin-package:${record.childProfileId}`,
           type: "origin-package",
           content,
-          text: JSON.stringify({ ...content, universeSeed: record.universeSeed }),
+          text: JSON.stringify({
+            ...content,
+            universeSeed: record.universeSeed,
+          }),
           sourceEngine: "profiles/accepted-origin-package",
           authority: 0.95,
           confidence: 1,
