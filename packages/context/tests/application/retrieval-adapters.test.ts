@@ -18,22 +18,24 @@ const baseQuery: RetrievalQuery = {
 
 describe("CanonicalMemoryRetrievalAdapter", () => {
   it("uses bounded authority retrieval and preserves provenance", async () => {
-    const listRelevant = vi.fn<CanonicalMemoryReader["listRelevant"]>().mockResolvedValue([
-      {
-        id: "m1",
-        householdId: "house-1",
-        worldId: "world-1",
-        childProfileId: "child-1",
-        ownerType: "profile",
-        ownerId: "child-1",
-        summary: "The child discovered the crystal cave.",
-        salience: 0.9,
-        confidence: 0.8,
-        sourceType: "story_outcome",
-        sourceId: "outcome-1",
-        createdAt: new Date("2026-08-01T10:00:00Z"),
-      },
-    ]);
+    const listRelevant = vi
+      .fn<CanonicalMemoryReader["listRelevant"]>()
+      .mockResolvedValue([
+        {
+          id: "m1",
+          householdId: "house-1",
+          worldId: "world-1",
+          childProfileId: "child-1",
+          ownerType: "profile",
+          ownerId: "child-1",
+          summary: "The child discovered the crystal cave.",
+          salience: 0.9,
+          confidence: 0.8,
+          sourceType: "story_outcome",
+          sourceId: "outcome-1",
+          createdAt: new Date("2026-08-01T10:00:00Z"),
+        },
+      ]);
     const adapter = new CanonicalMemoryRetrievalAdapter(
       { listRelevant },
       () => new Date("2026-08-15T10:00:00Z"),
@@ -81,7 +83,9 @@ describe("CanonicalMemoryRetrievalAdapter", () => {
       ],
     };
 
-    const result = await new CanonicalMemoryRetrievalAdapter(reader).retrieve(baseQuery);
+    const result = await new CanonicalMemoryRetrievalAdapter(reader).retrieve(
+      baseQuery,
+    );
     expect(result.candidates).toEqual([]);
   });
 });
@@ -111,7 +115,9 @@ describe("WorldEventRetrievalAdapter", () => {
       ],
     };
 
-    const result = await new WorldEventRetrievalAdapter(reader).retrieve(baseQuery);
+    const result = await new WorldEventRetrievalAdapter(reader).retrieve(
+      baseQuery,
+    );
 
     expect(result.candidates).toHaveLength(1);
     expect(result.candidates[0]).toMatchObject({
