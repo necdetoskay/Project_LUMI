@@ -80,5 +80,7 @@ function summarizeEvent(event: WorldEventRecord): string {
     .slice(0, 4)
     .map(([key, value]) => `${key}=${String(value)}`)
     .join(", ");
-  return payloadSummary ? `${event.eventType}: ${payloadSummary}` : event.eventType;
+  return payloadSummary
+    ? `${event.eventType}: ${payloadSummary}`
+    : event.eventType;
 }
