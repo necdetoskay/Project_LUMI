@@ -34,14 +34,14 @@ beforeEach(() => {
     childProfileId: "child-1",
     interests: ["space", "animals"],
     customInterests: ["crystals"],
-    developmentGoals: ["curiosity"],
+    developmentGoals: ["problem_solving"],
   });
   const now = new Date("2026-08-15T00:00:00.000Z");
   getCycle.mockResolvedValue({
     id: "cycle-1",
     childProfileId: "child-1",
     householdId: "household-1",
-    status: "active",
+    status: "draft",
     startDirection: "world_first",
     currentStep: "world_feeling",
     latestSummary: {
@@ -72,7 +72,7 @@ describe("generation context behavior", () => {
       locale: "tr-TR",
       interests: ["space", "animals"],
       customInterests: ["crystals"],
-      developmentGoals: ["curiosity"],
+      developmentGoals: ["problem_solving"],
     });
     expect(context.creation.previousSelections).toEqual({
       worldFeeling: "crystal_caves",
@@ -110,7 +110,7 @@ describe("generation context behavior", () => {
       child_personalization: {
         interests: ["space", "animals"],
         customInterests: ["crystals"],
-        developmentGoals: ["curiosity"],
+        developmentGoals: ["problem_solving"],
       },
       character_state: null,
     });
