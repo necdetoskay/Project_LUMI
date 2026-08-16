@@ -10,6 +10,11 @@ on:
   schedule:
     # Nightly production-path confidence check. Paid LLM calls stay isolated from normal PR CI.
     - cron: "37 2 * * *"
+  push:
+    branches:
+      - agent/onboarding-m8-ci-ultef
+    paths:
+      - .github/workflows/onboarding-live-e2e.yml
 
 permissions:
   contents: read
