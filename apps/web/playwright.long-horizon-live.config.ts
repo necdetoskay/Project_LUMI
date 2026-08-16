@@ -4,8 +4,7 @@ const liveEnabled = process.env.LUMI_LONG_HORIZON_LIVE === "1";
 const baseURL = process.env.LUMI_LONG_HORIZON_BASE_URL;
 const vercelAutomationBypassSecret =
   process.env.LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET;
-const vercelShareSecret =
-  process.env.LUMI_LONG_HORIZON_VERCEL_SHARE_SECRET;
+const vercelShareSecret = process.env.LUMI_LONG_HORIZON_VERCEL_SHARE_SECRET;
 const storageStatePath =
   process.env.LUMI_LONG_HORIZON_STORAGE_STATE_PATH ??
   "/tmp/lumi-long-horizon-vercel-share-storage.json";
