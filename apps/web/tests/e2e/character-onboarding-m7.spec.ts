@@ -109,6 +109,7 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     await page.getByTestId("continue-step").click();
 
     await expectStep(page, "character_identity");
+    await expect(page.getByTestId("generation-loading")).toBeVisible();
     await selectFirstCandidateAndContinue(page);
 
     await expectStep(page, "universe");
@@ -136,7 +137,9 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     // Leave the wizard and use browser Back. The persisted step must resume.
     await page.getByRole("link", { name: "Çocuk alanına dön" }).click();
     await expect(page).toHaveURL(
-      new RegExp(`/app/profiles/${childProfileId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+      new RegExp(
+        `/app/profiles/${childProfileId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+      ),
     );
     await page.goBack();
     await expectStep(page, "region");
@@ -170,9 +173,9 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
       new RegExp(`/app/profiles/${childProfileId}/characters/[0-9a-f-]+$`),
       { timeout: 30_000 },
     );
-    await expect(page.getByText("Luna Starwhisperer", { exact: false })).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(
+      page.getByRole("heading", { name: "Luna Starwhisperer", exact: true }),
+    ).toBeVisible({ timeout: 30_000 });
 
     // The draft cycle must be gone after final commit.
     const cycle = await context.request.get(
