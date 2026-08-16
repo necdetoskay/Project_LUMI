@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   createSeededRandom,
   formatRunSummary,
+  initializeRunJson,
   loadLongHorizonRunConfig,
   normalizeEvidenceText,
   safePathname,
@@ -171,7 +172,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await writeRunJson(config, evidence);
     };
 
-    await writeRunJson(config, evidence);
+    await initializeRunJson(config, evidence);
 
     try {
       await loginThroughUi(page, config.parentEmail, config.parentPassword);
@@ -242,6 +243,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await page.getByTestId("continue-step").click();
 
       await expectStep(page, "character_identity");
+      await checkpoint("onboarding:character_identity:ready");
       await selectGeneratedCandidate(
         page,
         "character_identity",
@@ -251,6 +253,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       );
 
       await expectStep(page, "universe");
+      await checkpoint("onboarding:universe:ready");
       await clickRandomVisible(
         page
           .getByTestId("canonical-onboarding-step")
@@ -271,6 +274,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         "core_saga",
       ] as const) {
         await expectStep(page, generatedStep);
+        await checkpoint(`onboarding:${generatedStep}:ready`);
         await selectGeneratedCandidate(
           page,
           generatedStep,
