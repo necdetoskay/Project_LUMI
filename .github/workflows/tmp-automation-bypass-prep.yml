@@ -1,0 +1,34 @@
+name: Temporary Automation Bypass Prep
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-fix-prep
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm exec prettier --check apps/web/playwright.long-horizon-live.config.ts apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts apps/web/app/app/profiles/[childProfileId]/child-dashboard-client-page.tsx
+
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
