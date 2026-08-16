@@ -115,4 +115,4 @@ if (summaryPath) {
   );
 }
 
-console.log(`Onboarding live evidence written to ${reportPath}`);
+console.warn(`Onboarding live evidence written to ${reportPath}`);
