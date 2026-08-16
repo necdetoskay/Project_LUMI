@@ -1,0 +1,29 @@
+version: 1
+project_id: lumi
+project_name: Project LUMI
+project_repository: necdetoskay/Project_LUMI
+radar:
+  repository: necdetoskay/technology-opportunity-radar
+  profile: projects/lumi/profile.yaml
+  project_record: projects/lumi/project.yaml
+  integration_standard: docs/project-integration-standard-v1.md
+  reassessment_standard: docs/project-reassessment-v1.md
+policy:
+  consult_before:
+    - new-dependency
+    - architecture-change
+    - llm-provider-or-model-change
+    - memory-or-context-design
+    - retrieval-or-rag-change
+    - evaluation-tooling
+    - security-tooling
+    - infrastructure-component
+  preserve_radar_references_in_proposals: true
+  allow_auto_issue: false
+  allow_auto_pr: false
+reassessment:
+  enabled: true
+  mode: nightly-semantic-rematch
+  reports_path: reports/project-reassessment/lumi
+  rescore_all_durable_records: true
+  reopen_external_sources_only_for_promoted_candidates: true
