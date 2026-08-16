@@ -19,6 +19,25 @@ export interface RecordedSelection {
   availableLabels: string[];
 }
 
+export type RecordedStorySource =
+  | "world_event"
+  | "npc_call"
+  | "inventory_item"
+  | "rumor";
+
+export interface RecordedStoryEvidence {
+  sequence: number;
+  sourceFamily: RecordedStorySource;
+  sourceLabel: string;
+  sourceTitle: string;
+  sourceTeaser: string;
+  sceneTitle: string;
+  narrative: string;
+  narrativeLength: number;
+  durationMs: number;
+  readerPath: string;
+}
+
 export interface LongHorizonRunFailure {
   phase: string;
   name: string;
@@ -40,7 +59,13 @@ export interface LongHorizonRunEvidence {
   characterDetailPath?: string;
   lastPathname?: string;
   selections: RecordedSelection[];
+  stories?: RecordedStoryEvidence[];
   finalReview?: string;
+  finalWorldState?: string;
+  finalCharacterState?: string;
+  finalInventoryState?: string;
+  finalNpcState?: string;
+  finalRelationshipState?: string;
   failure?: LongHorizonRunFailure;
 }
 
@@ -143,12 +168,24 @@ export function formatRunSummary(evidence: LongHorizonRunEvidence): string {
         )
         .join("\n")
     : "- No onboarding selection was committed before the run stopped.";
+  const storyLines = evidence.stories?.length
+    ? evidence.stories
+        .map(
+          (story) =>
+            `- Story ${story.sequence}: ${story.sourceFamily} · ${story.sourceTitle} · ${story.narrativeLength} chars · ${story.durationMs} ms`,
+        )
+        .join("\n")
+    : "- No completed generated story was recorded.";
 
   const failureSection = evidence.failure
     ? `\n## Failure\n\n- Phase: ${evidence.failure.phase}\n- Type: ${evidence.failure.name}\n- Message: ${evidence.failure.message}\n`
     : "";
 
-  return `# LUMI Long-Horizon Run ${evidence.runId}\n\n- Status: ${evidence.status}\n- Current phase: ${evidence.phase}\n- Child age: ${evidence.childAge}\n- Child label: ${evidence.childDisplayName}\n- RNG seed: ${evidence.rngSeed}\n- Child profile id: ${evidence.childProfileId ?? "not-created"}\n- Character id: ${evidence.characterId ?? "not-committed"}\n- Character path: ${evidence.characterDetailPath ?? "not-committed"}\n- Persistent data cleanup: disabled by contract\n\n## Random visible selections\n\n${selectionLines}${failureSection}\nNext stage after this slice: three direct stories, then two inventory-item and two rumor stories.`;
+  return `# LUMI Long-Horizon Run ${evidence.runId}\n\n- Status: ${evidence.status}\n- Current phase: ${evidence.phase}\n- Child age: ${evidence.childAge}\n- Child label: ${evidence.childDisplayName}\n- RNG seed: ${evidence.rngSeed}\n- Child profile id: ${evidence.childProfileId ?? "not-created"}\n- Character id: ${evidence.characterId ?? "not-committed"}\n- Character path: ${evidence.characterDetailPath ?? "not-committed"}\n- Persistent data cleanup: disabled by contract\n\n## Random visible onboarding selections\n\n${selectionLines}\n\n## Generated stories\n\n${storyLines}${failureSection}`;
+}
+
+export function formatStoryMarkdown(story: RecordedStoryEvidence): string {
+  return `# Story ${story.sequence}\n\n- Source family: ${story.sourceFamily}\n- Visible source label: ${story.sourceLabel}\n- Source title: ${story.sourceTitle}\n- Source teaser: ${story.sourceTeaser}\n- Scene title: ${story.sceneTitle}\n- Narrative characters: ${story.narrativeLength}\n- Generation/start duration: ${story.durationMs} ms\n- Reader path: ${story.readerPath}\n\n## Story text\n\n${story.narrative}`;
 }
 
 export async function ensureEvidenceDirectory(
