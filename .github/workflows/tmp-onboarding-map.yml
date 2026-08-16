@@ -18,6 +18,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Repair typed selection payloads
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('packages/profiles/src/application/character-foundation-onboarding.service.ts')
+          s=p.read_text()
+          s=s.replace('selectionPayload: input.suggestion,', 'selectionPayload: { ...input.suggestion },')
+          p.write_text(s)
+          PY
       - name: Format onboarding slice
         run: |
           pnpm exec prettier --write \
@@ -27,13 +37,13 @@ jobs:
             packages/profiles/src/application/character-origin-suggestion.service.ts \
             packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
             apps/web/lib/character-onboarding/finalize-character-foundation.service.ts
-      - name: Commit formatting if needed
+      - name: Commit repairs if needed
         run: |
           if ! git diff --quiet; then
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
             git add .
-            git commit -m 'chore: format onboarding foundation slice'
+            git commit -m 'fix: type onboarding selection payloads'
             git push
           fi
       - name: Typecheck profiles
