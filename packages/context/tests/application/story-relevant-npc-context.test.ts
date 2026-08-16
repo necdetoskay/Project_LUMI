@@ -71,6 +71,7 @@ describe("story relevant NPC context", () => {
       (item) => item.name === "relevant-npc",
     );
     expect(section?.items).toHaveLength(1);
+    expect(section?.items[0]?.type).toBe("relevant-npc");
     expect(section?.items[0]?.text).toContain("Arin");
     expect(section?.tokensUsed).toBeLessThanOrEqual(390);
     expect(manifest.tokenUsage.allocatedTokens).toBe(5_200);
