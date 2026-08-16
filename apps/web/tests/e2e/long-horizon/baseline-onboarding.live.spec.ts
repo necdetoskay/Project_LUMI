@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   createSeededRandom,
   formatRunSummary,
+  formatStoryMarkdown,
   initializeRunJson,
   loadLongHorizonRunConfig,
   normalizeEvidenceText,
@@ -10,13 +11,39 @@ import {
   sanitizeFailure,
   type LongHorizonRunEvidence,
   type RecordedSelection,
+  type RecordedStoryEvidence,
+  type RecordedStorySource,
   writeMarkdown,
   writeRunJson,
 } from "./live-run-support";
 
 const GENERATED_STEP_TIMEOUT_MS = 180_000;
+const STORY_GENERATION_TIMEOUT_MS = 360_000;
+const MAX_CANDIDATE_ROTATIONS = 8;
+const STORY_MIN_CHARS = 1_500;
+const STORY_MAX_CHARS = 2_000;
 
 type EvidenceCheckpoint = (phase: string) => Promise<void>;
+
+type VisibleAdventureCandidate = {
+  sourceFamily: RecordedStorySource;
+  sourceLabel: string;
+  sourceTitle: string;
+  sourceTeaser: string;
+  key: string;
+  card: Locator;
+};
+
+const SOURCE_LABELS: Record<RecordedStorySource, string> = {
+  world_event: "Dünyada Bir Şey Oldu",
+  npc_call: "Birinden Gelen Çağrı",
+  inventory_item: "Çantandaki Bir Eşya",
+  rumor: "Bir Söylenti Duydun",
+};
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 async function optionLabel(option: Locator): Promise<string> {
   const heading = option.locator("h3").first();
@@ -144,14 +171,205 @@ function extractId(pathname: string, pattern: RegExp, label: string): string {
   return decodeURIComponent(match[1]);
 }
 
+async function openStoriesTab(page: Page): Promise<void> {
+  const storiesTab = page.getByRole("button", { name: "Hikâyeler", exact: true });
+  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
+  await storiesTab.click();
+  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+    timeout: 60_000,
+  });
+}
+
+async function visibleCandidateFromCard(
+  card: Locator,
+  sourceFamily: RecordedStorySource,
+): Promise<VisibleAdventureCandidate> {
+  const sourceLabel = SOURCE_LABELS[sourceFamily];
+  const sourceTitle = normalizeEvidenceText(
+    await card.locator("h3").first().innerText(),
+    300,
+  );
+  const sourceTeaser = normalizeEvidenceText(
+    await card.locator("p").first().innerText(),
+    800,
+  );
+  return {
+    sourceFamily,
+    sourceLabel,
+    sourceTitle,
+    sourceTeaser,
+    key: `${sourceFamily}:${sourceTitle}:${sourceTeaser}`,
+    card,
+  };
+}
+
+async function chooseVisibleAdventureCandidate(
+  page: Page,
+  desiredFamilies: RecordedStorySource[],
+  usedKeys: Set<string>,
+  requireDistinct: boolean,
+  random: () => number,
+): Promise<VisibleAdventureCandidate> {
+  const newAdventure = page.getByRole("button", { name: "Yeni Macera" });
+  await expect(newAdventure).toBeVisible({ timeout: 60_000 });
+  await newAdventure.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible({ timeout: 60_000 });
+
+  for (let rotation = 0; rotation <= MAX_CANDIDATE_ROTATIONS; rotation += 1) {
+    const cards = dialog.getByTestId("adventure-candidate");
+    await expect
+      .poll(async () => cards.count(), {
+        timeout: 60_000,
+        message: "New Adventure must expose visible candidate cards",
+      })
+      .toBeGreaterThan(0);
+
+    const matches: VisibleAdventureCandidate[] = [];
+    const count = await cards.count();
+    for (let index = 0; index < count; index += 1) {
+      const card = cards.nth(index);
+      if (!(await card.isVisible())) continue;
+      const text = await card.innerText();
+      for (const family of desiredFamilies) {
+        if (!text.includes(SOURCE_LABELS[family])) continue;
+        const candidate = await visibleCandidateFromCard(card, family);
+        if (!requireDistinct || !usedKeys.has(candidate.key)) {
+          matches.push(candidate);
+        }
+        break;
+      }
+    }
+
+    if (matches.length > 0) {
+      return matches[Math.floor(random() * matches.length)]!;
+    }
+
+    if (rotation < MAX_CANDIDATE_ROTATIONS) {
+      const refresh = dialog.getByRole("button", {
+        name: "Başka maceralar göster",
+      });
+      await expect(refresh).toBeEnabled();
+      await refresh.click();
+      await expect(refresh).toBeEnabled({ timeout: 60_000 });
+    }
+  }
+
+  const labels = desiredFamilies.map((family) => SOURCE_LABELS[family]).join(", ");
+  throw new Error(
+    `LONG_HORIZON_PREREQUISITE_FAILED: expected a visible ${labels} candidate after ${MAX_CANDIDATE_ROTATIONS + 1} UI candidate pages`,
+  );
+}
+
+async function startAndCompleteStory(
+  page: Page,
+  input: {
+    sequence: number;
+    desiredFamilies: RecordedStorySource[];
+    usedKeys: Set<string>;
+    requireDistinct: boolean;
+    random: () => number;
+    checkpoint: EvidenceCheckpoint;
+  },
+): Promise<RecordedStoryEvidence> {
+  await input.checkpoint(`story:${input.sequence}:selecting-source`);
+  const candidate = await chooseVisibleAdventureCandidate(
+    page,
+    input.desiredFamilies,
+    input.usedKeys,
+    input.requireDistinct,
+    input.random,
+  );
+  if (input.requireDistinct) input.usedKeys.add(candidate.key);
+
+  const startedAt = Date.now();
+  const cta = candidate.card.getByRole("button");
+  await expect(cta).toBeEnabled();
+  await cta.click();
+
+  await expect(page).toHaveURL(/\/app\/stories\/[^/?#]+\/?$/, {
+    timeout: STORY_GENERATION_TIMEOUT_MS,
+  });
+  await input.checkpoint(`story:${input.sequence}:reader-opened`);
+
+  const narrativeLocator = page.getByTestId("story-narrative");
+  await expect(narrativeLocator).toBeVisible({
+    timeout: STORY_GENERATION_TIMEOUT_MS,
+  });
+  const narrative = (await narrativeLocator.innerText()).trim();
+  const sceneTitle = normalizeEvidenceText(
+    await page.getByTestId("story-scene-title").innerText(),
+    300,
+  );
+
+  expect(
+    narrative.length,
+    `Story ${input.sequence} must be produced by the application in the ${STORY_MIN_CHARS}-${STORY_MAX_CHARS} character target`,
+  ).toBeGreaterThanOrEqual(STORY_MIN_CHARS);
+  expect(narrative.length).toBeLessThanOrEqual(STORY_MAX_CHARS);
+
+  const visibleChoices = page.getByTestId("story-choice-option");
+  expect(
+    await visibleChoices.count(),
+    "Long-horizon short-story generation should render one complete generated narrative, not a hidden multi-step fixture graph",
+  ).toBe(0);
+
+  const complete = page.getByTestId("complete-story");
+  await expect(complete).toBeVisible({ timeout: 60_000 });
+  await complete.click();
+  await expect(page.getByText("Hikâye tamamlandı.", { exact: true })).toBeVisible({
+    timeout: 60_000,
+  });
+  const story: RecordedStoryEvidence = {
+    sequence: input.sequence,
+    sourceFamily: candidate.sourceFamily,
+    sourceLabel: candidate.sourceLabel,
+    sourceTitle: candidate.sourceTitle,
+    sourceTeaser: candidate.sourceTeaser,
+    sceneTitle,
+    narrative,
+    narrativeLength: narrative.length,
+    durationMs: Date.now() - startedAt,
+    readerPath: safePathname(page.url()),
+  };
+
+  await input.checkpoint(`story:${input.sequence}:completed`);
+  await page.getByRole("link", { name: "Hikâyelere dön" }).click();
+  await expect(page).toHaveURL(/\/app\/profiles\/[^/?#]+(?:\?tab=stories)?$/i, {
+    timeout: 60_000,
+  });
+  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+    timeout: 60_000,
+  });
+  return story;
+}
+
+function storyFilename(story: RecordedStoryEvidence): string {
+  if (story.sequence <= 3) {
+    return `0${story.sequence + 2}-story-0${story.sequence}.md`;
+  }
+  if (story.sourceFamily === "inventory_item") {
+    return `0${story.sequence + 2}-story-0${story.sequence}-item.md`;
+  }
+  return `0${story.sequence + 2}-story-0${story.sequence}-rumor.md`;
+}
+
+function extractRelationshipValue(text: string): number | null {
+  const match = text.match(/Yakınlık:\s*(-?\d+(?:\.\d+)?)/i);
+  if (!match?.[1]) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
 test.describe.serial("LUMI live long-horizon baseline", () => {
-  test("live login -> child creation -> randomized canonical onboarding -> evidence", async ({
+  test("UI-only child -> character -> 7 generated stories -> final living-world state", async ({
     page,
   }) => {
     const config = loadLongHorizonRunConfig();
     const random = createSeededRandom(config.rngSeed);
     const childDisplayName = `LUMI Test ${config.runId}`;
     const selections: RecordedSelection[] = [];
+    const stories: RecordedStoryEvidence[] = [];
     const evidence: LongHorizonRunEvidence = {
       formatVersion: 1,
       runId: config.runId,
@@ -162,6 +380,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       phase: "initializing",
       childDisplayName,
       selections,
+      stories,
     };
 
     let phase = evidence.phase;
@@ -212,9 +431,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         `# Child Profile\n\n- Run: ${config.runId}\n- Name: ${childDisplayName}\n- Exact age: ${config.childAge}\n- Child profile id: ${childProfileId}\n- RNG seed: ${config.rngSeed}\n- Creation path: browser UI only`,
       );
 
-      const profilesLink = page.locator('a[href="/app/profiles"]').first();
-      await expect(profilesLink).toBeVisible();
-      await profilesLink.click();
+      await page.getByRole("link", { name: "Çocuklar", exact: true }).click();
       await expect(page).toHaveURL(/\/app\/profiles(?:\?.*)?$/);
       const createdProfileCard = page
         .locator("#profile-container article")
@@ -223,9 +440,16 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await expect(createdProfileCard).toContainText(`${config.childAge} yaş`);
       await checkpoint("child-profile:verified");
 
-      await page.goto(
-        `/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard`,
+      await createdProfileCard.getByRole("link", { name: "Profili aç" }).click();
+      await expect(page).toHaveURL(
+        new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
+        { timeout: 60_000 },
       );
+      const createFirstCharacter = page.getByRole("link", {
+        name: /İlk karakteri oluştur|Karakter oluştur/,
+      });
+      await expect(createFirstCharacter.first()).toBeVisible({ timeout: 60_000 });
+      await createFirstCharacter.first().click();
       await expect(page).toHaveURL(/\/characters\/new\/wizard(?:\?.*)?$/);
       await expectStep(page, "character_type");
       await checkpoint("onboarding:character_type:ready");
@@ -316,10 +540,159 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       );
       evidence.characterId = characterId;
       evidence.characterDetailPath = characterDetailPath;
-      await expect(page.getByRole("heading").first()).toBeVisible();
+      await checkpoint("onboarding:committed");
+
+      await page.getByRole("link", { name: "Profil", exact: true }).click();
+      await expect(page).toHaveURL(
+        new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
+        { timeout: 60_000 },
+      );
+      await openStoriesTab(page);
+
+      const directKeys = new Set<string>();
+      for (let sequence = 1; sequence <= 3; sequence += 1) {
+        const story = await startAndCompleteStory(page, {
+          sequence,
+          desiredFamilies: ["world_event", "npc_call"],
+          usedKeys: directKeys,
+          requireDistinct: false,
+          random,
+          checkpoint,
+        });
+        stories.push(story);
+        await writeMarkdown(
+          config,
+          storyFilename(story),
+          formatStoryMarkdown(story),
+        );
+        await checkpoint(`story:${sequence}:evidence-saved`);
+      }
+
+      const itemKeys = new Set<string>();
+      for (let sequence = 4; sequence <= 5; sequence += 1) {
+        const story = await startAndCompleteStory(page, {
+          sequence,
+          desiredFamilies: ["inventory_item"],
+          usedKeys: itemKeys,
+          requireDistinct: true,
+          random,
+          checkpoint,
+        });
+        stories.push(story);
+        await writeMarkdown(
+          config,
+          storyFilename(story),
+          formatStoryMarkdown(story),
+        );
+        await checkpoint(`story:${sequence}:evidence-saved`);
+      }
+
+      const rumorKeys = new Set<string>();
+      for (let sequence = 6; sequence <= 7; sequence += 1) {
+        const story = await startAndCompleteStory(page, {
+          sequence,
+          desiredFamilies: ["rumor"],
+          usedKeys: rumorKeys,
+          requireDistinct: true,
+          random,
+          checkpoint,
+        });
+        stories.push(story);
+        await writeMarkdown(
+          config,
+          storyFilename(story),
+          formatStoryMarkdown(story),
+        );
+        await checkpoint(`story:${sequence}:evidence-saved`);
+      }
+
+      expect(stories).toHaveLength(7);
+      expect(
+        stories.filter((story) => story.sourceFamily === "inventory_item"),
+      ).toHaveLength(2);
+      expect(stories.filter((story) => story.sourceFamily === "rumor")).toHaveLength(2);
+
+      await page.getByRole("button", { name: "Karakterler", exact: true }).click();
+      const characterPanel = page.locator("main article").first();
+      await expect(characterPanel).toBeVisible({ timeout: 60_000 });
+      const finalCharacterState = (await characterPanel.innerText()).trim();
+      evidence.finalCharacterState = finalCharacterState;
+      await writeMarkdown(
+        config,
+        "11-final-character-state.md",
+        `# Final Character State\n\n${finalCharacterState}`,
+      );
+
+      const worldLink = page.getByRole("link", { name: /Dünyasını aç/ });
+      await expect(worldLink).toBeVisible();
+      await worldLink.click();
+      await expect(page).toHaveURL(/\/world(?:\?.*)?$/, { timeout: 60_000 });
+      const worldMain = page.locator("main").first();
+      await expect(worldMain).toBeVisible({ timeout: 60_000 });
+      const finalWorldState = (await worldMain.innerText()).trim();
+      evidence.finalWorldState = finalWorldState;
+      await writeMarkdown(
+        config,
+        "10-final-world-state.md",
+        `# Final World State\n\n${finalWorldState}`,
+      );
+
+      const inventoryHeading = page.getByRole("heading", { name: "Çanta" });
+      await expect(inventoryHeading).toBeVisible({ timeout: 60_000 });
+      const inventorySection = inventoryHeading.locator("xpath=ancestor::section[1]");
+      const finalInventoryState = (await inventorySection.innerText()).trim();
+      evidence.finalInventoryState = finalInventoryState;
+      await writeMarkdown(
+        config,
+        "12-final-inventory-bag.md",
+        `# Final Inventory / Bag\n\n${finalInventoryState}`,
+      );
+
+      const npcSummary = page.getByTestId("npc-relationship-summary");
+      await expect(npcSummary).toBeVisible({ timeout: 60_000 });
+      const npcCards = page.getByTestId("npc-state-card");
+      const npcCount = await npcCards.count();
+      const npcTexts: string[] = [];
+      const relationshipValues: number[] = [];
+      for (let index = 0; index < npcCount; index += 1) {
+        const text = (await npcCards.nth(index).innerText()).trim();
+        npcTexts.push(text);
+        const value = extractRelationshipValue(text);
+        if (value !== null) relationshipValues.push(value);
+      }
+      const finalNpcState =
+        npcTexts.length > 0
+          ? npcTexts.join("\n\n---\n\n")
+          : (await npcSummary.innerText()).trim();
+      evidence.finalNpcState = finalNpcState;
+      evidence.finalRelationshipState = finalNpcState;
+      await writeMarkdown(
+        config,
+        "13-final-npc-state.md",
+        `# Final NPC State\n\n${finalNpcState}`,
+      );
+      await writeMarkdown(
+        config,
+        "14-final-relationships.md",
+        `# Final Relationships\n\n${finalNpcState}`,
+      );
+
+      const totalNarrativeCharacters = stories.reduce(
+        (sum, story) => sum + story.narrativeLength,
+        0,
+      );
+      const strongest =
+        relationshipValues.length > 0 ? Math.max(...relationshipValues) : null;
+      const weakest =
+        relationshipValues.length > 0 ? Math.min(...relationshipValues) : null;
+      await writeMarkdown(
+        config,
+        "15-statistics.md",
+        `# Long-Horizon Statistics\n\n- Child age: ${config.childAge}\n- Character id: ${characterId}\n- Total stories: ${stories.length}\n- Direct source stories: ${stories.filter((story) => story.sourceFamily === "world_event" || story.sourceFamily === "npc_call").length}\n- Inventory-item stories: ${stories.filter((story) => story.sourceFamily === "inventory_item").length}\n- Rumor stories: ${stories.filter((story) => story.sourceFamily === "rumor").length}\n- Total rendered story characters: ${totalNarrativeCharacters}\n- Story lengths: ${stories.map((story) => story.narrativeLength).join(", ")}\n- Story generation/start durations (ms): ${stories.map((story) => story.durationMs).join(", ")}\n- Visible NPC count: ${npcCount}\n- Relationship values: ${relationshipValues.length > 0 ? relationshipValues.join(", ") : "none visible"}\n- Strongest relationship: ${strongest ?? "not visible"}\n- Weakest relationship: ${weakest ?? "not visible"}\n- Persistent live data cleanup: disabled\n- Journey transport: visible browser UI only`,
+      );
 
       evidence.status = "completed";
-      await checkpoint("onboarding:committed");
+      await checkpoint("final-state:captured");
     } catch (caught) {
       evidence.status = "failed";
       evidence.failure = sanitizeFailure(caught, phase, config);
@@ -328,11 +701,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       evidence.finishedAt = new Date().toISOString();
       evidence.lastPathname = safePathname(page.url());
       await writeRunJson(config, evidence);
-      await writeMarkdown(
-        config,
-        "00-run-summary.md",
-        formatRunSummary(evidence),
-      );
+      await writeMarkdown(config, "00-run-summary.md", formatRunSummary(evidence));
     }
   });
 });
