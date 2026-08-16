@@ -66,6 +66,8 @@ jobs:
           }
           console.log(`M7 disposable DB guard passed: ${name}`);
           NODE
+      - name: Apply auth migration
+        run: pnpm --filter @lumi/web auth:migrate
       - name: Apply profile migrations
         run: pnpm --filter @lumi/profiles profile:migrate
       - name: Apply world migrations
