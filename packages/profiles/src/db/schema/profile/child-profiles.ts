@@ -1,4 +1,11 @@
-import { check, index, jsonb, varchar, uuid } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  varchar,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import type { ChildProfileMetadata } from "../../../domain/types";
@@ -15,6 +22,7 @@ export const childProfiles = profileSchema.table(
       .references(() => households.id, { onDelete: "cascade" }),
     displayName: varchar("display_name", { length: 120 }).notNull(),
     ageBand: varchar("age_band", { length: 40 }).notNull(),
+    ageYears: integer("age_years"),
     locale: varchar("locale", { length: 12 }).notNull().default("tr-TR"),
     avatarAssetId: uuid("avatar_asset_id"),
     metadata: jsonb("metadata")
@@ -29,6 +37,10 @@ export const childProfiles = profileSchema.table(
     check(
       "child_profiles_age_band_check",
       sql`${table.ageBand} IN ('3-5', '6-8', '9-12', '13+')`,
+    ),
+    check(
+      "child_profiles_age_years_check",
+      sql`${table.ageYears} IS NULL OR (${table.ageYears} >= 3 AND ${table.ageYears} <= 17)`,
     ),
   ],
 );

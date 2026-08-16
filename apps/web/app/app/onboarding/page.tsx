@@ -2,18 +2,26 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type OnboardingState = {
   hasHousehold: boolean;
   householdId: string | null;
   householdName: string | null;
   childProfileCount: number;
-  childProfiles: { id: string; displayName: string; ageBand: string }[];
+  childProfiles: {
+    id: string;
+    displayName: string;
+    ageBand: string;
+    ageYears: number | null;
+  }[];
 };
 
 type Step = "loading" | "create-household" | "add-profiles" | "complete";
 
 export default function OnboardingPage() {
+  const searchParams = useSearchParams();
+  const addProfileMode = searchParams.get("addProfile") === "1";
   const [state, setState] = useState<OnboardingState | null>(null);
   const [step, setStep] = useState<Step>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +33,12 @@ export default function OnboardingPage() {
         const s = data.onboarding as OnboardingState;
         setState(s);
         if (!s.hasHousehold) setStep("create-household");
-        else if (s.childProfileCount === 0) setStep("add-profiles");
+        else if (s.childProfileCount === 0 || addProfileMode)
+          setStep("add-profiles");
         else setStep("complete");
       })
       .catch(() => setError("Failed to load onboarding state"));
-  }, []);
+  }, [addProfileMode]);
 
   if (error) return <ErrorDisplay message={error} />;
   if (step === "loading") return <LoadingDisplay />;
@@ -247,28 +256,33 @@ function AddProfilesForm({
   onError,
 }: {
   householdId: string;
-  profiles: { id: string; displayName: string; ageBand: string }[];
+  profiles: {
+    id: string;
+    displayName: string;
+    ageBand: string;
+    ageYears: number | null;
+  }[];
   onProfileAdded: (p: {
     id: string;
     displayName: string;
     ageBand: string;
+    ageYears: number | null;
   }) => void;
   onError: (err: string) => void;
 }) {
   const [displayName, setDisplayName] = useState("");
-  const [ageBand, setAgeBand] = useState("");
+  const [ageYears, setAgeYears] = useState(6);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!ageBand) return;
       setSubmitting(true);
       try {
         const res = await fetch("/api/child-profiles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ householdId, displayName, ageBand }),
+          body: JSON.stringify({ householdId, displayName, ageYears }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -279,14 +293,14 @@ function AddProfilesForm({
         onProfileAdded(data.profile);
         window.location.href = `/app/profiles/${encodeURIComponent(data.profile.id)}`;
         setDisplayName("");
-        setAgeBand("");
+        setAgeYears(6);
       } catch {
         onError("Network error");
       } finally {
         setSubmitting(false);
       }
     },
-    [householdId, displayName, ageBand, onProfileAdded, onError],
+    [householdId, displayName, ageYears, onProfileAdded, onError],
   );
 
   return (
@@ -306,7 +320,9 @@ function AddProfilesForm({
                 <strong className="text-on-surface text-lg">
                   {p.displayName}
                 </strong>
-                <span className="ml-3 text-muted text-sm">{p.ageBand}</span>
+                <span className="ml-3 text-muted text-sm">
+                  {p.ageYears === null ? p.ageBand : `${p.ageYears} yaş`}
+                </span>
               </div>
             </li>
           ))}
@@ -337,22 +353,23 @@ function AddProfilesForm({
         <div className="flex flex-col gap-2">
           <label
             className="font-label-bold text-on-surface-variant"
-            htmlFor="ageBand"
+            htmlFor="ageYears"
           >
-            Yaş grubu
+            Yaş
           </label>
-          <select
+          <input
             className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all font-body text-body"
-            id="ageBand"
+            id="ageYears"
+            min={3}
+            max={17}
             required
-            value={ageBand}
-            onChange={(e) => setAgeBand(e.target.value)}
-          >
-            <option value="">Seçin</option>
-            <option value="3-5">3–5 yaş</option>
-            <option value="6-8">6–8 yaş</option>
-            <option value="9-12">9–12 yaş</option>
-          </select>
+            type="number"
+            value={ageYears}
+            onChange={(e) => setAgeYears(Number(e.target.value))}
+          />
+          <p className="text-[12px] text-secondary">
+            Hikâye dili ve öneriler çocuğun tam yaşına göre kişiselleştirilir.
+          </p>
         </div>
         <button
           className="w-full bg-primary-container text-on-primary-container py-[0.85rem] rounded-lg font-label-bold text-label-bold hover:bg-primary hover:text-on-primary transition-all"

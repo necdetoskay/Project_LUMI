@@ -28,6 +28,25 @@ export function validateAgeBand(value: string): AgeBand {
   return band;
 }
 
+export function validateAgeYears(value: number): number {
+  if (!Number.isInteger(value) || value < 3 || value > 17) {
+    throw new ValidationError(
+      "INVALID_AGE_YEARS",
+      "Age must be an integer between 3 and 17",
+      "ageYears",
+    );
+  }
+  return value;
+}
+
+export function ageBandForAgeYears(value: number): AgeBand {
+  const age = validateAgeYears(value);
+  if (age <= 5) return "3-5";
+  if (age <= 8) return "6-8";
+  if (age <= 12) return "9-12";
+  return "13+";
+}
+
 export function validateMembershipRole(value: string): MembershipRole {
   const role = MEMBERSHIP_ROLES.find((r) => r === value);
   if (!role) {

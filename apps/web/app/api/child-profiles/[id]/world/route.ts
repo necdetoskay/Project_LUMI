@@ -5,6 +5,7 @@ import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import {
   findChildProfileForUser,
+  findNpcContextIdentities,
   getHouseholdForUser,
   listCharactersByChildProfile,
 } from "@lumi/profiles/application";
@@ -13,6 +14,7 @@ import {
   getWorldDetail,
   getWorldForCharacter,
 } from "@lumi/world/application";
+import { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence";
 
 const paramsSchema = z.object({
   id: z.string().uuid(),
@@ -62,6 +64,14 @@ function accessibilityHint(status: string): string {
 
 function asArray<T>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : [];
+}
+
+function relationshipLabel(value: number): string {
+  if (value >= 0.5) return "çok yakın";
+  if (value >= 0.1) return "olumlu";
+  if (value <= -0.5) return "çok gergin";
+  if (value <= -0.1) return "gergin";
+  return "nötr";
 }
 
 export const GET = observeHandler(
@@ -147,10 +157,17 @@ export const GET = observeHandler(
           });
         }
 
-        const [detailResult, currentLocationResult] = await Promise.allSettled([
-          getWorldDetail(world.id),
-          getCharacterCurrentLocation(primaryCharacter.id),
-        ]);
+        const [detailResult, currentLocationResult, npcResult] =
+          await Promise.allSettled([
+            getWorldDetail(world.id),
+            getCharacterCurrentLocation(primaryCharacter.id),
+            new DrizzleNpcSnapshotRepository().listForContext(
+              householdId,
+              world.id,
+              parsedParams.data.id,
+              24,
+            ),
+          ]);
 
         const detail =
           detailResult.status === "fulfilled" ? detailResult.value : null;
@@ -163,6 +180,23 @@ export const GET = observeHandler(
 
         const detailRegions = asArray(detail?.regions);
         const detailLocations = asArray(detail?.locations);
+        const npcSnapshots =
+          npcResult.status === "fulfilled" ? npcResult.value : [];
+        const npcIdentities = await findNpcContextIdentities({
+          characterIds: npcSnapshots.map((snapshot) => snapshot.characterId),
+          householdId,
+          childProfileId: parsedParams.data.id,
+        });
+        const npcIdentityByCharacterId = new Map(
+          npcIdentities.map(
+            (identity) => [identity.characterId, identity] as const,
+          ),
+        );
+        const locationNameById = new Map(
+          detailLocations.map(
+            (location) => [location.id, location.displayName] as const,
+          ),
+        );
         const locationsByRegion = new Map<
           string,
           Array<(typeof detailLocations)[number]>
@@ -235,6 +269,30 @@ export const GET = observeHandler(
             homeLocationId: detail?.home?.locationId ?? null,
             latestCheckpointId: detail?.latestCheckpoint?.id ?? null,
             regions: mapRegions,
+            npcs: npcSnapshots.flatMap((snapshot) => {
+              const identity = npcIdentityByCharacterId.get(
+                snapshot.characterId,
+              );
+              if (!identity) return [];
+              return [
+                {
+                  key: snapshot.npcId,
+                  name: identity.name,
+                  subtype: identity.subtype,
+                  originConcept: identity.originConcept,
+                  locationName: snapshot.locationId
+                    ? (locationNameById.get(snapshot.locationId) ??
+                      "Bilinmeyen konum")
+                    : "Konum kaydedilmemiş",
+                  needTypes: [...snapshot.needTypes],
+                  relationshipToCharacter: snapshot.relationshipToCharacter,
+                  relationshipLabel: relationshipLabel(
+                    snapshot.relationshipToCharacter,
+                  ),
+                  lastInteractionAt: snapshot.lastInteractionAt.toISOString(),
+                },
+              ];
+            }),
           },
         });
       } catch (error) {

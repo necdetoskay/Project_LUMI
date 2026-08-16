@@ -59,12 +59,19 @@ function fakePort(
   };
 }
 
+function validNarrative(
+  seed = "Lumi parlayan bir isik gordu ve yanina gitti.",
+): string {
+  const unit = `${seed} `;
+  return unit.repeat(Math.ceil(1600 / unit.length)).slice(0, 1600);
+}
+
 function validSceneJson(usedContinuityKeys: string[] = []): string {
   return JSON.stringify({
     sceneId: "scene-1",
     setting: "orman kenari",
     characters: ["Lumi"],
-    narrative: "Lumi parlayan bir isik gordu ve yanina gitti.",
+    narrative: validNarrative(),
     moment: "merak anı",
     nextPrompt: null,
     usedContinuityKeys,

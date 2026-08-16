@@ -174,6 +174,8 @@ export type { StoryScenePromptInput } from "./story-scene-prompt";
 export {
   parseAndValidateSceneOutput,
   SCENE_NARRATIVE_MAX,
+  STORY_NARRATIVE_TARGET_MIN,
+  STORY_NARRATIVE_TARGET_MAX,
 } from "./story-scene-output";
 export type {
   GeneratedScene,
@@ -185,6 +187,13 @@ export type {
   StorySceneLlmSettings,
   StorySceneLlmSettingsPort,
 } from "./story-scene-llm-settings";
+
+export { StoryAdventureGenerationService } from "./story-adventure-generation.service";
+export type {
+  AdventureSourceFamily,
+  StoryAdventureGenerationInput,
+  StoryAdventureGenerationResult,
+} from "./story-adventure-generation.service";
 
 export { StorySceneGenerationService } from "./story-scene-generation.service";
 export type {

@@ -2,17 +2,24 @@ import { getProfileDb } from "./db";
 import { DrizzleHouseholdRepository } from "../db/repositories/drizzle/drizzle-household.repository";
 import { DrizzleChildProfileRepository } from "../db/repositories/drizzle/drizzle-child-profile.repository";
 import { AuthorizationError } from "../domain/errors";
-import { validateAgeBand, validateDisplayName } from "../domain/validation";
+import {
+  ageBandForAgeYears,
+  validateAgeBand,
+  validateAgeYears,
+  validateDisplayName,
+} from "../domain/validation";
 
 export interface CreateChildProfileInput {
   householdId: string;
   displayName: string;
-  ageBand: string;
+  ageBand?: string;
+  ageYears?: number;
 }
 
 export interface UpdateChildProfileInput {
   displayName?: string;
   ageBand?: string;
+  ageYears?: number;
 }
 
 export interface ChildProfileResult {
@@ -20,6 +27,7 @@ export interface ChildProfileResult {
   householdId: string;
   displayName: string;
   ageBand: string;
+  ageYears: number | null;
   locale: string;
   createdAt: Date;
 }
@@ -43,20 +51,33 @@ async function assertMembership(
   }
 }
 
+function exactAgeFromRecord(profile: {
+  ageYears: number | null;
+  metadata: { ageYears?: number };
+}): number | null {
+  return profile.ageYears ?? profile.metadata.ageYears ?? null;
+}
+
 export async function createChildProfile(
   userId: string,
   input: CreateChildProfileInput,
 ): Promise<ChildProfileResult> {
   await assertMembership(input.householdId, userId);
   validateDisplayName(input.displayName);
-  validateAgeBand(input.ageBand);
+  const ageYears =
+    input.ageYears === undefined ? undefined : validateAgeYears(input.ageYears);
+  const ageBand =
+    ageYears === undefined
+      ? validateAgeBand(input.ageBand ?? "")
+      : ageBandForAgeYears(ageYears);
 
   const { childRepo } = getRepos();
   const profile = await childRepo.create({
     id: crypto.randomUUID(),
     householdId: input.householdId,
     displayName: input.displayName,
-    ageBand: input.ageBand,
+    ageBand,
+    ageYears,
     locale: "tr-TR",
   });
 
@@ -65,6 +86,7 @@ export async function createChildProfile(
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };
@@ -84,6 +106,7 @@ export async function listChildProfiles(
     householdId: p.householdId,
     displayName: p.displayName,
     ageBand: p.ageBand,
+    ageYears: exactAgeFromRecord(p),
     locale: p.locale,
     createdAt: p.createdAt,
   }));
@@ -103,15 +126,34 @@ export async function updateChildProfile(
   if (input.ageBand !== undefined) {
     validateAgeBand(input.ageBand);
   }
+  if (input.ageYears !== undefined) {
+    validateAgeYears(input.ageYears);
+  }
+
+  const update: {
+    displayName?: string;
+    ageBand?: string;
+    ageYears?: number;
+  } = {};
+  if (input.displayName !== undefined) {
+    update.displayName = input.displayName;
+  }
+  if (input.ageYears !== undefined) {
+    update.ageBand = ageBandForAgeYears(input.ageYears);
+    update.ageYears = input.ageYears;
+  } else if (input.ageBand !== undefined) {
+    update.ageBand = input.ageBand;
+  }
 
   const { childRepo } = getRepos();
-  const profile = await childRepo.update(profileId, householdId, input);
+  const profile = await childRepo.update(profileId, householdId, update);
 
   return {
     id: profile.id,
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };
@@ -144,6 +186,7 @@ export async function findChildProfileForUser(
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };

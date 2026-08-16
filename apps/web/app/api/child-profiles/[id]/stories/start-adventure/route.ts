@@ -4,6 +4,12 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import {
+  projectInventoryCandidate,
+  projectOpportunityCandidate,
+} from "@/lib/stories/adventure-presentation";
+import { generateAdventureReaderTurn } from "@/lib/story/generated-adventure-reader.service";
+import { generateHookReaderTurn } from "@/lib/story/generated-hook-reader.service";
+import {
   findChildProfileForUser,
   getCharacterContinuitySnapshot,
   getHouseholdForUser,
@@ -117,6 +123,7 @@ export const POST = observeHandler(
       }
 
       let candidateTitle = "Yeni macera";
+      let candidateTeaser = "";
       let candidateFamily:
         | "world_event"
         | "rumor"
@@ -135,15 +142,16 @@ export const POST = observeHandler(
           );
         }
         opportunityState = opportunity.getState();
-        candidateTitle = opportunityState.message;
-        candidateFamily =
-          opportunityState.opportunityType === "rumor"
-            ? "rumor"
-            : ["invitation", "social_visit", "gift"].includes(
-                  opportunityState.opportunityType,
-                )
-              ? "npc_call"
-              : "world_event";
+        const projected = projectOpportunityCandidate({
+          id: opportunityState.id,
+          type: opportunityState.opportunityType,
+          message: opportunityState.message,
+          sourceNpcId: opportunityState.sourceNpcId,
+          evidence: opportunityState.evidence,
+        });
+        candidateTitle = projected.title;
+        candidateTeaser = projected.teaser;
+        candidateFamily = projected.sourceFamily;
       } else if (candidateId.startsWith("inventory:")) {
         const itemId = candidateId.slice("inventory:".length);
         const continuity = await getCharacterContinuitySnapshot(
@@ -160,9 +168,19 @@ export const POST = observeHandler(
             { status: 404 },
           );
         }
-        candidateTitle = item.displayName;
+        const projected = projectInventoryCandidate(
+          item,
+          `${item.displayName}, yeni bir sırrın ya da keşfin başlangıcı olabilir.`,
+        );
+        candidateTitle = projected.title;
+        candidateTeaser = projected.teaser;
         candidateFamily = "inventory_item";
-      } else if (candidateId !== `world:${world.id}`) {
+      } else if (candidateId === `world:${world.id}`) {
+        candidateTitle = "Dünyada yeni bir iz";
+        candidateTeaser =
+          "Dünyada keşfedilmeyi bekleyen yeni ve merak uyandıran bir olay var.";
+        candidateFamily = "world_event";
+      } else {
         return NextResponse.json(
           { error: "NOT_FOUND", message: "Adventure candidate not found" },
           { status: 404 },
@@ -243,12 +261,34 @@ export const POST = observeHandler(
         hookId = hook.hook.id;
       }
 
+      const expectedVersion = activeSession.version;
+      const generated = hookId
+        ? await generateHookReaderTurn({
+            userId: parent.id,
+            householdId,
+            sessionId: activeSession.id,
+            hookId,
+            expectedVersion,
+          })
+        : await generateAdventureReaderTurn({
+            userId: parent.id,
+            householdId,
+            sessionId: activeSession.id,
+            worldId: world.id,
+            candidateId,
+            sourceFamily: candidateFamily,
+            sourceTitle: candidateTitle,
+            sourceTeaser: candidateTeaser,
+            expectedVersion,
+          });
+
       return NextResponse.json(
         {
           sessionId: activeSession.id,
           startedNewSession,
           attachedCandidateId: candidateId,
           hookId,
+          generatedSceneId: generated.sceneId,
         },
         { status: startedNewSession ? 201 : 200 },
       );

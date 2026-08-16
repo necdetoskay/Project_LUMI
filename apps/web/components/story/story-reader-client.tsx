@@ -499,6 +499,36 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
     [currentScene, loadReader, payload, sessionId, sessionVersion],
   );
 
+  const handleCompleteSession = useCallback(async () => {
+    if (!payload || !currentScene) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    setInfo(null);
+
+    try {
+      await postAction(
+        `/api/stories/sessions/${encodeURIComponent(sessionId)}/complete`,
+        {
+          expectedVersion: sessionVersion,
+          idempotencyKey: newIdempotencyKey(),
+        },
+      );
+      setInfo("Hikâye tamamlandı.");
+      await loadReader();
+    } catch (nextError) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "Hikâye tamamlanamadı.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }, [currentScene, loadReader, payload, sessionId, sessionVersion]);
+
   const handleManualCheckpoint = useCallback(async () => {
     if (!currentScene) {
       return;
@@ -710,7 +740,10 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
             </span>
             Mevcut sahne
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-on-surface">
+          <h2
+            className="mt-4 text-2xl font-bold text-on-surface"
+            data-testid="story-scene-title"
+          >
             {currentScene?.title ??
               currentScene?.sceneKey ??
               "Sahne bekleniyor"}
@@ -796,7 +829,10 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
               )}
             </section>
           </div>
-          <p className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface">
+          <p
+            className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface"
+            data-testid="story-narrative"
+          >
             {currentScene?.narrativeText ??
               "Bu oturum icin aktif sahne bulunamadi."}
           </p>
@@ -906,6 +942,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                       >
                         <button
                           className="flex min-h-12 w-full items-center justify-between text-left text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"
+                          data-testid="story-choice-option"
                           type="button"
                           aria-label={option.option.label}
                           onClick={() =>
@@ -959,10 +996,35 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
               </div>
             ))}
           </div>
+        ) : payload?.playback.session.sessionStatus === "completed" ? (
+          <div className="mt-4 rounded-xl border border-primary/20 bg-primary-fixed/35 p-5">
+            <p className="font-semibold text-on-surface">Hikâye tamamlandı.</p>
+            {childProfileId ? (
+              <a
+                className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-on-primary"
+                href={`/app/profiles/${encodeURIComponent(childProfileId)}?tab=stories`}
+              >
+                Hikâyelere dön
+              </a>
+            ) : null}
+          </div>
         ) : (
-          <p className="mt-4 text-sm text-on-surface-variant">
-            Bu sahne icin kullanilabilir secim bulunmuyor.
-          </p>
+          <div className="mt-4 rounded-xl border border-outline-variant bg-surface-container-low p-5">
+            <p className="text-sm text-on-surface-variant">
+              Bu sahne icin kullanilabilir secim bulunmuyor.
+            </p>
+            {currentScene ? (
+              <button
+                className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-on-primary disabled:opacity-50"
+                data-testid="complete-story"
+                disabled={submitting || checkpointSaving}
+                onClick={() => void handleCompleteSession()}
+                type="button"
+              >
+                {submitting ? "Tamamlanıyor..." : "Hikâyeyi Tamamla"}
+              </button>
+            ) : null}
+          </div>
         )}
       </section>
 

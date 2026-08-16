@@ -206,6 +206,7 @@ export function NewAdventureSheet({
                 return (
                   <article
                     className="flex min-h-52 flex-col rounded-3xl border border-outline-variant/60 bg-white p-5 shadow-sm"
+                    data-testid="adventure-candidate"
                     key={candidate.id}
                   >
                     <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.08em] text-primary">

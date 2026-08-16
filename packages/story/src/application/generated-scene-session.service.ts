@@ -38,6 +38,7 @@ export interface PersistGeneratedSceneAndAdvanceInput {
   sceneType?: SceneType;
   modelId?: string | null;
   sourceHookId?: string | null;
+  sourceKey?: string | null;
   actorUserId?: string | undefined;
   contextSnapshot?: Record<string, unknown> | undefined;
   generationInspection?: GenerationInspectionInput | undefined;
@@ -54,10 +55,14 @@ export interface PersistGeneratedSceneAndAdvanceResult {
 export function generatedSceneKeyForSource(input: {
   sessionId: string;
   sourceHookId?: string | null;
+  sourceKey?: string | null;
   fallbackFingerprint: string;
 }): string {
   if (input.sourceHookId) {
     return `generated:hook:${input.sourceHookId}`;
+  }
+  if (input.sourceKey) {
+    return `generated:adventure:${input.sessionId}:${input.sourceKey}`;
   }
   return `generated:${input.sessionId}:${input.fallbackFingerprint}`;
 }
@@ -87,8 +92,8 @@ export async function findGeneratedSceneForHook(input: {
  *
  * Hook-backed scenes use the stable source hook id as their persistence key,
  * so retries cannot create different prose rows even when generation uses a
- * fresh nonce. A replay after a successful advance returns the current reader
- * state without requiring the caller to know the newly incremented version.
+ * fresh nonce. Generic adventures use session + source key so retries inside
+ * one session are idempotent while later sessions receive fresh generation.
  */
 export async function persistGeneratedSceneAndAdvance(
   input: PersistGeneratedSceneAndAdvanceInput,
@@ -105,6 +110,7 @@ export async function persistGeneratedSceneAndAdvance(
     sessionId: input.sessionId,
     generatedSceneId: input.scene.sceneId,
     sourceHookId: input.sourceHookId ?? null,
+    sourceKey: input.sourceKey ?? null,
     narrative: input.scene.narrative,
   });
   const generatedSceneKey = generatedSceneKeyForSource({
@@ -112,6 +118,7 @@ export async function persistGeneratedSceneAndAdvance(
     ...(input.sourceHookId !== undefined
       ? { sourceHookId: input.sourceHookId }
       : {}),
+    ...(input.sourceKey !== undefined ? { sourceKey: input.sourceKey } : {}),
     fallbackFingerprint: sourceFingerprint,
   });
 
@@ -168,6 +175,7 @@ export async function persistGeneratedSceneAndAdvance(
           generatedForSessionId: input.sessionId,
           sourceGeneratedSceneId: input.scene.sceneId,
           sourceHookId: input.sourceHookId ?? null,
+          sourceKey: input.sourceKey ?? null,
           modelId: input.modelId ?? input.generationInspection?.modelId ?? null,
           setting: input.scene.setting,
           characters: input.scene.characters,

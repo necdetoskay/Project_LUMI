@@ -111,6 +111,11 @@ function makeManifest(): ContextManifest {
   };
 }
 
+function validNarrative(seed: string): string {
+  const unit = `${seed} `;
+  return unit.repeat(Math.ceil(1600 / unit.length)).slice(0, 1600);
+}
+
 const settingsPort: StorySceneLlmSettingsPort = {
   async resolveSettings() {
     return {
@@ -138,8 +143,9 @@ describe("story generation canonical context integration", () => {
         sceneId: "scene-context-1",
         setting: "Kristal magara girisi",
         characters: ["Lumi"],
-        narrative:
+        narrative: validNarrative(
           "Lumi eski anahtari hatirladi ve kapali kuzey gecidinden uzak durdu.",
+        ),
         moment: "Lumi dikkatli ve merakliydi.",
         nextPrompt: null,
         usedContinuityKeys: [],
@@ -195,7 +201,7 @@ describe("story generation canonical context integration", () => {
           sceneId: "scene-context-2",
           setting: "Kristal magara girisi",
           characters: ["Lumi"],
-          narrative: "Lumi parlayan anahtari hatirladi.",
+          narrative: validNarrative("Lumi parlayan anahtari hatirladi."),
           moment: "Merakli bir an.",
           nextPrompt: null,
           usedContinuityKeys: [],

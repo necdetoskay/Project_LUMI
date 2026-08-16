@@ -82,6 +82,18 @@ export const PATCH = observeHandler(
         if (parsed.ageBand !== undefined) {
           input.ageBand = parsed.ageBand as string;
         }
+        if (parsed.ageYears !== undefined) {
+          if (typeof parsed.ageYears !== "number") {
+            return NextResponse.json(
+              {
+                error: "VALIDATION_ERROR",
+                message: "ageYears must be a number",
+              },
+              { status: 400 },
+            );
+          }
+          input.ageYears = parsed.ageYears;
+        }
 
         const profile = await updateChildProfile(
           parent.id,

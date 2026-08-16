@@ -36,7 +36,14 @@ export default async function ProtectedAppPage() {
                 {t("intro")}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link className="storybook-button" href="/app/onboarding">
+                <Link
+                  className="storybook-button"
+                  href={
+                    state.hasHousehold
+                      ? "/app/onboarding?addProfile=1"
+                      : "/app/onboarding"
+                  }
+                >
                   <span
                     className="material-symbols-outlined"
                     aria-hidden="true"
@@ -123,7 +130,14 @@ export default async function ProtectedAppPage() {
               <p className="mx-auto mt-3 max-w-[38rem] text-base leading-7 text-on-surface-variant">
                 {t("emptyText")}
               </p>
-              <Link className="storybook-button mt-6" href="/app/onboarding">
+              <Link
+                className="storybook-button mt-6"
+                href={
+                  state.hasHousehold
+                    ? "/app/onboarding?addProfile=1"
+                    : "/app/onboarding"
+                }
+              >
                 {t("startProfile")}
               </Link>
             </div>

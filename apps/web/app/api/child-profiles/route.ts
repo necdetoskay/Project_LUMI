@@ -51,12 +51,14 @@ export const POST = observeHandler(async (request: Request) => {
       !parsed ||
       typeof parsed.householdId !== "string" ||
       typeof parsed.displayName !== "string" ||
-      typeof parsed.ageBand !== "string"
+      (typeof parsed.ageYears !== "number" &&
+        typeof parsed.ageBand !== "string")
     ) {
       return NextResponse.json(
         {
           error: "VALIDATION_ERROR",
-          message: "householdId, displayName, and ageBand are required",
+          message:
+            "householdId, displayName, and ageYears (or legacy ageBand) are required",
         },
         { status: 400 },
       );
@@ -66,7 +68,12 @@ export const POST = observeHandler(async (request: Request) => {
       const profile = await createChildProfile(parent.id, {
         householdId: parsed.householdId,
         displayName: parsed.displayName,
-        ageBand: parsed.ageBand,
+        ...(typeof parsed.ageYears === "number"
+          ? { ageYears: parsed.ageYears }
+          : {}),
+        ...(typeof parsed.ageBand === "string"
+          ? { ageBand: parsed.ageBand }
+          : {}),
       });
 
       return NextResponse.json({ profile }, { status: 201 });

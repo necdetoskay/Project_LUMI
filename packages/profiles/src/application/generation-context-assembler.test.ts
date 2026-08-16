@@ -13,6 +13,7 @@ function context(profile: GenerationContext["profile"]): GenerationContext {
     child: {
       id: "child-1",
       ageBand: "6-8",
+      ageYears: 7,
       locale: "tr-TR",
       interests: ["space"],
       customInterests: ["crystals"],
@@ -66,6 +67,7 @@ describe("generation context assembler", () => {
       child_identity: {
         id: "child-1",
         ageBand: "6-8",
+        ageYears: 7,
         locale: "tr-TR",
       },
       child_personalization: {

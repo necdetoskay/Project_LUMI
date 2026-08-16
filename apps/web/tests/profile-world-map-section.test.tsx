@@ -97,6 +97,7 @@ describe("ProfileWorldMapSection", () => {
                     locations: [],
                   },
                 ],
+                npcs: [],
               },
             }),
           );
@@ -202,6 +203,7 @@ describe("ProfileWorldMapSection", () => {
                 latestCheckpointId: null,
                 currentLocation: null,
                 regions: [],
+                npcs: [],
               },
             }),
           );

@@ -1,0 +1,87 @@
+name: LUMI Long-Horizon Live Playwright
+
+# Manual-only by design: every run writes persistent live state and may incur model cost.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Deployed LUMI base URL to exercise through the real UI"
+        required: true
+        type: string
+      child_age:
+        description: "Exact child age for this persistent run"
+        required: true
+        default: "6"
+        type: string
+      rng_seed:
+        description: "Optional non-negative RNG seed; leave blank for a generated seed"
+        required: false
+        type: string
+      run_id:
+        description: "Optional immutable run label"
+        required: false
+        type: string
+      acknowledge_persistent_live_write:
+        description: "I understand this creates persistent live data and incurs real model cost"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  live-playwright:
+    if: ${{ inputs.acknowledge_persistent_live_write == true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: ${{ inputs.base_url }}
+      LUMI_LONG_HORIZON_CHILD_AGE: ${{ inputs.child_age }}
+      LUMI_LONG_HORIZON_RNG_SEED: ${{ inputs.rng_seed }}
+      LUMI_LONG_HORIZON_RUN_ID: ${{ inputs.run_id }}
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard live credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${LUMI_LONG_HORIZON_BASE_URL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
+          echo "Persistent live Playwright run is explicitly acknowledged."
+
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+
+      - name: Run browser-only persistent acceptance pack
+        run: pnpm --filter @lumi/web test:long-horizon:live
+
+      - name: Upload long-horizon evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumi-long-horizon-${{ inputs.child_age }}-${{ github.run_id }}
+          path: apps/web/tests/e2e/long-horizon/evidence/
+          if-no-files-found: warn
+          retention-days: 90

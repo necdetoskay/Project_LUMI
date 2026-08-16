@@ -65,6 +65,7 @@ export function createLumiDemoAuthPostgresAdapter(databaseUrl) {
       password = process.env.LUMI_DEMO_PARENT_PASSWORD,
     } = {}) {
       const safePassword = requireDemoPassword(password);
+      const passwordHash = await createPasswordHash(safePassword);
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
@@ -87,10 +88,23 @@ export function createLumiDemoAuthPostgresAdapter(databaseUrl) {
         }
 
         if (!row) {
-          const passwordHash = await createPasswordHash(safePassword);
           await client.query(
             `INSERT INTO parent_accounts (id, email, password_hash, display_name)
              VALUES ($1,$2,$3,$4)`,
+            [
+              LUMI_DEMO_PARENT.id,
+              LUMI_DEMO_PARENT.email,
+              passwordHash,
+              LUMI_DEMO_PARENT.displayName,
+            ],
+          );
+        } else {
+          await client.query(
+            `UPDATE parent_accounts
+                SET password_hash = $3,
+                    display_name = $4,
+                    updated_at = NOW()
+              WHERE id = $1 AND email = $2`,
             [
               LUMI_DEMO_PARENT.id,
               LUMI_DEMO_PARENT.email,

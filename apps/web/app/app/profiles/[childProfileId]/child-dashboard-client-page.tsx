@@ -538,7 +538,7 @@ function HomeView({
               <h2 className="mt-1 text-2xl font-black">Macera arkadaşların</h2>
             </div>
             <Link
-              href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/type`}
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard`}
               className="rounded-2xl bg-[#6c42df] px-4 py-3 text-sm font-black text-white"
             >
               + Yeni Karakter Oluştur
@@ -713,7 +713,7 @@ function CharactersView({
           </h2>
         </div>
         <Link
-          href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/type`}
+          href={`/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard`}
           className="rounded-2xl bg-[#6c42df] px-5 py-3 font-black text-white"
         >
           + Yeni Karakter Oluştur

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockFindChildProfileForUser = vi.fn();
+const mockFindNpcContextIdentities = vi.fn();
 const mockGetHouseholdForUser = vi.fn();
 const mockListCharactersByChildProfile = vi.fn();
 const mockGetWorldForCharacter = vi.fn();
@@ -10,6 +11,8 @@ const mockGetCharacterCurrentLocation = vi.fn();
 vi.mock("@lumi/profiles/application", () => ({
   findChildProfileForUser: (...args: unknown[]) =>
     mockFindChildProfileForUser(...args),
+  findNpcContextIdentities: (...args: unknown[]) =>
+    mockFindNpcContextIdentities(...args),
   getHouseholdForUser: (...args: unknown[]) => mockGetHouseholdForUser(...args),
   listCharactersByChildProfile: (...args: unknown[]) =>
     mockListCharactersByChildProfile(...args),
@@ -38,6 +41,7 @@ const CHILD_ID = "22222222-2222-4222-8222-222222222222";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockFindNpcContextIdentities.mockResolvedValue([]);
 });
 
 describe("world map route", () => {
