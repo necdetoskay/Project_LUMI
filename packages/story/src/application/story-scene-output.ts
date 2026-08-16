@@ -1,4 +1,6 @@
 export const SCENE_NARRATIVE_MAX = 4000;
+export const STORY_NARRATIVE_TARGET_MIN = 1500;
+export const STORY_NARRATIVE_TARGET_MAX = 2000;
 export const SCENE_USED_CONTINUITY_KEYS_MAX = 12;
 
 export interface GeneratedScene {
