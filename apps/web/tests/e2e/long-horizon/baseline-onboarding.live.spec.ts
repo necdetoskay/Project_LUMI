@@ -319,6 +319,8 @@ async function startAndCompleteStory(
     "Long-horizon short-story generation should render one complete generated narrative, not a hidden multi-step fixture graph",
   ).toBe(0);
 
+  const readerPath = safePathname(page.url());
+  const generationDurationMs = Date.now() - startedAt;
   const complete = page.getByTestId("complete-story");
   await expect(complete).toBeVisible({ timeout: 60_000 });
   await complete.click();
@@ -327,18 +329,21 @@ async function startAndCompleteStory(
   ).toBeVisible({
     timeout: 60_000,
   });
-  const story: RecordedStoryEvidence = {
-    sequence: input.sequence,
-    sourceFamily: candidate.sourceFamily,
-    sourceLabel: candidate.sourceLabel,
-    sourceTitle: candidate.sourceTitle,
-    sourceTeaser: candidate.sourceTeaser,
-    sceneTitle,
-    narrative,
-    narrativeLength: narrative.length,
-    durationMs: Date.now() - startedAt,
-    readerPath: safePathname(page.url()),
-  };
+
+  const checkpointSummarySection = page
+    .locator("section")
+    .filter({
+      has: page.getByRole("heading", {
+        name: "Oturum ozeti",
+        exact: true,
+      }),
+    })
+    .first();
+  await expect(checkpointSummarySection).toBeVisible({ timeout: 60_000 });
+  const checkpointSummary = normalizeEvidenceText(
+    await checkpointSummarySection.innerText(),
+    1_200,
+  );
 
   await input.checkpoint(`story:${input.sequence}:completed`);
   await page.getByRole("link", { name: "Hikâyelere dön" }).click();
@@ -348,6 +353,54 @@ async function startAndCompleteStory(
   await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
     timeout: 60_000,
   });
+
+  const persistedCard = page
+    .locator(`a[href="${readerPath}"]`)
+    .filter({ has: page.locator("h4") })
+    .first();
+  await expect(
+    persistedCard,
+    `Completed story ${input.sequence} must remain visible in the child profile story history`,
+  ).toBeVisible({ timeout: 60_000 });
+  const persistedTitle = normalizeEvidenceText(
+    await persistedCard.locator("h4").innerText(),
+    300,
+  );
+  const playerRecap = normalizeEvidenceText(
+    await persistedCard.locator("p").first().innerText(),
+    1_200,
+  );
+
+  const story: RecordedStoryEvidence = {
+    sequence: input.sequence,
+    sourceFamily: candidate.sourceFamily,
+    sourceLabel: candidate.sourceLabel,
+    sourceTitle: candidate.sourceTitle,
+    sourceTeaser: candidate.sourceTeaser,
+    sceneTitle,
+    narrative,
+    narrativeLength: narrative.length,
+    durationMs: generationDurationMs,
+    readerPath,
+    persistedTitle,
+    playerRecap: playerRecap || "empty recap rendered in current UI",
+    checkpointSummary,
+    relevantLocation:
+      "not exposed as per-story metadata in the current generated reader/history UI",
+    importantItemChanges:
+      candidate.sourceFamily === "inventory_item"
+        ? "inventory-item source is visible; per-story inventory delta is not exposed in the current reader/history UI"
+        : "not exposed as per-story metadata in the current reader/history UI",
+    npcsInvolved:
+      "not exposed as structured per-story metadata in the current generated reader/history UI",
+    observableChoicesOutcomes:
+      "0 visible choice options; story completed through the visible Complete Story control",
+    contextInspector:
+      "Context Inspector / token / provider-cost metrics are not exposed in the current reader UI",
+    persistedVerified: true,
+  };
+
+  await input.checkpoint(`story:${input.sequence}:persistence-verified`);
   return story;
 }
 
