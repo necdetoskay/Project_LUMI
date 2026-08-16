@@ -7,6 +7,11 @@ export class PromptOutputValidationError extends Error {
 
 type JsonSchema = Record<string, unknown>;
 
+export interface PromptOutputValidationOptions {
+  allowOverMaxLength?: boolean;
+  synthesizeSuggestionKeys?: boolean;
+}
+
 function typeMatches(value: unknown, type: string) {
   if (type === "object")
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -25,6 +30,7 @@ function validateNode(
   schema: JsonSchema,
   path: string,
   issues: string[],
+  options: PromptOutputValidationOptions,
 ) {
   const type = schema.type;
   if (typeof type === "string" && !typeMatches(value, type)) {
@@ -35,7 +41,11 @@ function validateNode(
   if (typeof value === "string") {
     if (typeof schema.minLength === "number" && value.length < schema.minLength)
       issues.push(`${path}: shorter than minLength`);
-    if (typeof schema.maxLength === "number" && value.length > schema.maxLength)
+    if (
+      !options.allowOverMaxLength &&
+      typeof schema.maxLength === "number" &&
+      value.length > schema.maxLength
+    )
       issues.push(`${path}: longer than maxLength`);
   }
 
@@ -51,6 +61,7 @@ function validateNode(
           schema.items as JsonSchema,
           `${path}[${index}]`,
           issues,
+          options,
         ),
       );
   }
@@ -68,7 +79,7 @@ function validateNode(
         : {};
     for (const [key, childSchema] of Object.entries(properties))
       if (key in record)
-        validateNode(record[key], childSchema, `${path}.${key}`, issues);
+        validateNode(record[key], childSchema, `${path}.${key}`, issues, options);
   }
 }
 
@@ -92,9 +103,25 @@ function normalizeDirectSuggestionArray(
   return { suggestions: value };
 }
 
+function synthesizeSuggestionKeys(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (!Array.isArray(record.suggestions)) return value;
+  return {
+    ...record,
+    suggestions: record.suggestions.map((item, index) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+      const candidate = item as Record<string, unknown>;
+      if (typeof candidate.key === "string" && candidate.key.trim()) return item;
+      return { ...candidate, key: `candidate-${index + 1}` };
+    }),
+  };
+}
+
 export function parseAndValidatePromptOutput(
   raw: string,
   schema: JsonSchema,
+  options: PromptOutputValidationOptions = {},
 ): unknown {
   const cleaned = raw
     .trim()
@@ -107,8 +134,9 @@ export function parseAndValidatePromptOutput(
     throw new Error("LLM_OUTPUT_INVALID_JSON");
   }
   value = normalizeDirectSuggestionArray(value, schema);
+  if (options.synthesizeSuggestionKeys) value = synthesizeSuggestionKeys(value);
   const issues: string[] = [];
-  validateNode(value, schema, "$", issues);
+  validateNode(value, schema, "$", issues, options);
   if (issues.length) throw new PromptOutputValidationError(issues);
   return value;
 }
