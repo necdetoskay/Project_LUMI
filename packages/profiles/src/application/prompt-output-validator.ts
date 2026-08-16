@@ -25,6 +25,15 @@ function typeMatches(value: unknown, type: string) {
   return true;
 }
 
+function isSuggestionEnvelopeSchema(schema: JsonSchema): boolean {
+  if (schema.type !== "object") return false;
+  const properties =
+    schema.properties && typeof schema.properties === "object"
+      ? (schema.properties as Record<string, JsonSchema>)
+      : {};
+  return properties.suggestions?.type === "array";
+}
+
 function validateNode(
   value: unknown,
   schema: JsonSchema,
@@ -134,9 +143,16 @@ export function parseAndValidatePromptOutput(
     throw new Error("LLM_OUTPUT_INVALID_JSON");
   }
   value = normalizeDirectSuggestionArray(value, schema);
-  if (options.synthesizeSuggestionKeys) value = synthesizeSuggestionKeys(value);
+  const suggestionEnvelope = isSuggestionEnvelopeSchema(schema);
+  const effectiveOptions: PromptOutputValidationOptions = {
+    allowOverMaxLength: options.allowOverMaxLength ?? suggestionEnvelope,
+    synthesizeSuggestionKeys:
+      options.synthesizeSuggestionKeys ?? suggestionEnvelope,
+  };
+  if (effectiveOptions.synthesizeSuggestionKeys)
+    value = synthesizeSuggestionKeys(value);
   const issues: string[] = [];
-  validateNode(value, schema, "$", issues, options);
+  validateNode(value, schema, "$", issues, effectiveOptions);
   if (issues.length) throw new PromptOutputValidationError(issues);
   return value;
 }
