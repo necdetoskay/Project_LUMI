@@ -48,7 +48,7 @@ jobs:
           text = text[:start] + replacement + text[end:]
 
           old_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (!providerSettings?.encryptedApiKey) return null;\n  try {\n    return decryptApiKey(providerSettings.encryptedApiKey);\n  } catch {\n    return null;\n  }\n}\n'''
-          new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter\",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
+          new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
           if old_tail not in text:
               raise SystemExit('expected getOpenRouterApiKey block missing')
           text = text.replace(old_tail, new_tail, 1)
@@ -138,7 +138,7 @@ jobs:
             const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
             try {
               const membership = await pool.query(
-                `SELECT user_id, household_id FROM profile.household_members WHERE user_id = $1 AND is_active = TRUE ORDER BY created_at LIMIT 1`,
+                `SELECT user_id, household_id FROM profile.household_members WHERE user_id = $1 AND is_active = TRUE LIMIT 1`,
                 ['51000000-0000-4000-8000-000000000009'],
               );
               if (membership.rowCount !== 1) throw new Error('DEMO_HOUSEHOLD_NOT_FOUND');
