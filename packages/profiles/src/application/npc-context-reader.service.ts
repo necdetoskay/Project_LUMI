@@ -13,11 +13,15 @@ export interface NpcContextIdentity {
   lifecycleStage: string;
 }
 
-export async function findNpcContextIdentities(input: {
+export interface NpcContextIdentityQuery {
   characterIds: string[];
   householdId: string;
   childProfileId: string;
-}): Promise<NpcContextIdentity[]> {
+}
+
+export async function findNpcContextIdentities(
+  input: NpcContextIdentityQuery,
+): Promise<NpcContextIdentity[]> {
   const repository = new DrizzleCharacterRepository(getProfileDb());
   const characterIds = [...new Set(input.characterIds)].slice(0, 50);
   const records = await Promise.all(
@@ -46,3 +50,7 @@ export async function findNpcContextIdentities(input: {
     ];
   });
 }
+
+export const npcContextIdentityReader = {
+  findNpcIdentities: findNpcContextIdentities,
+};
