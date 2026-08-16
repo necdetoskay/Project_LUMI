@@ -36,6 +36,39 @@ export interface RecordedStoryEvidence {
   narrativeLength: number;
   durationMs: number;
   readerPath: string;
+  persistedTitle: string;
+  playerRecap: string;
+  checkpointSummary: string;
+  relevantLocation: string;
+  importantItemChanges: string;
+  npcsInvolved: string;
+  observableChoicesOutcomes: string;
+  contextInspector: string;
+  persistedVerified: boolean;
+}
+
+export interface LongHorizonRunStatistics {
+  childAge: number;
+  characterId: string;
+  worldIdentity: string;
+  worldStatus: string;
+  currentRegion: string;
+  currentLocation: string;
+  homeLocation: string;
+  totalStories: number;
+  sourceDistribution: Record<RecordedStorySource, number>;
+  totalRenderedStoryCharacters: number;
+  storyLengths: number[];
+  storyGenerationDurationsMs: number[];
+  persistedStoryCount: number;
+  inventorySummary: string;
+  visibleNpcCount: number;
+  relationshipValues: number[];
+  strongestRelationship: number | null;
+  weakestRelationship: number | null;
+  generationRetryMetrics: string;
+  contextTokenCostMetrics: string;
+  continuityFindings: string[];
 }
 
 export interface LongHorizonRunFailure {
@@ -60,6 +93,7 @@ export interface LongHorizonRunEvidence {
   lastPathname?: string;
   selections: RecordedSelection[];
   stories?: RecordedStoryEvidence[];
+  statistics?: LongHorizonRunStatistics;
   finalReview?: string;
   finalWorldState?: string;
   finalCharacterState?: string;
@@ -173,20 +207,24 @@ export function formatRunSummary(evidence: LongHorizonRunEvidence): string {
     ? evidence.stories
         .map(
           (story) =>
-            `- Story ${story.sequence}: ${story.sourceFamily} · ${story.sourceTitle} · ${story.narrativeLength} chars · ${story.durationMs} ms`,
+            `- Story ${story.sequence}: ${story.sourceFamily} · ${story.sourceTitle} · ${story.narrativeLength} chars · ${story.durationMs} ms · persisted=${story.persistedVerified}`,
         )
         .join("\n")
     : "- No completed generated story was recorded.";
+
+  const statisticsSection = evidence.statistics
+    ? `\n## Acceptance statistics\n\n- Persisted stories: ${evidence.statistics.persistedStoryCount}/${evidence.statistics.totalStories}\n- Current region: ${evidence.statistics.currentRegion}\n- Current location: ${evidence.statistics.currentLocation}\n- Inventory: ${evidence.statistics.inventorySummary}\n- Visible NPC count: ${evidence.statistics.visibleNpcCount}\n- Context/token/cost metrics: ${evidence.statistics.contextTokenCostMetrics}\n`
+    : "";
 
   const failureSection = evidence.failure
     ? `\n## Failure\n\n- Phase: ${evidence.failure.phase}\n- Type: ${evidence.failure.name}\n- Message: ${evidence.failure.message}\n`
     : "";
 
-  return `# LUMI Long-Horizon Run ${evidence.runId}\n\n- Status: ${evidence.status}\n- Current phase: ${evidence.phase}\n- Child age: ${evidence.childAge}\n- Child label: ${evidence.childDisplayName}\n- RNG seed: ${evidence.rngSeed}\n- Child profile id: ${evidence.childProfileId ?? "not-created"}\n- Character id: ${evidence.characterId ?? "not-committed"}\n- Character path: ${evidence.characterDetailPath ?? "not-committed"}\n- Persistent data cleanup: disabled by contract\n\n## Random visible onboarding selections\n\n${selectionLines}\n\n## Generated stories\n\n${storyLines}${failureSection}`;
+  return `# LUMI Long-Horizon Run ${evidence.runId}\n\n- Evidence format: v${evidence.formatVersion}\n- Status: ${evidence.status}\n- Current phase: ${evidence.phase}\n- Child age: ${evidence.childAge}\n- Child label: ${evidence.childDisplayName}\n- RNG seed: ${evidence.rngSeed}\n- Child profile id: ${evidence.childProfileId ?? "not-created"}\n- Character id: ${evidence.characterId ?? "not-committed"}\n- Character path: ${evidence.characterDetailPath ?? "not-committed"}\n- Persistent data cleanup: disabled by contract\n\n## Random visible onboarding selections\n\n${selectionLines}\n\n## Generated stories\n\n${storyLines}${statisticsSection}${failureSection}`;
 }
 
 export function formatStoryMarkdown(story: RecordedStoryEvidence): string {
-  return `# Story ${story.sequence}\n\n- Source family: ${story.sourceFamily}\n- Visible source label: ${story.sourceLabel}\n- Source title: ${story.sourceTitle}\n- Source teaser: ${story.sourceTeaser}\n- Scene title: ${story.sceneTitle}\n- Narrative characters: ${story.narrativeLength}\n- Generation/start duration: ${story.durationMs} ms\n- Reader path: ${story.readerPath}\n\n## Story text\n\n${story.narrative}`;
+  return `# Story ${story.sequence}\n\n- Source family: ${story.sourceFamily}\n- Visible source label: ${story.sourceLabel}\n- Source title: ${story.sourceTitle}\n- Source teaser: ${story.sourceTeaser}\n- Scene title: ${story.sceneTitle}\n- Persisted profile-list title: ${story.persistedTitle}\n- Persisted after completion: ${story.persistedVerified}\n- Player recap: ${story.playerRecap}\n- Narrative characters: ${story.narrativeLength}\n- Generation/start duration: ${story.durationMs} ms\n- Reader path: ${story.readerPath}\n- Relevant location: ${story.relevantLocation}\n- Important item changes: ${story.importantItemChanges}\n- NPCs involved: ${story.npcsInvolved}\n- Observable choices/outcomes: ${story.observableChoicesOutcomes}\n- Context Inspector / token / cost: ${story.contextInspector}\n\n## Reader checkpoint summary\n\n${story.checkpointSummary}\n\n## Full rendered story text\n\n${story.narrative}`;
 }
 
 export async function ensureEvidenceDirectory(
