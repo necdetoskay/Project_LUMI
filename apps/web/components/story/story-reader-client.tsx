@@ -740,7 +740,10 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
             </span>
             Mevcut sahne
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-on-surface">
+          <h2
+            className="mt-4 text-2xl font-bold text-on-surface"
+            data-testid="story-scene-title"
+          >
             {currentScene?.title ??
               currentScene?.sceneKey ??
               "Sahne bekleniyor"}
@@ -826,7 +829,10 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
               )}
             </section>
           </div>
-          <p className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface">
+          <p
+            className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface"
+            data-testid="story-narrative"
+          >
             {currentScene?.narrativeText ??
               "Bu oturum icin aktif sahne bulunamadi."}
           </p>
@@ -936,6 +942,7 @@ export function StoryReaderClient({ sessionId }: { sessionId: string }) {
                       >
                         <button
                           className="flex min-h-12 w-full items-center justify-between text-left text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"
+                          data-testid="story-choice-option"
                           type="button"
                           aria-label={option.option.label}
                           onClick={() =>
