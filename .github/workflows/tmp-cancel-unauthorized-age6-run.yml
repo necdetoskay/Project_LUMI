@@ -1,0 +1,34 @@
+name: Temporary Cancel Unintended Age-6 Run
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-fix-prep
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cancel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Cancel unintended persistent live run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_RUN_ID: "31973838528"
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output "$RUNNER_TEMP/cancel.json" --write-out '%{http_code}' \
+            --request POST \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${TARGET_RUN_ID}/cancel")"
+          if [ "$status" != "202" ] && [ "$status" != "409" ]; then
+            echo "Cancel request failed with HTTP $status"
+            cat "$RUNNER_TEMP/cancel.json"
+            exit 1
+          fi
+          echo "Cancel request accepted for run $TARGET_RUN_ID (HTTP $status)."
