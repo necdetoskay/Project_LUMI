@@ -18,6 +18,15 @@ if (!baseURL) {
   throw new Error("LUMI_LONG_HORIZON_BASE_URL is required for the live suite.");
 }
 
+const protectedPreviewConfig = vercelShareSecret
+  ? {
+      globalSetup: "./tests/e2e/long-horizon/live-vercel-share-setup.ts",
+    }
+  : {};
+const protectedPreviewUse = vercelShareSecret
+  ? { storageState: storageStatePath }
+  : {};
+
 export default defineConfig({
   testDir: "./tests/e2e/long-horizon",
   testMatch: /.*\.live\.spec\.ts/,
@@ -26,12 +35,10 @@ export default defineConfig({
   workers: 1,
   timeout: 30 * 60 * 1000,
   expect: { timeout: 60_000 },
-  globalSetup: vercelShareSecret
-    ? "./tests/e2e/long-horizon/live-vercel-share-setup.ts"
-    : undefined,
+  ...protectedPreviewConfig,
   use: {
     baseURL,
-    storageState: vercelShareSecret ? storageStatePath : undefined,
+    ...protectedPreviewUse,
     // Do not retain Playwright traces/video/screenshots for this live suite: they can
     // capture account identifiers, cookies, form values, or other live-session data.
     // The suite writes a deliberately curated Markdown/JSON evidence pack instead.
