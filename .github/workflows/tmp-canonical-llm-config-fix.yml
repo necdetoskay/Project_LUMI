@@ -144,7 +144,7 @@ jobs:
               if (membership.rowCount !== 1) throw new Error('DEMO_HOUSEHOLD_NOT_FOUND');
               const { user_id: userId, household_id: householdId } = membership.rows[0];
 
-              const fallback = await getOpenRouterApiKey('env-fallback-probe-user', householdId);
+              const fallback = await getOpenRouterApiKey('00000000-0000-4000-8000-000000000000', householdId);
               if (fallback !== process.env.OPENROUTER_API_KEY) throw new Error('ENV_API_KEY_FALLBACK_FAILED');
               console.log('OpenRouter env fallback: PASS');
 
