@@ -5,7 +5,7 @@ import type {
   TextGenerationResult,
 } from "./types";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 function parseJson(value: string): unknown | null {
   try {
@@ -13,6 +13,12 @@ function parseJson(value: string): unknown | null {
   } catch {
     return null;
   }
+}
+
+function getOpenRouterUrl(): string {
+  const baseUrl =
+    process.env.OPENROUTER_API_BASE_URL?.trim() || DEFAULT_OPENROUTER_BASE_URL;
+  return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 }
 
 export class OpenRouterTextGenerationProvider
@@ -29,7 +35,7 @@ export class OpenRouterTextGenerationProvider
     if (!model) throw new Error("Prompt version must define a model");
 
     const startedAt = performance.now();
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(getOpenRouterUrl(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
