@@ -1,0 +1,68 @@
+name: Temporary long-horizon NPC observability patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Expose canonical NPC state on the real world UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected 1 match, got {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          route = 'apps/web/app/api/child-profiles/[id]/world/route.ts'
+          replace_once(route,
+          '  findChildProfileForUser,\n  getHouseholdForUser,\n  listCharactersByChildProfile,',
+          '  findChildProfileForUser,\n  findNpcContextIdentities,\n  getHouseholdForUser,\n  listCharactersByChildProfile,')
+          replace_once(route,
+          '} from "@lumi/world/application";\n',
+          '} from "@lumi/world/application";\nimport { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence";\n')
+          replace_once(route,
+          '        const [detailResult, currentLocationResult] = await Promise.allSettled([\n          getWorldDetail(world.id),\n          getCharacterCurrentLocation(primaryCharacter.id),\n        ]);',
+          '        const [detailResult, currentLocationResult, npcResult] =\n          await Promise.allSettled([\n            getWorldDetail(world.id),\n            getCharacterCurrentLocation(primaryCharacter.id),\n            new DrizzleNpcSnapshotRepository().listForContext(\n              householdId,\n              world.id,\n              parsedParams.data.id,\n              24,\n            ),\n          ]);')
+          replace_once(route,
+          '        const detailRegions = asArray(detail?.regions);\n        const detailLocations = asArray(detail?.locations);',
+          '        const detailRegions = asArray(detail?.regions);\n        const detailLocations = asArray(detail?.locations);\n        const npcSnapshots = npcResult.status === "fulfilled" ? npcResult.value : [];\n        const npcIdentities = await findNpcContextIdentities({\n          characterIds: npcSnapshots.map((snapshot) => snapshot.characterId),\n          householdId,\n          childProfileId: parsedParams.data.id,\n        });\n        const npcIdentityByCharacterId = new Map(\n          npcIdentities.map((identity) => [identity.characterId, identity] as const),\n        );\n        const locationNameById = new Map(\n          detailLocations.map((location) => [location.id, location.displayName] as const),\n        );')
+          replace_once(route,
+          '            regions: mapRegions,\n          },',
+          '            regions: mapRegions,\n            npcs: npcSnapshots.flatMap((snapshot) => {\n              const identity = npcIdentityByCharacterId.get(snapshot.characterId);\n              if (!identity) return [];\n              return [\n                {\n                  key: snapshot.npcId,\n                  name: identity.name,\n                  subtype: identity.subtype,\n                  originConcept: identity.originConcept,\n                  locationName: snapshot.locationId\n                    ? (locationNameById.get(snapshot.locationId) ?? "Bilinmeyen konum")\n                    : "Konum kaydedilmemiş",\n                  needTypes: [...snapshot.needTypes],\n                  relationshipToCharacter: snapshot.relationshipToCharacter,\n                  relationshipLabel: relationshipLabel(\n                    snapshot.relationshipToCharacter,\n                  ),\n                  lastInteractionAt: snapshot.lastInteractionAt.toISOString(),\n                },\n              ];\n            }),\n          },')
+          replace_once(route,
+          'function asArray<T>(value: T[] | null | undefined): T[] {\n  return Array.isArray(value) ? value : [];\n}\n',
+          'function asArray<T>(value: T[] | null | undefined): T[] {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction relationshipLabel(value: number): string {\n  if (value >= 0.5) return "çok yakın";\n  if (value >= 0.1) return "olumlu";\n  if (value <= -0.5) return "çok gergin";\n  if (value <= -0.1) return "gergin";\n  return "nötr";\n}\n')
+
+          component = 'apps/web/components/world/profile-world-map-section.tsx'
+          replace_once(component,
+          '    regions: WorldMapRegion[];\n  } | null;',
+          '    regions: WorldMapRegion[];\n    npcs: Array<{\n      key: string;\n      name: string;\n      subtype: string;\n      originConcept: string;\n      locationName: string;\n      needTypes: string[];\n      relationshipToCharacter: number;\n      relationshipLabel: string;\n      lastInteractionAt: string;\n    }>;\n  } | null;')
+          replace_once(component,
+          '          <section className="rounded-xl border border-outline-variant bg-white p-5">\n            <h2 className="text-lg font-bold text-on-surface">Kesif notu</h2>',
+          '          <section\n            className="rounded-xl border border-outline-variant bg-white p-5"\n            data-testid="npc-relationship-summary"\n          >\n            <h2 className="text-lg font-bold text-on-surface">\n              Tanıdıklar ve ilişkiler\n            </h2>\n            {world.npcs.length > 0 ? (\n              <div className="mt-4 space-y-3">\n                {world.npcs.map((npc) => (\n                  <article\n                    className="rounded-lg border border-outline-variant bg-surface-container-low p-4"\n                    data-testid="npc-state-card"\n                    key={npc.key}\n                  >\n                    <div className="flex items-start justify-between gap-3">\n                      <div>\n                        <h3 className="text-sm font-bold text-on-surface">\n                          {npc.name}\n                        </h3>\n                        <p className="mt-1 text-xs text-on-surface-variant">\n                          {npc.subtype} · {npc.locationName}\n                        </p>\n                      </div>\n                      <span className="rounded-full bg-primary-fixed/60 px-2.5 py-1 text-xs font-bold text-primary">\n                        {npc.relationshipLabel}\n                      </span>\n                    </div>\n                    <p className="mt-3 text-sm leading-6 text-on-surface-variant">\n                      {npc.originConcept}\n                    </p>\n                    <div className="mt-3 grid gap-2 text-xs text-on-surface-variant">\n                      <p>\n                        Yakınlık: {npc.relationshipToCharacter.toFixed(2)}\n                      </p>\n                      <p>\n                        İhtiyaçlar: {npc.needTypes.length > 0\n                          ? npc.needTypes.join(", ")\n                          : "kayıtlı ihtiyaç yok"}\n                      </p>\n                      <p>Son etkileşim: {npc.lastInteractionAt}</p>\n                    </div>\n                  </article>\n                ))}\n              </div>\n            ) : (\n              <p className="mt-3 text-sm leading-6 text-on-surface-variant">\n                Bu dünyada henüz görünür bir NPC ilişkisi kaydedilmedi.\n              </p>\n            )}\n          </section>\n\n          <section className="rounded-xl border border-outline-variant bg-white p-5">\n            <h2 className="text-lg font-bold text-on-surface">Kesif notu</h2>')
+
+          Path('.github/workflows/tmp-long-horizon-npc-observability.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(world): expose canonical NPC relationships in world UI"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
