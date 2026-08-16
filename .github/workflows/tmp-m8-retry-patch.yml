@@ -1,0 +1,142 @@
+name: Temporary M8 Foundation Retry Patch
+
+on:
+  push:
+    branches:
+      - agent/onboarding-m8-ci-ultef
+    paths:
+      - .github/workflows/tmp-m8-retry-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/onboarding-m8-ci-ultef
+      - name: Patch generic foundation generation retries
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('packages/profiles/src/application/character-foundation-onboarding.service.ts')
+          s = p.read_text()
+          old = '''  const prompt = await resolveActivePrompt(spec.promptKey, context);
+          const generated = await generateTextWithLlm({
+            userId,
+            householdId: input.householdId,
+            taskType: spec.taskType,
+            system: prompt.system,
+            user: prompt.user,
+            modelOverride: prompt.modelOverride,
+            generationConfig: prompt.generationConfig,
+          });
+          try {
+            const validated = parseAndValidatePromptOutput(
+              generated.content,
+              prompt.outputSchema,
+            );
+            const suggestions = spec.pick(validated);
+            await recordAiGenerationTrace({
+              householdId: input.householdId,
+              childProfileId: input.childProfileId,
+              creationCycleId: generationContext.creation.cycleId,
+              taskType: spec.taskType,
+              promptKey: prompt.promptKey,
+              promptVersion: prompt.promptVersion,
+              inputContext: context,
+              outputPayload: { suggestions },
+              validationStatus: "valid",
+              generated,
+            });
+            return {
+              suggestions,
+              modelId: generated.model,
+              promptVersion: prompt.promptVersion,
+            };
+          } catch (error) {
+            await recordAiGenerationTrace({
+              householdId: input.householdId,
+              childProfileId: input.childProfileId,
+              creationCycleId: generationContext.creation.cycleId,
+              taskType: spec.taskType,
+              promptKey: prompt.promptKey,
+              promptVersion: prompt.promptVersion,
+              inputContext: context,
+              outputPayload: { raw: generated.content },
+              validationStatus: "invalid",
+              generated,
+            });
+            throw error;
+          }
+          '''
+          new = '''  const prompt = await resolveActivePrompt(spec.promptKey, context);
+          let lastError: unknown;
+          for (let attempt = 1; attempt <= 3; attempt += 1) {
+            const generated = await generateTextWithLlm({
+              userId,
+              householdId: input.householdId,
+              taskType: spec.taskType,
+              system: prompt.system,
+              user:
+                attempt === 1
+                  ? prompt.user
+                  : `${prompt.user}\\n\\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
+              modelOverride: prompt.modelOverride,
+              generationConfig: prompt.generationConfig,
+            });
+            try {
+              const validated = parseAndValidatePromptOutput(
+                generated.content,
+                prompt.outputSchema,
+              );
+              const suggestions = spec.pick(validated);
+              await recordAiGenerationTrace({
+                householdId: input.householdId,
+                childProfileId: input.childProfileId,
+                creationCycleId: generationContext.creation.cycleId,
+                taskType: spec.taskType,
+                promptKey: prompt.promptKey,
+                promptVersion: prompt.promptVersion,
+                inputContext: { ...context, generationAttempt: attempt },
+                outputPayload: { suggestions },
+                validationStatus: "valid",
+                generated,
+              });
+              return {
+                suggestions,
+                modelId: generated.model,
+                promptVersion: prompt.promptVersion,
+              };
+            } catch (error) {
+              lastError = error;
+              await recordAiGenerationTrace({
+                householdId: input.householdId,
+                childProfileId: input.childProfileId,
+                creationCycleId: generationContext.creation.cycleId,
+                taskType: spec.taskType,
+                promptKey: prompt.promptKey,
+                promptVersion: prompt.promptVersion,
+                inputContext: { ...context, generationAttempt: attempt },
+                outputPayload: { raw: generated.content },
+                validationStatus: "invalid",
+                generated,
+              });
+            }
+          }
+          throw lastError;
+          '''
+          if old not in s:
+              raise SystemExit('target generateSuggestions block not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Remove temporary workflow and commit
+        run: |
+          rm .github/workflows/tmp-m8-retry-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/profiles/src/application/character-foundation-onboarding.service.ts .github/workflows/tmp-m8-retry-patch.yml
+          git commit -m "fix(onboarding): retry invalid foundation generations"
+          git push origin HEAD:agent/onboarding-m8-ci-ultef
