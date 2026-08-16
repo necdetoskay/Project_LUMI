@@ -1,0 +1,64 @@
+name: Temporary start-adventure live generation patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Wire visible New Adventure selection to real LLM generation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('apps/web/app/api/child-profiles/[id]/stories/start-adventure/route.ts')
+          text = p.read_text()
+
+          def one(old, new):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one match, got {count}: {old[:100]!r}')
+              text = text.replace(old, new, 1)
+
+          one(
+          'import { observeHandler } from "@/lib/observability/observed-api-route";\n',
+          'import { observeHandler } from "@/lib/observability/observed-api-route";\nimport {\n  projectInventoryCandidate,\n  projectOpportunityCandidate,\n} from "@/lib/stories/adventure-presentation";\nimport { generateAdventureReaderTurn } from "@/lib/story/generated-adventure-reader.service";\nimport { generateHookReaderTurn } from "@/lib/story/generated-hook-reader.service";\n')
+          one(
+          '      let candidateTitle = "Yeni macera";\n      let candidateFamily:',
+          '      let candidateTitle = "Yeni macera";\n      let candidateTeaser = "";\n      let candidateFamily:')
+          one(
+          '        opportunityState = opportunity.getState();\n        candidateTitle = opportunityState.message;\n        candidateFamily =\n          opportunityState.opportunityType === "rumor"\n            ? "rumor"\n            : ["invitation", "social_visit", "gift"].includes(\n                  opportunityState.opportunityType,\n                )\n              ? "npc_call"\n              : "world_event";',
+          '        opportunityState = opportunity.getState();\n        const projected = projectOpportunityCandidate({\n          id: opportunityState.id,\n          type: opportunityState.opportunityType,\n          message: opportunityState.message,\n          sourceNpcId: opportunityState.sourceNpcId,\n          evidence: opportunityState.evidence,\n        });\n        candidateTitle = projected.title;\n        candidateTeaser = projected.teaser;\n        candidateFamily = projected.sourceFamily;')
+          one(
+          '        candidateTitle = item.displayName;\n        candidateFamily = "inventory_item";',
+          '        const projected = projectInventoryCandidate(\n          item,\n          `${item.displayName}, yeni bir sırrın ya da keşfin başlangıcı olabilir.`,\n        );\n        candidateTitle = projected.title;\n        candidateTeaser = projected.teaser;\n        candidateFamily = "inventory_item";')
+          one(
+          '      } else if (candidateId !== `world:${world.id}`) {\n        return NextResponse.json(',
+          '      } else if (candidateId === `world:${world.id}`) {\n        candidateTitle = "Dünyada yeni bir iz";\n        candidateTeaser =\n          "Dünyada keşfedilmeyi bekleyen yeni ve merak uyandıran bir olay var.";\n        candidateFamily = "world_event";\n      } else {\n        return NextResponse.json(')
+          one(
+          '      let hookId: string | null = null;\n      if (opportunityState) {',
+          '      let hookId: string | null = null;\n      if (opportunityState) {')
+          one(
+          '        hookId = hook.hook.id;\n      }\n\n      return NextResponse.json(\n        {\n          sessionId: activeSession.id,\n          startedNewSession,\n          attachedCandidateId: candidateId,\n          hookId,\n        },',
+          '        hookId = hook.hook.id;\n      }\n\n      const expectedVersion = activeSession.version;\n      const generated = hookId\n        ? await generateHookReaderTurn({\n            userId: parent.id,\n            householdId,\n            sessionId: activeSession.id,\n            hookId,\n            expectedVersion,\n          })\n        : await generateAdventureReaderTurn({\n            userId: parent.id,\n            householdId,\n            sessionId: activeSession.id,\n            worldId: world.id,\n            candidateId,\n            sourceFamily: candidateFamily,\n            sourceTitle: candidateTitle,\n            sourceTeaser: candidateTeaser,\n            expectedVersion,\n          });\n\n      return NextResponse.json(\n        {\n          sessionId: activeSession.id,\n          startedNewSession,\n          attachedCandidateId: candidateId,\n          hookId,\n          generatedSceneId: generated.sceneId,\n        },')
+
+          p.write_text(text)
+          Path('.github/workflows/tmp-start-adventure-live-generation.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(stories): generate selected adventures before opening reader"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
