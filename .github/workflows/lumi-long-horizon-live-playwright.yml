@@ -1,5 +1,6 @@
 name: LUMI Long-Horizon Live Playwright
 
+# Manual-only by design: every run writes persistent live state and may incur model cost.
 on:
   workflow_dispatch:
     inputs:
