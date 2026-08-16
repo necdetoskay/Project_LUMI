@@ -1,23 +1,43 @@
-name: Temporary Onboarding Map
+name: Temporary Onboarding Validation
 on:
   push:
     branches: [agent/character-onboarding-live-e2e]
     paths: [.github/workflows/tmp-onboarding-map.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  map:
+  validate:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Map canonical onboarding capabilities
-        shell: bash
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format onboarding slice
         run: |
-          echo '=== PROMPT KEYS ==='
-          grep -RIn 'character_onboarding\.' packages apps | head -n 400 || true
-          echo '=== WORLD / REGION / SAGA SERVICES ==='
-          grep -RInE '^export (async )?function.*(World|Region|Saga)|generate.*(World|Region|Saga)|select.*(World|Region|Saga)' packages/world/src packages/profiles/src/application 2>/dev/null | head -n 500 || true
-          echo '=== CREATION SCHEMA ==='
-          grep -RInE 'characterCreation(Cycles|Selections)|current_step|currentStep' packages/profiles/src packages/profiles/migrations | head -n 500 || true
-          echo '=== AI TASK TYPES ==='
-          grep -RInE 'character_(world|region|origin|saga|identity)|world_.*suggest' packages/profiles/src apps/web | head -n 500 || true
+          pnpm exec prettier --write \
+            packages/profiles/src/application/character-foundation-onboarding.service.ts \
+            packages/profiles/src/application/character-first-identity-suggestion.service.ts \
+            packages/profiles/src/application/character-creation-cycle.service.ts \
+            packages/profiles/src/application/character-origin-suggestion.service.ts \
+            packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
+            packages/profiles/migrations/0065_character_foundation_onboarding.sql \
+            apps/web/lib/character-onboarding/finalize-character-foundation.service.ts
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add .
+            git commit -m 'chore: format onboarding foundation slice'
+            git push
+          fi
+      - name: Typecheck profiles
+        run: pnpm --filter @lumi/profiles typecheck
+      - name: Typecheck web
+        run: pnpm --filter @lumi/web typecheck
