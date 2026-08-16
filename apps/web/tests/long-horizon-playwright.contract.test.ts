@@ -2,10 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const LIVE_TEST_DIR = path.resolve(
-  process.cwd(),
-  "tests/e2e/long-horizon",
-);
+const LIVE_TEST_DIR = path.resolve(process.cwd(), "tests/e2e/long-horizon");
 
 const FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
   [/\bcontext\.request\b/, "Playwright context.request"],
@@ -17,12 +14,20 @@ const FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
   [/\bfetch\s*\(\s*["'`]\/api\//, "direct API fetch"],
   [/@lumi\/[^"'`]+\/db\b/, "domain DB package import"],
   [/\b(?:drizzle-orm|postgres|pg)\b/, "database library import"],
-  [/mock-(?:llm|openrouter)|mock\/canonical|MOCK_OPENROUTER/i, "mock provider/runtime"],
-  [/OPENROUTER_API_KEY|callStoryOpenRouter|callOpenRouter/, "direct provider access"],
+  [
+    /mock-(?:llm|openrouter)|mock\/canonical|MOCK_OPENROUTER/i,
+    "mock provider/runtime",
+  ],
+  [
+    /OPENROUTER_API_KEY|callStoryOpenRouter|callOpenRouter/,
+    "direct provider access",
+  ],
   [/route\.abort|route\.continue/, "network interception"],
 ];
 
-async function liveSourceFiles(): Promise<Array<{ path: string; text: string }>> {
+async function liveSourceFiles(): Promise<
+  Array<{ path: string; text: string }>
+> {
   const names = await readdir(LIVE_TEST_DIR);
   const files = names.filter((name) => /\.(?:ts|tsx|mjs|js)$/.test(name));
   return Promise.all(
@@ -60,16 +65,16 @@ describe("live long-horizon Playwright execution contract", () => {
       }
     }
 
-    expect(gotoCalls).toEqual([
-      'baseline-onboarding.live.spec.ts:"/login"',
-    ]);
+    expect(gotoCalls).toEqual(['baseline-onboarding.live.spec.ts:"/login"']);
   });
 
   it("keeps the live pack free of cleanup/delete shortcuts", async () => {
     const files = await liveSourceFiles();
     const combined = files.map((file) => file.text).join("\n");
 
-    expect(combined).not.toMatch(/archiveChild|deleteChild|cleanupLive|teardownLive/i);
+    expect(combined).not.toMatch(
+      /archiveChild|deleteChild|cleanupLive|teardownLive/i,
+    );
     expect(combined).not.toMatch(/\.delete\s*\(\s*["'`]\/api\//i);
   });
 });

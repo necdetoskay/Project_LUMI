@@ -172,7 +172,10 @@ function extractId(pathname: string, pattern: RegExp, label: string): string {
 }
 
 async function openStoriesTab(page: Page): Promise<void> {
-  const storiesTab = page.getByRole("button", { name: "Hikâyeler", exact: true });
+  const storiesTab = page.getByRole("button", {
+    name: "Hikâyeler",
+    exact: true,
+  });
   await expect(storiesTab).toBeVisible({ timeout: 60_000 });
   await storiesTab.click();
   await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
@@ -255,7 +258,9 @@ async function chooseVisibleAdventureCandidate(
     }
   }
 
-  const labels = desiredFamilies.map((family) => SOURCE_LABELS[family]).join(", ");
+  const labels = desiredFamilies
+    .map((family) => SOURCE_LABELS[family])
+    .join(", ");
   throw new Error(
     `LONG_HORIZON_PREREQUISITE_FAILED: expected a visible ${labels} candidate after ${MAX_CANDIDATE_ROTATIONS + 1} UI candidate pages`,
   );
@@ -317,7 +322,9 @@ async function startAndCompleteStory(
   const complete = page.getByTestId("complete-story");
   await expect(complete).toBeVisible({ timeout: 60_000 });
   await complete.click();
-  await expect(page.getByText("Hikâye tamamlandı.", { exact: true })).toBeVisible({
+  await expect(
+    page.getByText("Hikâye tamamlandı.", { exact: true }),
+  ).toBeVisible({
     timeout: 60_000,
   });
   const story: RecordedStoryEvidence = {
@@ -440,7 +447,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await expect(createdProfileCard).toContainText(`${config.childAge} yaş`);
       await checkpoint("child-profile:verified");
 
-      await createdProfileCard.getByRole("link", { name: "Profili aç" }).click();
+      await createdProfileCard
+        .getByRole("link", { name: "Profili aç" })
+        .click();
       await expect(page).toHaveURL(
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },
@@ -448,7 +457,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       const createFirstCharacter = page.getByRole("link", {
         name: /İlk karakteri oluştur|Karakter oluştur/,
       });
-      await expect(createFirstCharacter.first()).toBeVisible({ timeout: 60_000 });
+      await expect(createFirstCharacter.first()).toBeVisible({
+        timeout: 60_000,
+      });
       await createFirstCharacter.first().click();
       await expect(page).toHaveURL(/\/characters\/new\/wizard(?:\?.*)?$/);
       await expectStep(page, "character_type");
@@ -610,9 +621,13 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       expect(
         stories.filter((story) => story.sourceFamily === "inventory_item"),
       ).toHaveLength(2);
-      expect(stories.filter((story) => story.sourceFamily === "rumor")).toHaveLength(2);
+      expect(
+        stories.filter((story) => story.sourceFamily === "rumor"),
+      ).toHaveLength(2);
 
-      await page.getByRole("button", { name: "Karakterler", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Karakterler", exact: true })
+        .click();
       const characterPanel = page.locator("main article").first();
       await expect(characterPanel).toBeVisible({ timeout: 60_000 });
       const finalCharacterState = (await characterPanel.innerText()).trim();
@@ -639,7 +654,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
 
       const inventoryHeading = page.getByRole("heading", { name: "Çanta" });
       await expect(inventoryHeading).toBeVisible({ timeout: 60_000 });
-      const inventorySection = inventoryHeading.locator("xpath=ancestor::section[1]");
+      const inventorySection = inventoryHeading.locator(
+        "xpath=ancestor::section[1]",
+      );
       const finalInventoryState = (await inventorySection.innerText()).trim();
       evidence.finalInventoryState = finalInventoryState;
       await writeMarkdown(
@@ -701,7 +718,11 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       evidence.finishedAt = new Date().toISOString();
       evidence.lastPathname = safePathname(page.url());
       await writeRunJson(config, evidence);
-      await writeMarkdown(config, "00-run-summary.md", formatRunSummary(evidence));
+      await writeMarkdown(
+        config,
+        "00-run-summary.md",
+        formatRunSummary(evidence),
+      );
     }
   });
 });
