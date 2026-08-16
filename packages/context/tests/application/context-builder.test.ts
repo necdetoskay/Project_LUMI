@@ -100,6 +100,7 @@ describe("ContextBuilder", () => {
         "working-story",
         "emotional-state",
         "long-term-memory",
+        "relevant-npc",
         "knowledge",
         "world",
         "origin-package",
@@ -111,7 +112,7 @@ describe("ContextBuilder", () => {
       const manifest = await builder.build(testRequest);
 
       const priorities = manifest.sections.map((section) => section.priority);
-      expect(priorities).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(priorities).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
     });
   });
 
@@ -279,7 +280,7 @@ describe("ContextBuilder", () => {
       );
 
       const manifest = await builder.build(createMinimalRequest());
-      expect(manifest.sections.length).toBe(8);
+      expect(manifest.sections.length).toBe(9);
       expect(manifest.tokenUsage.usedTokens).toBeLessThanOrEqual(
         testBudget.totalTokens,
       );
