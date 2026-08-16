@@ -30,8 +30,8 @@ function getRepos() {
 function isMissingSchemaError(err: unknown): boolean {
   if (err instanceof PostgresError) {
     return (
-      err.code === "42P01" || // undefined_table
-      err.code === "3F000" || // schema_does_not_exist
+      err.code === "42P01" ||
+      err.code === "3F000" ||
       err.message?.includes("does not exist")
     );
   }
@@ -87,7 +87,7 @@ export async function getOnboardingState(
       id: p.id,
       displayName: p.displayName,
       ageBand: p.ageBand,
-      ageYears: p.metadata.ageYears ?? null,
+      ageYears: p.ageYears ?? p.metadata.ageYears ?? null,
     })),
   };
 }
