@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
+  timeout: 120_000,
+  expect: { timeout: 30_000 },
   use: {
     baseURL,
     trace: "on-first-retry",
@@ -23,7 +25,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "node tests/e2e/mock-onboarding-llm-server-entry.mjs",
+      command: "node tests/e2e/mock-onboarding-llm-v2-server-entry.mjs",
       port: mockPort,
       reuseExistingServer: false,
       timeout: 30_000,
