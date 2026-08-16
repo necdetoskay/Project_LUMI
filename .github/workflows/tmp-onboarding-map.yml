@@ -10,16 +10,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Map wizard and services
+      - name: Map canonical onboarding capabilities
         shell: bash
         run: |
-          echo '=== WIZARD FILES ==='
-          find 'apps/web/app/app/profiles/[childProfileId]/characters/new' -type f -maxdepth 4 -print | sort
-          echo '=== API ROUTES ==='
-          find apps/web/app/api/character-creation -type f -print | sort
-          echo '=== STEP / ROUTE REFERENCES ==='
-          grep -RInE 'currentStep|stepKey|router\.push|characters/new/' 'apps/web/app/app/profiles/[childProfileId]/characters/new' packages/profiles/src/application apps/web/app/api/character-creation | head -n 500 || true
-          echo '=== CHARACTER CREATION SERVICES ==='
-          ls -1 packages/profiles/src/application/*character*{suggestion,creation-cycle}* 2>/dev/null || true
-          echo '=== ORIGIN EXPORTS ==='
-          grep -RInE '^export (async )?function|^export const|^export type' packages/profiles/src/application/character-origin-suggestion.service.ts packages/profiles/src/application/character-identity-suggestion.service.ts packages/profiles/src/application/character-bootstrap.service.ts | head -n 300 || true
+          echo '=== PROMPT KEYS ==='
+          grep -RIn 'character_onboarding\.' packages apps | head -n 400 || true
+          echo '=== WORLD / REGION / SAGA SERVICES ==='
+          grep -RInE '^export (async )?function.*(World|Region|Saga)|generate.*(World|Region|Saga)|select.*(World|Region|Saga)' packages/world/src packages/profiles/src/application 2>/dev/null | head -n 500 || true
+          echo '=== CREATION SCHEMA ==='
+          grep -RInE 'characterCreation(Cycles|Selections)|current_step|currentStep' packages/profiles/src packages/profiles/migrations | head -n 500 || true
+          echo '=== AI TASK TYPES ==='
+          grep -RInE 'character_(world|region|origin|saga|identity)|world_.*suggest' packages/profiles/src apps/web | head -n 500 || true
