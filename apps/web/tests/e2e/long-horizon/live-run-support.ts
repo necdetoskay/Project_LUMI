@@ -132,7 +132,8 @@ export function createSeededRandom(seed: number): () => number {
 
 export function normalizeEvidenceText(value: string, maxLength = 500): string {
   return value
-    .replace(/\u0000/g, "")
+    .split("\u0000")
+    .join("")
     .trim()
     .replace(/\s+/g, " ")
     .slice(0, maxLength);
