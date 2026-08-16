@@ -1,0 +1,53 @@
+name: Temporary long-horizon reader selector patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Add stable selectors to visible reader controls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('apps/web/components/story/story-reader-client.tsx')
+          text = p.read_text()
+          replacements = [
+            (
+              '<p className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface">\n            {currentScene?.narrativeText ??',
+              '<p\n            className="mt-4 whitespace-pre-wrap text-base leading-7 text-on-surface"\n            data-testid="story-narrative"\n          >\n            {currentScene?.narrativeText ??',
+            ),
+            (
+              '<button\n                          className="flex min-h-12 w-full items-center justify-between text-left text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"\n                          type="button"\n                          aria-label={option.option.label}',
+              '<button\n                          className="flex min-h-12 w-full items-center justify-between text-left text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-50"\n                          data-testid="story-choice-option"\n                          type="button"\n                          aria-label={option.option.label}',
+            ),
+            (
+              '<h2 className="mt-4 text-2xl font-bold text-on-surface">\n            {currentScene?.title ??',
+              '<h2\n            className="mt-4 text-2xl font-bold text-on-surface"\n            data-testid="story-scene-title"\n          >\n            {currentScene?.title ??',
+            ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one match, got {count}: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+          p.write_text(text)
+          Path('.github/workflows/tmp-long-horizon-reader-testids.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(story): expose stable selectors for visible reader controls"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
