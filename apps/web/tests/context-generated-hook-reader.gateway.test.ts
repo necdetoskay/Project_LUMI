@@ -7,7 +7,10 @@ describe("production generated-hook reader AI gateway wiring", () => {
   it("uses the shared story gateway instead of the legacy profiles OpenRouter caller", () => {
     const source = readFileSync(
       fileURLToPath(
-        new URL("../lib/story/generated-hook-reader.service.ts", import.meta.url),
+        new URL(
+          "../lib/story/generated-hook-reader.service.ts",
+          import.meta.url,
+        ),
       ),
       "utf8",
     );
