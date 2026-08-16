@@ -20,7 +20,9 @@ if (!baseURL) {
   throw new Error("LUMI_LONG_HORIZON_BASE_URL is required for the live suite.");
 }
 
-const useShareSession = Boolean(vercelShareSecret && !vercelAutomationBypassSecret);
+const useShareSession = Boolean(
+  vercelShareSecret && !vercelAutomationBypassSecret,
+);
 const protectedPreviewConfig = useShareSession
   ? {
       globalSetup: "./tests/e2e/long-horizon/live-vercel-share-setup.ts",
