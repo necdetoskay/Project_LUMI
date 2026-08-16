@@ -1,0 +1,90 @@
+name: Character Onboarding M7 Browser E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/onboarding-m7-browser-e2e
+    paths:
+      - .github/workflows/onboarding-m7-browser-e2e.yml
+      - apps/web/app/api/character-creation/canonical/**
+      - apps/web/app/app/profiles/**/characters/new/**
+      - apps/web/lib/character-onboarding/**
+      - apps/web/tests/e2e/character-onboarding-m7.spec.ts
+      - apps/web/tests/e2e/mock-onboarding-llm-server-entry.mjs
+      - apps/web/playwright.m7.config.ts
+      - packages/profiles/src/application/character-**
+      - packages/profiles/migrations/**
+      - packages/world/**
+
+permissions:
+  contents: read
+
+jobs:
+  browser-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_onboarding_browser_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_onboarding_browser_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_onboarding_browser_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_onboarding_browser_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_onboarding_browser_test
+      LUMI_SETTINGS_ENCRYPTION_KEY: lumi-m7-playwright-encryption-key
+      NODE_ENV: test
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard disposable database
+        run: |
+          node <<'NODE'
+          const db = new URL(process.env.DATABASE_URL);
+          const name = db.pathname.replace(/^\//, '').toLowerCase();
+          if (!name.includes('test') && !name.includes('review')) {
+            console.error(`Refusing browser E2E against non-test database: ${name}`);
+            process.exit(1);
+          }
+          console.log(`M7 disposable DB guard passed: ${name}`);
+          NODE
+      - name: Apply profile migrations
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Apply world migrations
+        run: pnpm --filter @lumi/world world:migrate
+      - name: Typecheck browser onboarding path
+        run: |
+          pnpm --filter @lumi/profiles typecheck
+          pnpm --filter @lumi/world typecheck
+          pnpm --filter @lumi/web typecheck
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Run real M7 browser journey
+        run: pnpm --filter @lumi/web exec playwright test --config playwright.m7.config.ts tests/e2e/character-onboarding-m7.spec.ts
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m7-playwright-artifacts
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
