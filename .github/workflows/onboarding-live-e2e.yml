@@ -12,6 +12,15 @@ on:
       - agent/character-onboarding-live-e2e
     paths:
       - .github/workflows/onboarding-live-e2e.yml
+      - apps/web/tests/character-onboarding-production-live-e2e.test.ts
+      - apps/web/lib/character-onboarding/**
+      - packages/profiles/src/application/character-foundation-onboarding.service.ts
+      - packages/profiles/src/application/character-first-identity-suggestion.service.ts
+      - packages/profiles/src/application/character-creation-cycle.service.ts
+      - packages/profiles/src/application/character-origin-suggestion.service.ts
+      - packages/profiles/migrations/0065_character_foundation_onboarding.sql
+      - packages/profiles/src/db/schema/profile/llm-task-model-settings.ts
+      - apps/web/package.json
 
 permissions:
   contents: read
