@@ -1,0 +1,31 @@
+name: Temporary Onboarding E2E SQL Repair
+on:
+  push:
+    branches: [agent/character-onboarding-live-e2e]
+    paths: [.github/workflows/tmp-fix-onboarding-e2e-sql.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair trace column names
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('apps/web/tests/character-onboarding-production-live-e2e.test.ts')
+          s=p.read_text()
+          s=s.replace('input_tokens,output_tokens,total_tokens,latency_ms,input_context', 'prompt_tokens,completion_tokens,total_tokens,latency_ms,input_context')
+          s=s.replace('inputTokens: row.input_tokens,', 'promptTokens: row.prompt_tokens,')
+          s=s.replace('outputTokens: row.output_tokens,', 'completionTokens: row.completion_tokens,')
+          p.write_text(s)
+          PY
+      - name: Commit repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/tests/character-onboarding-production-live-e2e.test.ts
+          git commit -m 'fix(test): query actual generation trace token columns'
+          git push
