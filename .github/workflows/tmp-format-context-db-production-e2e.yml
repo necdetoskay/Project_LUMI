@@ -1,0 +1,54 @@
+name: Temporary Context E2E Format Fix
+
+on:
+  push:
+    branches:
+      - agent/context-db-production-e2e
+    paths:
+      - apps/web/tests/context-db-production-live-e2e.test.ts
+      - .github/workflows/tmp-format-context-db-production-e2e.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prettier:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/context-db-production-e2e
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format Context production E2E test
+        run: pnpm exec prettier --write apps/web/tests/context-db-production-live-e2e.test.ts
+
+      - name: Commit formatting changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/context-db-production-live-e2e.test.ts
+          git commit -m "chore: format Context production E2E test"
+          git push origin HEAD:agent/context-db-production-e2e
+
+      - name: Verify target formatting
+        run: pnpm exec prettier --check apps/web/tests/context-db-production-live-e2e.test.ts
