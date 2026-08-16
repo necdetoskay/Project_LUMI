@@ -35,7 +35,7 @@ export interface CanonicalNpcIdentityRecord {
 }
 
 export interface CanonicalNpcRuntimeReader {
-  listDecisionReady(
+  listForContext(
     householdId: string,
     worldId: string,
     childProfileId: string,
@@ -78,7 +78,7 @@ export class CanonicalNpcRetrievalAdapter
     }
 
     const limit = Math.min(normalizeRetrievalLimit(query.limit), 24);
-    const runtimeRecords = await this.runtimeReader.listDecisionReady(
+    const runtimeRecords = await this.runtimeReader.listForContext(
       query.householdId,
       query.worldId,
       query.childProfileId,
