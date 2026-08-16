@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export interface LongHorizonRunConfig {
@@ -12,8 +12,17 @@ export interface LongHorizonRunConfig {
 
 export interface RecordedSelection {
   step: string;
-  index: number;
-  visibleText: string;
+  candidateCount: number;
+  selectedIndex: number;
+  selectedLabel: string;
+  selectedTestId?: string;
+  availableLabels: string[];
+}
+
+export interface LongHorizonRunFailure {
+  phase: string;
+  name: string;
+  message: string;
 }
 
 export interface LongHorizonRunEvidence {
@@ -22,10 +31,17 @@ export interface LongHorizonRunEvidence {
   childAge: number;
   rngSeed: number;
   startedAt: string;
+  finishedAt?: string;
+  status: "running" | "failed" | "completed";
+  phase: string;
   childDisplayName: string;
+  childProfileId?: string;
+  characterId?: string;
+  characterDetailPath?: string;
+  lastPathname?: string;
   selections: RecordedSelection[];
-  characterDetailUrl?: string;
   finalReview?: string;
+  failure?: LongHorizonRunFailure;
 }
 
 export function loadLongHorizonRunConfig(): LongHorizonRunConfig {
@@ -88,6 +104,52 @@ export function createSeededRandom(seed: number): () => number {
   };
 }
 
+export function normalizeEvidenceText(value: string, maxLength = 500): string {
+  return value
+    .replace(/\u0000/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
+}
+
+export function safePathname(value: string): string {
+  try {
+    return new URL(value, "https://lumi.invalid").pathname;
+  } catch {
+    return "/";
+  }
+}
+
+export function sanitizeFailure(
+  caught: unknown,
+  phase: string,
+  config: LongHorizonRunConfig,
+): LongHorizonRunFailure {
+  const error = caught instanceof Error ? caught : new Error(String(caught));
+  return {
+    phase,
+    name: normalizeEvidenceText(error.name, 80),
+    message: redactSensitiveText(error.message, config),
+  };
+}
+
+export function formatRunSummary(evidence: LongHorizonRunEvidence): string {
+  const selectionLines = evidence.selections.length
+    ? evidence.selections
+        .map(
+          (selection) =>
+            `- ${selection.step}: ${selection.selectedLabel} (${selection.selectedIndex + 1}/${selection.candidateCount})`,
+        )
+        .join("\n")
+    : "- No onboarding selection was committed before the run stopped.";
+
+  const failureSection = evidence.failure
+    ? `\n## Failure\n\n- Phase: ${evidence.failure.phase}\n- Type: ${evidence.failure.name}\n- Message: ${evidence.failure.message}\n`
+    : "";
+
+  return `# LUMI Long-Horizon Run ${evidence.runId}\n\n- Status: ${evidence.status}\n- Current phase: ${evidence.phase}\n- Child age: ${evidence.childAge}\n- Child label: ${evidence.childDisplayName}\n- RNG seed: ${evidence.rngSeed}\n- Child profile id: ${evidence.childProfileId ?? "not-created"}\n- Character id: ${evidence.characterId ?? "not-committed"}\n- Character path: ${evidence.characterDetailPath ?? "not-committed"}\n- Persistent data cleanup: disabled by contract\n\n## Random visible selections\n\n${selectionLines}${failureSection}\nNext stage after this slice: three direct stories, then two inventory-item and two rumor stories.`;
+}
+
 export async function ensureEvidenceDirectory(
   directory: string,
 ): Promise<void> {
@@ -98,11 +160,10 @@ export async function writeRunJson(
   config: LongHorizonRunConfig,
   evidence: LongHorizonRunEvidence,
 ): Promise<void> {
-  await ensureEvidenceDirectory(config.evidenceDir);
-  await writeFile(
-    path.join(config.evidenceDir, "run.json"),
+  await writeEvidenceFile(
+    config,
+    "run.json",
     `${JSON.stringify(evidence, null, 2)}\n`,
-    "utf8",
   );
 }
 
@@ -111,10 +172,42 @@ export async function writeMarkdown(
   filename: string,
   content: string,
 ): Promise<void> {
+  if (!/^[a-zA-Z0-9._-]+$/.test(filename)) {
+    throw new Error(`Unsafe evidence filename: ${filename}`);
+  }
+  await writeEvidenceFile(config, filename, `${content.trim()}\n`);
+}
+
+async function writeEvidenceFile(
+  config: LongHorizonRunConfig,
+  filename: string,
+  content: string,
+): Promise<void> {
   await ensureEvidenceDirectory(config.evidenceDir);
-  await writeFile(
-    path.join(config.evidenceDir, filename),
-    `${content.trim()}\n`,
-    "utf8",
+  const targetPath = path.join(config.evidenceDir, filename);
+  const tempPath = path.join(
+    config.evidenceDir,
+    `.${filename}.${process.pid}.${Date.now()}.tmp`,
   );
+  await writeFile(tempPath, content, "utf8");
+  await rename(tempPath, targetPath);
+}
+
+function redactSensitiveText(
+  value: string,
+  config: LongHorizonRunConfig,
+): string {
+  let redacted = value;
+  for (const [secret, replacement] of [
+    [config.parentPassword, "[REDACTED_PASSWORD]"],
+    [config.parentEmail, "[REDACTED_ACCOUNT]"],
+  ] as const) {
+    if (secret) redacted = redacted.split(secret).join(replacement);
+  }
+
+  redacted = redacted.replace(
+    /([?&](?:token|access_token|refresh_token|code|session|password)=)[^&#\s]+/gi,
+    "$1[REDACTED]",
+  );
+  return normalizeEvidenceText(redacted, 1_000);
 }
