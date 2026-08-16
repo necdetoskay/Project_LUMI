@@ -88,7 +88,13 @@ function validateNode(
         : {};
     for (const [key, childSchema] of Object.entries(properties))
       if (key in record)
-        validateNode(record[key], childSchema, `${path}.${key}`, issues, options);
+        validateNode(
+          record[key],
+          childSchema,
+          `${path}.${key}`,
+          issues,
+          options,
+        );
   }
 }
 
@@ -121,7 +127,8 @@ function synthesizeSuggestionKeys(value: unknown): unknown {
     suggestions: record.suggestions.map((item, index) => {
       if (!item || typeof item !== "object" || Array.isArray(item)) return item;
       const candidate = item as Record<string, unknown>;
-      if (typeof candidate.key === "string" && candidate.key.trim()) return item;
+      if (typeof candidate.key === "string" && candidate.key.trim())
+        return item;
       return { ...candidate, key: `candidate-${index + 1}` };
     }),
   };
