@@ -18,6 +18,9 @@ export const LLM_TASK_TYPES = [
   "world_character_suggestions",
   "character_identity_suggestions",
   "character_origin_suggestions",
+  "character_world_compatibility",
+  "character_region_suggestions",
+  "character_core_saga",
   "story_outline_generation",
   "story_turn_generation",
   "safety_review",
@@ -63,7 +66,7 @@ export const llmTaskModelSettings = profileSchema.table(
     ),
     check(
       "llm_task_model_settings_task_type_check",
-      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
+      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'character_world_compatibility', 'character_region_suggestions', 'character_core_saga', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
     ),
     check(
       "llm_task_model_settings_reasoning_check",
