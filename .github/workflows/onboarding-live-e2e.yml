@@ -18,7 +18,10 @@ on:
       - packages/profiles/src/application/character-first-identity-suggestion.service.ts
       - packages/profiles/src/application/character-creation-cycle.service.ts
       - packages/profiles/src/application/character-origin-suggestion.service.ts
+      - packages/profiles/src/application/prompt-output-validator.ts
+      - packages/profiles/src/application/prompt-output-validator.test.ts
       - packages/profiles/migrations/0065_character_foundation_onboarding.sql
+      - packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql
       - packages/profiles/src/db/schema/profile/llm-task-model-settings.ts
       - apps/web/package.json
 
