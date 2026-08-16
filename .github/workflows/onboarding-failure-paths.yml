@@ -1,0 +1,72 @@
+name: Character Onboarding M6 Failure Paths
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/onboarding-m6-failure-paths
+    paths:
+      - .github/workflows/onboarding-failure-paths.yml
+      - apps/web/tests/character-onboarding-failure-paths.integration.test.ts
+      - packages/profiles/src/application/character-creation-cycle.service.ts
+      - packages/profiles/src/application/character-foundation-onboarding.service.ts
+      - packages/profiles/src/application/character-first-identity-suggestion.service.ts
+      - packages/profiles/src/application/prompt-output-validator.ts
+
+permissions:
+  contents: read
+
+jobs:
+  m6-failure-paths:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_onboarding_failure_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_onboarding_failure_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_failure_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_failure_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_failure_test
+      LUMI_ONBOARDING_FAILURE_E2E: "1"
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard disposable database
+        run: |
+          node <<'NODE'
+          const db = new URL(process.env.DATABASE_URL);
+          const name = db.pathname.replace(/^\//, '').toLowerCase();
+          if (!name.includes('test') && !name.includes('review')) {
+            console.error(`Refusing destructive M6 tests against non-test DB: ${name}`);
+            process.exit(1);
+          }
+          console.log(`M6 disposable DB guard passed: ${name}`);
+          NODE
+      - name: Apply profile migrations
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Typecheck failure-path test
+        run: |
+          pnpm --filter @lumi/profiles typecheck
+          pnpm --filter @lumi/web typecheck
+      - name: Run M6 controlled failure-path tests
+        run: pnpm --filter @lumi/web exec vitest run tests/character-onboarding-failure-paths.integration.test.ts
