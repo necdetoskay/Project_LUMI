@@ -100,3 +100,12 @@ export type {
   AcceptedOriginPackageReader,
   AcceptedOriginPackageRecord,
 } from "./adapters";
+
+export { CanonicalNpcRetrievalAdapter } from "./adapters/canonical-npc-retrieval.adapter";
+export type {
+  CanonicalNpcContextPayload,
+  CanonicalNpcIdentityReader,
+  CanonicalNpcIdentityRecord,
+  CanonicalNpcRuntimeReader,
+  CanonicalNpcRuntimeRecord,
+} from "./adapters/canonical-npc-retrieval.adapter";
