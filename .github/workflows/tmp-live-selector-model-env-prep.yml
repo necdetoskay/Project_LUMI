@@ -1,0 +1,83 @@
+name: Temporary Live Selector Model Env Prep
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-fix-prep
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Patch canonical character selector and Turbo model env
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          spec = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
+          text = spec.read_text(encoding='utf-8')
+          old = '''      const createFirstCharacter = page.getByRole("link", {
+        name: /İlk karakteri oluştur|Karakter oluştur/,
+      });
+      await expect(createFirstCharacter.first()).toBeVisible({
+        timeout: 60_000,
+      });
+      await createFirstCharacter.first().click({ timeout: 60_000 });'''
+          new = '''      const createFirstCharacter = page
+        .locator(
+          `a[href="/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard"]`,
+        )
+        .first();
+      await expect(createFirstCharacter).toBeVisible({ timeout: 60_000 });
+      await createFirstCharacter.click({ timeout: 60_000 });'''
+          if old not in text:
+              raise SystemExit('Expected character-entry locator block was not found')
+          spec.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          turbo = Path('turbo.json')
+          turbo_text = turbo.read_text(encoding='utf-8')
+          old_env = '"env": ["DATABASE_URL"]'
+          new_env = '"env": ["DATABASE_URL", "OPENROUTER_API_KEY"]'
+          if old_env not in turbo_text:
+              raise SystemExit('Expected turbo build env list was not found')
+          turbo.write_text(turbo_text.replace(old_env, new_env, 1), encoding='utf-8')
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format changed files
+        run: pnpm exec prettier --write apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts turbo.json
+
+      - name: Format check
+        run: pnpm exec prettier --check apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts turbo.json apps/web/playwright.long-horizon-live.config.ts apps/web/app/app/profiles/[childProfileId]/child-dashboard-client-page.tsx
+
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+
+      - name: Commit verified source fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts turbo.json
+          git diff --cached --quiet && { echo "No source diff to commit"; exit 0; }
+          git commit -m "fix(live): target canonical wizard and expose model env"
+          git push origin "HEAD:$GITHUB_REF_NAME"
