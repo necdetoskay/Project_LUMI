@@ -44,10 +44,15 @@ export async function generateTextWithLlm(
     typeof cfg.temperature === "number"
       ? cfg.temperature
       : taskSetting?.temperature;
-  const maxTokens =
-    typeof cfg.maxOutputTokens === "number"
+  const hasPromptTokenPolicy = Object.prototype.hasOwnProperty.call(
+    cfg,
+    "maxOutputTokens",
+  );
+  const maxTokens = hasPromptTokenPolicy
+    ? typeof cfg.maxOutputTokens === "number"
       ? cfg.maxOutputTokens
-      : taskSetting?.maxOutputTokens;
+      : undefined
+    : taskSetting?.maxOutputTokens;
   const started = Date.now();
   const result = await callOpenRouter(apiKey, {
     model,
