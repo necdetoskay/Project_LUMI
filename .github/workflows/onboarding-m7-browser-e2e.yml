@@ -2,9 +2,9 @@ name: Character Onboarding M7 Browser E2E
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - agent/onboarding-m7-browser-e2e
+      - main
     paths:
       - .github/workflows/onboarding-m7-browser-e2e.yml
       - apps/web/app/api/character-creation/canonical/**
