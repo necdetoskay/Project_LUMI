@@ -5,6 +5,7 @@ on:
     branches:
       - agent/context-production-e2e-workflow
     paths:
+      - apps/web/lib/ai/**
       - apps/web/lib/story/**
       - apps/web/tests/context-db-production-live-e2e.test.ts
       - apps/web/tests/ultef-s37-hook-reader-production.v3.integration.test.ts
