@@ -1,0 +1,65 @@
+name: Temporary story adventure plumbing patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Wire generic adventure generation exports and stable persistence keys
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, got {count}: {old[:90]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          p = 'packages/story/src/application/generated-scene-session.service.ts'
+          replace_once(p,
+          '  sourceHookId?: string | null;\n  actorUserId?: string | undefined;',
+          '  sourceHookId?: string | null;\n  sourceKey?: string | null;\n  actorUserId?: string | undefined;')
+          replace_once(p,
+          '  sourceHookId?: string | null;\n  fallbackFingerprint: string;\n}): string {\n  if (input.sourceHookId) {\n    return `generated:hook:${input.sourceHookId}`;\n  }\n  return `generated:${input.sessionId}:${input.fallbackFingerprint}`;',
+          '  sourceHookId?: string | null;\n  sourceKey?: string | null;\n  fallbackFingerprint: string;\n}): string {\n  if (input.sourceHookId) {\n    return `generated:hook:${input.sourceHookId}`;\n  }\n  if (input.sourceKey) {\n    return `generated:adventure:${input.sourceKey}`;\n  }\n  return `generated:${input.sessionId}:${input.fallbackFingerprint}`;')
+          replace_once(p,
+          '    sourceHookId: input.sourceHookId ?? null,\n    narrative: input.scene.narrative,',
+          '    sourceHookId: input.sourceHookId ?? null,\n    sourceKey: input.sourceKey ?? null,\n    narrative: input.scene.narrative,')
+          replace_once(p,
+          '    ...(input.sourceHookId !== undefined\n      ? { sourceHookId: input.sourceHookId }\n      : {}),\n    fallbackFingerprint: sourceFingerprint,',
+          '    ...(input.sourceHookId !== undefined\n      ? { sourceHookId: input.sourceHookId }\n      : {}),\n    ...(input.sourceKey !== undefined ? { sourceKey: input.sourceKey } : {}),\n    fallbackFingerprint: sourceFingerprint,')
+          replace_once(p,
+          '          sourceHookId: input.sourceHookId ?? null,\n          modelId:',
+          '          sourceHookId: input.sourceHookId ?? null,\n          sourceKey: input.sourceKey ?? null,\n          modelId:')
+
+          p = 'packages/story/src/application/index.ts'
+          replace_once(p,
+          'export { StorySceneGenerationService } from "./story-scene-generation.service";\nexport type {',
+          'export { StoryAdventureGenerationService } from "./story-adventure-generation.service";\nexport type {\n  AdventureSourceFamily,\n  StoryAdventureGenerationInput,\n  StoryAdventureGenerationResult,\n} from "./story-adventure-generation.service";\n\nexport { StorySceneGenerationService } from "./story-scene-generation.service";\nexport type {')
+          replace_once(p,
+          '  parseAndValidateSceneOutput,\n  SCENE_NARRATIVE_MAX,\n} from "./story-scene-output";',
+          '  parseAndValidateSceneOutput,\n  SCENE_NARRATIVE_MAX,\n  STORY_NARRATIVE_TARGET_MIN,\n  STORY_NARRATIVE_TARGET_MAX,\n} from "./story-scene-output";')
+
+          Path('.github/workflows/tmp-story-adventure-plumbing.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(story): add stable generic adventure generation plumbing"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
