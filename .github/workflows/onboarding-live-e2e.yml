@@ -16,19 +16,34 @@ on:
 permissions:
   contents: read
 
-env:
-  DATABASE_URL: ${{ secrets.STORY_TEST_DATABASE_URL || secrets.DATABASE_URL }}
-  STORY_TEST_DATABASE_URL: ${{ secrets.STORY_TEST_DATABASE_URL || secrets.DATABASE_URL }}
-  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-  LUMI_SETTINGS_ENCRYPTION_KEY: ${{ secrets.LUMI_SETTINGS_ENCRYPTION_KEY }}
-  LUMI_ONBOARDING_LIVE_E2E: "1"
-  STORY_TEST_ENABLE_DESTRUCTIVE: "true"
-  LUMI_LIVE_LLM_MODEL: ${{ inputs.model || 'deepseek/deepseek-v4-flash' }}
-
 jobs:
   live-e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_onboarding_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_onboarding_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_onboarding_test
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      LUMI_SETTINGS_ENCRYPTION_KEY: onboarding-production-e2e-test-encryption-key-only
+      LUMI_ONBOARDING_LIVE_E2E: "1"
+      STORY_TEST_ENABLE_DESTRUCTIVE: "true"
+      LUMI_LIVE_LLM_MODEL: ${{ inputs.model || 'deepseek/deepseek-v4-flash' }}
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -40,18 +55,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Guard disposable database and required secrets
+      - name: Guard disposable database and OpenRouter secret
         shell: bash
         run: |
           node <<'NODE'
-          const required = [
-            ['DATABASE_URL', process.env.DATABASE_URL],
-            ['OPENROUTER_API_KEY', process.env.OPENROUTER_API_KEY],
-            ['LUMI_SETTINGS_ENCRYPTION_KEY', process.env.LUMI_SETTINGS_ENCRYPTION_KEY],
-          ];
-          const missing = required.filter(([, value]) => !value).map(([name]) => name);
-          if (missing.length) {
-            console.error(`Missing required Actions secrets: ${missing.join(', ')}`);
+          if (!process.env.OPENROUTER_API_KEY) {
+            console.error('Missing OPENROUTER_API_KEY Actions secret');
             process.exit(1);
           }
           const db = new URL(process.env.DATABASE_URL);
