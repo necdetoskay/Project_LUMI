@@ -44,6 +44,7 @@ function resolveSectionValue(
       return {
         id: context.child.id,
         ageBand: context.child.ageBand,
+        ageYears: context.child.ageYears,
         locale: context.child.locale,
       };
     case "child_personalization":
