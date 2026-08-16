@@ -42,6 +42,7 @@ export const CHARACTER_TYPE_TO_KIND: Record<
 
 export interface ChildProfileMetadata {
   preferredName?: string;
+  ageYears?: number;
   accessibility?: Record<string, boolean>;
 }
 
