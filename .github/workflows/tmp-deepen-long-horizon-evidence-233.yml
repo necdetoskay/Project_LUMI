@@ -1,4 +1,4 @@
-name: Temporary deepen long-horizon evidence 233
+name: Temporary deepen long-horizon story evidence 233
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Deepen story persistence and final statistics evidence
+      - name: Capture completed-story persistence evidence
         shell: bash
         run: |
           python3 - <<'PY'
@@ -40,39 +40,12 @@ jobs:
 
           spec = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
           text = spec.read_text()
+          start_marker = '  const complete = page.getByTestId("complete-story");'
+          end_marker = '  return story;'
+          start = text.index(start_marker)
+          end = text.index(end_marker, start) + len(end_marker)
 
-          old_story = '''  const complete = page.getByTestId("complete-story");
-          await expect(complete).toBeVisible({ timeout: 60_000 });
-          await complete.click();
-          await expect(
-            page.getByText("Hikâye tamamlandı.", { exact: true }),
-          ).toBeVisible({
-            timeout: 60_000,
-          });
-          const story: RecordedStoryEvidence = {
-            sequence: input.sequence,
-            sourceFamily: candidate.sourceFamily,
-            sourceLabel: candidate.sourceLabel,
-            sourceTitle: candidate.sourceTitle,
-            sourceTeaser: candidate.sourceTeaser,
-            sceneTitle,
-            narrative,
-            narrativeLength: narrative.length,
-            durationMs: Date.now() - startedAt,
-            readerPath: safePathname(page.url()),
-          };
-
-          await input.checkpoint(`story:${input.sequence}:completed`);
-          await page.getByRole("link", { name: "Hikâyelere dön" }).click();
-          await expect(page).toHaveURL(/\\/app\\/profiles\\/[^/?#]+(?:\\?tab=stories)?$/i, {
-            timeout: 60_000,
-          });
-          await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
-            timeout: 60_000,
-          });
-          return story;'''
-
-          new_story = '''  const readerPath = safePathname(page.url());
+          replacement = '''  const readerPath = safePathname(page.url());
           const generationDurationMs = Date.now() - startedAt;
           const complete = page.getByTestId("complete-story");
           await expect(complete).toBeVisible({ timeout: 60_000 });
@@ -156,163 +129,7 @@ jobs:
           await input.checkpoint(`story:${input.sequence}:persistence-verified`);
           return story;'''
 
-          if old_story not in text:
-              raise SystemExit('story completion block not found')
-          text = text.replace(old_story, new_story, 1)
-
-          old_world = '''      const finalWorldState = (await worldMain.innerText()).trim();
-          evidence.finalWorldState = finalWorldState;
-          await writeMarkdown(
-            config,
-            "10-final-world-state.md",
-            `# Final World State\\n\\n${finalWorldState}`,
-          );
-
-          const inventoryHeading = page.getByRole("heading", { name: "Çanta" });'''
-
-          new_world = '''      const finalWorldState = (await worldMain.innerText()).trim();
-          evidence.finalWorldState = finalWorldState;
-
-          const worldStatus = normalizeEvidenceText(
-            await page
-              .getByText("Dunya durumu", { exact: true })
-              .locator("xpath=following-sibling::p[1]")
-              .innerText(),
-            120,
-          );
-          const currentRegionBadge = page.getByText("Su an burada", {
-            exact: true,
-          });
-          const currentRegion =
-            (await currentRegionBadge.count()) > 0 &&
-            (await currentRegionBadge.first().isVisible())
-              ? normalizeEvidenceText(
-                  await currentRegionBadge
-                    .first()
-                    .locator("xpath=ancestor::article[1]")
-                    .getByRole("heading")
-                    .first()
-                    .innerText(),
-                  240,
-                )
-              : "not exposed in current world-map UI";
-          const mapSummary = page
-            .locator("section")
-            .filter({
-              has: page.getByRole("heading", {
-                name: "Harita ozeti",
-                exact: true,
-              }),
-            })
-            .first();
-          await expect(mapSummary).toBeVisible({ timeout: 60_000 });
-          const currentLocation = normalizeEvidenceText(
-            await mapSummary
-              .getByText("Su anki konum", { exact: true })
-              .locator("xpath=following-sibling::p[1]")
-              .innerText(),
-            240,
-          );
-          const inventorySummary = normalizeEvidenceText(
-            await mapSummary
-              .getByText("Canta", { exact: true })
-              .locator("xpath=following-sibling::p[1]")
-              .innerText(),
-            120,
-          );
-          const homeBadge = page.locator("span").filter({ hasText: /^Yuva$/ }).first();
-          const homeLocation =
-            (await homeBadge.count()) > 0 && (await homeBadge.isVisible())
-              ? normalizeEvidenceText(
-                  await homeBadge
-                    .locator("xpath=ancestor::button[1]")
-                    .getByRole("heading")
-                    .first()
-                    .innerText(),
-                  240,
-                )
-              : "not separately exposed in current world-map UI";
-
-          await writeMarkdown(
-            config,
-            "10-final-world-state.md",
-            `# Final World State\\n\\n- World identity: not exposed as a stable id/name in the current world-map UI\\n- World status: ${worldStatus}\\n- Current region: ${currentRegion}\\n- Current location: ${currentLocation}\\n- Home location: ${homeLocation}\\n- World events/opportunities: not exposed as a structured final-state list in the current world-map UI\\n\\n## Full visible world state\\n\\n${finalWorldState}`,
-          );
-
-          const inventoryHeading = page.getByRole("heading", { name: "Çanta" });'''
-
-          if old_world not in text:
-              raise SystemExit('world evidence block not found')
-          text = text.replace(old_world, new_world, 1)
-
-          old_stats = '''      await writeMarkdown(
-            config,
-            "15-statistics.md",
-            `# Long-Horizon Statistics\\n\\n- Child age: ${config.childAge}\\n- Character id: ${characterId}\\n- Total stories: ${stories.length}\\n- Direct source stories: ${stories.filter((story) => story.sourceFamily === "world_event" || story.sourceFamily === "npc_call").length}\\n- Inventory-item stories: ${stories.filter((story) => story.sourceFamily === "inventory_item").length}\\n- Rumor stories: ${stories.filter((story) => story.sourceFamily === "rumor").length}\\n- Total rendered story characters: ${totalNarrativeCharacters}\\n- Story lengths: ${stories.map((story) => story.narrativeLength).join(", ")}\\n- Story generation/start durations (ms): ${stories.map((story) => story.durationMs).join(", ")}\\n- Visible NPC count: ${npcCount}\\n- Relationship values: ${relationshipValues.length > 0 ? relationshipValues.join(", ") : "none visible"}\\n- Strongest relationship: ${strongest ?? "not visible"}\\n- Weakest relationship: ${weakest ?? "not visible"}\\n- Persistent live data cleanup: disabled\\n- Journey transport: visible browser UI only`,
-          );'''
-
-          new_stats = '''      const sourceDistribution = {
-            world_event: stories.filter(
-              (story) => story.sourceFamily === "world_event",
-            ).length,
-            npc_call: stories.filter((story) => story.sourceFamily === "npc_call")
-              .length,
-            inventory_item: stories.filter(
-              (story) => story.sourceFamily === "inventory_item",
-            ).length,
-            rumor: stories.filter((story) => story.sourceFamily === "rumor")
-              .length,
-          };
-          const persistedStoryCount = stories.filter(
-            (story) => story.persistedVerified,
-          ).length;
-          const continuityFindings = [
-            `${persistedStoryCount}/${stories.length} completed stories remained visible in the same child profile history`,
-            `${stories.filter((story) => story.narrativeLength >= STORY_MIN_CHARS && story.narrativeLength <= STORY_MAX_CHARS).length}/${stories.length} rendered stories stayed inside the ${STORY_MIN_CHARS}-${STORY_MAX_CHARS} character contract`,
-            `Final world, character, inventory and NPC/relationship views rendered through the same browser journey`,
-            `No deterministic generated-prose equality assertions were used`,
-          ];
-          const generationRetryMetrics =
-            "0 test-level story failures on a completed run; provider retry/failure counts are not exposed in the current UI";
-          const contextTokenCostMetrics =
-            "Context Inspector, token counts and provider-cost metrics are not exposed in the current UI";
-
-          evidence.statistics = {
-            childAge: config.childAge,
-            characterId,
-            worldIdentity:
-              "not exposed as a stable id/name in the current world-map UI",
-            worldStatus,
-            currentRegion,
-            currentLocation,
-            homeLocation,
-            totalStories: stories.length,
-            sourceDistribution,
-            totalRenderedStoryCharacters: totalNarrativeCharacters,
-            storyLengths: stories.map((story) => story.narrativeLength),
-            storyGenerationDurationsMs: stories.map((story) => story.durationMs),
-            persistedStoryCount,
-            inventorySummary,
-            visibleNpcCount: npcCount,
-            relationshipValues,
-            strongestRelationship: strongest,
-            weakestRelationship: weakest,
-            generationRetryMetrics,
-            contextTokenCostMetrics,
-            continuityFindings,
-          };
-
-          await writeMarkdown(
-            config,
-            "15-statistics.md",
-            `# Long-Horizon Statistics\\n\\n- Child age: ${config.childAge}\\n- Character id: ${characterId}\\n- World identity: ${evidence.statistics.worldIdentity}\\n- World status: ${worldStatus}\\n- Current region: ${currentRegion}\\n- Current location: ${currentLocation}\\n- Home location: ${homeLocation}\\n- Total stories: ${stories.length}\\n- World-event stories: ${sourceDistribution.world_event}\\n- NPC-call stories: ${sourceDistribution.npc_call}\\n- Inventory-item stories: ${sourceDistribution.inventory_item}\\n- Rumor stories: ${sourceDistribution.rumor}\\n- Persisted completed stories: ${persistedStoryCount}/${stories.length}\\n- Total rendered story characters: ${totalNarrativeCharacters}\\n- Story lengths: ${stories.map((story) => story.narrativeLength).join(", ")}\\n- Story generation/start durations (ms): ${stories.map((story) => story.durationMs).join(", ")}\\n- Final inventory summary: ${inventorySummary}\\n- Visible NPC count: ${npcCount}\\n- Relationship values: ${relationshipValues.length > 0 ? relationshipValues.join(", ") : "none visible"}\\n- Strongest relationship: ${strongest ?? "not visible"}\\n- Weakest relationship: ${weakest ?? "not visible"}\\n- Failed/retried generations: ${generationRetryMetrics}\\n- Context/token/cost metrics: ${contextTokenCostMetrics}\\n- Persistent live data cleanup: disabled\\n- Journey transport: visible browser UI only\\n\\n## Continuity findings\\n\\n${continuityFindings.map((finding) => `- ${finding}`).join("\\n")}`,
-          );'''
-
-          if old_stats not in text:
-              raise SystemExit('statistics block not found')
-          text = text.replace(old_stats, new_stats, 1)
-
-          spec.write_text(text)
+          spec.write_text(text[:start] + replacement + text[end:])
           PY
 
       - name: Format changed files
@@ -327,12 +144,12 @@ jobs:
       - name: Typecheck web package
         run: pnpm --filter @lumi/web typecheck
 
-      - name: Commit verified evidence changes and remove temporary workflow
+      - name: Commit verified story evidence changes and remove temporary workflow
         shell: bash
         run: |
           rm .github/workflows/tmp-deepen-long-horizon-evidence-233.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "feat(e2e): capture persistent long-horizon evidence"
+          git commit -m "feat(e2e): verify completed story persistence"
           git push origin HEAD:agent/live-long-horizon-playwright-pack
