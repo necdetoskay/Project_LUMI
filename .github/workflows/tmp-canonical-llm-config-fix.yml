@@ -47,7 +47,6 @@ jobs:
           replacement = '''export async function ensureDefaultLlmTaskSettings(\n  userId: string,\n  householdId: string,\n): Promise<void> {\n  const repos = getRepos();\n  await assertHouseholdAccess(userId, householdId, repos);\n\n  for (const taskType of DEFAULT_CANONICAL_TASK_TYPES) {\n    const existing = await repos.taskRepo.findByTaskType(\n      userId,\n      householdId,\n      taskType,\n    );\n    if (existing) continue;\n\n    await repos.taskRepo.upsert({\n      id: crypto.randomUUID(),\n      userId,\n      householdId,\n      provider: "openrouter",\n      taskType,\n      modelId: DEFAULT_OPENROUTER_MODEL_ID,\n      reasoningLevel: "medium",\n      temperature: 0.8,\n      maxOutputTokens: 1800,\n      enabled: true,\n    });\n  }\n}\n'''
           text = text[:start] + replacement + text[end:]
 
-          start = text.index('export async function getOpenRouterApiKey(')
           old_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (!providerSettings?.encryptedApiKey) return null;\n  try {\n    return decryptApiKey(providerSettings.encryptedApiKey);\n  } catch {\n    return null;\n  }\n}\n'''
           new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
           if old_tail not in text:
@@ -113,7 +112,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { readFile } from 'node:fs/promises';
           import pg from 'pg';
-          const sql = await readFile('../../../packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql', 'utf8');
+          const sql = await readFile('../../packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql', 'utf8');
           const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
           try {
             await pool.query(sql);
