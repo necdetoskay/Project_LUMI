@@ -1,10 +1,21 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import pg from "pg";
 
 const llmMock = vi.hoisted(() => vi.fn());
-vi.mock("../../../packages/profiles/src/application/text-llm-gateway.service", () => ({
-  generateTextWithLlm: llmMock,
-}));
+vi.mock(
+  "../../../packages/profiles/src/application/text-llm-gateway.service",
+  () => ({
+    generateTextWithLlm: llmMock,
+  }),
+);
 
 import {
   chooseCharacterCreationDirection,
@@ -59,7 +70,11 @@ suite("Character Onboarding M6 failure paths", () => {
     await pool.query(
       `INSERT INTO profile.child_profiles(id,household_id,display_name,age_band,locale,metadata)
        VALUES($1,$2,'M6 Kaşif','6-8','tr-TR',$3::jsonb)`,
-      [childProfileId, householdId, JSON.stringify({ interests: ["space", "crystals"] })],
+      [
+        childProfileId,
+        householdId,
+        JSON.stringify({ interests: ["space", "crystals"] }),
+      ],
     );
     await pool.query(
       `INSERT INTO profile.parental_settings(household_id,content_boundary,require_parent_approval_for_ai)
@@ -70,13 +85,33 @@ suite("Character Onboarding M6 failure paths", () => {
 
   async function cleanupFixture() {
     if (!householdId) return;
-    await pool.query(`DELETE FROM profile.ai_generation_traces WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.character_creation_selections WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.character_creation_cycles WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.parental_settings WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.child_profiles WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.household_members WHERE household_id=$1`, [householdId]);
-    await pool.query(`DELETE FROM profile.households WHERE id=$1`, [householdId]);
+    await pool.query(
+      `DELETE FROM profile.ai_generation_traces WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(
+      `DELETE FROM profile.character_creation_selections WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(
+      `DELETE FROM profile.character_creation_cycles WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(
+      `DELETE FROM profile.parental_settings WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(
+      `DELETE FROM profile.child_profiles WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(
+      `DELETE FROM profile.household_members WHERE household_id=$1`,
+      [householdId],
+    );
+    await pool.query(`DELETE FROM profile.households WHERE id=$1`, [
+      householdId,
+    ]);
   }
 
   async function startCharacterFirst() {
@@ -135,7 +170,10 @@ suite("Character Onboarding M6 failure paths", () => {
     llmMock.mockResolvedValue(generated('{"suggestions":[{"key":"broken"}]}'));
 
     await expect(
-      generateCharacterFirstIdentitySuggestions(userId, { householdId, childProfileId }),
+      generateCharacterFirstIdentitySuggestions(userId, {
+        householdId,
+        childProfileId,
+      }),
     ).rejects.toThrow();
 
     expect((await cycleSnapshot()).current_step).toBe("character_identity");
@@ -146,7 +184,9 @@ suite("Character Onboarding M6 failure paths", () => {
       [householdId],
     );
     expect(traces.rowCount).toBe(3);
-    expect(traces.rows.every((row) => row.validation_status === "invalid")).toBe(true);
+    expect(
+      traces.rows.every((row) => row.validation_status === "invalid"),
+    ).toBe(true);
   });
 
   it("rejects empty candidate output without corrupting the draft", async () => {
@@ -154,12 +194,17 @@ suite("Character Onboarding M6 failure paths", () => {
     llmMock.mockResolvedValue(generated('{"suggestions":[]}'));
 
     await expect(
-      generateCharacterFirstIdentitySuggestions(userId, { householdId, childProfileId }),
+      generateCharacterFirstIdentitySuggestions(userId, {
+        householdId,
+        childProfileId,
+      }),
     ).rejects.toThrow();
 
     const cycle = await cycleSnapshot();
     expect(cycle.current_step).toBe("character_identity");
-    expect(cycle.latest_summary.characterType).toEqual({ characterType: "fantastic" });
+    expect(cycle.latest_summary.characterType).toEqual({
+      characterType: "fantastic",
+    });
     expect(await selectionCount("character_identity")).toBe(0);
   });
 
@@ -168,7 +213,10 @@ suite("Character Onboarding M6 failure paths", () => {
     llmMock.mockRejectedValue(new Error("LLM_PROVIDER_TIMEOUT"));
 
     await expect(
-      generateCharacterFirstIdentitySuggestions(userId, { householdId, childProfileId }),
+      generateCharacterFirstIdentitySuggestions(userId, {
+        householdId,
+        childProfileId,
+      }),
     ).rejects.toThrow("LLM_PROVIDER_TIMEOUT");
 
     expect((await cycleSnapshot()).current_step).toBe("character_identity");
@@ -177,10 +225,18 @@ suite("Character Onboarding M6 failure paths", () => {
 
   it("resumes the same interrupted creation cycle and continues normally", async () => {
     await startCharacterFirst();
-    const before = await getActiveCharacterCreationCycle(userId, householdId, childProfileId);
+    const before = await getActiveCharacterCreationCycle(
+      userId,
+      householdId,
+      childProfileId,
+    );
     expect(before?.currentStep).toBe("character_identity");
 
-    const afterReload = await getActiveCharacterCreationCycle(userId, householdId, childProfileId);
+    const afterReload = await getActiveCharacterCreationCycle(
+      userId,
+      householdId,
+      childProfileId,
+    );
     expect(afterReload?.id).toBe(before?.id);
     expect(afterReload?.currentStep).toBe("character_identity");
 
@@ -240,6 +296,8 @@ suite("Character Onboarding M6 failure paths", () => {
     expect(await selectionCount("character_type")).toBe(1);
     const cycle = await cycleSnapshot();
     expect(cycle.current_step).toBe("character_identity");
-    expect(cycle.latest_summary.characterType).toEqual({ characterType: "fantastic" });
+    expect(cycle.latest_summary.characterType).toEqual({
+      characterType: "fantastic",
+    });
   });
 });
