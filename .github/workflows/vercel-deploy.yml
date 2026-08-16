@@ -11,6 +11,9 @@ on:
         options:
           - preview
           - production
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
 
 concurrency:
   group: vercel-deploy-${{ github.ref }}
