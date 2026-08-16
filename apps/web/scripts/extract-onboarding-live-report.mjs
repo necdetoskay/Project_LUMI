@@ -3,7 +3,9 @@ import path from "node:path";
 
 const [, , logPath, reportPath] = process.argv;
 if (!logPath || !reportPath) {
-  console.error("Usage: node extract-onboarding-live-report.mjs <log> <report.json>");
+  console.error(
+    "Usage: node extract-onboarding-live-report.mjs <log> <report.json>",
+  );
   process.exit(1);
 }
 
@@ -51,7 +53,8 @@ if (jsonEnd < 0) {
 
 const live = JSON.parse(text.slice(jsonStart, jsonEnd));
 const traces = Array.isArray(live.generationTraces) ? live.generationTraces : [];
-const sum = (field) => traces.reduce((total, row) => total + Number(row?.[field] ?? 0), 0);
+const sum = (field) =>
+  traces.reduce((total, row) => total + Number(row?.[field] ?? 0), 0);
 
 const report = {
   schemaVersion: 1,
