@@ -415,7 +415,6 @@ live("Character Onboarding 9-stage production Live E2E", () => {
             "world_event_store",
             "world_character_movement_events",
             "world_character_locations",
-            "world_character_residences",
             "world_location_connections",
             "world_environment_snapshots",
             "world_bootstrap_manifests",
