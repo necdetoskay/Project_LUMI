@@ -26,7 +26,11 @@ export async function finalizeCharacterOnboarding(
       homeArchetype: foundation.origin.home,
       nearbyNpcSeed: foundation.origin.formativeExperience,
       firstMysterySeed: foundation.origin.storyHook,
-      noveltyMarkers: [foundation.world.key, foundation.region.key, foundation.saga.key],
+      noveltyMarkers: [
+        foundation.world.key,
+        foundation.region.key,
+        foundation.saga.key,
+      ],
       safetyBounds: {},
     },
   });

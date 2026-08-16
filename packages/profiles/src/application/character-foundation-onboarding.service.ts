@@ -8,7 +8,11 @@ import {
   lumiCharacters,
   parentalSettings,
 } from "../db/schema/profile";
-import type { AgeBand, BroadCharacterKind, CharacterType } from "../domain/types";
+import type {
+  AgeBand,
+  BroadCharacterKind,
+  CharacterType,
+} from "../domain/types";
 import { recordAiGenerationTrace } from "./ai-generation-trace.service";
 import { getProfileDb } from "./db";
 import {
@@ -21,7 +25,11 @@ import { parseAndValidatePromptOutput } from "./prompt-output-validator";
 import { resolveActivePrompt } from "./prompt-runtime.service";
 import { generateTextWithLlm } from "./text-llm-gateway.service";
 
-export type CanonicalCharacterType = "human" | "animal" | "fantastic" | "synthetic";
+export type CanonicalCharacterType =
+  | "human"
+  | "animal"
+  | "fantastic"
+  | "synthetic";
 
 export interface WorldSuggestion {
   key: string;
@@ -175,28 +183,32 @@ async function persistSelection(
     ? input.expectedStep
     : [input.expectedStep];
   if (!expected.includes(cycle.currentStep))
-    throw new Error(`ONBOARDING_STEP_OUT_OF_ORDER:${cycle.currentStep}:${input.stepKey}`);
+    throw new Error(
+      `ONBOARDING_STEP_OUT_OF_ORDER:${cycle.currentStep}:${input.stepKey}`,
+    );
   const latestSummary = {
     ...(cycle.latestSummary ?? {}),
     [input.summaryKey]: input.selectionPayload,
   };
   const db = getProfileDb();
   await db.transaction(async (tx) => {
-    await tx
-      .insert(characterCreationSelections)
-      .values({
-        id: crypto.randomUUID(),
-        cycleId: cycle.id,
-        childProfileId: input.childProfileId,
-        householdId: input.householdId,
-        stepKey: input.stepKey,
-        selectionKey: input.selectionKey,
-        selectionPayload: input.selectionPayload,
-        selectedBy: "user",
-      });
+    await tx.insert(characterCreationSelections).values({
+      id: crypto.randomUUID(),
+      cycleId: cycle.id,
+      childProfileId: input.childProfileId,
+      householdId: input.householdId,
+      stepKey: input.stepKey,
+      selectionKey: input.selectionKey,
+      selectionPayload: input.selectionPayload,
+      selectedBy: "user",
+    });
     await tx
       .update(characterCreationCycles)
-      .set({ currentStep: input.nextStep, latestSummary, updatedAt: new Date() })
+      .set({
+        currentStep: input.nextStep,
+        latestSummary,
+        updatedAt: new Date(),
+      })
       .where(eq(characterCreationCycles.id, cycle.id));
   });
   return { id: cycle.id, currentStep: input.nextStep, latestSummary };
@@ -262,7 +274,11 @@ export async function generateWorldSuggestions(
 
 export async function chooseWorldSuggestion(
   userId: string,
-  input: { householdId: string; childProfileId: string; suggestion: WorldSuggestion },
+  input: {
+    householdId: string;
+    childProfileId: string;
+    suggestion: WorldSuggestion;
+  },
 ) {
   return persistSelection(userId, {
     ...input,
@@ -337,7 +353,11 @@ export async function generateRegionSuggestions(
 
 export async function chooseRegionSuggestion(
   userId: string,
-  input: { householdId: string; childProfileId: string; suggestion: RegionSuggestion },
+  input: {
+    householdId: string;
+    childProfileId: string;
+    suggestion: RegionSuggestion;
+  },
 ) {
   return persistSelection(userId, {
     ...input,
@@ -377,7 +397,12 @@ export async function generateCoreSagaSuggestions(
     promptKey: "character_onboarding.core_saga",
     taskType: "character_core_saga",
     summaryGuard(summary) {
-      if (!summary.world || !summary.region || !summary.origin || !summary.characterIdentity)
+      if (
+        !summary.world ||
+        !summary.region ||
+        !summary.origin ||
+        !summary.characterIdentity
+      )
         throw new Error("CORE_SAGA_CONTEXT_REQUIRED");
     },
     contextExtras: (summary) => ({
@@ -392,7 +417,11 @@ export async function generateCoreSagaSuggestions(
 
 export async function chooseCoreSagaSuggestion(
   userId: string,
-  input: { householdId: string; childProfileId: string; suggestion: CoreSagaSuggestion },
+  input: {
+    householdId: string;
+    childProfileId: string;
+    suggestion: CoreSagaSuggestion;
+  },
 ) {
   return persistSelection(userId, {
     ...input,
@@ -406,9 +435,10 @@ export async function chooseCoreSagaSuggestion(
 }
 
 function broadKindFromCanonical(value: unknown): BroadCharacterKind {
-  const type = typeof value === "object" && value
-    ? (value as { characterType?: unknown }).characterType
-    : value;
+  const type =
+    typeof value === "object" && value
+      ? (value as { characterType?: unknown }).characterType
+      : value;
   if (type === "human") return "human";
   if (type === "animal") return "animal";
   if (type === "synthetic") return "robot";
@@ -436,13 +466,17 @@ export async function finalizeCharacterFoundation(
   if (!cycle || cycle.currentStep !== "final_review")
     throw new Error("FINAL_REVIEW_REQUIRED");
   const summary = cycle.latestSummary ?? {};
-  const identity = summary.characterIdentity as {
-    key: string;
-    name: string;
-    identity: string;
-    traits: [string, string, string];
-  } | undefined;
-  const universe = summary.universe as { key: string; name: string } | undefined;
+  const identity = summary.characterIdentity as
+    | {
+        key: string;
+        name: string;
+        identity: string;
+        traits: [string, string, string];
+      }
+    | undefined;
+  const universe = summary.universe as
+    | { key: string; name: string }
+    | undefined;
   const world = summary.world as WorldSuggestion | undefined;
   const region = summary.region as RegionSuggestion | undefined;
   const origin = summary.origin as FoundationOriginSelection | undefined;
@@ -501,7 +535,10 @@ export async function finalizeCharacterFoundation(
       universeSeed: universe.key.slice(0, 120),
       safetyBounds: {
         ageBand: child.ageBand as AgeBand,
-        contentBoundary: policy.contentBoundary as "strict" | "moderate" | "open",
+        contentBoundary: policy.contentBoundary as
+          | "strict"
+          | "moderate"
+          | "open",
         requireParentApprovalForAi: policy.requireParentApprovalForAi,
       },
     });
@@ -538,6 +575,15 @@ export async function finalizeCharacterFoundation(
   return {
     characterId,
     cycleId: cycle.id,
-    foundation: { identity, universe, world, region, origin, saga, broadKind, role },
+    foundation: {
+      identity,
+      universe,
+      world,
+      region,
+      origin,
+      saga,
+      broadKind,
+      role,
+    },
   };
 }

@@ -55,12 +55,11 @@ export async function generateCharacterOriginSuggestions(
       typeof summary.worldFeeling === "string"
         ? summary.worldFeeling
         : `${world?.name ?? "selected world"}; ${world?.ecology ?? ""}; ${world?.adventureTone ?? ""}`,
-    characterArchetype:
-      summary.characterArchetype ?? {
-        characterType: summary.characterType,
-        world,
-        region,
-      },
+    characterArchetype: summary.characterArchetype ?? {
+      characterType: summary.characterType,
+      world,
+      region,
+    },
     characterIdentity: summary.characterIdentity as object,
     previousSelections: summary,
   };

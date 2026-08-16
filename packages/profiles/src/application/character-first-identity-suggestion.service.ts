@@ -45,7 +45,8 @@ export async function generateCharacterFirstIdentitySuggestions(
       generated.content,
       prompt.outputSchema,
     ) as { suggestions: CharacterIdentitySuggestion[] };
-    if (!parsed.suggestions.length) throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
+    if (!parsed.suggestions.length)
+      throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
     await recordAiGenerationTrace({
       householdId: input.householdId,
       childProfileId: input.childProfileId,
