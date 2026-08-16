@@ -58,6 +58,6 @@ The Playwright live config does not retain trace, video, or screenshot diagnosti
 
 Reference runs should be linked from issue #233 and listed here only after the corresponding live artifact has completed successfully.
 
-| Child age | Run id | Evidence artifact | Status |
-| --- | --- | --- | --- |
-| 6 | _pending first reference run_ | _not run yet_ | pending explicit live-run authorization |
+| Child age | Run id                        | Evidence artifact | Status                                  |
+| --------- | ----------------------------- | ----------------- | --------------------------------------- |
+| 6         | _pending first reference run_ | _not run yet_     | pending explicit live-run authorization |
