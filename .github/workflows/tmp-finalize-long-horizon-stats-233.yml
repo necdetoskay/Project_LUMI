@@ -33,7 +33,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply final evidence patch
-        run: python3 scripts/tmp-finalize-long-horizon-stats-233.py
+        shell: bash
+        run: |
+          sed -i "s/world_replacement = '''/world_replacement = r'''/" scripts/tmp-finalize-long-horizon-stats-233.py
+          sed -i "s/stats_replacement = '''/stats_replacement = r'''/" scripts/tmp-finalize-long-horizon-stats-233.py
+          python3 scripts/tmp-finalize-long-horizon-stats-233.py
 
       - name: Format changed file
         run: pnpm exec prettier --write apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
