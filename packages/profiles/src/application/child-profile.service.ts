@@ -130,15 +130,23 @@ export async function updateChildProfile(
     validateAgeYears(input.ageYears);
   }
 
+  const update: {
+    displayName?: string;
+    ageBand?: string;
+    ageYears?: number;
+  } = {};
+  if (input.displayName !== undefined) {
+    update.displayName = input.displayName;
+  }
+  if (input.ageYears !== undefined) {
+    update.ageBand = ageBandForAgeYears(input.ageYears);
+    update.ageYears = input.ageYears;
+  } else if (input.ageBand !== undefined) {
+    update.ageBand = input.ageBand;
+  }
+
   const { childRepo } = getRepos();
-  const profile = await childRepo.update(profileId, householdId, {
-    displayName: input.displayName,
-    ageBand:
-      input.ageYears === undefined
-        ? input.ageBand
-        : ageBandForAgeYears(input.ageYears),
-    ageYears: input.ageYears,
-  });
+  const profile = await childRepo.update(profileId, householdId, update);
 
   return {
     id: profile.id,
