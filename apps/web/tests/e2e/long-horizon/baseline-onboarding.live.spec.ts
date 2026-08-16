@@ -491,8 +491,15 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         `# Child Profile\n\n- Run: ${config.runId}\n- Name: ${childDisplayName}\n- Exact age: ${config.childAge}\n- Child profile id: ${childProfileId}\n- RNG seed: ${config.rngSeed}\n- Creation path: browser UI only`,
       );
 
-      await page.getByRole("link", { name: "Çocuklar", exact: true }).click();
-      await expect(page).toHaveURL(/\/app\/profiles(?:\?.*)?$/);
+      const profilesHomeLink = page
+        .locator('a[href="/app/profiles"]')
+        .filter({ hasText: "LUMI" })
+        .first();
+      await expect(profilesHomeLink).toBeVisible({ timeout: 60_000 });
+      await profilesHomeLink.click({ timeout: 60_000 });
+      await expect(page).toHaveURL(/\/app\/profiles(?:\?.*)?$/, {
+        timeout: 60_000,
+      });
       const createdProfileCard = page
         .locator("#profile-container article")
         .filter({ hasText: childDisplayName });
@@ -513,7 +520,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await expect(createFirstCharacter.first()).toBeVisible({
         timeout: 60_000,
       });
-      await createFirstCharacter.first().click();
+      await createFirstCharacter.first().click({ timeout: 60_000 });
       await expect(page).toHaveURL(/\/characters\/new\/wizard(?:\?.*)?$/);
       await expectStep(page, "character_type");
       await checkpoint("onboarding:character_type:ready");
