@@ -180,17 +180,22 @@ export const GET = observeHandler(
 
         const detailRegions = asArray(detail?.regions);
         const detailLocations = asArray(detail?.locations);
-        const npcSnapshots = npcResult.status === "fulfilled" ? npcResult.value : [];
+        const npcSnapshots =
+          npcResult.status === "fulfilled" ? npcResult.value : [];
         const npcIdentities = await findNpcContextIdentities({
           characterIds: npcSnapshots.map((snapshot) => snapshot.characterId),
           householdId,
           childProfileId: parsedParams.data.id,
         });
         const npcIdentityByCharacterId = new Map(
-          npcIdentities.map((identity) => [identity.characterId, identity] as const),
+          npcIdentities.map(
+            (identity) => [identity.characterId, identity] as const,
+          ),
         );
         const locationNameById = new Map(
-          detailLocations.map((location) => [location.id, location.displayName] as const),
+          detailLocations.map(
+            (location) => [location.id, location.displayName] as const,
+          ),
         );
         const locationsByRegion = new Map<
           string,
@@ -265,7 +270,9 @@ export const GET = observeHandler(
             latestCheckpointId: detail?.latestCheckpoint?.id ?? null,
             regions: mapRegions,
             npcs: npcSnapshots.flatMap((snapshot) => {
-              const identity = npcIdentityByCharacterId.get(snapshot.characterId);
+              const identity = npcIdentityByCharacterId.get(
+                snapshot.characterId,
+              );
               if (!identity) return [];
               return [
                 {
@@ -274,7 +281,8 @@ export const GET = observeHandler(
                   subtype: identity.subtype,
                   originConcept: identity.originConcept,
                   locationName: snapshot.locationId
-                    ? (locationNameById.get(snapshot.locationId) ?? "Bilinmeyen konum")
+                    ? (locationNameById.get(snapshot.locationId) ??
+                      "Bilinmeyen konum")
                     : "Konum kaydedilmemiş",
                   needTypes: [...snapshot.needTypes],
                   relationshipToCharacter: snapshot.relationshipToCharacter,

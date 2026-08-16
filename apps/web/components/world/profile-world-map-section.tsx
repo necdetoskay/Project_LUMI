@@ -582,11 +582,10 @@ export function ProfileWorldMapSection({
                       {npc.originConcept}
                     </p>
                     <div className="mt-3 grid gap-2 text-xs text-on-surface-variant">
+                      <p>Yakınlık: {npc.relationshipToCharacter.toFixed(2)}</p>
                       <p>
-                        Yakınlık: {npc.relationshipToCharacter.toFixed(2)}
-                      </p>
-                      <p>
-                        İhtiyaçlar: {npc.needTypes.length > 0
+                        İhtiyaçlar:{" "}
+                        {npc.needTypes.length > 0
                           ? npc.needTypes.join(", ")
                           : "kayıtlı ihtiyaç yok"}
                       </p>

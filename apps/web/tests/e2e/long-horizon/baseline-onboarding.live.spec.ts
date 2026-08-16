@@ -328,7 +328,11 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       evidence.finishedAt = new Date().toISOString();
       evidence.lastPathname = safePathname(page.url());
       await writeRunJson(config, evidence);
-      await writeMarkdown(config, "00-run-summary.md", formatRunSummary(evidence));
+      await writeMarkdown(
+        config,
+        "00-run-summary.md",
+        formatRunSummary(evidence),
+      );
     }
   });
 });
