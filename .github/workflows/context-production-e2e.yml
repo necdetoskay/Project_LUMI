@@ -99,6 +99,10 @@ jobs:
           CANDIDATE_LUMI_OPENROUTER_API_KEY: ${{ secrets.LUMI_OPENROUTER_API_KEY }}
           CANDIDATE_OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           CANDIDATE_OPENROUTER_APIKEY: ${{ secrets.OPENROUTER_APIKEY }}
+          CANDIDATE_OPENROUTER_MANAGEMENT_KEY: ${{ secrets.OPENROUTER_MANAGEMENT_KEY }}
+          CANDIDATE_OPENROUTER_PROVISIONING_KEY: ${{ secrets.OPENROUTER_PROVISIONING_KEY }}
+          CANDIDATE_OPENROUTER_SECRET: ${{ secrets.OPENROUTER_SECRET }}
+          CANDIDATE_OPENROUTER_API_SECRET: ${{ secrets.OPENROUTER_API_SECRET }}
         run: |
           set -euo pipefail
 
@@ -107,6 +111,7 @@ jobs:
             value=$(printf '%s' "$value" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
             value="${value#OPENROUTER_API_KEY=}"
             value="${value#OPENROUTER_KEY=}"
+            value="${value#OPENROUTER_MANAGEMENT_KEY=}"
             value="${value#\"}"
             value="${value%\"}"
             value="${value#\'}"
@@ -121,7 +126,11 @@ jobs:
             CANDIDATE_OPENROUTER_KEY \
             CANDIDATE_LUMI_OPENROUTER_API_KEY \
             CANDIDATE_OPEN_ROUTER_API_KEY \
-            CANDIDATE_OPENROUTER_APIKEY; do
+            CANDIDATE_OPENROUTER_APIKEY \
+            CANDIDATE_OPENROUTER_MANAGEMENT_KEY \
+            CANDIDATE_OPENROUTER_PROVISIONING_KEY \
+            CANDIDATE_OPENROUTER_SECRET \
+            CANDIDATE_OPENROUTER_API_SECRET; do
             raw="${!name:-}"
             [ -n "$raw" ] || continue
             candidate=$(normalize_key "$raw")
