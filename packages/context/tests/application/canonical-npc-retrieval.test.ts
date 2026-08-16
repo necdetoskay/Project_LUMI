@@ -112,9 +112,10 @@ describe("CanonicalNpcRetrievalAdapter", () => {
       },
     };
 
-    await new CanonicalNpcRetrievalAdapter(runtimeReader, identityReader).retrieve(
-      query(),
-    );
+    await new CanonicalNpcRetrievalAdapter(
+      runtimeReader,
+      identityReader,
+    ).retrieve(query());
 
     expect(requestedIds).toEqual(["safe-character"]);
   });
