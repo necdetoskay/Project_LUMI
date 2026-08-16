@@ -54,7 +54,6 @@ jobs:
       - name: Format changed implementation and live-test files
         run: |
           pnpm exec prettier --write \
-            packages/profiles/migrations/0071_child_profile_exact_age.sql \
             packages/profiles/src/db/schema/profile/child-profiles.ts \
             packages/profiles/src/domain/child-profile.ts \
             packages/profiles/src/application/child-profile.service.ts \
