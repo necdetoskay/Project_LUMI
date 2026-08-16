@@ -1,0 +1,50 @@
+name: Temporary M7 Prettier Fix
+
+on:
+  push:
+    branches:
+      - agent/onboarding-m7-browser-e2e
+    paths:
+      - .github/workflows/tmp-m7-prettier.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format M7 files
+        run: |
+          pnpm exec prettier --write \
+            apps/web/app/api/character-creation/canonical/route.ts \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/canonical-character-wizard-client.tsx' \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/page.tsx' \
+            apps/web/tests/e2e/mock-onboarding-llm-v2-server-entry.mjs
+      - name: Verify formatting
+        run: |
+          pnpm exec prettier --check \
+            apps/web/app/api/character-creation/canonical/route.ts \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/canonical-character-wizard-client.tsx' \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/page.tsx' \
+            apps/web/tests/e2e/mock-onboarding-llm-v2-server-entry.mjs
+      - name: Commit formatting and remove temporary workflow
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/app/api/character-creation/canonical/route.ts \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/canonical-character-wizard-client.tsx' \
+            'apps/web/app/app/profiles/[childProfileId]/characters/new/wizard/page.tsx' \
+            apps/web/tests/e2e/mock-onboarding-llm-v2-server-entry.mjs
+          git rm .github/workflows/tmp-m7-prettier.yml
+          git commit -m 'style(onboarding): format M7 browser flow'
+          git push
