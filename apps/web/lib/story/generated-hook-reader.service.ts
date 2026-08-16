@@ -189,6 +189,15 @@ export async function generateHookReaderTurn(
     sceneType: hook.sceneType,
     modelId: generation.modelId,
     sourceHookId: hook.id,
+    ...(generation.contextManifest && generation.modelId
+      ? {
+          generationInspection: {
+            modelId: generation.modelId,
+            attempt: generation.attempt,
+            contextManifest: generation.contextManifest,
+          },
+        }
+      : {}),
     idempotencyKey: `generated-hook-reader:${hook.id}`,
   });
 
