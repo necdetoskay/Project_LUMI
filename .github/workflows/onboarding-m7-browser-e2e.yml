@@ -11,11 +11,12 @@ on:
       - apps/web/app/app/profiles/**/characters/new/**
       - apps/web/lib/character-onboarding/**
       - apps/web/tests/e2e/character-onboarding-m7.spec.ts
-      - apps/web/tests/e2e/mock-onboarding-llm-server-entry.mjs
+      - apps/web/tests/e2e/mock-onboarding-llm-v2-server-entry.mjs
       - apps/web/playwright.m7.config.ts
       - packages/profiles/src/application/character-**
       - packages/profiles/migrations/**
       - packages/world/**
+      - packages/story/**
 
 permissions:
   contents: read
@@ -72,10 +73,13 @@ jobs:
         run: pnpm --filter @lumi/profiles profile:migrate
       - name: Apply world migrations
         run: pnpm --filter @lumi/world world:migrate
+      - name: Apply story migrations
+        run: pnpm --filter @lumi/story story:migrate
       - name: Typecheck browser onboarding path
         run: |
           pnpm --filter @lumi/profiles typecheck
           pnpm --filter @lumi/world typecheck
+          pnpm --filter @lumi/story typecheck
           pnpm --filter @lumi/web typecheck
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
