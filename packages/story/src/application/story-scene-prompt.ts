@@ -6,6 +6,10 @@ import {
   normalizeStoryContinuityContext,
   type StoryContinuityContext,
 } from "./story-continuity-context";
+import {
+  STORY_NARRATIVE_TARGET_MAX,
+  STORY_NARRATIVE_TARGET_MIN,
+} from "./story-scene-output";
 
 export interface StoryScenePromptInput {
   brief: HookSceneBrief;
@@ -97,13 +101,15 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
 
   return `Sen Project LUMI için güvenli, yaşa uygun çocuk hikayesi sahnesi üreten bir AI asistansın.
 
-Görev: Kabul edilmiş bir etkileşim ipucundan (story hook) yola çıkarak tek bir sahne üret. Sahne, çocuk okuyucunun hikayede ilerlediği anı anlatır ve ipucunun içeriğini doğal biçimde yansıtır.
+Görev: Kabul edilmiş bir etkileşim ipucundan (story hook) yola çıkarak tek oturumda okunup tamamlanabilen kısa bir hikâye üret. Hikâye, çocuk okuyucunun yaşadığı anı anlatır ve ipucunun içeriğini doğal biçimde yansıtır.
 
 Kısıtlamalar:
 - Korku, şiddet, yetişkin teması KESİNLİKLE yasak.
 - ${ageBand} yaş grubuna uygun.
 - İçerik sınırı: ${contentBoundary}.
 - Dil: Türkçe (${locale}).
+- narrative tam olarak ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakter aralığında olmalı.
+- Narrative başlangıç, gelişme ve yumuşak bir sonuç içermeli.
 - Sadece geçerli JSON çıktısı ver, ek metin ekleme.
 - Generation nonce (her çağrıda farklı üretim için): ${generationNonce}
 
@@ -117,9 +123,9 @@ JSON şeması (kesinlikle uy):
   "sceneId": "deterministik sahne kimliği (kısa, örn. hook-brief-bazlı slug)",
   "setting": "sahnenin geçtiği güvenli yer (1-300 karakter)",
   "characters": ["sahnede yer alan karakter adları"],
-  "narrative": "hikaye anlatımı (1-4000 karakter, Türkçe, çocuk için güvenli)",
-  "moment": "sahnenin tek cümlelik duygusal anı",
-  "nextPrompt": "bir sonraki sahne için kısa yönlendirme (opsiyonel)",
+  "narrative": "${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakterlik Türkçe, çocuk için güvenli tam hikâye",
+  "moment": "hikayenin tek cümlelik duygusal sonucu",
+  "nextPrompt": null,
   "usedContinuityKeys": ["yalnız sahnede gerçekten kullanılan, promptta verilmiş süreklilik anahtarları"]
 }`;
 }
