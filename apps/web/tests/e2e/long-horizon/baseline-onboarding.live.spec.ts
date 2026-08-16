@@ -67,7 +67,7 @@ async function clickRandomVisible(
   const visible: Array<{
     index: number;
     label: string;
-    testId?: string;
+    testId?: string | undefined;
   }> = [];
 
   for (let index = 0; index < count; index += 1) {

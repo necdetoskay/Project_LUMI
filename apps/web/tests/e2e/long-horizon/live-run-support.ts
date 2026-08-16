@@ -15,7 +15,7 @@ export interface RecordedSelection {
   candidateCount: number;
   selectedIndex: number;
   selectedLabel: string;
-  selectedTestId?: string;
+  selectedTestId?: string | undefined;
   availableLabels: string[];
 }
 

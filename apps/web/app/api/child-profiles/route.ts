@@ -68,10 +68,12 @@ export const POST = observeHandler(async (request: Request) => {
       const profile = await createChildProfile(parent.id, {
         householdId: parsed.householdId,
         displayName: parsed.displayName,
-        ageYears:
-          typeof parsed.ageYears === "number" ? parsed.ageYears : undefined,
-        ageBand:
-          typeof parsed.ageBand === "string" ? parsed.ageBand : undefined,
+        ...(typeof parsed.ageYears === "number"
+          ? { ageYears: parsed.ageYears }
+          : {}),
+        ...(typeof parsed.ageBand === "string"
+          ? { ageBand: parsed.ageBand }
+          : {}),
       });
 
       return NextResponse.json({ profile }, { status: 201 });
