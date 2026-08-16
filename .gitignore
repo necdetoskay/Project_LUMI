@@ -16,6 +16,10 @@ packages/profiles/node_modules/
 packages/profiles/.turbo/
 apps/web/.next-e2e/
 
+# Persistent long-horizon live evidence is uploaded as workflow artifacts.
+apps/web/tests/e2e/long-horizon/evidence/*
+!apps/web/tests/e2e/long-horizon/evidence/README.md
+
 # Graphify exploration artifacts
 .graphify_detect.json
 .graphify_python
