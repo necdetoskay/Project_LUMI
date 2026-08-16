@@ -362,6 +362,10 @@ run("ULTEF S37 generated hook reader production", () => {
       expect(report.result).toBe("PASS");
     } finally {
       await pool.query(
+        `DELETE FROM story.story_generation_inspections WHERE story_session_id=$1`,
+        [session],
+      );
+      await pool.query(
         `DELETE FROM story.story_idempotency_ledger WHERE household_id IN($1,$2)`,
         [h1, h2],
       );
