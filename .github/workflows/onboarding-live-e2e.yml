@@ -18,10 +18,13 @@ on:
       - packages/profiles/src/application/character-first-identity-suggestion.service.ts
       - packages/profiles/src/application/character-creation-cycle.service.ts
       - packages/profiles/src/application/character-origin-suggestion.service.ts
+      - packages/profiles/src/application/text-llm-gateway.service.ts
       - packages/profiles/src/application/prompt-output-validator.ts
       - packages/profiles/src/application/prompt-output-validator.test.ts
       - packages/profiles/migrations/0065_character_foundation_onboarding.sql
       - packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql
+      - packages/profiles/migrations/0067_onboarding_quality_token_budget.sql
+      - packages/profiles/migrations/0068_remove_onboarding_output_token_cap.sql
       - packages/profiles/src/db/schema/profile/llm-task-model-settings.ts
       - apps/web/package.json
 
