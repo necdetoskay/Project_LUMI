@@ -6,7 +6,7 @@ on:
       - agent/live-long-horizon-playwright-pack
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   age6-live-reference:
@@ -31,6 +31,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Patch login success URL matcher in live harness
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts")
+          text = path.read_text(encoding="utf-8")
+          old = r'page.waitForURL(/\/app(?:\/|$)/, { timeout: 60_000 }),' 
+          new = r'page.waitForURL(/\/app(?:[/?#]|$)/, { timeout: 60_000 }),' 
+          if old not in text:
+              raise SystemExit("Expected login URL matcher was not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          print("Live login URL matcher patched for /app?success=signed_in")
+          PY
 
       - name: Confirm explicit live-run prerequisites
         shell: bash
@@ -205,9 +221,6 @@ jobs:
             --data '{"ttl":7200}' \
             "https://api.vercel.com/aliases/$DEPLOYMENT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
 
-          # Extract possible bypass tokens without ever logging their values. Vercel has
-          # returned multiple response shapes across API/SDK versions, so candidates are
-          # validated against the protected Preview before one is accepted.
           jq -r '
             [
               (.value? // empty),
@@ -290,6 +303,21 @@ jobs:
           LUMI_LONG_HORIZON_BASE_URL: ${{ steps.deploy.outputs.deployment_url }}
           LUMI_LONG_HORIZON_VERCEL_SHARE_SECRET: ${{ steps.share.outputs.secret }}
         run: pnpm --filter @lumi/web test:long-horizon:live
+
+      - name: Persist login URL matcher fix
+        if: always()
+        shell: bash
+        run: |
+          path="apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts"
+          if git diff --quiet -- "$path"; then
+            echo "No login matcher diff to persist."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$path"
+          git commit -m "fix(e2e): accept login success query in live pack"
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
       - name: Upload age-6 long-horizon evidence
         if: always()
