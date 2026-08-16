@@ -43,7 +43,7 @@ jobs:
 
           const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
           const canonicalPromptKeys = new Set([
-            'character_first_identity_suggestions',
+            'character_onboarding.character_first_identity_suggestions',
             'character_onboarding.world_suggestions',
             'character_onboarding.compatibility',
             'character_onboarding.region_suggestions',
@@ -76,7 +76,7 @@ jobs:
               );
               const columnNames = cols.rows.map((row) => row.column_name);
               const safeColumns = columnNames.filter((name) =>
-                /(^id$|key|scope|active|version|model|enabled|task_type|provider|household_id|user_id)/i.test(name) &&
+                /(^id$|key|scope|active|status|version|model|enabled|task_type|provider|household_id|user_id)/i.test(name) &&
                 !/secret|encrypted|api_key/i.test(name),
               );
               console.log(`TABLE ${table} SAFE_COLUMNS ${safeColumns.join(',')}`);
