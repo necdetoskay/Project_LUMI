@@ -78,7 +78,7 @@ export const llmTaskModelSettings = profileSchema.table(
     ),
     check(
       "llm_task_model_settings_tokens_check",
-      sql`${table.maxOutputTokens} >= 256 AND ${table.maxOutputTokens} <= 8000`,
+      sql`${table.maxOutputTokens} >= 256`,
     ),
   ],
 );
