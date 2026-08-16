@@ -42,7 +42,7 @@ jobs:
               target = Path(path)
               text = target.read_text()
               if old not in text:
-                  raise SystemExit(f"Expected snippet not found in {path}")
+                  raise SystemExit(f"Expected snippet not found in {path}: {old!r}")
               target.write_text(text.replace(old, new, 1))
 
           replace_once(
@@ -69,33 +69,14 @@ jobs:
 
           replace_once(
               "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts",
-              '''    if (await option.isVisible()) {
-                  visible.push({
-                    index,
-                    label: await optionLabel(option),
-                    testId: (await option.getAttribute("data-testid")) ?? undefined,
-                  });
-                }''',
-              '''    if (await option.isVisible()) {
-                  const testId = await option.getAttribute("data-testid");
-                  visible.push({
-                    index,
-                    label: await optionLabel(option),
-                    ...(testId === null ? {} : { testId }),
-                  });
-                }''',
+              "    testId?: string;\n",
+              "    testId?: string | undefined;\n",
           )
 
           replace_once(
-              "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts",
-              '''    selectedLabel: chosen.label,
-                selectedTestId: chosen.testId,
-                availableLabels: visible.map((option) => option.label),''',
-              '''    selectedLabel: chosen.label,
-                ...(chosen.testId === undefined
-                  ? {}
-                  : { selectedTestId: chosen.testId }),
-                availableLabels: visible.map((option) => option.label),''',
+              "apps/web/tests/e2e/long-horizon/live-run-support.ts",
+              "  selectedTestId?: string;\n",
+              "  selectedTestId?: string | undefined;\n",
           )
           PY
 
@@ -103,7 +84,8 @@ jobs:
         run: |
           pnpm exec prettier --write \
             "apps/web/app/api/child-profiles/route.ts" \
-            "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts"
+            "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts" \
+            "apps/web/tests/e2e/long-horizon/live-run-support.ts"
 
       - name: Verify web typecheck
         run: pnpm --filter @lumi/web typecheck
