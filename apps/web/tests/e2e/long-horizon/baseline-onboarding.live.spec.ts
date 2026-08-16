@@ -158,7 +158,7 @@ async function loginThroughUi(
   await loginForm.locator('input[name="password"]').fill(password);
 
   await Promise.all([
-    page.waitForURL(/\/app(?:\/|$)/, { timeout: 60_000 }),
+    page.waitForURL(/\/app(?:[/?#]|$)/, { timeout: 60_000 }),
     loginForm.locator('button[type="submit"]').click(),
   ]);
 }
