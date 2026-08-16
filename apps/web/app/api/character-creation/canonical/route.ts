@@ -5,6 +5,7 @@ import { finalizeCharacterOnboarding } from "@/lib/character-onboarding/finalize
 import {
   chooseCharacterCreationDirection,
   chooseCharacterIdentity,
+  ensureDefaultLlmTaskSettings,
   getActiveCharacterCreationCycle,
 } from "@lumi/profiles/application";
 import {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
     try {
       switch (body.action) {
         case "start":
+          await ensureDefaultLlmTaskSettings(parent.id, body.householdId);
           return NextResponse.json({
             cycle: await chooseCharacterCreationDirection(parent.id, {
               ...input,
