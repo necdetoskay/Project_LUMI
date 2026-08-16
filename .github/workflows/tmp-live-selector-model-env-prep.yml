@@ -33,20 +33,24 @@ jobs:
 
           spec = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
           text = spec.read_text(encoding='utf-8')
-          old = '''      const createFirstCharacter = page.getByRole("link", {
-        name: /İlk karakteri oluştur|Karakter oluştur/,
-      });
-      await expect(createFirstCharacter.first()).toBeVisible({
-        timeout: 60_000,
-      });
-      await createFirstCharacter.first().click({ timeout: 60_000 });'''
-          new = '''      const createFirstCharacter = page
-        .locator(
-          `a[href="/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard"]`,
-        )
-        .first();
-      await expect(createFirstCharacter).toBeVisible({ timeout: 60_000 });
-      await createFirstCharacter.click({ timeout: 60_000 });'''
+          old = (
+              '      const createFirstCharacter = page.getByRole("link", {\n'
+              '        name: /İlk karakteri oluştur|Karakter oluştur/,\n'
+              '      });\n'
+              '      await expect(createFirstCharacter.first()).toBeVisible({\n'
+              '        timeout: 60_000,\n'
+              '      });\n'
+              '      await createFirstCharacter.first().click({ timeout: 60_000 });'
+          )
+          new = (
+              '      const createFirstCharacter = page\n'
+              '        .locator(\n'
+              '          `a[href="/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard"]`,\n'
+              '        )\n'
+              '        .first();\n'
+              '      await expect(createFirstCharacter).toBeVisible({ timeout: 60_000 });\n'
+              '      await createFirstCharacter.click({ timeout: 60_000 });'
+          )
           if old not in text:
               raise SystemExit('Expected character-entry locator block was not found')
           spec.write_text(text.replace(old, new, 1), encoding='utf-8')
