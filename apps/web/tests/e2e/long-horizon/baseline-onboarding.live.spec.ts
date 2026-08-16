@@ -514,13 +514,13 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },
       );
-      const createFirstCharacter = page.getByRole("link", {
-        name: /İlk karakteri oluştur|Karakter oluştur/,
-      });
-      await expect(createFirstCharacter.first()).toBeVisible({
-        timeout: 60_000,
-      });
-      await createFirstCharacter.first().click({ timeout: 60_000 });
+      const createFirstCharacter = page
+        .locator(
+          `a[href="/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard"]`,
+        )
+        .first();
+      await expect(createFirstCharacter).toBeVisible({ timeout: 60_000 });
+      await createFirstCharacter.click({ timeout: 60_000 });
       await expect(page).toHaveURL(/\/characters\/new\/wizard(?:\?.*)?$/);
       await expectStep(page, "character_type");
       await checkpoint("onboarding:character_type:ready");
