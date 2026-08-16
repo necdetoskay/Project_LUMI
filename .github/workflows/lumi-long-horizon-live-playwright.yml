@@ -84,14 +84,3 @@ jobs:
           path: apps/web/tests/e2e/long-horizon/evidence/
           if-no-files-found: warn
           retention-days: 90
-
-      - name: Upload Playwright diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lumi-long-horizon-diagnostics-${{ github.run_id }}
-          path: |
-            apps/web/test-results/
-            apps/web/playwright-report/
-          if-no-files-found: ignore
-          retention-days: 30
