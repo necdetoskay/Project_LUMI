@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 const PASSWORD = "m7-browser-test-password-123";
 
@@ -73,7 +73,7 @@ async function createParentFixture(context: BrowserContext) {
   return { householdId, childProfileId };
 }
 
-async function expectStep(page: import("@playwright/test").Page, step: string) {
+async function expectStep(page: Page, step: string) {
   await expect(page.getByTestId("canonical-onboarding-step")).toHaveAttribute(
     "data-step",
     step,
@@ -81,9 +81,7 @@ async function expectStep(page: import("@playwright/test").Page, step: string) {
   );
 }
 
-async function selectFirstCandidateAndContinue(
-  page: import("@playwright/test").Page,
-) {
+async function selectFirstCandidateAndContinue(page: Page) {
   const cards = page.getByTestId("candidate-card");
   await expect(cards.first()).toBeVisible({ timeout: 30_000 });
   await cards.first().click();
