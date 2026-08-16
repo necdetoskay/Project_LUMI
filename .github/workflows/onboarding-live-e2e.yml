@@ -102,5 +102,5 @@ jobs:
         run: pnpm --filter @lumi/world world:migrate
 
       - name: Run real 9-stage Character Onboarding
-        # Runs uncapped by LUMI; provider/model natural completion behavior is observed in traces.
+        # Uncapped production-path run; observe natural completion usage instead of constraining quality.
         run: pnpm --filter @lumi/web test:onboarding:production-e2e
