@@ -23,56 +23,11 @@ jobs:
           from pathlib import Path
           p = Path('packages/profiles/src/application/character-foundation-onboarding.service.ts')
           s = p.read_text()
-          old = '''  const prompt = await resolveActivePrompt(spec.promptKey, context);
-          const generated = await generateTextWithLlm({
-            userId,
-            householdId: input.householdId,
-            taskType: spec.taskType,
-            system: prompt.system,
-            user: prompt.user,
-            modelOverride: prompt.modelOverride,
-            generationConfig: prompt.generationConfig,
-          });
-          try {
-            const validated = parseAndValidatePromptOutput(
-              generated.content,
-              prompt.outputSchema,
-            );
-            const suggestions = spec.pick(validated);
-            await recordAiGenerationTrace({
-              householdId: input.householdId,
-              childProfileId: input.childProfileId,
-              creationCycleId: generationContext.creation.cycleId,
-              taskType: spec.taskType,
-              promptKey: prompt.promptKey,
-              promptVersion: prompt.promptVersion,
-              inputContext: context,
-              outputPayload: { suggestions },
-              validationStatus: "valid",
-              generated,
-            });
-            return {
-              suggestions,
-              modelId: generated.model,
-              promptVersion: prompt.promptVersion,
-            };
-          } catch (error) {
-            await recordAiGenerationTrace({
-              householdId: input.householdId,
-              childProfileId: input.childProfileId,
-              creationCycleId: generationContext.creation.cycleId,
-              taskType: spec.taskType,
-              promptKey: prompt.promptKey,
-              promptVersion: prompt.promptVersion,
-              inputContext: context,
-              outputPayload: { raw: generated.content },
-              validationStatus: "invalid",
-              generated,
-            });
-            throw error;
-          }
-          '''
-          new = '''  const prompt = await resolveActivePrompt(spec.promptKey, context);
+          start_marker = '  const prompt = await resolveActivePrompt(spec.promptKey, context);\n'
+          end_marker = '\nfunction asSuggestions<T>(value: unknown): T[] {'
+          start = s.index(start_marker)
+          end = s.index(end_marker, start)
+          replacement = '''  const prompt = await resolveActivePrompt(spec.promptKey, context);
           let lastError: unknown;
           for (let attempt = 1; attempt <= 3; attempt += 1) {
             const generated = await generateTextWithLlm({
@@ -127,10 +82,9 @@ jobs:
             }
           }
           throw lastError;
+          }
           '''
-          if old not in s:
-              raise SystemExit('target generateSuggestions block not found')
-          p.write_text(s.replace(old, new, 1))
+          p.write_text(s[:start] + replacement + s[end:])
           PY
       - name: Remove temporary workflow and commit
         run: |
