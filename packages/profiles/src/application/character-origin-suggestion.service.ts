@@ -31,19 +31,38 @@ export async function generateCharacterOriginSuggestions(
     profile: "character_onboarding",
   });
   const summary = generationContext.creation.previousSelections;
-  if (
-    typeof summary.worldFeeling !== "string" ||
-    !summary.characterArchetype ||
-    !summary.characterIdentity
-  )
+  const canonicalFoundation = Boolean(
+    summary.world && summary.region && summary.characterIdentity,
+  );
+  const legacyWorldFirst = Boolean(
+    typeof summary.worldFeeling === "string" &&
+      summary.characterArchetype &&
+      summary.characterIdentity,
+  );
+  if (!canonicalFoundation && !legacyWorldFirst)
     throw new Error("CHARACTER_ORIGIN_CONTEXT_REQUIRED");
 
+  const world = summary.world as
+    | { name?: string; ecology?: string; adventureTone?: string }
+    | undefined;
+  const region = summary.region as
+    | { name?: string; biome?: string; description?: string }
+    | undefined;
   const assembledContext = assembleGenerationContext(generationContext);
   const context = {
     ...toPromptGenerationContext(assembledContext),
-    worldFeeling: summary.worldFeeling,
-    characterArchetype: summary.characterArchetype,
-    characterIdentity: summary.characterIdentity,
+    worldFeeling:
+      typeof summary.worldFeeling === "string"
+        ? summary.worldFeeling
+        : `${world?.name ?? "selected world"}; ${world?.ecology ?? ""}; ${world?.adventureTone ?? ""}`,
+    characterArchetype:
+      summary.characterArchetype ?? {
+        characterType: summary.characterType,
+        world,
+        region,
+      },
+    characterIdentity: summary.characterIdentity as object,
+    previousSelections: summary,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.character_origin_suggestions",
@@ -65,6 +84,7 @@ export async function generateCharacterOriginSuggestions(
       prompt.outputSchema,
     ) as { suggestions: CharacterOriginSuggestion[] };
     suggestions = value.suggestions;
+    if (!suggestions.length) throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
   } catch (error) {
     await recordAiGenerationTrace({
       householdId: input.householdId,
