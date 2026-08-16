@@ -2,6 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 const liveEnabled = process.env.LUMI_LONG_HORIZON_LIVE === "1";
 const baseURL = process.env.LUMI_LONG_HORIZON_BASE_URL;
+const vercelShareSecret =
+  process.env.LUMI_LONG_HORIZON_VERCEL_SHARE_SECRET;
+const storageStatePath =
+  process.env.LUMI_LONG_HORIZON_STORAGE_STATE_PATH ??
+  "/tmp/lumi-long-horizon-vercel-share-storage.json";
 
 if (!liveEnabled) {
   throw new Error(
@@ -21,8 +26,12 @@ export default defineConfig({
   workers: 1,
   timeout: 30 * 60 * 1000,
   expect: { timeout: 60_000 },
+  globalSetup: vercelShareSecret
+    ? "./tests/e2e/long-horizon/live-vercel-share-setup.ts"
+    : undefined,
   use: {
     baseURL,
+    storageState: vercelShareSecret ? storageStatePath : undefined,
     // Do not retain Playwright traces/video/screenshots for this live suite: they can
     // capture account identifiers, cookies, form values, or other live-session data.
     // The suite writes a deliberately curated Markdown/JSON evidence pack instead.
