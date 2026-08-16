@@ -95,33 +95,25 @@ export async function chooseCharacterCreationDirection(
       })
       .where(eq(characterCreationCycles.id, existing.id));
   else
-    await db
-      .insert(characterCreationCycles)
-      .values({
-        id: cycleId,
-        childProfileId: input.childProfileId,
-        householdId: input.householdId,
-        startDirection: input.direction,
-        currentStep: nextStep,
-        latestSummary: { startDirection: input.direction },
-      });
-  await db
-    .insert(characterCreationSelections)
-    .values({
-      id: crypto.randomUUID(),
-      cycleId,
+    await db.insert(characterCreationCycles).values({
+      id: cycleId,
       childProfileId: input.childProfileId,
       householdId: input.householdId,
-      stepKey: "start",
-      selectionKey: input.direction,
-      selectionPayload: { direction: input.direction },
-      selectedBy: "user",
+      startDirection: input.direction,
+      currentStep: nextStep,
+      latestSummary: { startDirection: input.direction },
     });
-  return {
-    id: cycleId,
-    startDirection: input.direction,
-    currentStep: nextStep,
-  };
+  await db.insert(characterCreationSelections).values({
+    id: crypto.randomUUID(),
+    cycleId,
+    childProfileId: input.childProfileId,
+    householdId: input.householdId,
+    stepKey: "start",
+    selectionKey: input.direction,
+    selectionPayload: { direction: input.direction },
+    selectedBy: "user",
+  });
+  return { id: cycleId, startDirection: input.direction, currentStep: nextStep };
 }
 export async function chooseWorldFeeling(
   userId: string,
@@ -140,83 +132,35 @@ export async function chooseWorldFeeling(
   );
   if (!cycle || cycle.startDirection !== "world_first")
     throw new Error("World-first creation cycle is required");
-  const latestSummary = {
-    ...(cycle.latestSummary ?? {}),
-    worldFeeling: input.feeling,
-  };
-  await db
-    .update(characterCreationCycles)
-    .set({
-      currentStep: "world_character_suggestions",
-      latestSummary,
-      updatedAt: new Date(),
-    })
-    .where(eq(characterCreationCycles.id, cycle.id));
-  await db
-    .insert(characterCreationSelections)
-    .values({
-      id: crypto.randomUUID(),
-      cycleId: cycle.id,
-      childProfileId: input.childProfileId,
-      householdId: input.householdId,
-      stepKey: "world_feeling",
-      selectionKey: input.feeling,
-      selectionPayload: { feeling: input.feeling },
-      selectedBy: "user",
-    });
-  return {
-    id: cycle.id,
-    startDirection: cycle.startDirection,
+  const latestSummary = { ...(cycle.latestSummary ?? {}), worldFeeling: input.feeling };
+  await db.update(characterCreationCycles).set({
     currentStep: "world_character_suggestions",
     latestSummary,
-  };
+    updatedAt: new Date(),
+  }).where(eq(characterCreationCycles.id, cycle.id));
+  await db.insert(characterCreationSelections).values({
+    id: crypto.randomUUID(), cycleId: cycle.id,
+    childProfileId: input.childProfileId, householdId: input.householdId,
+    stepKey: "world_feeling", selectionKey: input.feeling,
+    selectionPayload: { feeling: input.feeling }, selectedBy: "user",
+  });
+  return { id: cycle.id, startDirection: cycle.startDirection, currentStep: "world_character_suggestions", latestSummary };
 }
 export async function chooseWorldCharacterSuggestion(
   userId: string,
   input: {
     householdId: string;
     childProfileId: string;
-    suggestion: {
-      key: string;
-      name: string;
-      description: string;
-      fitReason: string;
-    };
+    suggestion: { key: string; name: string; description: string; fitReason: string };
   },
 ) {
   await assertScope(userId, input.householdId, input.childProfileId);
   const db = getProfileDb();
-  const cycle = await getActiveCharacterCreationCycle(
-    userId,
-    input.householdId,
-    input.childProfileId,
-  );
-  if (!cycle || cycle.startDirection !== "world_first")
-    throw new Error("WORLD_FIRST_CYCLE_REQUIRED");
-  const latestSummary = {
-    ...(cycle.latestSummary ?? {}),
-    characterArchetype: input.suggestion,
-  };
-  await db
-    .update(characterCreationCycles)
-    .set({
-      currentStep: "character_identity",
-      latestSummary,
-      updatedAt: new Date(),
-    })
-    .where(eq(characterCreationCycles.id, cycle.id));
-  await db
-    .insert(characterCreationSelections)
-    .values({
-      id: crypto.randomUUID(),
-      cycleId: cycle.id,
-      childProfileId: input.childProfileId,
-      householdId: input.householdId,
-      stepKey: "world_character_suggestion",
-      selectionKey: input.suggestion.key,
-      selectionPayload: input.suggestion,
-      selectedBy: "user",
-    });
+  const cycle = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
+  if (!cycle || cycle.startDirection !== "world_first") throw new Error("WORLD_FIRST_CYCLE_REQUIRED");
+  const latestSummary = { ...(cycle.latestSummary ?? {}), characterArchetype: input.suggestion };
+  await db.update(characterCreationCycles).set({ currentStep: "character_identity", latestSummary, updatedAt: new Date() }).where(eq(characterCreationCycles.id, cycle.id));
+  await db.insert(characterCreationSelections).values({ id: crypto.randomUUID(), cycleId: cycle.id, childProfileId: input.childProfileId, householdId: input.householdId, stepKey: "world_character_suggestion", selectionKey: input.suggestion.key, selectionPayload: input.suggestion, selectedBy: "user" });
   return { id: cycle.id, currentStep: "character_identity", latestSummary };
 }
 export async function chooseCharacterIdentity(
@@ -235,31 +179,13 @@ export async function chooseCharacterIdentity(
 ) {
   await assertScope(userId, input.householdId, input.childProfileId);
   const db = getProfileDb();
-  const cycle = await getActiveCharacterCreationCycle(
-    userId,
-    input.householdId,
-    input.childProfileId,
-  );
+  const cycle = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
   if (!cycle) throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");
-  const latestSummary = {
-    ...(cycle.latestSummary ?? {}),
-    characterIdentity: input.suggestion,
-  };
-  await db
-    .update(characterCreationCycles)
-    .set({ currentStep: "origin", latestSummary, updatedAt: new Date() })
-    .where(eq(characterCreationCycles.id, cycle.id));
-  await db
-    .insert(characterCreationSelections)
-    .values({
-      id: crypto.randomUUID(),
-      cycleId: cycle.id,
-      childProfileId: input.childProfileId,
-      householdId: input.householdId,
-      stepKey: "character_identity",
-      selectionKey: input.suggestion.key,
-      selectionPayload: input.suggestion,
-      selectedBy: "user",
-    });
-  return { id: cycle.id, currentStep: "origin", latestSummary };
+  if (cycle.currentStep !== "character_identity")
+    throw new Error(`ONBOARDING_STEP_OUT_OF_ORDER:${cycle.currentStep}:character_identity`);
+  const latestSummary = { ...(cycle.latestSummary ?? {}), characterIdentity: input.suggestion };
+  const nextStep = cycle.startDirection === "character_first" ? "universe" : "origin";
+  await db.update(characterCreationCycles).set({ currentStep: nextStep, latestSummary, updatedAt: new Date() }).where(eq(characterCreationCycles.id, cycle.id));
+  await db.insert(characterCreationSelections).values({ id: crypto.randomUUID(), cycleId: cycle.id, childProfileId: input.childProfileId, householdId: input.householdId, stepKey: "character_identity", selectionKey: input.suggestion.key, selectionPayload: input.suggestion, selectedBy: "user" });
+  return { id: cycle.id, currentStep: nextStep, latestSummary };
 }

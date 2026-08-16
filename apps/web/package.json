@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:load": "vitest run --project load",
     "test:context:production-e2e": "vitest run tests/context-db-production-live-e2e.test.ts",
+    "test:onboarding:production-e2e": "vitest run tests/character-onboarding-production-live-e2e.test.ts",
     "ultef:s37-hook-reader": "vitest run tests/ultef-s37-hook-reader-production.v3.integration.test.ts",
     "ultef:s38-template-versioning": "vitest run tests/ultef-s38-template-versioning.v3.integration.test.ts",
     "ultef:s40-public-auth": "playwright test tests/e2e/s40-public-auth.spec.ts",
