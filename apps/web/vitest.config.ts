@@ -11,6 +11,7 @@ loadEnvConfig(appDir);
 
 const alias = {
   "@": new URL(".", import.meta.url).pathname,
+  "server-only": resolve(appDir, "tests/mocks/server-only.ts"),
 };
 
 export default defineConfig({
