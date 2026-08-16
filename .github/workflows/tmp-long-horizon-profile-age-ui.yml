@@ -1,0 +1,76 @@
+name: Temporary long-horizon exact-age UI patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Show exact age on child dashboard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("apps/web/app/app/profiles/[childProfileId]/profile-experience-client-page.tsx")
+          text = p.read_text()
+          replacements = [
+            (
+              '  ageBand: string;\n  locale: string;',
+              '  ageBand: string;\n  ageYears: number | null;\n  locale: string;',
+            ),
+            (
+              '<InfoPill icon="cake" text={ageLabel(profile.ageBand)} />',
+              '<InfoPill\n                  icon="cake"\n                  text={\n                    profile.ageYears === null\n                      ? ageLabel(profile.ageBand)\n                      : `${profile.ageYears} yaş`\n                  }\n                />',
+            ),
+            (
+              'Profil yaşı: {ageLabel(profile.ageBand)} · Dil: {profile.locale}',
+              'Profil yaşı: {profile.ageYears === null ? ageLabel(profile.ageBand) : `${profile.ageYears} yaş`} · Dil: {profile.locale}',
+            ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected exactly one match for {old!r}, got {count}")
+              text = text.replace(old, new, 1)
+          p.write_text(text)
+          PY
+      - name: Format changed implementation and live-test files
+        run: |
+          pnpm exec prettier --write \
+            packages/profiles/migrations/0071_child_profile_exact_age.sql \
+            packages/profiles/src/db/schema/profile/child-profiles.ts \
+            packages/profiles/src/domain/child-profile.ts \
+            packages/profiles/src/application/child-profile.service.ts \
+            packages/profiles/src/application/onboarding.service.ts \
+            packages/profiles/src/application/generation-context-assembler.ts \
+            apps/web/app/api/child-profiles/[id]/route.ts \
+            apps/web/app/app/profiles/[childProfileId]/profile-experience-client-page.tsx \
+            apps/web/tests/e2e/long-horizon/live-run-support.ts \
+            apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts \
+            apps/web/package.json \
+            .github/workflows/lumi-long-horizon-live-playwright.yml
+      - name: Commit and self-delete
+        run: |
+          rm .github/workflows/tmp-long-horizon-profile-age-ui.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(web): expose exact child age for live acceptance"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
