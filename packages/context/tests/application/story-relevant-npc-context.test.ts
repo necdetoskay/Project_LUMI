@@ -35,7 +35,9 @@ describe("story relevant NPC context", () => {
     const npcItem: ContextItem<RelevantNpcItem> = {
       id: "npc:internal-123",
       type: "relevant-npc",
-      content: { summary: "Arin is a forest guide. Relationship tone: positive" },
+      content: {
+        summary: "Arin is a forest guide. Relationship tone: positive",
+      },
       text: "Arin is a forest guide. Relationship tone: positive",
       sourceEngine: "profiles+npc-intelligence/canonical-npc",
       authority: 0.9,
@@ -65,7 +67,9 @@ describe("story relevant NPC context", () => {
       generationIntent: "story_generation",
     });
 
-    const section = manifest.sections.find((item) => item.name === "relevant-npc");
+    const section = manifest.sections.find(
+      (item) => item.name === "relevant-npc",
+    );
     expect(section?.items).toHaveLength(1);
     expect(section?.items[0]?.text).toContain("Arin");
     expect(section?.tokensUsed).toBeLessThanOrEqual(390);
