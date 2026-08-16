@@ -1,0 +1,109 @@
+name: Temporary fix world-map fixtures 233
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Align world-map fixtures with current contract
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          api = Path('apps/web/tests/world-map-api.test.ts')
+          text = api.read_text()
+          text = text.replace(
+              'const mockFindChildProfileForUser = vi.fn();\n',
+              'const mockFindChildProfileForUser = vi.fn();\nconst mockFindNpcContextIdentities = vi.fn();\n',
+              1,
+          )
+          text = text.replace(
+              'vi.mock("@lumi/profiles/application", () => ({\n  findChildProfileForUser: (...args: unknown[]) =>\n    mockFindChildProfileForUser(...args),\n',
+              'vi.mock("@lumi/profiles/application", () => ({\n  findChildProfileForUser: (...args: unknown[]) =>\n    mockFindChildProfileForUser(...args),\n  findNpcContextIdentities: (...args: unknown[]) =>\n    mockFindNpcContextIdentities(...args),\n',
+              1,
+          )
+          text = text.replace(
+              'beforeEach(() => {\n  vi.clearAllMocks();\n});',
+              'beforeEach(() => {\n  vi.clearAllMocks();\n  mockFindNpcContextIdentities.mockResolvedValue([]);\n});',
+              1,
+          )
+          api.write_text(text)
+
+          ui = Path('apps/web/tests/profile-world-map-section.test.tsx')
+          text = ui.read_text()
+          needle = '                regions: ['
+          first = text.find(needle)
+          if first < 0:
+              raise SystemExit('first world regions fixture not found')
+          end_first = text.find('              },\n            }),', first)
+          if end_first < 0:
+              raise SystemExit('first world fixture end not found')
+          block = text[first:end_first]
+          if '                npcs:' not in block:
+              # Insert immediately after the regions array by targeting the final region-array close in this world block.
+              last_regions_close = block.rfind('                ],')
+              if last_regions_close < 0:
+                  raise SystemExit('first regions close not found')
+              insert_at = first + last_regions_close + len('                ],')
+              text = text[:insert_at] + '\n                npcs: [],' + text[insert_at:]
+
+          second_anchor = '                currentLocation: null,\n                regions: [],'
+          if second_anchor not in text:
+              raise SystemExit('second world fixture anchor not found')
+          text = text.replace(
+              second_anchor,
+              '                currentLocation: null,\n                regions: [],\n                npcs: [],',
+              1,
+          )
+          ui.write_text(text)
+          PY
+
+      - name: Format touched tests
+        run: |
+          pnpm exec prettier --write \
+            apps/web/tests/world-map-api.test.ts \
+            apps/web/tests/profile-world-map-section.test.tsx
+
+      - name: Run targeted world-map tests
+        run: pnpm --filter @lumi/web exec vitest run tests/world-map-api.test.ts tests/profile-world-map-section.test.tsx
+
+      - name: Verify web typecheck
+        run: pnpm --filter @lumi/web typecheck
+
+      - name: Commit verified fix and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/tmp-fix-world-map-fixtures-233.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(web): align world-map fixtures with npc contract"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
