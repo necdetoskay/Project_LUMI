@@ -51,6 +51,13 @@ async function assertMembership(
   }
 }
 
+function exactAgeFromRecord(profile: {
+  ageYears: number | null;
+  metadata: { ageYears?: number };
+}): number | null {
+  return profile.ageYears ?? profile.metadata.ageYears ?? null;
+}
+
 export async function createChildProfile(
   userId: string,
   input: CreateChildProfileInput,
@@ -70,8 +77,8 @@ export async function createChildProfile(
     householdId: input.householdId,
     displayName: input.displayName,
     ageBand,
+    ageYears,
     locale: "tr-TR",
-    metadata: ageYears === undefined ? {} : { ageYears },
   });
 
   return {
@@ -79,7 +86,7 @@ export async function createChildProfile(
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
-    ageYears: profile.metadata.ageYears ?? null,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };
@@ -99,7 +106,7 @@ export async function listChildProfiles(
     householdId: p.householdId,
     displayName: p.displayName,
     ageBand: p.ageBand,
-    ageYears: p.metadata.ageYears ?? null,
+    ageYears: exactAgeFromRecord(p),
     locale: p.locale,
     createdAt: p.createdAt,
   }));
@@ -124,18 +131,13 @@ export async function updateChildProfile(
   }
 
   const { childRepo } = getRepos();
-  const existing = await childRepo.findById(profileId, householdId);
-  if (!existing) throw new Error("Child profile not found for update");
   const profile = await childRepo.update(profileId, householdId, {
     displayName: input.displayName,
     ageBand:
       input.ageYears === undefined
         ? input.ageBand
         : ageBandForAgeYears(input.ageYears),
-    metadata:
-      input.ageYears === undefined
-        ? existing.metadata
-        : { ...existing.metadata, ageYears: input.ageYears },
+    ageYears: input.ageYears,
   });
 
   return {
@@ -143,7 +145,7 @@ export async function updateChildProfile(
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
-    ageYears: profile.metadata.ageYears ?? null,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };
@@ -176,7 +178,7 @@ export async function findChildProfileForUser(
     householdId: profile.householdId,
     displayName: profile.displayName,
     ageBand: profile.ageBand,
-    ageYears: profile.metadata.ageYears ?? null,
+    ageYears: exactAgeFromRecord(profile),
     locale: profile.locale,
     createdAt: profile.createdAt,
   };
