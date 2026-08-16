@@ -16,7 +16,8 @@ export const STORY_GENERATION_TOKEN_BUDGET: Readonly<TokenBudget> = {
   workingStoryTokens: 1_430,
   emotionalStateTokens: 520,
   longTermMemoryTokens: 650,
-  knowledgeTokens: 390,
+  relevantNpcTokens: 390,
+  knowledgeTokens: 0,
   worldTokens: 650,
   originPackageTokens: 390,
 };
