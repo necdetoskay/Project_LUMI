@@ -1,0 +1,36 @@
+name: Temporary long-horizon Prettier
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts apps/web/tests/long-horizon-playwright.contract.test.ts
+      - run: pnpm exec prettier --check apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts apps/web/tests/long-horizon-playwright.contract.test.ts
+      - name: Commit formatted files
+        run: |
+          rm .github/workflows/tmp-long-horizon-prettier.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style(e2e): format long-horizon acceptance pack"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
