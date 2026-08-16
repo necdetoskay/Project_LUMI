@@ -12,6 +12,8 @@ import {
 import { buildStoryScenePrompt } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
+  STORY_NARRATIVE_TARGET_MAX,
+  STORY_NARRATIVE_TARGET_MIN,
   type GeneratedScene,
 } from "./story-scene-output";
 import {
@@ -75,7 +77,7 @@ export class StorySceneGenerationService {
   async generateSceneFromHook(
     input: StorySceneGenerationInput,
   ): Promise<StorySceneGenerationResult> {
-    const maxAttempts = input.maxAttempts ?? 2;
+    const maxAttempts = input.maxAttempts ?? 3;
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
     const relevantNpcIds = [
@@ -157,19 +159,30 @@ export class StorySceneGenerationService {
         const invalidContinuityKeys = usedContinuityKeys.filter(
           (key) => !allowedContinuityKeys.has(key),
         );
-        if (invalidContinuityKeys.length === 0) {
-          return {
-            scene: parsed.scene,
-            modelId: response.model || null,
-            attempt,
-            contextManifest: generationContext,
-          };
+        if (invalidContinuityKeys.length > 0) {
+          lastError = new LlmGenerationError(
+            `Story scene continuity usage validation failed: unknown keys ${invalidContinuityKeys.join(", ")}`,
+          );
+          continue;
         }
 
-        lastError = new LlmGenerationError(
-          `Story scene continuity usage validation failed: unknown keys ${invalidContinuityKeys.join(", ")}`,
-        );
-        continue;
+        const narrativeLength = parsed.scene.narrative.length;
+        if (
+          narrativeLength < STORY_NARRATIVE_TARGET_MIN ||
+          narrativeLength > STORY_NARRATIVE_TARGET_MAX
+        ) {
+          lastError = new LlmGenerationError(
+            `Story scene narrative length must be ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} characters; got ${narrativeLength}`,
+          );
+          continue;
+        }
+
+        return {
+          scene: parsed.scene,
+          modelId: response.model || null,
+          attempt,
+          contextManifest: generationContext,
+        };
       }
 
       lastError = new LlmGenerationError(
