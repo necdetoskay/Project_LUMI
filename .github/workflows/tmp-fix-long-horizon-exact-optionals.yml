@@ -1,0 +1,119 @@
+name: Temporary fix long-horizon exact optionals
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply exact-optional fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected snippet not found in {path}")
+              target.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "apps/web/app/api/child-profiles/route.ts",
+              '''      const profile = await createChildProfile(parent.id, {
+                  householdId: parsed.householdId,
+                  displayName: parsed.displayName,
+                  ageYears:
+                    typeof parsed.ageYears === "number" ? parsed.ageYears : undefined,
+                  ageBand:
+                    typeof parsed.ageBand === "string" ? parsed.ageBand : undefined,
+                });''',
+              '''      const profile = await createChildProfile(parent.id, {
+                  householdId: parsed.householdId,
+                  displayName: parsed.displayName,
+                  ...(typeof parsed.ageYears === "number"
+                    ? { ageYears: parsed.ageYears }
+                    : {}),
+                  ...(typeof parsed.ageBand === "string"
+                    ? { ageBand: parsed.ageBand }
+                    : {}),
+                });''',
+          )
+
+          replace_once(
+              "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts",
+              '''    if (await option.isVisible()) {
+                  visible.push({
+                    index,
+                    label: await optionLabel(option),
+                    testId: (await option.getAttribute("data-testid")) ?? undefined,
+                  });
+                }''',
+              '''    if (await option.isVisible()) {
+                  const testId = await option.getAttribute("data-testid");
+                  visible.push({
+                    index,
+                    label: await optionLabel(option),
+                    ...(testId === null ? {} : { testId }),
+                  });
+                }''',
+          )
+
+          replace_once(
+              "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts",
+              '''    selectedLabel: chosen.label,
+                selectedTestId: chosen.testId,
+                availableLabels: visible.map((option) => option.label),''',
+              '''    selectedLabel: chosen.label,
+                ...(chosen.testId === undefined
+                  ? {}
+                  : { selectedTestId: chosen.testId }),
+                availableLabels: visible.map((option) => option.label),''',
+          )
+          PY
+
+      - name: Format touched files
+        run: |
+          pnpm exec prettier --write \
+            "apps/web/app/api/child-profiles/route.ts" \
+            "apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts"
+
+      - name: Verify web typecheck
+        run: pnpm --filter @lumi/web typecheck
+
+      - name: Commit fix and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/tmp-fix-long-horizon-exact-optionals.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(e2e): satisfy exact optional property types"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
