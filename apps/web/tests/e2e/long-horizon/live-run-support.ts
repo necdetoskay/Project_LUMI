@@ -60,7 +60,7 @@ export function loadLongHorizonRunConfig(): LongHorizonRunConfig {
     );
   }
 
-  const suppliedSeed = process.env.LUMI_LONG_HORIZON_RNG_SEED;
+  const suppliedSeed = process.env.LUMI_LONG_HORIZON_RNG_SEED?.trim();
   const rngSeed = suppliedSeed
     ? Number(suppliedSeed)
     : Math.floor(Date.now() % 2_147_483_647);
@@ -70,8 +70,9 @@ export function loadLongHorizonRunConfig(): LongHorizonRunConfig {
     );
   }
 
+  const suppliedRunId = process.env.LUMI_LONG_HORIZON_RUN_ID?.trim();
   const runId =
-    process.env.LUMI_LONG_HORIZON_RUN_ID ??
+    suppliedRunId ||
     `age-${childAge}-seed-${rngSeed}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   if (!/^[a-zA-Z0-9_-]+$/.test(runId)) {
     throw new Error(
@@ -154,6 +155,18 @@ export async function ensureEvidenceDirectory(
   directory: string,
 ): Promise<void> {
   await mkdir(directory, { recursive: true });
+}
+
+export async function initializeRunJson(
+  config: LongHorizonRunConfig,
+  evidence: LongHorizonRunEvidence,
+): Promise<void> {
+  await ensureEvidenceDirectory(config.evidenceDir);
+  await writeFile(
+    path.join(config.evidenceDir, "run.json"),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+    { encoding: "utf8", flag: "wx" },
+  );
 }
 
 export async function writeRunJson(
