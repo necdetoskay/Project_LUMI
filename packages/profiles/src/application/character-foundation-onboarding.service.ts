@@ -104,12 +104,17 @@ async function generateSuggestions<T>(
     ...(spec.contextExtras?.(summary) ?? {}),
   };
   const prompt = await resolveActivePrompt(spec.promptKey, context);
+let lastError: unknown;
+for (let attempt = 1; attempt <= 3; attempt += 1) {
   const generated = await generateTextWithLlm({
     userId,
     householdId: input.householdId,
     taskType: spec.taskType,
     system: prompt.system,
-    user: prompt.user,
+    user:
+      attempt === 1
+        ? prompt.user
+        : `${prompt.user}\n\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
     modelOverride: prompt.modelOverride,
     generationConfig: prompt.generationConfig,
   });
@@ -126,7 +131,7 @@ async function generateSuggestions<T>(
       taskType: spec.taskType,
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
-      inputContext: context,
+      inputContext: { ...context, generationAttempt: attempt },
       outputPayload: { suggestions },
       validationStatus: "valid",
       generated,
@@ -137,6 +142,7 @@ async function generateSuggestions<T>(
       promptVersion: prompt.promptVersion,
     };
   } catch (error) {
+    lastError = error;
     await recordAiGenerationTrace({
       householdId: input.householdId,
       childProfileId: input.childProfileId,
@@ -144,13 +150,14 @@ async function generateSuggestions<T>(
       taskType: spec.taskType,
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
-      inputContext: context,
+      inputContext: { ...context, generationAttempt: attempt },
       outputPayload: { raw: generated.content },
       validationStatus: "invalid",
       generated,
     });
-    throw error;
   }
+}
+throw lastError;
 }
 
 function asSuggestions<T>(value: unknown): T[] {
