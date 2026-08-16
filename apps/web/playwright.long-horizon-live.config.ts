@@ -23,9 +23,12 @@ export default defineConfig({
   expect: { timeout: 60_000 },
   use: {
     baseURL,
-    trace: "retain-on-failure",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    // Do not retain Playwright traces/video/screenshots for this live suite: they can
+    // capture account identifiers, cookies, form values, or other live-session data.
+    // The suite writes a deliberately curated Markdown/JSON evidence pack instead.
+    trace: "off",
+    screenshot: "off",
+    video: "off",
   },
   projects: [
     {
