@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
+      VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
       LUMI_LONG_HORIZON_LIVE: "1"
       LUMI_LONG_HORIZON_BASE_URL: ${{ inputs.base_url }}
       LUMI_LONG_HORIZON_CHILD_AGE: ${{ inputs.child_age }}
@@ -69,12 +72,58 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_BASE_URL}"
           test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
+          test -n "${VERCEL_TOKEN}"
           echo "Persistent live Playwright run is explicitly acknowledged."
+
+      - name: Create temporary Vercel automation bypass
+        id: bypass
+        shell: bash
+        env:
+          PREVIEW_URL: ${{ inputs.base_url }}
+        run: |
+          set -euo pipefail
+          secret="$(openssl rand -hex 16)"
+          echo "::add-mask::$secret"
+
+          request="$RUNNER_TEMP/vercel-automation-bypass-generate.json"
+          response="$RUNNER_TEMP/vercel-automation-bypass-response.json"
+          jq -n --arg secret "$secret" '{
+            generate: {
+              secret: $secret,
+              note: "Temporary Project LUMI long-horizon Playwright run"
+            }
+          }' > "$request"
+
+          curl --fail-with-body --silent --show-error \
+            --request PATCH \
+            --output "$response" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$request" \
+            "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
+
+          result="$(curl --silent --show-error \
+            --location \
+            --max-redirs 5 \
+            --output /dev/null \
+            --write-out '%{http_code}|%{url_effective}' \
+            --header "x-vercel-protection-bypass: $secret" \
+            --header "x-vercel-set-bypass-cookie: true" \
+            "$PREVIEW_URL/login")"
+          status="${result%%|*}"
+          final_url="${result#*|}"
+          test "$status" = "200" || { echo "Automation bypass probe returned HTTP $status"; exit 1; }
+          [[ "$final_url" != *"/sso-api"* ]] || { echo "Automation bypass probe was redirected to Vercel SSO"; exit 1; }
+
+          echo "secret=$secret" >> "$GITHUB_OUTPUT"
+          echo "Temporary Vercel automation bypass created and validated."
 
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
 
       - name: Run browser-only persistent acceptance pack
+        env:
+          LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ steps.bypass.outputs.secret }}
         run: pnpm --filter @lumi/web test:long-horizon:live
 
       - name: Upload long-horizon evidence
@@ -85,3 +134,24 @@ jobs:
           path: apps/web/tests/e2e/long-horizon/evidence/
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Revoke temporary Vercel automation bypass
+        if: always() && steps.bypass.outputs.secret != ''
+        shell: bash
+        env:
+          AUTOMATION_SECRET: ${{ steps.bypass.outputs.secret }}
+        run: |
+          revoke="$RUNNER_TEMP/vercel-automation-bypass-revoke.json"
+          jq -n --arg secret "$AUTOMATION_SECRET" '{
+            revoke: {
+              secret: $secret,
+              regenerate: false
+            }
+          }' > "$revoke"
+          curl --silent --show-error \
+            --request PATCH \
+            --output /dev/null \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$revoke" \
+            "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" || true
