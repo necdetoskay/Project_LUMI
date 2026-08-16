@@ -30,6 +30,11 @@ function assertSafeDisposableDatabase(url: string) {
   }
 }
 
+function validNarrative(seed: string): string {
+  const unit = `${seed} `;
+  return unit.repeat(Math.ceil(1600 / unit.length)).slice(0, 1600);
+}
+
 const settingsPort: StorySceneLlmSettingsPort = {
   async resolveSettings() {
     return {
@@ -76,6 +81,10 @@ function continuityAwareCaller(capturedPrompts: string[]): OpenRouterCaller {
     capturedPrompts.push(prompt);
     const hasPersistedTrait = prompt.includes("courage=0.82");
     const hasPersistedVersion = prompt.includes("kalıcı karakter sürümü 2");
+    const narrativeSeed =
+      hasPersistedTrait && hasPersistedVersion
+        ? "Arin, onceki deneyiminden gelen cesaretini hatirlayip yeni patikaya kararlilikla adim atti."
+        : "Arin yeni patikaya dogru ilerledi.";
 
     return {
       model: "deterministic-ultef-provider",
@@ -83,10 +92,7 @@ function continuityAwareCaller(capturedPrompts: string[]): OpenRouterCaller {
         sceneId: "px02-later-scene",
         setting: "Gunes Vadisi patikasi",
         characters: ["Arin"],
-        narrative:
-          hasPersistedTrait && hasPersistedVersion
-            ? "Arin, onceki deneyiminden gelen cesaretini hatirlayip yeni patikaya kararlilikla adim atti."
-            : "Arin yeni patikaya dogru ilerledi.",
+        narrative: validNarrative(narrativeSeed),
         moment:
           hasPersistedTrait && hasPersistedVersion
             ? "Kalici karakter degisimi sonraki sahneyi etkiledi."
