@@ -1,0 +1,76 @@
+name: Temporary existing household child UI patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Patch existing-household child creation UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(f"{path}: expected 1 match, got {n}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          p = "apps/web/app/app/onboarding/page.tsx"
+          once(p,
+            'import Link from "next/link";',
+            'import Link from "next/link";\nimport { useSearchParams } from "next/navigation";')
+          once(p,
+            '  const [state, setState] = useState<OnboardingState | null>(null);',
+            '  const searchParams = useSearchParams();\n  const addProfileMode = searchParams.get("addProfile") === "1";\n  const [state, setState] = useState<OnboardingState | null>(null);')
+          once(p,
+            '        if (!s.hasHousehold) setStep("create-household");\n        else if (s.childProfileCount === 0) setStep("add-profiles");\n        else setStep("complete");',
+            '        if (!s.hasHousehold) setStep("create-household");\n        else if (s.childProfileCount === 0 || addProfileMode)\n          setStep("add-profiles");\n        else setStep("complete");')
+          once(p,
+            '  }, []);',
+            '  }, [addProfileMode]);')
+
+          p = "apps/web/app/app/profiles/profiles-client-page.tsx"
+          once(p,
+            "  ageBand: string;\n  locale: string;",
+            "  ageBand: string;\n  ageYears: number | null;\n  locale: string;")
+          text = Path(p).read_text()
+          old = 'href="/app/onboarding"'
+          count = text.count(old)
+          if count < 2:
+              raise SystemExit(f"{p}: expected at least two add-profile links, got {count}")
+          text = text.replace(old, 'href="/app/onboarding?addProfile=1"')
+          old_age = "                          Yaş grubu {profile.ageBand}"
+          if text.count(old_age) != 1:
+              raise SystemExit(f"{p}: age label count {text.count(old_age)}")
+          text = text.replace(
+            old_age,
+            "                          {profile.ageYears === null\n                            ? `Yaş grubu ${profile.ageBand}`\n                            : `${profile.ageYears} yaş`}",
+            1,
+          )
+          Path(p).write_text(text)
+
+          Path(".github/workflows/tmp-add-child-existing-household.yml").unlink()
+          PY
+      - name: Format and commit
+        run: |
+          corepack enable
+          pnpm exec prettier --write apps/web/app/app/onboarding/page.tsx apps/web/app/app/profiles/profiles-client-page.tsx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(profiles): allow adding child to existing household"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
