@@ -348,7 +348,7 @@ live("Character Onboarding 9-stage production Live E2E", () => {
 
         const traces = await pool.query(
           `SELECT task_type,prompt_key,prompt_version,provider,model_id,
-                  input_tokens,output_tokens,total_tokens,latency_ms,input_context
+                  prompt_tokens,completion_tokens,total_tokens,latency_ms,input_context
              FROM profile.ai_generation_traces
             WHERE creation_cycle_id=$1
             ORDER BY created_at ASC`,
@@ -399,8 +399,8 @@ live("Character Onboarding 9-stage production Live E2E", () => {
                 promptKey: row.prompt_key,
                 promptVersion: row.prompt_version,
                 modelId: row.model_id,
-                inputTokens: row.input_tokens,
-                outputTokens: row.output_tokens,
+                promptTokens: row.prompt_tokens,
+                completionTokens: row.completion_tokens,
                 totalTokens: row.total_tokens,
                 latencyMs: row.latency_ms,
               })),
