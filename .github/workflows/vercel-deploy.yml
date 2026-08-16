@@ -25,12 +25,10 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     env:
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
       VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      VERCEL_PROJECT_NAME: project-lumi-web
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout
@@ -56,17 +54,93 @@ jobs:
         run: |
           if [ "${{ inputs.target }}" = "production" ]; then
             echo "environment=production" >> "$GITHUB_OUTPUT"
-            echo "prod_flag=--prod" >> "$GITHUB_OUTPUT"
           else
             echo "environment=preview" >> "$GITHUB_OUTPUT"
-            echo "prod_flag=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Pull Vercel project settings
-        run: npx --yes vercel@latest pull --yes --environment=${{ steps.target.outputs.environment }} --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
+      - name: Create deployment request
+        id: request
+        shell: bash
+        env:
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.target.outputs.environment }}
+        run: |
+          request="$RUNNER_TEMP/vercel-deployment-request.json"
+          response="$RUNNER_TEMP/vercel-deployment-response.json"
 
-      - name: Build
-        run: npx --yes vercel@latest build ${{ steps.target.outputs.prod_flag }} --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
+          jq -n \
+            --arg name "$VERCEL_PROJECT_NAME" \
+            --arg project "$VERCEL_PROJECT_ID" \
+            --arg org "$GITHUB_REPOSITORY_OWNER" \
+            --arg repo "${GITHUB_REPOSITORY#*/}" \
+            --arg ref "$GITHUB_REF_NAME" \
+            --arg sha "$GITHUB_SHA" \
+            --arg remoteUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            '{
+              name: $name,
+              project: $project,
+              gitSource: {
+                type: "github",
+                org: $org,
+                repo: $repo,
+                ref: $ref,
+                sha: $sha
+              },
+              gitMetadata: {
+                remoteUrl: $remoteUrl,
+                commitRef: $ref,
+                commitSha: $sha,
+                dirty: false,
+                ci: true,
+                ciType: "github-actions",
+                rootDirectory: "apps/web"
+              }
+            }' > "$request"
 
-      - name: Deploy prebuilt output
-        run: npx --yes vercel@latest deploy --prebuilt ${{ steps.target.outputs.prod_flag }} --project="$VERCEL_PROJECT_ID" --token="$VERCEL_TOKEN"
+          if [ "$DEPLOYMENT_ENVIRONMENT" = "production" ]; then
+            jq '. + {target: "production"}' "$request" > "$request.tmp"
+            mv "$request.tmp" "$request"
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --output "$response" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$request" \
+            "https://api.vercel.com/v13/deployments?teamId=$VERCEL_ORG_ID"
+
+          deployment_id="$(jq -r '.id // empty' "$response")"
+          deployment_url="$(jq -r '.url // empty' "$response")"
+          deployment_target="$(jq -r '.target // empty' "$response")"
+          deployment_state="$(jq -r '.readyState // .status // empty' "$response")"
+
+          if [ -z "$deployment_id" ] || [ -z "$deployment_url" ]; then
+            echo "Vercel did not return a deployment id/url."
+            jq '{error, id, url, target, readyState, status}' "$response"
+            exit 1
+          fi
+
+          if [ "$DEPLOYMENT_ENVIRONMENT" = "preview" ] && [ "$deployment_target" = "production" ]; then
+            echo "Safety check failed: preview request created a production deployment."
+            exit 1
+          fi
+
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=https://$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "deployment_target=${deployment_target:-preview}" >> "$GITHUB_OUTPUT"
+          echo "deployment_state=${deployment_state:-unknown}" >> "$GITHUB_OUTPUT"
+
+          echo "Deployment created: $deployment_id"
+          echo "URL: https://$deployment_url"
+          echo "Requested environment: $DEPLOYMENT_ENVIRONMENT"
+          echo "Vercel target: ${deployment_target:-preview}"
+          echo "Initial state: ${deployment_state:-unknown}"
+
+      - name: Deployment summary
+        run: |
+          echo "### Vercel deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Environment: ${{ steps.target.outputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Deployment ID: ${{ steps.request.outputs.deployment_id }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target: ${{ steps.request.outputs.deployment_target }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Initial state: ${{ steps.request.outputs.deployment_state }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.request.outputs.deployment_url }}" >> "$GITHUB_STEP_SUMMARY"
