@@ -102,7 +102,7 @@ jobs:
           fi
 
       - name: Upload live E2E evidence artifact
-        if: always() && hashFiles(format('{0}', env.LIVE_E2E_REPORT)) != ''
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: character-onboarding-live-e2e-evidence
