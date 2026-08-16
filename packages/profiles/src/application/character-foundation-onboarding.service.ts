@@ -285,7 +285,7 @@ export async function chooseWorldSuggestion(
     expectedStep: "world",
     stepKey: "world",
     selectionKey: input.suggestion.key,
-    selectionPayload: input.suggestion,
+    selectionPayload: { ...input.suggestion },
     summaryKey: "world",
     nextStep: "compatibility",
   });
@@ -325,7 +325,7 @@ export async function chooseCompatibility(
     expectedStep: "compatibility",
     stepKey: "compatibility",
     selectionKey: input.suggestion.key,
-    selectionPayload: input.suggestion,
+    selectionPayload: { ...input.suggestion },
     summaryKey: "compatibility",
     nextStep: "region",
   });
@@ -364,7 +364,7 @@ export async function chooseRegionSuggestion(
     expectedStep: "region",
     stepKey: "region",
     selectionKey: input.suggestion.key,
-    selectionPayload: input.suggestion,
+    selectionPayload: { ...input.suggestion },
     summaryKey: "region",
     nextStep: "origin",
   });
@@ -383,7 +383,7 @@ export async function chooseOriginSuggestion(
     expectedStep: "origin",
     stepKey: "origin",
     selectionKey: input.suggestion.key,
-    selectionPayload: input.suggestion,
+    selectionPayload: { ...input.suggestion },
     summaryKey: "origin",
     nextStep: "core_saga",
   });
@@ -428,7 +428,7 @@ export async function chooseCoreSagaSuggestion(
     expectedStep: "core_saga",
     stepKey: "core_saga",
     selectionKey: input.suggestion.key,
-    selectionPayload: input.suggestion,
+    selectionPayload: { ...input.suggestion },
     summaryKey: "coreSaga",
     nextStep: "final_review",
   });
