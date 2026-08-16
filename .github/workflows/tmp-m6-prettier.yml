@@ -1,0 +1,35 @@
+name: Temporary M6 Prettier Fix
+on:
+  push:
+    branches:
+      - agent/onboarding-m6-failure-paths
+    paths:
+      - .github/workflows/tmp-m6-prettier.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format M6 test
+        run: pnpm exec prettier --write apps/web/tests/character-onboarding-failure-paths.integration.test.ts
+      - name: Verify M6 formatting and lint
+        run: |
+          pnpm exec prettier --check apps/web/tests/character-onboarding-failure-paths.integration.test.ts
+          pnpm exec eslint apps/web/tests/character-onboarding-failure-paths.integration.test.ts --max-warnings=0
+      - name: Commit formatting
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/tests/character-onboarding-failure-paths.integration.test.ts
+          git commit -m 'style(onboarding): format M6 failure-path tests'
+          git push
