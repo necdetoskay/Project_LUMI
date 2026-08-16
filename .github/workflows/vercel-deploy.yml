@@ -11,6 +11,9 @@ on:
         options:
           - preview
           - production
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
 
 concurrency:
   group: vercel-deploy-${{ github.ref }}
@@ -28,6 +31,7 @@ jobs:
     env:
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
       VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      VERCEL_SCOPE: necdetoskay-8234s-projects
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout
@@ -53,10 +57,10 @@ jobs:
           fi
 
       - name: Pull Vercel project settings
-        run: npx --yes vercel@latest pull --yes --environment=${{ steps.target.outputs.environment }} --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest pull --yes --environment=${{ steps.target.outputs.environment }} --scope="$VERCEL_SCOPE" --token="$VERCEL_TOKEN"
 
       - name: Build
-        run: npx --yes vercel@latest build ${{ steps.target.outputs.prod_flag }} --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest build ${{ steps.target.outputs.prod_flag }} --scope="$VERCEL_SCOPE" --token="$VERCEL_TOKEN"
 
       - name: Deploy prebuilt output
-        run: npx --yes vercel@latest deploy --prebuilt ${{ steps.target.outputs.prod_flag }} --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@latest deploy --prebuilt ${{ steps.target.outputs.prod_flag }} --scope="$VERCEL_SCOPE" --token="$VERCEL_TOKEN"
