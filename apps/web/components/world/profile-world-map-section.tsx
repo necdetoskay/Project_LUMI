@@ -56,6 +56,17 @@ type WorldMapResponse = {
       locationType: string;
     } | null;
     regions: WorldMapRegion[];
+    npcs: Array<{
+      key: string;
+      name: string;
+      subtype: string;
+      originConcept: string;
+      locationName: string;
+      needTypes: string[];
+      relationshipToCharacter: number;
+      relationshipLabel: string;
+      lastInteractionAt: string;
+    }>;
   } | null;
   message?: string;
 };
@@ -535,6 +546,58 @@ export function ProfileWorldMapSection({
             ) : (
               <p className="mt-3 text-sm leading-6 text-on-surface-variant">
                 Karakterin gorunen bir esyasi henuz kaydedilmedi.
+              </p>
+            )}
+          </section>
+
+          <section
+            className="rounded-xl border border-outline-variant bg-white p-5"
+            data-testid="npc-relationship-summary"
+          >
+            <h2 className="text-lg font-bold text-on-surface">
+              Tanıdıklar ve ilişkiler
+            </h2>
+            {world.npcs.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {world.npcs.map((npc) => (
+                  <article
+                    className="rounded-lg border border-outline-variant bg-surface-container-low p-4"
+                    data-testid="npc-state-card"
+                    key={npc.key}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-on-surface">
+                          {npc.name}
+                        </h3>
+                        <p className="mt-1 text-xs text-on-surface-variant">
+                          {npc.subtype} · {npc.locationName}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-primary-fixed/60 px-2.5 py-1 text-xs font-bold text-primary">
+                        {npc.relationshipLabel}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                      {npc.originConcept}
+                    </p>
+                    <div className="mt-3 grid gap-2 text-xs text-on-surface-variant">
+                      <p>
+                        Yakınlık: {npc.relationshipToCharacter.toFixed(2)}
+                      </p>
+                      <p>
+                        İhtiyaçlar: {npc.needTypes.length > 0
+                          ? npc.needTypes.join(", ")
+                          : "kayıtlı ihtiyaç yok"}
+                      </p>
+                      <p>Son etkileşim: {npc.lastInteractionAt}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+                Bu dünyada henüz görünür bir NPC ilişkisi kaydedilmedi.
               </p>
             )}
           </section>
