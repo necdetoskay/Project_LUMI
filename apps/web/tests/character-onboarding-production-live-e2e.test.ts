@@ -457,7 +457,9 @@ live("Character Onboarding 9-stage production Live E2E", () => {
           `DELETE FROM profile.ai_generation_traces WHERE household_id=$1`,
           [householdId],
         );
-      } catch {}
+      } catch {
+        // Trace storage may be absent in older disposable schema variants.
+      }
       await pool.query(
         `DELETE FROM profile.character_creation_selections WHERE household_id=$1`,
         [householdId],
