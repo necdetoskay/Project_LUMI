@@ -72,6 +72,26 @@ function validateNode(
   }
 }
 
+function normalizeDirectSuggestionArray(
+  value: unknown,
+  schema: JsonSchema,
+): unknown {
+  if (!Array.isArray(value) || schema.type !== "object") return value;
+
+  const required = Array.isArray(schema.required)
+    ? schema.required.filter((key): key is string => typeof key === "string")
+    : [];
+  if (required.length !== 1 || required[0] !== "suggestions") return value;
+
+  const properties =
+    schema.properties && typeof schema.properties === "object"
+      ? (schema.properties as Record<string, JsonSchema>)
+      : {};
+  if (properties.suggestions?.type !== "array") return value;
+
+  return { suggestions: value };
+}
+
 export function parseAndValidatePromptOutput(
   raw: string,
   schema: JsonSchema,
@@ -86,6 +106,7 @@ export function parseAndValidatePromptOutput(
   } catch {
     throw new Error("LLM_OUTPUT_INVALID_JSON");
   }
+  value = normalizeDirectSuggestionArray(value, schema);
   const issues: string[] = [];
   validateNode(value, schema, "$", issues);
   if (issues.length) throw new PromptOutputValidationError(issues);
