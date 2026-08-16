@@ -40,6 +40,11 @@ function assertSafeDisposableDatabase(url: string) {
   }
 }
 
+function validNarrative(seed: string): string {
+  const unit = `${seed} `;
+  return unit.repeat(Math.ceil(1600 / unit.length)).slice(0, 1600);
+}
+
 const settingsPort: StorySceneLlmSettingsPort = {
   async resolveSettings() {
     return {
@@ -87,6 +92,9 @@ function consequenceAwareCaller(capturedPrompts: string[]): OpenRouterCaller {
     const seesCommittedChoice = prompt.includes(
       "Kalıcı seçim sonucu: flags.bridge_open=true.",
     );
+    const narrativeSeed = seesCommittedChoice
+      ? "Arin daha once actigi koprunun hala acik oldugunu gorup guvenle karsiya gecti."
+      : "Arin koprunun yanina geldi.";
 
     return {
       model: "deterministic-ultef-provider",
@@ -94,9 +102,7 @@ function consequenceAwareCaller(capturedPrompts: string[]): OpenRouterCaller {
         sceneId: "px05-later-scene",
         setting: "Gunes Vadisi koprusu",
         characters: ["Arin"],
-        narrative: seesCommittedChoice
-          ? "Arin daha once actigi koprunun hala acik oldugunu gorup guvenle karsiya gecti."
-          : "Arin koprunun yanina geldi.",
+        narrative: validNarrative(narrativeSeed),
         moment: seesCommittedChoice
           ? "Kalici secim sonucu sonraki sahnede goruldu."
           : "Arin cevresine bakindi.",
