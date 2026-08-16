@@ -503,53 +503,69 @@ export async function finalizeCharacterFoundation(
     .from(parentalSettings)
     .where(eq(parentalSettings.householdId, input.householdId))
     .limit(1);
-  if (!child) throw new Error("CHILD_PROFILE_NOT_FOUND");
-  if (!policy) throw new Error("PARENTAL_SETTINGS_REQUIRED");
+  if (!child || !policy) throw new Error("FOUNDATION_SCOPE_DATA_REQUIRED");
 
   const characterId = crypto.randomUUID();
+  const firstOriginPackageId = crypto.randomUUID();
+  const role = roleFromIdentity(identity);
+  const broadKind = broadKindFromCanonical(summary.characterType);
+  const subtype = identity.identity.slice(0, 80) || identity.name.slice(0, 80);
+  const latestSummary = {
+    ...summary,
+    committedCharacterId: characterId,
+  };
+
   await db.transaction(async (tx) => {
     await tx.insert(lumiCharacters).values({
       id: characterId,
-      householdId: input.householdId,
       childProfileId: input.childProfileId,
-      displayName: identity.name,
-      type: roleFromIdentity(identity),
-      broadKind: broadKindFromCanonical(summary.characterType),
-      subtypeLabel: identity.identity.slice(0, 160),
-      ageBand: child.ageBand as AgeBand,
-      traits: identity.traits,
-      interests: [world.name, region.name],
-      contentBoundary: policy.contentBoundary,
-      requireParentApprovalForAi: policy.requireParentApprovalForAi,
-      startingRegion: region.name,
-      status: "active",
+      householdId: input.householdId,
+      name: identity.name.slice(0, 120),
+      broadKind,
+      characterType: role,
+      subtype,
+      originMode: "manual",
+      firstOriginPackageId,
+      originConcept: origin.origin.slice(0, 500),
+      startingRegionArchetype: region.name.slice(0, 120),
+      startingLocation: region.description.slice(0, 200),
+      homeArchetype: origin.home.slice(0, 120),
+      nearbyNpcSeed: origin.formativeExperience.slice(0, 500),
+      firstMysterySeed: origin.storyHook.slice(0, 500),
+      universeSeed: universe.key.slice(0, 120),
+      safetyBounds: {
+        ageBand: child.ageBand as AgeBand,
+        contentBoundary: policy.contentBoundary as
+          | "strict"
+          | "moderate"
+          | "open",
+        requireParentApprovalForAi: policy.requireParentApprovalForAi,
+      },
     });
     await tx.insert(characterGoals).values({
       id: crypto.randomUUID(),
       characterId,
-      householdId: input.householdId,
-      childProfileId: input.childProfileId,
-      goalType: "long_term",
-      title: saga.title,
-      description: `${saga.premise}\n\n${saga.longTermGoal}\n\nMotivation: ${saga.motivation}`,
+      needType: "core_saga",
+      description: `${saga.title}: ${saga.longTermGoal}`.slice(0, 500),
+      priority: 1,
       status: "active",
-      metadata: {
-        source: "character_onboarding_core_saga",
-        universe,
-        world,
-        region,
-        origin,
-        themes: saga.themes,
-        futureBranches: saga.futureBranches,
-        specificity: saga.specificity,
-      },
+    });
+    await tx.insert(characterCreationSelections).values({
+      id: crypto.randomUUID(),
+      cycleId: cycle.id,
+      childProfileId: input.childProfileId,
+      householdId: input.householdId,
+      stepKey: "final_review",
+      selectionKey: "commit",
+      selectionPayload: { characterId, worldKey: world.key, sagaKey: saga.key },
+      selectedBy: "user",
     });
     await tx
       .update(characterCreationCycles)
       .set({
         status: "completed",
         currentStep: "completed",
-        latestSummary: { ...summary, characterId },
+        latestSummary,
         completedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -559,11 +575,15 @@ export async function finalizeCharacterFoundation(
   return {
     characterId,
     cycleId: cycle.id,
-    identity,
-    universe,
-    world,
-    region,
-    origin,
-    coreSaga: saga,
+    foundation: {
+      identity,
+      universe,
+      world,
+      region,
+      origin,
+      saga,
+      broadKind,
+      role,
+    },
   };
 }
