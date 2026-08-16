@@ -1,0 +1,38 @@
+name: Temporary adventure visible selector patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Add stable selectors to visible adventure cards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('apps/web/components/story/new-adventure-sheet.tsx')
+          text = p.read_text()
+          old = '''                  <article\n                    className="flex min-h-52 flex-col rounded-3xl border border-outline-variant/60 bg-white p-5 shadow-sm"\n                    key={candidate.id}\n                  >'''
+          new = '''                  <article\n                    className="flex min-h-52 flex-col rounded-3xl border border-outline-variant/60 bg-white p-5 shadow-sm"\n                    data-testid="adventure-candidate"\n                    key={candidate.id}\n                  >'''
+          if text.count(old) != 1:
+              raise SystemExit(f'candidate article match count={text.count(old)}')
+          p.write_text(text.replace(old, new, 1))
+          Path('.github/workflows/tmp-adventure-visible-selectors.yml').unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(stories): expose stable selector for visible adventure cards"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
