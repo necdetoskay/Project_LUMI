@@ -70,6 +70,10 @@ export interface LongTermMemoryItem {
   emotionalWeight: number;
 }
 
+export interface RelevantNpcItem {
+  summary: string;
+}
+
 export interface KnowledgeItem {
   knownFacts: string[];
   suspectedFacts: string[];
@@ -125,6 +129,10 @@ export interface LongTermMemorySource {
   ): Promise<ContextSourceResult<LongTermMemoryItem>>;
 }
 
+export interface RelevantNpcSource {
+  fetch(request: ContextRequest): Promise<ContextSourceResult<RelevantNpcItem>>;
+}
+
 export interface KnowledgeSource {
   fetch(request: ContextRequest): Promise<ContextSourceResult<KnowledgeItem>>;
 }
@@ -154,6 +162,7 @@ export interface TokenBudget {
   workingStoryTokens: number;
   emotionalStateTokens: number;
   longTermMemoryTokens: number;
+  relevantNpcTokens?: number | undefined;
   knowledgeTokens: number;
   worldTokens: number;
   originPackageTokens?: number | undefined;
