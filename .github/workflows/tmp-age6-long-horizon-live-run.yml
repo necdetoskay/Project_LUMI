@@ -42,10 +42,13 @@ jobs:
           text = path.read_text(encoding="utf-8")
           old = r'page.waitForURL(/\/app(?:\/|$)/, { timeout: 60_000 }),' 
           new = r'page.waitForURL(/\/app(?:[/?#]|$)/, { timeout: 60_000 }),' 
-          if old not in text:
-              raise SystemExit("Expected login URL matcher was not found")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
-          print("Live login URL matcher patched for /app?success=signed_in")
+          if old in text:
+              path.write_text(text.replace(old, new, 1), encoding="utf-8")
+              print("Live login URL matcher patched for /app?success=signed_in")
+          elif new in text:
+              print("Live login URL matcher already supports /app?success=signed_in")
+          else:
+              raise SystemExit("Neither expected login URL matcher variant was found")
           PY
 
       - name: Confirm explicit live-run prerequisites
