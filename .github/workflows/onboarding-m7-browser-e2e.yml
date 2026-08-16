@@ -1,3 +1,4 @@
+# Canonical onboarding browser gate: deterministic provider, real app/auth/database path.
 name: Character Onboarding M7 Browser E2E
 
 on:
