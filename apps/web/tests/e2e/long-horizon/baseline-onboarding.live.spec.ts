@@ -158,7 +158,7 @@ async function loginThroughUi(
   await loginForm.locator('input[name="password"]').fill(password);
 
   await Promise.all([
-    page.waitForURL(/\/app(?:\/|$)/, { timeout: 60_000 }),
+    page.waitForURL(/\/app(?:[/?#]|$)/, { timeout: 60_000 }),
     loginForm.locator('button[type="submit"]').click(),
   ]);
 }
@@ -513,7 +513,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await expect(createFirstCharacter.first()).toBeVisible({
         timeout: 60_000,
       });
-      await createFirstCharacter.first().click();
+      await createFirstCharacter.first().click({ timeout: 60_000 });
       await expect(page).toHaveURL(/\/characters\/new\/wizard(?:\?.*)?$/);
       await expectStep(page, "character_type");
       await checkpoint("onboarding:character_type:ready");
