@@ -329,6 +329,29 @@ export class DrizzleNpcSnapshotRepository {
     return rows.map(mapSnapshot);
   }
 
+  async listForContext(
+    householdId: string,
+    worldId: string,
+    childProfileId: string,
+    limit = 24,
+  ): Promise<CanonicalNpcSnapshot[]> {
+    const boundedLimit = Math.max(1, Math.min(limit, 24));
+    const rows = await this.db
+      .select()
+      .from(npcSnapshots)
+      .where(
+        and(
+          eq(npcSnapshots.householdId, householdId),
+          eq(npcSnapshots.worldId, worldId),
+          eq(npcSnapshots.childProfileId, childProfileId),
+        ),
+      )
+      .orderBy(asc(npcSnapshots.npcId))
+      .limit(boundedLimit);
+
+    return rows.map(mapSnapshot);
+  }
+
   async listDecisionReady(
     householdId: string,
     worldId: string,
