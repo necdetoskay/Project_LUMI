@@ -192,9 +192,11 @@ jobs:
         shell: bash
         env:
           DEPLOYMENT_ID: ${{ steps.deploy.outputs.deployment_id }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment_url }}
         run: |
           set -euo pipefail
           response="$RUNNER_TEMP/vercel-share-bypass.json"
+          candidates="$RUNNER_TEMP/vercel-share-candidates.txt"
           curl --fail-with-body --silent --show-error \
             --request PATCH \
             --output "$response" \
@@ -203,11 +205,68 @@ jobs:
             --data '{"ttl":7200}' \
             "https://api.vercel.com/aliases/$DEPLOYMENT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
 
-          secret="$(jq -r '.value // empty' "$response")"
-          test -n "$secret" || { echo "Vercel share bypass value missing"; exit 1; }
+          # Extract possible bypass tokens without ever logging their values. Vercel has
+          # returned multiple response shapes across API/SDK versions, so candidates are
+          # validated against the protected Preview before one is accepted.
+          jq -r '
+            [
+              (.value? // empty),
+              (.shareableUrl? // empty),
+              (.shareableURL? // empty),
+              (.shareableLink? // empty),
+              (if (.protectionBypass? | type) == "string" then .protectionBypass else empty end),
+              (if (.protectionBypass? | type) == "object" then (.protectionBypass | keys[]) else empty end),
+              (paths(scalars) as $p | getpath($p) | select(type == "string" and length >= 12))
+            ]
+            | flatten
+            | .[]
+            | select(type == "string" and length >= 12)
+          ' "$response" | awk '!seen[$0]++' > "$candidates"
+
+          secret=""
+          while IFS= read -r raw; do
+            test -n "$raw" || continue
+            candidate="$raw"
+            if [[ "$candidate" == *"_vercel_share="* ]]; then
+              candidate="${candidate#*_vercel_share=}"
+              candidate="${candidate%%&*}"
+              candidate="${candidate%%#*}"
+            fi
+            test -n "$candidate" || continue
+            echo "::add-mask::$candidate"
+
+            cookie_jar="$RUNNER_TEMP/vercel-share-probe-cookies.txt"
+            final="$(curl --silent --show-error \
+              --location \
+              --max-redirs 5 \
+              --cookie-jar "$cookie_jar" \
+              --output /dev/null \
+              --write-out '%{http_code}|%{url_effective}' \
+              "$PREVIEW_URL/login?_vercel_share=$candidate" || true)"
+            status="${final%%|*}"
+            final_url="${final#*|}"
+            if [ "$status" = "200" ] && [[ "$final_url" != *"/sso-api"* ]]; then
+              secret="$candidate"
+              break
+            fi
+          done < "$candidates"
+
+          if [ -z "$secret" ]; then
+            echo "Vercel share bypass response shape (values redacted):"
+            jq '{
+              topLevelKeys: keys,
+              valueType: (.value? | type),
+              protectionBypassType: (.protectionBypass? | type),
+              protectionBypassEntryCount: (if (.protectionBypass? | type) == "object" then (.protectionBypass | length) else 0 end),
+              resultType: (.result? | type)
+            }' "$response"
+            echo "No candidate from the Vercel response granted protected Preview access."
+            exit 1
+          fi
+
           echo "::add-mask::$secret"
           echo "secret=$secret" >> "$GITHUB_OUTPUT"
-          echo "Temporary Preview share access created."
+          echo "Temporary Preview share access created and validated."
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
