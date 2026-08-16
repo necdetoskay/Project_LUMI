@@ -77,4 +77,13 @@ describe("live long-horizon Playwright execution contract", () => {
     );
     expect(combined).not.toMatch(/\.delete\s*\(\s*["'`]\/api\//i);
   });
+
+  it("refuses to silently reuse an existing evidence run id", async () => {
+    const support = await readFile(
+      path.join(LIVE_TEST_DIR, "live-run-support.ts"),
+      "utf8",
+    );
+
+    expect(support).toContain('flag: "wx"');
+  });
 });
