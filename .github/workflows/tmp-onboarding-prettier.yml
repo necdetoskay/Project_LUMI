@@ -1,0 +1,33 @@
+name: Temporary Onboarding Prettier Fix
+on:
+  push:
+    branches:
+      - agent/character-onboarding-live-e2e
+    paths:
+      - .github/workflows/tmp-onboarding-prettier.yml
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format onboarding files
+        run: pnpm exec prettier --write apps/web/tests/character-onboarding-production-live-e2e.test.ts packages/profiles/src/application/prompt-output-validator.ts
+      - name: Verify formatting
+        run: pnpm exec prettier --check apps/web/tests/character-onboarding-production-live-e2e.test.ts packages/profiles/src/application/prompt-output-validator.ts
+      - name: Commit formatting
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/tests/character-onboarding-production-live-e2e.test.ts packages/profiles/src/application/prompt-output-validator.ts
+          git commit -m 'style(onboarding): apply prettier formatting'
+          git push
