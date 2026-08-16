@@ -78,8 +78,8 @@ jobs:
       STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@localhost:5432/lumi_context_test
       STORY_TEST_ENABLE_DESTRUCTIVE: "true"
       LUMI_LIVE_DB_E2E: "1"
+      LUMI_LIVE_LLM_MODEL: openai/gpt-4.1-mini
       LUMI_SETTINGS_ENCRYPTION_KEY: context-production-e2e-test-encryption-key-only
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
@@ -90,13 +90,87 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Require live OpenRouter secret
+
+      - name: Resolve and verify live OpenRouter credential
         shell: bash
+        env:
+          CANDIDATE_OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CANDIDATE_OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+          CANDIDATE_LUMI_OPENROUTER_API_KEY: ${{ secrets.LUMI_OPENROUTER_API_KEY }}
+          CANDIDATE_OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          CANDIDATE_OPENROUTER_APIKEY: ${{ secrets.OPENROUTER_APIKEY }}
         run: |
-          if [ -z "$OPENROUTER_API_KEY" ]; then
-            echo "OPENROUTER_API_KEY repository secret is required."
+          set -euo pipefail
+
+          normalize_key() {
+            local value="$1"
+            value=$(printf '%s' "$value" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            value="${value#OPENROUTER_API_KEY=}"
+            value="${value#OPENROUTER_KEY=}"
+            value="${value#\"}"
+            value="${value%\"}"
+            value="${value#\'}"
+            value="${value%\'}"
+            printf '%s' "$value"
+          }
+
+          selected=""
+          selected_name=""
+          for name in \
+            CANDIDATE_OPENROUTER_API_KEY \
+            CANDIDATE_OPENROUTER_KEY \
+            CANDIDATE_LUMI_OPENROUTER_API_KEY \
+            CANDIDATE_OPEN_ROUTER_API_KEY \
+            CANDIDATE_OPENROUTER_APIKEY; do
+            raw="${!name:-}"
+            [ -n "$raw" ] || continue
+            candidate=$(normalize_key "$raw")
+            [ -n "$candidate" ] || continue
+            status=$(curl --silent --show-error --output /tmp/openrouter-key.json \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer $candidate" \
+              https://openrouter.ai/api/v1/key || true)
+            echo "$name authentication status: $status"
+            if [ "$status" = "200" ]; then
+              selected="$candidate"
+              selected_name="$name"
+              break
+            fi
+          done
+
+          if [ -z "$selected" ]; then
+            echo "No configured OpenRouter repository secret authenticated successfully."
             exit 1
           fi
+
+          is_management=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('/tmp/openrouter-key.json','utf8'));process.stdout.write(String(Boolean(j.data?.is_management_key)))")
+          if [ "$is_management" = "true" ]; then
+            echo "$selected_name is a management key; provisioning an ephemeral low-limit E2E key."
+            create_status=$(curl --silent --show-error --output /tmp/openrouter-created-key.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer $selected" \
+              --header 'Content-Type: application/json' \
+              --data "{\"name\":\"lumi-context-e2e-${GITHUB_RUN_ID}\",\"limit\":0.25}" \
+              https://openrouter.ai/api/v1/keys || true)
+            if [ "$create_status" != "201" ]; then
+              echo "Failed to provision ephemeral OpenRouter E2E key (HTTP $create_status)."
+              exit 1
+            fi
+            generated=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('/tmp/openrouter-created-key.json','utf8'));process.stdout.write(j.key||'')")
+            key_hash=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('/tmp/openrouter-created-key.json','utf8'));process.stdout.write(j.data?.hash||'')")
+            [ -n "$generated" ] && [ -n "$key_hash" ] || { echo "Ephemeral key response was incomplete."; exit 1; }
+            echo "::add-mask::$generated"
+            echo "::add-mask::$selected"
+            echo "OPENROUTER_API_KEY=$generated" >> "$GITHUB_ENV"
+            echo "OPENROUTER_MANAGEMENT_KEY=$selected" >> "$GITHUB_ENV"
+            echo "OPENROUTER_TEMP_KEY_HASH=$key_hash" >> "$GITHUB_ENV"
+          else
+            echo "Using authenticated inference key from $selected_name."
+            echo "::add-mask::$selected"
+            echo "OPENROUTER_API_KEY=$selected" >> "$GITHUB_ENV"
+          fi
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Prepare profile schema
@@ -113,3 +187,19 @@ jobs:
         run: pnpm --filter @lumi/web ultef:s37-hook-reader
       - name: Run real Context production E2E
         run: pnpm --filter @lumi/web test:context:production-e2e
+
+      - name: Delete ephemeral OpenRouter E2E key
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -z "${OPENROUTER_TEMP_KEY_HASH:-}" ] || [ -z "${OPENROUTER_MANAGEMENT_KEY:-}" ]; then
+            exit 0
+          fi
+          status=$(curl --silent --show-error --output /tmp/openrouter-delete.json \
+            --write-out '%{http_code}' \
+            --request DELETE \
+            --header "Authorization: Bearer $OPENROUTER_MANAGEMENT_KEY" \
+            "https://openrouter.ai/api/v1/keys/$OPENROUTER_TEMP_KEY_HASH" || true)
+          if [ "$status" != "200" ] && [ "$status" != "204" ]; then
+            echo "Warning: ephemeral OpenRouter key cleanup returned HTTP $status."
+          fi
