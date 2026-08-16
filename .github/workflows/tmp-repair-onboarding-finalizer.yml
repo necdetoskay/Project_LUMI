@@ -1,0 +1,74 @@
+name: Temporary Onboarding Finalizer Repair
+on:
+  push:
+    branches: [agent/character-onboarding-live-e2e]
+    paths: [.github/workflows/tmp-repair-onboarding-finalizer.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair canonical character inserts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('packages/profiles/src/application/character-foundation-onboarding.service.ts')
+          s=p.read_text()
+          start=s.index('    await tx.insert(lumiCharacters).values({')
+          end=s.index('    await tx\n      .update(characterCreationCycles)', start)
+          replacement='''    const originPackageId = crypto.randomUUID();
+            await tx.insert(lumiCharacters).values({
+              id: characterId,
+              householdId: input.householdId,
+              childProfileId: input.childProfileId,
+              name: identity.name,
+              broadKind: broadKindFromCanonical(summary.characterType),
+              characterType: roleFromIdentity(identity),
+              subtype: identity.identity.slice(0, 80),
+              originMode: "manual",
+              firstOriginPackageId: originPackageId,
+              originConcept: origin.origin.slice(0, 500),
+              startingRegionArchetype: region.name.slice(0, 120),
+              startingLocation: region.name.slice(0, 200),
+              homeArchetype: origin.home.slice(0, 120),
+              nearbyNpcSeed: `A welcoming guide connected to ${region.name}`.slice(0, 500),
+              firstMysterySeed: region.mystery.slice(0, 500),
+              universeSeed: universe.name.slice(0, 120),
+              safetyBounds: {
+                ageBand: child.ageBand as AgeBand,
+                contentBoundary: policy.contentBoundary,
+                requireParentApprovalForAi: policy.requireParentApprovalForAi,
+              },
+              preferenceHints: {
+                preferredThemes: saga.themes,
+              },
+            });
+            await tx.insert(characterGoals).values({
+              id: crypto.randomUUID(),
+              characterId,
+              needType: "purpose",
+              description: `${saga.title}: ${saga.premise} ${saga.longTermGoal} Motivation: ${saga.motivation}`.slice(0, 500),
+              priority: 1,
+              status: "active",
+            });
+'''
+          s=s[:start]+replacement+s[end:]
+          p.write_text(s)
+          PY
+      - name: Format and verify
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm exec prettier --write packages/profiles/src/application/character-foundation-onboarding.service.ts
+          pnpm --filter @lumi/profiles typecheck
+      - name: Commit repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add packages/profiles/src/application/character-foundation-onboarding.service.ts
+          git commit -m 'fix(onboarding): align finalizer with canonical profile schema'
+          git push
