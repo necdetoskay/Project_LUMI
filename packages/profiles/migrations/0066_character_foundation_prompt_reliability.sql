@@ -7,7 +7,7 @@ WHERE prompt_key IN (
   'character_onboarding.region_suggestions',
   'character_onboarding.character_origin_suggestions',
   'character_onboarding.core_saga'
-) AND status='active';
+) AND version <> 2 AND status='active';
 
 INSERT INTO profile.ai_prompt_versions
 (id,prompt_key,version,status,system_template,user_template,allowed_variables,required_variables,output_schema,schema_version,generation_config,activated_at)
@@ -40,5 +40,14 @@ VALUES
 '{"type":"object","required":["suggestions"],"properties":{"suggestions":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"object","required":["key","title","premise","longTermGoal","motivation","themes","futureBranches","specificity"],"properties":{"key":{"type":"string"},"title":{"type":"string","minLength":2,"maxLength":120},"premise":{"type":"string","minLength":20,"maxLength":400},"longTermGoal":{"type":"string","minLength":10,"maxLength":300},"motivation":{"type":"string","minLength":10,"maxLength":300},"themes":{"type":"array","minItems":2,"maxItems":6,"items":{"type":"string"}},"futureBranches":{"type":"array","minItems":2,"maxItems":6,"items":{"type":"string"}},"specificity":{"type":"string","minLength":10,"maxLength":400}}}}}}'::jsonb,
 'v1','{"temperature":0.75,"maxOutputTokens":3400}'::jsonb,NOW())
 ON CONFLICT (prompt_key,version) DO NOTHING;
+
+UPDATE profile.ai_prompt_versions
+SET status='active', activated_at=COALESCE(activated_at,NOW()), updated_at=NOW()
+WHERE prompt_key IN (
+  'character_onboarding.world_suggestions',
+  'character_onboarding.region_suggestions',
+  'character_onboarding.character_origin_suggestions',
+  'character_onboarding.core_saga'
+) AND version=2 AND status <> 'active';
 
 COMMIT;
