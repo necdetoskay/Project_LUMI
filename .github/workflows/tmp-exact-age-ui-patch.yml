@@ -1,0 +1,104 @@
+name: Temporary exact age UI patch
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-playwright-pack
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/live-long-horizon-playwright-pack
+      - name: Patch exact age UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(f"{path}: expected 1 match, got {n}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          p = "apps/web/app/app/onboarding/page.tsx"
+          once(p,
+            "  childProfiles: { id: string; displayName: string; ageBand: string }[];",
+            "  childProfiles: {\n    id: string;\n    displayName: string;\n    ageBand: string;\n    ageYears: number | null;\n  }[];")
+          once(p,
+            "  profiles: { id: string; displayName: string; ageBand: string }[];",
+            "  profiles: {\n    id: string;\n    displayName: string;\n    ageBand: string;\n    ageYears: number | null;\n  }[];")
+          once(p,
+            "    ageBand: string;\n  }) => void;",
+            "    ageBand: string;\n    ageYears: number | null;\n  }) => void;")
+          once(p, '  const [ageBand, setAgeBand] = useState("");', '  const [ageYears, setAgeYears] = useState(6);')
+          once(p, "      if (!ageBand) return;\n      setSubmitting(true);", "      setSubmitting(true);")
+          once(p, "          body: JSON.stringify({ householdId, displayName, ageBand }),", "          body: JSON.stringify({ householdId, displayName, ageYears }),")
+          once(p, '        setAgeBand("");', "        setAgeYears(6);")
+          once(p, "    [householdId, displayName, ageBand, onProfileAdded, onError],", "    [householdId, displayName, ageYears, onProfileAdded, onError],")
+          once(p,
+            '                <span className="ml-3 text-muted text-sm">{p.ageBand}</span>',
+            '                <span className="ml-3 text-muted text-sm">\n                  {p.ageYears === null ? p.ageBand : `${p.ageYears} yaş`}\n                </span>')
+          old = '''          <label
+            className="font-label-bold text-on-surface-variant"
+            htmlFor="ageBand"
+          >
+            Yaş grubu
+          </label>
+          <select
+            className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all font-body text-body"
+            id="ageBand"
+            required
+            value={ageBand}
+            onChange={(e) => setAgeBand(e.target.value)}
+          >
+            <option value="">Seçin</option>
+            <option value="3-5">3–5 yaş</option>
+            <option value="6-8">6–8 yaş</option>
+            <option value="9-12">9–12 yaş</option>
+          </select>'''
+          # The source block is indented by ten spaces; use a content-based boundary instead.
+          text = Path(p).read_text()
+          start = text.index('          <label\n            className="font-label-bold text-on-surface-variant"\n            htmlFor="ageBand"')
+          end_marker = "          </select>"
+          end = text.index(end_marker, start) + len(end_marker)
+          replacement = '''          <label
+            className="font-label-bold text-on-surface-variant"
+            htmlFor="ageYears"
+          >
+            Yaş
+          </label>
+          <input
+            className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all font-body text-body"
+            id="ageYears"
+            min={3}
+            max={17}
+            required
+            type="number"
+            value={ageYears}
+            onChange={(e) => setAgeYears(Number(e.target.value))}
+          />
+          <p className="text-[12px] text-secondary">
+            Hikâye dili ve öneriler çocuğun tam yaşına göre kişiselleştirilir.
+          </p>'''
+          Path(p).write_text(text[:start] + replacement + text[end:])
+
+          Path(".github/workflows/tmp-exact-age-ui-patch.yml").unlink()
+          PY
+      - name: Format and commit
+        run: |
+          corepack enable
+          pnpm exec prettier --write apps/web/app/app/onboarding/page.tsx
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(web): collect exact child age in onboarding"
+          git push origin HEAD:agent/live-long-horizon-playwright-pack
