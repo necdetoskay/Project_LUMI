@@ -62,7 +62,7 @@ export function generatedSceneKeyForSource(input: {
     return `generated:hook:${input.sourceHookId}`;
   }
   if (input.sourceKey) {
-    return `generated:adventure:${input.sourceKey}`;
+    return `generated:adventure:${input.sessionId}:${input.sourceKey}`;
   }
   return `generated:${input.sessionId}:${input.fallbackFingerprint}`;
 }
@@ -92,8 +92,8 @@ export async function findGeneratedSceneForHook(input: {
  *
  * Hook-backed scenes use the stable source hook id as their persistence key,
  * so retries cannot create different prose rows even when generation uses a
- * fresh nonce. A replay after a successful advance returns the current reader
- * state without requiring the caller to know the newly incremented version.
+ * fresh nonce. Generic adventures use session + source key so retries inside
+ * one session are idempotent while later sessions receive fresh generation.
  */
 export async function persistGeneratedSceneAndAdvance(
   input: PersistGeneratedSceneAndAdvanceInput,
