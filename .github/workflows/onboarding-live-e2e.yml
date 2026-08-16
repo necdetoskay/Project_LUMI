@@ -47,8 +47,8 @@ jobs:
       STORY_TEST_ENABLE_DESTRUCTIVE: "true"
       LUMI_LIVE_LLM_MODEL: ${{ inputs.model || 'deepseek/deepseek-v4-flash' }}
       NODE_ENV: test
-      LIVE_E2E_LOG: ${{ runner.temp }}/character-onboarding-live-e2e.log
-      LIVE_E2E_REPORT: ${{ runner.temp }}/character-onboarding-live-e2e-report.json
+      LIVE_E2E_LOG: .tmp/character-onboarding-live-e2e.log
+      LIVE_E2E_REPORT: .tmp/character-onboarding-live-e2e-report.json
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -93,6 +93,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          mkdir -p .tmp
           pnpm --filter @lumi/web test:onboarding:production-e2e 2>&1 | tee "$LIVE_E2E_LOG"
 
       - name: Publish structured live E2E evidence
