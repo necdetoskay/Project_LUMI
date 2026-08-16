@@ -26,7 +26,6 @@ jobs:
             packages/profiles/src/application/character-creation-cycle.service.ts \
             packages/profiles/src/application/character-origin-suggestion.service.ts \
             packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
-            packages/profiles/migrations/0065_character_foundation_onboarding.sql \
             apps/web/lib/character-onboarding/finalize-character-foundation.service.ts
       - name: Commit formatting if needed
         run: |
