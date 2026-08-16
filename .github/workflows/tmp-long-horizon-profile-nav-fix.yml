@@ -1,0 +1,64 @@
+name: Temporary Long-Horizon Profile Nav Fix
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-fix-prep
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Patch child-list navigation in live harness
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
+          text = path.read_text(encoding='utf-8')
+          old = '      await page.getByRole("link", { name: "Çocuklar", exact: true }).click();\n      await expect(page).toHaveURL(/\\/app\\/profiles(?:\\?.*)?$/);'
+          new = '      const profilesHomeLink = page\\n        .locator(\'a[href="/app/profiles"]\')\\n        .filter({ hasText: "LUMI" })\\n        .first();\\n      await expect(profilesHomeLink).toBeVisible({ timeout: 60_000 });\\n      await profilesHomeLink.click({ timeout: 60_000 });\\n      await expect(page).toHaveURL(/\\/app\\/profiles(?:\\?.*)?$/, {\\n        timeout: 60_000,\\n      });'
+          new = new.replace('\\n', '\n')
+          if old not in text:
+              raise SystemExit('Expected old child-list navigation block was not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check changed files
+        run: pnpm exec prettier --check apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts apps/web/app/app/profiles/[childProfileId]/child-dashboard-client-page.tsx
+
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+
+      - name: Commit verified fix
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No source diff to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git commit -m "fix(e2e): use visible profile navigation in live pack"
+          git push origin "HEAD:$GITHUB_REF_NAME"
