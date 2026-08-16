@@ -9,7 +9,9 @@ export default async function CanonicalCharacterWizardPage({
 }: {
   params: Promise<{ childProfileId: string }>;
 }) {
-  const parent = await getParentFromSessionToken(await getParentSessionCookie());
+  const parent = await getParentFromSessionToken(
+    await getParentSessionCookie(),
+  );
   if (!parent) redirect("/login");
   const { childProfileId } = await params;
   return <CanonicalCharacterWizardClient childProfileId={childProfileId} />;
