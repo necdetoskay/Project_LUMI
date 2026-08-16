@@ -52,7 +52,9 @@ if (jsonEnd < 0) {
 }
 
 const live = JSON.parse(text.slice(jsonStart, jsonEnd));
-const traces = Array.isArray(live.generationTraces) ? live.generationTraces : [];
+const traces = Array.isArray(live.generationTraces)
+  ? live.generationTraces
+  : [];
 const sum = (field) =>
   traces.reduce((total, row) => total + Number(row?.[field] ?? 0), 0);
 
