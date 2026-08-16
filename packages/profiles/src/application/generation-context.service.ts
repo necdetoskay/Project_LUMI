@@ -10,6 +10,7 @@ export type GenerationContextProfile =
 export interface GenerationChildContext {
   id: string;
   ageBand: string;
+  ageYears: number | null;
   locale: string;
   interests: string[];
   customInterests: string[];
@@ -55,6 +56,7 @@ export async function buildGenerationContext(
     child: {
       id: child.id,
       ageBand: child.ageBand,
+      ageYears: child.ageYears,
       locale: child.locale,
       interests: personalization.interests,
       customInterests: personalization.customInterests,

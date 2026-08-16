@@ -15,6 +15,7 @@ export interface OnboardingState {
     id: string;
     displayName: string;
     ageBand: string;
+    ageYears: number | null;
   }>;
 }
 
@@ -86,6 +87,7 @@ export async function getOnboardingState(
       id: p.id,
       displayName: p.displayName,
       ageBand: p.ageBand,
+      ageYears: p.metadata.ageYears ?? null,
     })),
   };
 }
