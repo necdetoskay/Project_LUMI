@@ -1,5 +1,7 @@
 import {
+  ageBandForAgeYears,
   validateAgeBand,
+  validateAgeYears,
   validateCharacterOriginHandoff,
   validateDisplayName,
   validateInteractionLevel,
@@ -20,6 +22,7 @@ export interface ChildProfileState {
   householdId: string;
   displayName: string;
   ageBand: AgeBand;
+  ageYears: number | null;
   locale: string;
   avatarAssetId: string | null;
   metadata: ChildProfileMetadata;
@@ -62,13 +65,19 @@ export class ChildProfile {
     id: string;
     householdId: string;
     displayName: string;
-    ageBand: string;
+    ageBand?: string;
+    ageYears?: number;
     locale?: string;
     metadata?: ChildProfileMetadata;
     preferences?: Partial<ChildPreferencesState>;
   }): ChildProfile {
     const displayName = validateDisplayName(input.displayName);
-    const ageBand = validateAgeBand(input.ageBand);
+    const ageYears =
+      input.ageYears === undefined ? null : validateAgeYears(input.ageYears);
+    const ageBand =
+      ageYears === null
+        ? validateAgeBand(input.ageBand ?? "")
+        : ageBandForAgeYears(ageYears);
 
     return new ChildProfile(
       {
@@ -76,6 +85,7 @@ export class ChildProfile {
         householdId: input.householdId,
         displayName,
         ageBand,
+        ageYears,
         locale: input.locale ?? "tr-TR",
         avatarAssetId: null,
         metadata: input.metadata ?? {},
@@ -91,8 +101,7 @@ export class ChildProfile {
     state: ChildProfileState,
     preferences?: Partial<ChildPreferencesState>,
   ): ChildProfile {
-    const profile = new ChildProfile(state, preferences);
-    return profile;
+    return new ChildProfile(state, preferences);
   }
 
   getState(): ChildProfileState {
@@ -118,6 +127,14 @@ export class ChildProfile {
 
   updateAgeBand(band: string): void {
     this.state.ageBand = validateAgeBand(band);
+    this.state.ageYears = null;
+    this.state.updatedAt = new Date();
+  }
+
+  updateAgeYears(ageYears: number): void {
+    const validated = validateAgeYears(ageYears);
+    this.state.ageYears = validated;
+    this.state.ageBand = ageBandForAgeYears(validated);
     this.state.updatedAt = new Date();
   }
 
