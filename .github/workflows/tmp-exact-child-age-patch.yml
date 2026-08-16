@@ -17,7 +17,7 @@ jobs:
         with:
           ref: agent/live-long-horizon-playwright-pack
           fetch-depth: 0
-      - name: Apply exact-age production wiring
+      - name: Apply exact-age backend wiring
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -61,7 +61,7 @@ jobs:
           text = text.replace(old, "    ageBand: profile.ageBand,\n    ageYears: profile.metadata.ageYears ?? null,\n    locale: profile.locale,")
           old = "    ageBand: p.ageBand,\n    locale: p.locale,"
           if text.count(old) != 1:
-              raise SystemExit(f"{p}: expected 1 list result mapping, got {text.count(old)}")
+              raise SystemExit(f"{p}: expected 1 list mapping, got {text.count(old)}")
           text = text.replace(old, "    ageBand: p.ageBand,\n    ageYears: p.metadata.ageYears ?? null,\n    locale: p.locale,", 1)
           old = "  if (input.ageBand !== undefined) {\n    validateAgeBand(input.ageBand);\n  }\n\n  const { childRepo } = getRepos();\n  const profile = await childRepo.update(profileId, householdId, input);"
           new = "  if (input.ageBand !== undefined) {\n    validateAgeBand(input.ageBand);\n  }\n  if (input.ageYears !== undefined) {\n    validateAgeYears(input.ageYears);\n  }\n\n  const { childRepo } = getRepos();\n  const existing = await childRepo.findById(profileId, householdId);\n  if (!existing) throw new Error(\"Child profile not found for update\");\n  const profile = await childRepo.update(profileId, householdId, {\n    displayName: input.displayName,\n    ageBand:\n      input.ageYears === undefined\n        ? input.ageBand\n        : ageBandForAgeYears(input.ageYears),\n    metadata:\n      input.ageYears === undefined\n        ? existing.metadata\n        : { ...existing.metadata, ageYears: input.ageYears },\n  });"
@@ -87,69 +87,6 @@ jobs:
           once(p,
             "        displayName: parsed.displayName,\n        ageBand: parsed.ageBand,",
             "        displayName: parsed.displayName,\n        ageYears:\n          typeof parsed.ageYears === \"number\" ? parsed.ageYears : undefined,\n        ageBand:\n          typeof parsed.ageBand === \"string\" ? parsed.ageBand : undefined,")
-
-          p = "apps/web/app/app/onboarding/page.tsx"
-          once(p,
-            "  childProfiles: { id: string; displayName: string; ageBand: string }[];",
-            "  childProfiles: {\n    id: string;\n    displayName: string;\n    ageBand: string;\n    ageYears: number | null;\n  }[];")
-          once(p,
-            "  profiles: { id: string; displayName: string; ageBand: string }[];",
-            "  profiles: {\n    id: string;\n    displayName: string;\n    ageBand: string;\n    ageYears: number | null;\n  }[];")
-          once(p,
-            "    ageBand: string;\n  }) => void;",
-            "    ageBand: string;\n    ageYears: number | null;\n  }) => void;")
-          once(p, '  const [ageBand, setAgeBand] = useState("");', '  const [ageYears, setAgeYears] = useState(6);')
-          once(p, "      if (!ageBand) return;\n      setSubmitting(true);", "      setSubmitting(true);")
-          once(p, "          body: JSON.stringify({ householdId, displayName, ageBand }),", "          body: JSON.stringify({ householdId, displayName, ageYears }),")
-          once(p, '        setAgeBand("");', "        setAgeYears(6);")
-          once(p, "    [householdId, displayName, ageBand, onProfileAdded, onError],", "    [householdId, displayName, ageYears, onProfileAdded, onError],")
-          once(p,
-            '                <span className="ml-3 text-muted text-sm">{p.ageBand}</span>',
-            '                <span className="ml-3 text-muted text-sm">\n                  {p.ageYears === null ? p.ageBand : `${p.ageYears} yaş`}\n                </span>')
-          old = '''          <label
-            className="font-label-bold text-on-surface-variant"
-            htmlFor="ageBand"
-          >
-            Yaş grubu
-          </label>
-          <select
-            className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all font-body text-body"
-            id="ageBand"
-            required
-            value={ageBand}
-            onChange={(e) => setAgeBand(e.target.value)}
-          >
-            <option value="">Seçin</option>
-            <option value="3-5">3–5 yaş</option>
-            <option value="6-8">6–8 yaş</option>
-            <option value="9-12">9–12 yaş</option>
-          </select>'''
-          new = '''          <label
-            className="font-label-bold text-on-surface-variant"
-            htmlFor="ageYears"
-          >
-            Yaş
-          </label>
-          <input
-            className="w-full px-[0.9rem] py-[0.8rem] rounded-lg border border-border bg-white focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition-all font-body text-body"
-            id="ageYears"
-            min={3}
-            max={17}
-            required
-            type="number"
-            value={ageYears}
-            onChange={(e) => setAgeYears(Number(e.target.value))}
-          />
-          <p className="text-[12px] text-secondary">
-            Hikâye dili ve öneriler çocuğun tam yaşına göre kişiselleştirilir.
-          </p>'''
-          once(p, old, new)
-
-          p = "apps/web/app/app/profiles/profiles-client-page.tsx"
-          once(p, "  ageBand: string;\n  locale: string;", "  ageBand: string;\n  ageYears: number | null;\n  locale: string;")
-          once(p,
-            "                          Yaş grubu {profile.ageBand}",
-            "                          {profile.ageYears === null\n                            ? `Yaş grubu ${profile.ageBand}`\n                            : `${profile.ageYears} yaş`}")
 
           Path(".github/workflows/tmp-exact-child-age-patch.yml").unlink()
           PY
