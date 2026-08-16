@@ -31,7 +31,9 @@ export interface LongHorizonRunEvidence {
 export function loadLongHorizonRunConfig(): LongHorizonRunConfig {
   const childAge = Number(process.env.LUMI_LONG_HORIZON_CHILD_AGE ?? "6");
   if (!Number.isInteger(childAge) || childAge < 3 || childAge > 17) {
-    throw new Error("LUMI_LONG_HORIZON_CHILD_AGE must be an integer from 3 to 17");
+    throw new Error(
+      "LUMI_LONG_HORIZON_CHILD_AGE must be an integer from 3 to 17",
+    );
   }
 
   const parentEmail = process.env.LUMI_LONG_HORIZON_PARENT_EMAIL;
@@ -47,7 +49,9 @@ export function loadLongHorizonRunConfig(): LongHorizonRunConfig {
     ? Number(suppliedSeed)
     : Math.floor(Date.now() % 2_147_483_647);
   if (!Number.isInteger(rngSeed) || rngSeed < 0) {
-    throw new Error("LUMI_LONG_HORIZON_RNG_SEED must be a non-negative integer");
+    throw new Error(
+      "LUMI_LONG_HORIZON_RNG_SEED must be a non-negative integer",
+    );
   }
 
   const runId =
@@ -84,7 +88,9 @@ export function createSeededRandom(seed: number): () => number {
   };
 }
 
-export async function ensureEvidenceDirectory(directory: string): Promise<void> {
+export async function ensureEvidenceDirectory(
+  directory: string,
+): Promise<void> {
   await mkdir(directory, { recursive: true });
 }
 
@@ -106,5 +112,9 @@ export async function writeMarkdown(
   content: string,
 ): Promise<void> {
   await ensureEvidenceDirectory(config.evidenceDir);
-  await writeFile(path.join(config.evidenceDir, filename), `${content.trim()}\n`, "utf8");
+  await writeFile(
+    path.join(config.evidenceDir, filename),
+    `${content.trim()}\n`,
+    "utf8",
+  );
 }

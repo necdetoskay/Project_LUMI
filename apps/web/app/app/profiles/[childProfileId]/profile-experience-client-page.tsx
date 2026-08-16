@@ -11,6 +11,7 @@ type Profile = {
   householdId: string;
   displayName: string;
   ageBand: string;
+  ageYears: number | null;
   locale: string;
   createdAt: string;
 };
@@ -257,7 +258,14 @@ export default function ProfileExperienceClientPage({
                 değil, ona daha anlamlı hikâye fırsatları sunmak için kullanır.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <InfoPill icon="cake" text={ageLabel(profile.ageBand)} />
+                <InfoPill
+                  icon="cake"
+                  text={
+                    profile.ageYears === null
+                      ? ageLabel(profile.ageBand)
+                      : `${profile.ageYears} yaş`
+                  }
+                />
                 <InfoPill
                   icon="favorite"
                   text={`${personalization.interests.length + personalization.customInterests.length} ilgi alanı`}
@@ -629,7 +637,11 @@ function Overview({
         }
       >
         <p className="text-sm leading-6 text-on-surface-variant">
-          Profil yaşı: {ageLabel(profile.ageBand)} · Dil: {profile.locale}
+          Profil yaşı:{" "}
+          {profile.ageYears === null
+            ? ageLabel(profile.ageBand)
+            : `${profile.ageYears} yaş`}{" "}
+          · Dil: {profile.locale}
         </p>
       </Panel>
       <Panel

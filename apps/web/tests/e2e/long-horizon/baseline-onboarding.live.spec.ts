@@ -29,7 +29,10 @@ async function clickRandomVisible(
       });
     }
   }
-  expect(visible.length, `${step} must expose at least one visible option`).toBeGreaterThan(0);
+  expect(
+    visible.length,
+    `${step} must expose at least one visible option`,
+  ).toBeGreaterThan(0);
   const chosen = visible[Math.floor(random() * visible.length)]!;
   selections.push({ step, index: chosen.index, visibleText: chosen.text });
   await locator.nth(chosen.index).click();
@@ -80,11 +83,15 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
 
     await loginThroughUi(page);
 
-    const newChildLink = page.getByRole("link", { name: /Yeni çocuk profili/i });
+    const newChildLink = page.getByRole("link", {
+      name: /Yeni çocuk profili/i,
+    });
     await expect(newChildLink).toBeVisible();
     await newChildLink.click();
 
-    await expect(page.getByRole("heading", { name: "Çocuk profilleri" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Çocuk profilleri" }),
+    ).toBeVisible();
     await page.getByLabel("Çocuğun adı").fill(childDisplayName);
     await page.getByLabel("Yaş").fill(String(config.childAge));
     await page.getByRole("button", { name: "Profil ekle" }).click();
@@ -92,8 +99,12 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
     await expect(page).toHaveURL(/\/app\/profiles\/[0-9a-f-]+(?:\?.*)?$/, {
       timeout: 60_000,
     });
-    await expect(page.getByText(childDisplayName, { exact: false }).first()).toBeVisible();
-    await expect(page.getByText(`${config.childAge} yaş`, { exact: false }).first()).toBeVisible();
+    await expect(
+      page.getByText(childDisplayName, { exact: false }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`${config.childAge} yaş`, { exact: false }).first(),
+    ).toBeVisible();
 
     const firstCharacterLink = page.getByRole("link", {
       name: /İlk karakteri oluştur/i,
@@ -143,7 +154,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
     await selectGeneratedCandidate(page, "core_saga", selections);
 
     await expectStep(page, "final_review");
-    const finalReview = (await page.getByTestId("final-review").innerText()).trim();
+    const finalReview = (
+      await page.getByTestId("final-review").innerText()
+    ).trim();
     expect(finalReview.length).toBeGreaterThan(40);
     evidence.finalReview = finalReview;
 
