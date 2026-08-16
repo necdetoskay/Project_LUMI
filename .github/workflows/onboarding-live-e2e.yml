@@ -26,6 +26,7 @@ on:
       - packages/profiles/migrations/0067_onboarding_quality_token_budget.sql
       - packages/profiles/migrations/0068_remove_onboarding_output_token_cap.sql
       - packages/profiles/migrations/0069_compatibility_optional_adaptation.sql
+      - packages/profiles/migrations/0070_compatibility_empty_adaptation.sql
       - packages/profiles/src/db/schema/profile/llm-task-model-settings.ts
       - apps/web/package.json
 
