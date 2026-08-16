@@ -7,7 +7,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL"],
+      "env": ["DATABASE_URL", "OPENROUTER_API_KEY"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
