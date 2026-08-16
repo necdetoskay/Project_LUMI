@@ -1,8 +1,5 @@
 import type { EmotionalStateItem, WorkingStoryItem } from "@lumi/context";
-import {
-  callOpenRouter,
-  getCharacterBootstrapStatus,
-} from "@lumi/profiles/application";
+import { getCharacterBootstrapStatus } from "@lumi/profiles/application";
 import {
   advanceSession,
   findGeneratedSceneForHook,
@@ -13,6 +10,7 @@ import {
   StorySceneGenerationService,
 } from "@lumi/story/application";
 import { ValidationError } from "@lumi/story/domain";
+import { callStoryOpenRouter } from "../ai/text-generation/story-openrouter-caller";
 import { PersistedCharacterDecisionContextAdapter } from "../emotional-decision-runtime";
 import { NpcBeliefStoryContinuityContextAdapter } from "../story-continuity-context-runtime";
 import { createProductionStoryContextComposer } from "../story-context-runtime";
@@ -178,7 +176,7 @@ export async function generateHookReaderTurn(
       settingsPort,
       continuityPort,
       contextComposer,
-      callOpenRouter,
+      callOpenRouter: callStoryOpenRouter,
       childProfileId: session.childProfileId,
       characterId,
       storySessionId: input.sessionId,
