@@ -1,0 +1,106 @@
+name: Temporary NPC story context patch
+
+on:
+  push:
+    branches:
+      - agent/context-npc-story-integration
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/context-npc-story-integration
+          fetch-depth: 0
+      - name: Apply contract-aware patches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one match, got {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          p = "packages/context/src/application/context-builder.ts"
+          replace_once(p,
+          "  LongTermMemorySource,\n  KnowledgeSource,",
+          "  LongTermMemorySource,\n  RelevantNpcSource,\n  KnowledgeSource,")
+          replace_once(p,
+          "  longTermMemorySource: LongTermMemorySource;\n  knowledgeSource: KnowledgeSource;",
+          "  longTermMemorySource: LongTermMemorySource;\n  relevantNpcSource?: RelevantNpcSource;\n  knowledgeSource: KnowledgeSource;")
+          replace_once(p,
+          "  longTermMemoryTokens: z.number().int().nonnegative(),\n  knowledgeTokens: z.number().int().nonnegative(),",
+          "  longTermMemoryTokens: z.number().int().nonnegative(),\n  relevantNpcTokens: z.number().int().nonnegative().optional(),\n  knowledgeTokens: z.number().int().nonnegative(),")
+          replace_once(p,
+          "      memoryResult,\n      knowledgeResult,",
+          "      memoryResult,\n      relevantNpcResult,\n      knowledgeResult,")
+          replace_once(p,
+          "      this.safeFetch(\n        \"long-term-memory\",\n        () => this.deps.longTermMemorySource.fetch(validatedRequest),\n        findings,\n      ),\n      this.safeFetch(\n        \"knowledge\",",
+          "      this.safeFetch(\n        \"long-term-memory\",\n        () => this.deps.longTermMemorySource.fetch(validatedRequest),\n        findings,\n      ),\n      this.deps.relevantNpcSource\n        ? this.safeFetch(\n            \"relevant-npc\",\n            () => this.deps.relevantNpcSource!.fetch(validatedRequest),\n            findings,\n          )\n        : Promise.resolve({ items: [], sourceRelevance: 0 }),\n      this.safeFetch(\n        \"knowledge\","
+          )
+          replace_once(p,
+          "      {\n        name: \"knowledge\",\n        priority: 5,\n        budget: validatedBudget.knowledgeTokens,",
+          "      {\n        name: \"relevant-npc\",\n        priority: 5,\n        budget: validatedBudget.relevantNpcTokens ?? 0,\n        result: relevantNpcResult,\n      },\n      {\n        name: \"knowledge\",\n        priority: 6,\n        budget: validatedBudget.knowledgeTokens,"
+          )
+          replace_once(p,
+          "        name: \"world\",\n        priority: 6,",
+          "        name: \"world\",\n        priority: 7,")
+          replace_once(p,
+          "        name: \"origin-package\",\n        priority: 7,",
+          "        name: \"origin-package\",\n        priority: 8,")
+          replace_once(p,
+          "      budget.longTermMemoryTokens +\n      budget.knowledgeTokens +",
+          "      budget.longTermMemoryTokens +\n      (budget.relevantNpcTokens ?? 0) +\n      budget.knowledgeTokens +")
+
+          p = "packages/context/src/application/story-generation-context.ts"
+          replace_once(p,
+          "  longTermMemoryTokens: 650,\n  knowledgeTokens: 390,",
+          "  longTermMemoryTokens: 650,\n  relevantNpcTokens: 390,\n  knowledgeTokens: 0,")
+
+          p = "apps/web/lib/story-context-runtime.ts"
+          replace_once(p,
+          "  CanonicalMemoryRetrievalAdapter,\n  NoCanonicalKnowledgeSource,",
+          "  CanonicalMemoryRetrievalAdapter,\n  CanonicalNpcRetrievalAdapter,\n  NoCanonicalKnowledgeSource,")
+          replace_once(p,
+          "  RetrievalLongTermMemorySource,\n  RetrievalWorldEventSource,",
+          "  RetrievalLongTermMemorySource,\n  RetrievalNpcSource,\n  RetrievalWorldEventSource,")
+          replace_once(p,
+          'import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence";',
+          'import {\n  DrizzleCanonicalMemoryRepository,\n  DrizzleNpcSnapshotRepository,\n} from "@lumi/npc-intelligence";')
+          replace_once(p,
+          'import { getAcceptedOriginPackageContext } from "@lumi/profiles/application";',
+          'import {\n  getAcceptedOriginPackageContext,\n  npcContextIdentityReader,\n} from "@lumi/profiles/application";')
+          replace_once(p,
+          "  const memoryRetrieval = new CanonicalMemoryRetrievalAdapter(memoryRepository);\n\n  const databaseUrl =",
+          "  const memoryRetrieval = new CanonicalMemoryRetrievalAdapter(memoryRepository);\n  const npcRepository = new DrizzleNpcSnapshotRepository();\n  const npcRetrieval = new CanonicalNpcRetrievalAdapter(\n    npcRepository,\n    npcContextIdentityReader,\n  );\n\n  const databaseUrl =")
+          replace_once(p,
+          "    longTermMemorySource: new RetrievalLongTermMemorySource(memoryRetrieval),\n    knowledgeSource:",
+          "    longTermMemorySource: new RetrievalLongTermMemorySource(memoryRetrieval),\n    relevantNpcSource: new RetrievalNpcSource(npcRetrieval),\n    knowledgeSource:")
+
+          p = "packages/profiles/src/application/index.ts"
+          replace_once(p,
+          'export { getAcceptedOriginPackageContext } from "./accepted-origin-package.service";\nexport type { AcceptedOriginPackageContext } from "./accepted-origin-package.service";',
+          'export { getAcceptedOriginPackageContext } from "./accepted-origin-package.service";\nexport type { AcceptedOriginPackageContext } from "./accepted-origin-package.service";\nexport {\n  findNpcContextIdentities,\n  npcContextIdentityReader,\n} from "./npc-context-reader.service";\nexport type {\n  NpcContextIdentity,\n  NpcContextIdentityQuery,\n} from "./npc-context-reader.service";')
+
+          p = "packages/context/tests/application/canonical-npc-retrieval.test.ts"
+          text = Path(p).read_text().replace("listDecisionReady:", "listForContext:")
+          Path(p).write_text(text)
+
+          Path(".github/workflows/tmp-context-npc-story-patch.yml").unlink()
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(context): wire relevant NPCs into story context"
+          git push origin HEAD:agent/context-npc-story-integration
