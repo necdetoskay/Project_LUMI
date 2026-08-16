@@ -76,7 +76,10 @@ live("Context DB-backed production E2E", () => {
           [
             childProfileId,
             householdId,
-            JSON.stringify({ e2eRun: runMarker, interests: ["crystals", "exploration"] }),
+            JSON.stringify({
+              e2eRun: runMarker,
+              interests: ["crystals", "exploration"],
+            }),
           ],
         );
         await pool.query(
@@ -114,7 +117,10 @@ live("Context DB-backed production E2E", () => {
             householdId,
             childProfileId,
             characterId,
-            JSON.stringify({ e2eRun: runMarker, worldFact: "Crystal Islands glow softly at night." }),
+            JSON.stringify({
+              e2eRun: runMarker,
+              worldFact: "Crystal Islands glow softly at night.",
+            }),
           ],
         );
 
@@ -133,7 +139,8 @@ live("Context DB-backed production E2E", () => {
             taskSettingId,
             userId,
             householdId,
-            process.env.LUMI_LIVE_LLM_MODEL ?? "deepseek/deepseek-chat-v3-0324",
+            process.env.LUMI_LIVE_LLM_MODEL ??
+              "deepseek/deepseek-chat-v3-0324",
           ],
         );
 
@@ -191,7 +198,8 @@ live("Context DB-backed production E2E", () => {
             `context-live-${hookId}`,
             sourceNpcId,
             JSON.stringify({
-              claim: "Ay ışığında parlayan kristallerin arasından gelen nazik sesi araştır.",
+              claim:
+                "Ay ışığında parlayan kristallerin arasından gelen nazik sesi araştır.",
             }),
             JSON.stringify({ childSafe: true }),
           ],
@@ -213,7 +221,9 @@ live("Context DB-backed production E2E", () => {
         expect(playback.session.version).toBe(2);
         expect(playback.session.currentSceneId).toBe(generated.sceneId);
         expect(playback.currentScene?.id).toBe(generated.sceneId);
-        expect(playback.currentScene?.narrativeText.length ?? 0).toBeGreaterThan(20);
+        expect(playback.currentScene?.narrativeText.length ?? 0).toBeGreaterThan(
+          20,
+        );
 
         const persisted = await pool.query<{
           scene_key: string;
@@ -227,7 +237,9 @@ live("Context DB-backed production E2E", () => {
         );
         expect(persisted.rowCount).toBe(1);
         expect(persisted.rows[0]?.scene_key).toBe(`generated:hook:${hookId}`);
-        expect(persisted.rows[0]?.narrative_text.length ?? 0).toBeGreaterThan(20);
+        expect(persisted.rows[0]?.narrative_text.length ?? 0).toBeGreaterThan(
+          20,
+        );
         expect(persisted.rows[0]?.metadata?.sourceHookId).toBe(hookId);
 
         const inspection = await getGenerationInspection({
@@ -240,7 +252,7 @@ live("Context DB-backed production E2E", () => {
         expect(inspection.attempt).toBeGreaterThanOrEqual(1);
         expect(inspection.contextContentHash.length).toBeGreaterThan(10);
         expect(inspection.sections.length).toBeGreaterThan(0);
-        expect(inspection.tokenUsage.total).toBeGreaterThan(0);
+        expect(inspection.tokenUsage.usedTokens).toBeGreaterThan(0);
         expect(inspection.request.householdId).toBe(householdId);
         expect(inspection.request.childProfileId).toBe(childProfileId);
         expect(inspection.request.worldId).toBe(worldId);
@@ -259,10 +271,12 @@ live("Context DB-backed production E2E", () => {
         expect(rawInspection.rows[0]?.context_manifest).toBeTruthy();
         expect(rawInspection.rows[0]?.inspector_projection).toBeTruthy();
 
-        const consumed = await pool.query<{ status: string; consumed_at: Date | null }>(
-          `SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`,
-          [hookId],
-        );
+        const consumed = await pool.query<{
+          status: string;
+          consumed_at: Date | null;
+        }>(`SELECT status,consumed_at FROM story.story_hooks WHERE id=$1`, [
+          hookId,
+        ]);
         expect(consumed.rows[0]?.status).toBe("consumed");
         expect(consumed.rows[0]?.consumed_at).toBeInstanceOf(Date);
       } finally {
@@ -287,31 +301,45 @@ live("Context DB-backed production E2E", () => {
           [sessionId],
         );
         await pool.query(`DELETE FROM story.story_hooks WHERE id=$1`, [hookId]);
-        await pool.query(`DELETE FROM story.story_sessions WHERE id=$1`, [sessionId]);
-        await pool.query(`DELETE FROM story.story_scenes WHERE story_version_id=$1`, [
+        await pool.query(`DELETE FROM story.story_sessions WHERE id=$1`, [
+          sessionId,
+        ]);
+        await pool.query(
+          `DELETE FROM story.story_scenes WHERE story_version_id=$1`,
+          [storyVersionId],
+        );
+        await pool.query(`DELETE FROM story.story_versions WHERE id=$1`, [
           storyVersionId,
         ]);
-        await pool.query(`DELETE FROM story.story_versions WHERE id=$1`, [storyVersionId]);
         await pool.query(`DELETE FROM story.story_definitions WHERE id=$1`, [
           storyDefinitionId,
         ]);
         await pool.query(`DELETE FROM profile.worlds WHERE id=$1`, [worldId]);
-        await pool.query(`DELETE FROM profile.lumi_characters WHERE id=$1`, [characterId]);
-        await pool.query(`DELETE FROM profile.llm_task_model_settings WHERE id=$1`, [
-          taskSettingId,
+        await pool.query(`DELETE FROM profile.lumi_characters WHERE id=$1`, [
+          characterId,
         ]);
-        await pool.query(`DELETE FROM profile.llm_provider_settings WHERE id=$1`, [
-          providerSettingId,
+        await pool.query(
+          `DELETE FROM profile.llm_task_model_settings WHERE id=$1`,
+          [taskSettingId],
+        );
+        await pool.query(
+          `DELETE FROM profile.llm_provider_settings WHERE id=$1`,
+          [providerSettingId],
+        );
+        await pool.query(
+          `DELETE FROM profile.parental_settings WHERE household_id=$1`,
+          [householdId],
+        );
+        await pool.query(`DELETE FROM profile.child_profiles WHERE id=$1`, [
+          childProfileId,
         ]);
-        await pool.query(`DELETE FROM profile.parental_settings WHERE household_id=$1`, [
-          householdId,
-        ]);
-        await pool.query(`DELETE FROM profile.child_profiles WHERE id=$1`, [childProfileId]);
         await pool.query(
           `DELETE FROM profile.household_members WHERE household_id=$1 AND user_id=$2`,
           [householdId, userId],
         );
-        await pool.query(`DELETE FROM profile.households WHERE id=$1`, [householdId]);
+        await pool.query(`DELETE FROM profile.households WHERE id=$1`, [
+          householdId,
+        ]);
       }
     },
     90_000,
