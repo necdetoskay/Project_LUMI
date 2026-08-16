@@ -73,6 +73,9 @@ export async function generateCharacterFirstIdentitySuggestions(
       validationStatus: "invalid",
       generated,
     });
+    if (process.env.LUMI_ONBOARDING_LIVE_E2E === "1") {
+      console.error("LUMI_ONBOARDING_INVALID_IDENTITY_OUTPUT", generated.content);
+    }
     throw error;
   }
 }
