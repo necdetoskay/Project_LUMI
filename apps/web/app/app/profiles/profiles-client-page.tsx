@@ -8,6 +8,7 @@ type Profile = {
   householdId: string;
   displayName: string;
   ageBand: string;
+  ageYears: number | null;
   locale: string;
   createdAt: string;
 };
@@ -81,7 +82,10 @@ export default function ProfilesClientPage() {
               oluşturabilirsiniz.
             </p>
           </div>
-          <Link className="storybook-button" href="/app/onboarding">
+          <Link
+            className="storybook-button"
+            href="/app/onboarding?addProfile=1"
+          >
             <span className="material-symbols-outlined" aria-hidden="true">
               person_add
             </span>
@@ -110,7 +114,10 @@ export default function ProfilesClientPage() {
               alanlarına göre kendi hikâye dünyasını kurabilmemiz için başlangıç
               noktasıdır.
             </p>
-            <Link className="storybook-button mt-6" href="/app/onboarding">
+            <Link
+              className="storybook-button mt-6"
+              href="/app/onboarding?addProfile=1"
+            >
               İlk profili oluştur
             </Link>
           </div>
@@ -149,7 +156,9 @@ export default function ProfilesClientPage() {
                       </div>
                       <div>
                         <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
-                          Yaş grubu {profile.ageBand}
+                          {profile.ageYears === null
+                            ? `Yaş grubu ${profile.ageBand}`
+                            : `${profile.ageYears} yaş`}
                         </p>
                         <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
                           {profile.displayName}
@@ -220,7 +229,7 @@ export default function ProfilesClientPage() {
               </div>
               <Link
                 className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-5 text-sm font-extrabold text-[#27352b]"
-                href="/app/onboarding"
+                href="/app/onboarding?addProfile=1"
               >
                 Yeni profil ekle
               </Link>
@@ -252,7 +261,7 @@ function ErrorDisplay({ message }: { message: string }) {
           <p>{message}</p>
           <Link
             className="mt-5 inline-flex font-bold underline"
-            href="/app/onboarding"
+            href="/app/onboarding?addProfile=1"
           >
             Kuruluma git
           </Link>

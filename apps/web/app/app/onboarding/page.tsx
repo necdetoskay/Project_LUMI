@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type OnboardingState = {
   hasHousehold: boolean;
@@ -19,6 +20,8 @@ type OnboardingState = {
 type Step = "loading" | "create-household" | "add-profiles" | "complete";
 
 export default function OnboardingPage() {
+  const searchParams = useSearchParams();
+  const addProfileMode = searchParams.get("addProfile") === "1";
   const [state, setState] = useState<OnboardingState | null>(null);
   const [step, setStep] = useState<Step>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +33,12 @@ export default function OnboardingPage() {
         const s = data.onboarding as OnboardingState;
         setState(s);
         if (!s.hasHousehold) setStep("create-household");
-        else if (s.childProfileCount === 0) setStep("add-profiles");
+        else if (s.childProfileCount === 0 || addProfileMode)
+          setStep("add-profiles");
         else setStep("complete");
       })
       .catch(() => setError("Failed to load onboarding state"));
-  }, []);
+  }, [addProfileMode]);
 
   if (error) return <ErrorDisplay message={error} />;
   if (step === "loading") return <LoadingDisplay />;
