@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 describe("production generated-hook reader AI gateway wiring", () => {
   it("uses the shared story gateway instead of the legacy profiles OpenRouter caller", () => {
     const source = readFileSync(
-      fileURLToPath(new URL("./generated-hook-reader.service.ts", import.meta.url)),
+      fileURLToPath(
+        new URL("./generated-hook-reader.service.ts", import.meta.url),
+      ),
       "utf8",
     );
 
@@ -14,6 +16,8 @@ describe("production generated-hook reader AI gateway wiring", () => {
       'import { callStoryOpenRouter } from "../ai/text-generation/story-openrouter-caller";',
     );
     expect(source).toContain("callOpenRouter: callStoryOpenRouter");
-    expect(source).not.toContain("callOpenRouter,\n  getCharacterBootstrapStatus");
+    expect(source).not.toContain(
+      "callOpenRouter,\n  getCharacterBootstrapStatus",
+    );
   });
 });

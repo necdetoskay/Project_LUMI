@@ -11,7 +11,8 @@ describe("Context production live LLM smoke", () => {
       expect(process.env.OPENROUTER_API_KEY).toBeTruthy();
 
       const result = await callStoryOpenRouter("gateway-owned-secret", {
-        model: process.env.LUMI_LIVE_LLM_MODEL ?? "deepseek/deepseek-chat-v3-0324",
+        model:
+          process.env.LUMI_LIVE_LLM_MODEL ?? "deepseek/deepseek-chat-v3-0324",
         temperature: 0,
         maxTokens: 80,
         messages: [
