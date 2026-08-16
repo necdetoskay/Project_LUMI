@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const liveEnabled = process.env.LUMI_LONG_HORIZON_LIVE === "1";
 const baseURL = process.env.LUMI_LONG_HORIZON_BASE_URL;
+const vercelAutomationBypassSecret =
+  process.env.LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET;
 const vercelShareSecret =
   process.env.LUMI_LONG_HORIZON_VERCEL_SHARE_SECRET;
 const storageStatePath =
@@ -18,14 +20,22 @@ if (!baseURL) {
   throw new Error("LUMI_LONG_HORIZON_BASE_URL is required for the live suite.");
 }
 
-const protectedPreviewConfig = vercelShareSecret
+const useShareSession = Boolean(vercelShareSecret && !vercelAutomationBypassSecret);
+const protectedPreviewConfig = useShareSession
   ? {
       globalSetup: "./tests/e2e/long-horizon/live-vercel-share-setup.ts",
     }
   : {};
-const protectedPreviewUse = vercelShareSecret
-  ? { storageState: storageStatePath }
-  : {};
+const protectedPreviewUse = vercelAutomationBypassSecret
+  ? {
+      extraHTTPHeaders: {
+        "x-vercel-protection-bypass": vercelAutomationBypassSecret,
+        "x-vercel-set-bypass-cookie": "true",
+      },
+    }
+  : useShareSession
+    ? { storageState: storageStatePath }
+    : {};
 
 export default defineConfig({
   testDir: "./tests/e2e/long-horizon",
