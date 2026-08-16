@@ -12,6 +12,16 @@ import {
 } from "../../db/schema/profile/llm-task-model-settings";
 import { AuthorizationError, ValidationError } from "../../domain";
 
+const DEFAULT_OPENROUTER_MODEL_ID = "aion-labs/aion-3.0-mini";
+const DEFAULT_CANONICAL_TASK_TYPES: readonly LlmTaskType[] = [
+  "character_identity_suggestions",
+  "character_world_suggestions",
+  "character_world_compatibility",
+  "character_region_suggestions",
+  "character_origin_suggestions",
+  "character_core_saga",
+];
+
 export interface LlmSettingsResponse {
   hasApiKey: boolean;
   maskedApiKey: string | null;
@@ -406,21 +416,25 @@ export async function ensureDefaultLlmTaskSettings(
   householdId: string,
 ): Promise<void> {
   const repos = getRepos();
-  const existing = await repos.taskRepo.findByTaskType(
-    userId,
-    householdId,
-    "character_origin_generation",
-  );
-  if (!existing) {
+  await assertHouseholdAccess(userId, householdId, repos);
+
+  for (const taskType of DEFAULT_CANONICAL_TASK_TYPES) {
+    const existing = await repos.taskRepo.findByTaskType(
+      userId,
+      householdId,
+      taskType,
+    );
+    if (existing) continue;
+
     await repos.taskRepo.upsert({
       id: crypto.randomUUID(),
       userId,
       householdId,
       provider: "openrouter",
-      taskType: "character_origin_generation",
-      modelId: "aion-labs/aion-3.0-mini",
+      taskType,
+      modelId: DEFAULT_OPENROUTER_MODEL_ID,
       reasoningLevel: "medium",
-      temperature: 0.85,
+      temperature: 0.8,
       maxOutputTokens: 1800,
       enabled: true,
     });
@@ -437,10 +451,15 @@ export async function getOpenRouterApiKey(
     householdId,
     "openrouter",
   );
-  if (!providerSettings?.encryptedApiKey) return null;
-  try {
-    return decryptApiKey(providerSettings.encryptedApiKey);
-  } catch {
-    return null;
+  if (providerSettings?.encryptedApiKey) {
+    try {
+      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);
+      if (scopedApiKey.trim()) return scopedApiKey;
+    } catch {
+      // Fall through to the server-wide credential when a scoped key is unusable.
+    }
   }
+
+  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();
+  return envApiKey || null;
 }
