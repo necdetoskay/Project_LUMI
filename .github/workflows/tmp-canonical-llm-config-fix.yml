@@ -48,7 +48,7 @@ jobs:
           text = text[:start] + replacement + text[end:]
 
           old_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (!providerSettings?.encryptedApiKey) return null;\n  try {\n    return decryptApiKey(providerSettings.encryptedApiKey);\n  } catch {\n    return null;\n  }\n}\n'''
-          new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
+          new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter\",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
           if old_tail not in text:
               raise SystemExit('expected getOpenRouterApiKey block missing')
           text = text.replace(old_tail, new_tail, 1)
@@ -134,52 +134,59 @@ jobs:
             getOpenRouterApiKey,
           } from '/home/runner/work/Project_LUMI/Project_LUMI/packages/profiles/src/application/llm-settings/llm-settings.service.ts';
 
-          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
-          try {
-            const membership = await pool.query(
-              `SELECT user_id, household_id FROM profile.household_members WHERE user_id = $1 AND is_active = TRUE ORDER BY created_at LIMIT 1`,
-              ['51000000-0000-4000-8000-000000000009'],
-            );
-            if (membership.rowCount !== 1) throw new Error('DEMO_HOUSEHOLD_NOT_FOUND');
-            const { user_id: userId, household_id: householdId } = membership.rows[0];
+          async function main() {
+            const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+            try {
+              const membership = await pool.query(
+                `SELECT user_id, household_id FROM profile.household_members WHERE user_id = $1 AND is_active = TRUE ORDER BY created_at LIMIT 1`,
+                ['51000000-0000-4000-8000-000000000009'],
+              );
+              if (membership.rowCount !== 1) throw new Error('DEMO_HOUSEHOLD_NOT_FOUND');
+              const { user_id: userId, household_id: householdId } = membership.rows[0];
 
-            const fallback = await getOpenRouterApiKey('env-fallback-probe-user', householdId);
-            if (fallback !== process.env.OPENROUTER_API_KEY) throw new Error('ENV_API_KEY_FALLBACK_FAILED');
-            console.log('OpenRouter env fallback: PASS');
+              const fallback = await getOpenRouterApiKey('env-fallback-probe-user', householdId);
+              if (fallback !== process.env.OPENROUTER_API_KEY) throw new Error('ENV_API_KEY_FALLBACK_FAILED');
+              console.log('OpenRouter env fallback: PASS');
 
-            await ensureDefaultLlmTaskSettings(userId, householdId);
-            const tasks = await pool.query(
-              `SELECT task_type, model_id, enabled FROM profile.llm_task_model_settings WHERE user_id=$1 AND household_id=$2 AND task_type = ANY($3::text[]) ORDER BY task_type`,
-              [userId, householdId, [
-                'character_identity_suggestions',
-                'character_world_suggestions',
-                'character_world_compatibility',
-                'character_region_suggestions',
-                'character_origin_suggestions',
-                'character_core_saga',
-              ]],
-            );
-            if (tasks.rowCount !== 6 || tasks.rows.some((row) => !row.enabled || !row.model_id)) {
-              throw new Error('CANONICAL_TASK_DEFAULTS_INCOMPLETE');
+              await ensureDefaultLlmTaskSettings(userId, householdId);
+              const tasks = await pool.query(
+                `SELECT task_type, model_id, enabled FROM profile.llm_task_model_settings WHERE user_id=$1 AND household_id=$2 AND task_type = ANY($3::text[]) ORDER BY task_type`,
+                [userId, householdId, [
+                  'character_identity_suggestions',
+                  'character_world_suggestions',
+                  'character_world_compatibility',
+                  'character_region_suggestions',
+                  'character_origin_suggestions',
+                  'character_core_saga',
+                ]],
+              );
+              if (tasks.rowCount !== 6 || tasks.rows.some((row) => !row.enabled || !row.model_id)) {
+                throw new Error('CANONICAL_TASK_DEFAULTS_INCOMPLETE');
+              }
+              console.log('Canonical task defaults:', tasks.rows.map((row) => `${row.task_type}=${row.model_id}`).join(', '));
+
+              const prompts = await pool.query(
+                `SELECT prompt_key, version, status FROM profile.ai_prompt_versions WHERE prompt_key = ANY($1::text[]) AND status='active' ORDER BY prompt_key`,
+                [[
+                  'character_onboarding.character_first_identity_suggestions',
+                  'character_onboarding.world_suggestions',
+                  'character_onboarding.compatibility',
+                  'character_onboarding.region_suggestions',
+                  'character_onboarding.character_origin_suggestions',
+                  'character_onboarding.core_saga',
+                ]],
+              );
+              if (prompts.rowCount !== 6) throw new Error(`ACTIVE_CANONICAL_PROMPTS_INCOMPLETE:${prompts.rowCount}`);
+              console.log('Active canonical prompts:', prompts.rows.map((row) => `${row.prompt_key}@v${row.version}`).join(', '));
+            } finally {
+              await pool.end();
             }
-            console.log('Canonical task defaults:', tasks.rows.map((row) => `${row.task_type}=${row.model_id}`).join(', '));
-
-            const prompts = await pool.query(
-              `SELECT prompt_key, version, status FROM profile.ai_prompt_versions WHERE prompt_key = ANY($1::text[]) AND status='active' ORDER BY prompt_key`,
-              [[
-                'character_onboarding.character_first_identity_suggestions',
-                'character_onboarding.world_suggestions',
-                'character_onboarding.compatibility',
-                'character_onboarding.region_suggestions',
-                'character_onboarding.character_origin_suggestions',
-                'character_onboarding.core_saga',
-              ]],
-            );
-            if (prompts.rowCount !== 6) throw new Error(`ACTIVE_CANONICAL_PROMPTS_INCOMPLETE:${prompts.rowCount}`);
-            console.log('Active canonical prompts:', prompts.rows.map((row) => `${row.prompt_key}@v${row.version}`).join(', '));
-          } finally {
-            await pool.end();
           }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
           TS
           pnpm exec tsx /tmp/lumi-canonical-config-probe.ts
 
