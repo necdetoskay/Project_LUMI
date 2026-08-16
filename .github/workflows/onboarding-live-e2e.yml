@@ -7,28 +7,9 @@ on:
         description: OpenRouter model slug
         required: false
         default: deepseek/deepseek-v4-flash
-  push:
-    branches:
-      - agent/character-onboarding-live-e2e
-    paths:
-      - .github/workflows/onboarding-live-e2e.yml
-      - apps/web/tests/character-onboarding-production-live-e2e.test.ts
-      - apps/web/lib/character-onboarding/**
-      - packages/profiles/src/application/character-foundation-onboarding.service.ts
-      - packages/profiles/src/application/character-first-identity-suggestion.service.ts
-      - packages/profiles/src/application/character-creation-cycle.service.ts
-      - packages/profiles/src/application/character-origin-suggestion.service.ts
-      - packages/profiles/src/application/text-llm-gateway.service.ts
-      - packages/profiles/src/application/prompt-output-validator.ts
-      - packages/profiles/src/application/prompt-output-validator.test.ts
-      - packages/profiles/migrations/0065_character_foundation_onboarding.sql
-      - packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql
-      - packages/profiles/migrations/0067_onboarding_quality_token_budget.sql
-      - packages/profiles/migrations/0068_remove_onboarding_output_token_cap.sql
-      - packages/profiles/migrations/0069_compatibility_optional_adaptation.sql
-      - packages/profiles/migrations/0070_compatibility_empty_adaptation.sql
-      - packages/profiles/src/db/schema/profile/llm-task-model-settings.ts
-      - apps/web/package.json
+  schedule:
+    # Nightly production-path confidence check. Paid LLM calls stay isolated from normal PR CI.
+    - cron: "37 2 * * *"
 
 permissions:
   contents: read
@@ -61,6 +42,8 @@ jobs:
       STORY_TEST_ENABLE_DESTRUCTIVE: "true"
       LUMI_LIVE_LLM_MODEL: ${{ inputs.model || 'deepseek/deepseek-v4-flash' }}
       NODE_ENV: test
+      LIVE_E2E_LOG: .tmp/character-onboarding-live-e2e.log
+      LIVE_E2E_REPORT: .tmp/character-onboarding-live-e2e-report.json
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -102,5 +85,28 @@ jobs:
         run: pnpm --filter @lumi/world world:migrate
 
       - name: Run real 9-stage Character Onboarding
-        # Final cleaned uncapped verification: observe natural completion usage without constraining quality.
-        run: pnpm --filter @lumi/web test:onboarding:production-e2e
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .tmp
+          pnpm --filter @lumi/web test:onboarding:production-e2e 2>&1 | tee "$LIVE_E2E_LOG"
+
+      - name: Publish structured live E2E evidence
+        if: always()
+        shell: bash
+        run: |
+          if grep -q "LUMI_ONBOARDING_LIVE_RESULT" "$LIVE_E2E_LOG"; then
+            node apps/web/scripts/extract-onboarding-live-report.mjs "$LIVE_E2E_LOG" "$LIVE_E2E_REPORT"
+          else
+            echo "## Character Onboarding Live E2E" >> "$GITHUB_STEP_SUMMARY"
+            echo "No successful live-result marker was produced. Inspect the test logs above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload live E2E evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-onboarding-live-e2e-evidence
+          path: ${{ env.LIVE_E2E_REPORT }}
+          if-no-files-found: ignore
+          retention-days: 30
