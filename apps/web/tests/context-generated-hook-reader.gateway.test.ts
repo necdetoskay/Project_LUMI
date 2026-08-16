@@ -1,17 +1,12 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 describe("production generated-hook reader AI gateway wiring", () => {
   it("uses the shared story gateway instead of the legacy profiles OpenRouter caller", () => {
     const source = readFileSync(
-      fileURLToPath(
-        new URL(
-          "../lib/story/generated-hook-reader.service.ts",
-          import.meta.url,
-        ),
-      ),
+      resolve(process.cwd(), "lib/story/generated-hook-reader.service.ts"),
       "utf8",
     );
 
