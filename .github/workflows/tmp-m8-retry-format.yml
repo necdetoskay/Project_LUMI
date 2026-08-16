@@ -1,0 +1,37 @@
+name: Temporary M8 Retry Format
+
+on:
+  push:
+    branches:
+      - agent/onboarding-m8-ci-ultef
+    paths:
+      - .github/workflows/tmp-m8-retry-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/onboarding-m8-ci-ultef
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write packages/profiles/src/application/character-foundation-onboarding.service.ts
+      - run: pnpm exec prettier --check packages/profiles/src/application/character-foundation-onboarding.service.ts
+      - name: Commit formatting and remove temporary workflow
+        run: |
+          rm .github/workflows/tmp-m8-retry-format.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/profiles/src/application/character-foundation-onboarding.service.ts .github/workflows/tmp-m8-retry-format.yml
+          git commit -m "style(onboarding): format foundation retry"
+          git push origin HEAD:agent/onboarding-m8-ci-ultef
