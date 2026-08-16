@@ -1,0 +1,195 @@
+name: Temporary Canonical LLM Config Fix
+
+on:
+  push:
+    branches:
+      - agent/live-long-horizon-fix-prep
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify-repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.LUMI_DEV_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Patch provider fallback, canonical defaults, route bootstrap and migration idempotency
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          settings = Path('packages/profiles/src/application/llm-settings/llm-settings.service.ts')
+          text = settings.read_text(encoding='utf-8')
+          marker = 'import { AuthorizationError, ValidationError } from "../../domain";\n'
+          constants = '''import { AuthorizationError, ValidationError } from "../../domain";\n\nconst DEFAULT_OPENROUTER_MODEL_ID = "aion-labs/aion-3.0-mini";\nconst DEFAULT_CANONICAL_TASK_TYPES: readonly LlmTaskType[] = [\n  "character_identity_suggestions",\n  "character_world_suggestions",\n  "character_world_compatibility",\n  "character_region_suggestions",\n  "character_origin_suggestions",\n  "character_core_saga",\n];\n'''
+          if 'DEFAULT_CANONICAL_TASK_TYPES' not in text:
+              if marker not in text:
+                  raise SystemExit('llm settings import marker missing')
+              text = text.replace(marker, constants, 1)
+
+          start = text.index('export async function ensureDefaultLlmTaskSettings(')
+          end = text.index('\nexport async function getOpenRouterApiKey(', start)
+          replacement = '''export async function ensureDefaultLlmTaskSettings(\n  userId: string,\n  householdId: string,\n): Promise<void> {\n  const repos = getRepos();\n  await assertHouseholdAccess(userId, householdId, repos);\n\n  for (const taskType of DEFAULT_CANONICAL_TASK_TYPES) {\n    const existing = await repos.taskRepo.findByTaskType(\n      userId,\n      householdId,\n      taskType,\n    );\n    if (existing) continue;\n\n    await repos.taskRepo.upsert({\n      id: crypto.randomUUID(),\n      userId,\n      householdId,\n      provider: "openrouter",\n      taskType,\n      modelId: DEFAULT_OPENROUTER_MODEL_ID,\n      reasoningLevel: "medium",\n      temperature: 0.8,\n      maxOutputTokens: 1800,\n      enabled: true,\n    });\n  }\n}\n'''
+          text = text[:start] + replacement + text[end:]
+
+          start = text.index('export async function getOpenRouterApiKey(')
+          old_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (!providerSettings?.encryptedApiKey) return null;\n  try {\n    return decryptApiKey(providerSettings.encryptedApiKey);\n  } catch {\n    return null;\n  }\n}\n'''
+          new_tail = '''export async function getOpenRouterApiKey(\n  userId: string,\n  householdId: string,\n): Promise<string | null> {\n  const repos = getRepos();\n  const providerSettings = await repos.providerRepo.findByUserAndHousehold(\n    userId,\n    householdId,\n    "openrouter",\n  );\n  if (providerSettings?.encryptedApiKey) {\n    try {\n      const scopedApiKey = decryptApiKey(providerSettings.encryptedApiKey);\n      if (scopedApiKey.trim()) return scopedApiKey;\n    } catch {\n      // Fall through to the server-wide credential when a scoped key is unusable.\n    }\n  }\n\n  const envApiKey = process.env.OPENROUTER_API_KEY?.trim();\n  return envApiKey || null;\n}\n'''
+          if old_tail not in text:
+              raise SystemExit('expected getOpenRouterApiKey block missing')
+          text = text.replace(old_tail, new_tail, 1)
+          settings.write_text(text, encoding='utf-8')
+
+          route = Path('apps/web/app/api/character-creation/canonical/route.ts')
+          route_text = route.read_text(encoding='utf-8')
+          old_import = '''  chooseCharacterCreationDirection,\n  chooseCharacterIdentity,\n  getActiveCharacterCreationCycle,\n} from "@lumi/profiles/application";'''
+          new_import = '''  chooseCharacterCreationDirection,\n  chooseCharacterIdentity,\n  ensureDefaultLlmTaskSettings,\n  getActiveCharacterCreationCycle,\n} from "@lumi/profiles/application";'''
+          if old_import not in route_text:
+              raise SystemExit('canonical route import block missing')
+          route_text = route_text.replace(old_import, new_import, 1)
+          old_case = '''        case "start":\n          return NextResponse.json({\n            cycle: await chooseCharacterCreationDirection(parent.id, {'''
+          new_case = '''        case "start":\n          await ensureDefaultLlmTaskSettings(parent.id, body.householdId);\n          return NextResponse.json({\n            cycle: await chooseCharacterCreationDirection(parent.id, {'''
+          if old_case not in route_text:
+              raise SystemExit('canonical start case missing')
+          route_text = route_text.replace(old_case, new_case, 1)
+          route.write_text(route_text, encoding='utf-8')
+
+          migration = Path('packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql')
+          migration_text = migration.read_text(encoding='utf-8')
+          old_update = ") AND status='active';\n\nINSERT INTO profile.ai_prompt_versions"
+          new_update = ") AND version <> 2 AND status='active';\n\nINSERT INTO profile.ai_prompt_versions"
+          if old_update not in migration_text:
+              raise SystemExit('0066 archive update marker missing')
+          migration_text = migration_text.replace(old_update, new_update, 1)
+          old_end = '''ON CONFLICT (prompt_key,version) DO NOTHING;\n\nCOMMIT;'''
+          new_end = '''ON CONFLICT (prompt_key,version) DO NOTHING;\n\nUPDATE profile.ai_prompt_versions\nSET status='active', activated_at=COALESCE(activated_at,NOW()), updated_at=NOW()\nWHERE prompt_key IN (\n  'character_onboarding.world_suggestions',\n  'character_onboarding.region_suggestions',\n  'character_onboarding.character_origin_suggestions',\n  'character_onboarding.core_saga'\n) AND version=2 AND status <> 'active';\n\nCOMMIT;'''
+          if old_end not in migration_text:
+              raise SystemExit('0066 migration end marker missing')
+          migration.write_text(migration_text.replace(old_end, new_end, 1), encoding='utf-8')
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format changed TypeScript
+        run: pnpm exec prettier --write packages/profiles/src/application/llm-settings/llm-settings.service.ts apps/web/app/api/character-creation/canonical/route.ts
+
+      - name: Format check
+        run: pnpm exec prettier --check packages/profiles/src/application/llm-settings/llm-settings.service.ts apps/web/app/api/character-creation/canonical/route.ts
+
+      - name: Profiles tests
+        run: pnpm --filter @lumi/profiles test
+
+      - name: Profiles typecheck
+        run: pnpm --filter @lumi/profiles typecheck
+
+      - name: Web typecheck
+        run: pnpm --filter @lumi/web typecheck
+
+      - name: Validate staging database guard
+        run: |
+          test -n "$DATABASE_URL" || { echo "LUMI_DEV_DATABASE_URL missing"; exit 1; }
+          DB_NAME="$(node -e 'const u=new URL(process.env.DATABASE_URL);process.stdout.write(u.pathname.replace(/^\//,""))')"
+          test "$DB_NAME" = "neondb" || { echo "Refusing staging repair outside neondb"; exit 1; }
+
+      - name: Apply only repaired prompt reliability migration to staging
+        working-directory: apps/web
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import pg from 'pg';
+          const sql = await readFile('../../../packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql', 'utf8');
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+          try {
+            await pool.query(sql);
+            console.log('0066 staging prompt repair: PASS');
+          } finally {
+            await pool.end();
+          }
+          NODE
+
+      - name: Verify env fallback and seed canonical task defaults without model calls
+        working-directory: packages/profiles
+        env:
+          OPENROUTER_API_KEY: lumi-env-fallback-sentinel-not-a-real-key
+        run: |
+          cat > /tmp/lumi-canonical-config-probe.ts <<'TS'
+          import pg from 'pg';
+          import {
+            ensureDefaultLlmTaskSettings,
+            getOpenRouterApiKey,
+          } from '/home/runner/work/Project_LUMI/Project_LUMI/packages/profiles/src/application/llm-settings/llm-settings.service.ts';
+
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+          try {
+            const membership = await pool.query(
+              `SELECT user_id, household_id FROM profile.household_members WHERE user_id = $1 AND is_active = TRUE ORDER BY created_at LIMIT 1`,
+              ['51000000-0000-4000-8000-000000000009'],
+            );
+            if (membership.rowCount !== 1) throw new Error('DEMO_HOUSEHOLD_NOT_FOUND');
+            const { user_id: userId, household_id: householdId } = membership.rows[0];
+
+            const fallback = await getOpenRouterApiKey('env-fallback-probe-user', householdId);
+            if (fallback !== process.env.OPENROUTER_API_KEY) throw new Error('ENV_API_KEY_FALLBACK_FAILED');
+            console.log('OpenRouter env fallback: PASS');
+
+            await ensureDefaultLlmTaskSettings(userId, householdId);
+            const tasks = await pool.query(
+              `SELECT task_type, model_id, enabled FROM profile.llm_task_model_settings WHERE user_id=$1 AND household_id=$2 AND task_type = ANY($3::text[]) ORDER BY task_type`,
+              [userId, householdId, [
+                'character_identity_suggestions',
+                'character_world_suggestions',
+                'character_world_compatibility',
+                'character_region_suggestions',
+                'character_origin_suggestions',
+                'character_core_saga',
+              ]],
+            );
+            if (tasks.rowCount !== 6 || tasks.rows.some((row) => !row.enabled || !row.model_id)) {
+              throw new Error('CANONICAL_TASK_DEFAULTS_INCOMPLETE');
+            }
+            console.log('Canonical task defaults:', tasks.rows.map((row) => `${row.task_type}=${row.model_id}`).join(', '));
+
+            const prompts = await pool.query(
+              `SELECT prompt_key, version, status FROM profile.ai_prompt_versions WHERE prompt_key = ANY($1::text[]) AND status='active' ORDER BY prompt_key`,
+              [[
+                'character_onboarding.character_first_identity_suggestions',
+                'character_onboarding.world_suggestions',
+                'character_onboarding.compatibility',
+                'character_onboarding.region_suggestions',
+                'character_onboarding.character_origin_suggestions',
+                'character_onboarding.core_saga',
+              ]],
+            );
+            if (prompts.rowCount !== 6) throw new Error(`ACTIVE_CANONICAL_PROMPTS_INCOMPLETE:${prompts.rowCount}`);
+            console.log('Active canonical prompts:', prompts.rows.map((row) => `${row.prompt_key}@v${row.version}`).join(', '));
+          } finally {
+            await pool.end();
+          }
+          TS
+          pnpm exec tsx /tmp/lumi-canonical-config-probe.ts
+
+      - name: Commit verified source fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/profiles/src/application/llm-settings/llm-settings.service.ts apps/web/app/api/character-creation/canonical/route.ts packages/profiles/migrations/0066_character_foundation_prompt_reliability.sql
+          git diff --cached --quiet && { echo "No source diff to commit"; exit 0; }
+          git commit -m "fix(llm): bootstrap canonical onboarding runtime config"
+          git push origin "HEAD:$GITHUB_REF_NAME"
