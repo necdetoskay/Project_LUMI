@@ -3,6 +3,26 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const LIVE_TEST_DIR = path.resolve(process.cwd(), "tests/e2e/long-horizon");
+const EVIDENCE_README = path.join(LIVE_TEST_DIR, "evidence", "README.md");
+const REQUIRED_EVIDENCE_FILES = [
+  "00-run-summary.md",
+  "01-child-profile.md",
+  "02-character-foundation.md",
+  "03-story-01.md",
+  "04-story-02.md",
+  "05-story-03.md",
+  "06-story-04-item.md",
+  "07-story-05-item.md",
+  "08-story-06-rumor.md",
+  "09-story-07-rumor.md",
+  "10-final-world-state.md",
+  "11-final-character-state.md",
+  "12-final-inventory-bag.md",
+  "13-final-npc-state.md",
+  "14-final-relationships.md",
+  "15-statistics.md",
+  "run.json",
+] as const;
 
 const FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
   [/\bcontext\.request\b/, "Playwright context.request"],
@@ -85,5 +105,16 @@ describe("live long-horizon Playwright execution contract", () => {
     );
 
     expect(support).toContain('flag: "wx"');
+  });
+
+  it("versions the complete evidence layout and cross-age comparison contract", async () => {
+    const readme = await readFile(EVIDENCE_README, "utf8");
+
+    expect(readme).toContain("Evidence format");
+    expect(readme).toContain("ages 4, 5, 6, and 7");
+    expect(readme).toContain("Do **not** compare generated story sentences");
+    for (const filename of REQUIRED_EVIDENCE_FILES) {
+      expect(readme).toContain(`\`${filename}\``);
+    }
   });
 });
