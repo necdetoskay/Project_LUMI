@@ -5,6 +5,8 @@ import type {
   ContextSourceResult,
   LongTermMemoryItem,
   LongTermMemorySource,
+  RelevantNpcItem,
+  RelevantNpcSource,
   RetrievalCandidate,
   WorldItem,
   WorldSource,
@@ -35,6 +37,33 @@ export class RetrievalLongTermMemorySource implements LongTermMemorySource {
     });
     return {
       items: result.candidates.map(memoryCandidateToContextItem),
+      sourceRelevance: maxRelevance(result.candidates),
+    };
+  }
+}
+
+export class RetrievalNpcSource implements RelevantNpcSource {
+  constructor(
+    private readonly retrieval: ContextRetrievalSource,
+    private readonly limit = DEFAULT_RETRIEVAL_LIMIT,
+  ) {}
+
+  async fetch(
+    request: ContextRequest,
+  ): Promise<ContextSourceResult<RelevantNpcItem>> {
+    const result = await this.retrieval.retrieve({
+      householdId: request.householdId,
+      childProfileId: request.childProfileId,
+      worldId: request.worldId,
+      storySessionId: request.storySessionId,
+      focalCharacterId: request.focalCharacterId,
+      generationIntent: request.generationIntent,
+      query: request.sceneFocus ?? request.generationIntent,
+      limit: this.limit,
+      sourceKinds: ["npc"],
+    });
+    return {
+      items: result.candidates.map(npcCandidateToContextItem),
       sourceRelevance: maxRelevance(result.candidates),
     };
   }
@@ -103,6 +132,23 @@ function memoryCandidateToContextItem(
     authority: 0.9,
     confidence: 0.9,
     scope: "character_belief",
+    priority: 2,
+    relevance: candidate.relevance,
+  };
+}
+
+function npcCandidateToContextItem(
+  candidate: RetrievalCandidate,
+): ContextItem<RelevantNpcItem> {
+  return {
+    id: candidate.stableId,
+    type: "relevant-npc",
+    content: { summary: candidate.summary },
+    text: candidate.summary,
+    sourceEngine: candidate.provenance.authority,
+    authority: 0.9,
+    confidence: 0.9,
+    scope: "world_truth",
     priority: 2,
     relevance: candidate.relevance,
   };

@@ -25,6 +25,7 @@ import type {
   WorkingStorySource,
   EmotionalStateSource,
   LongTermMemorySource,
+  RelevantNpcSource,
   KnowledgeSource,
   WorldSource,
   WorldItem,
@@ -39,6 +40,7 @@ export interface ContextBuilderDeps {
   workingStorySource: WorkingStorySource;
   emotionalStateSource: EmotionalStateSource;
   longTermMemorySource: LongTermMemorySource;
+  relevantNpcSource?: RelevantNpcSource;
   knowledgeSource: KnowledgeSource;
   worldSource: WorldSource;
   originPackageSource?: OriginPackageSource;
@@ -62,6 +64,7 @@ const tokenBudgetSchema = z.object({
   workingStoryTokens: z.number().int().nonnegative(),
   emotionalStateTokens: z.number().int().nonnegative(),
   longTermMemoryTokens: z.number().int().nonnegative(),
+  relevantNpcTokens: z.number().int().nonnegative().optional(),
   knowledgeTokens: z.number().int().nonnegative(),
   worldTokens: z.number().int().nonnegative(),
   originPackageTokens: z.number().int().nonnegative().optional(),
@@ -152,6 +155,7 @@ export class ContextBuilder {
       workingStoryResult,
       emotionalResult,
       memoryResult,
+      relevantNpcResult,
       knowledgeResult,
       worldResult,
       originResult,
@@ -171,6 +175,13 @@ export class ContextBuilder {
         () => this.deps.longTermMemorySource.fetch(validatedRequest),
         findings,
       ),
+      this.deps.relevantNpcSource
+        ? this.safeFetch(
+            "relevant-npc",
+            () => this.deps.relevantNpcSource!.fetch(validatedRequest),
+            findings,
+          )
+        : Promise.resolve({ items: [], sourceRelevance: 0 }),
       this.safeFetch(
         "knowledge",
         () => this.deps.knowledgeSource.fetch(validatedRequest),
@@ -232,20 +243,26 @@ export class ContextBuilder {
         result: memoryResult,
       },
       {
-        name: "knowledge",
+        name: "relevant-npc",
         priority: 5,
+        budget: validatedBudget.relevantNpcTokens ?? 0,
+        result: relevantNpcResult,
+      },
+      {
+        name: "knowledge",
+        priority: 6,
         budget: validatedBudget.knowledgeTokens,
         result: knowledgeResult,
       },
       {
         name: "world",
-        priority: 6,
+        priority: 7,
         budget: validatedBudget.worldTokens,
         result: worldResult,
       },
       {
         name: "origin-package",
-        priority: 7,
+        priority: 8,
         budget: validatedBudget.originPackageTokens ?? 0,
         result: originResult,
       },
@@ -342,6 +359,7 @@ export class ContextBuilder {
       budget.workingStoryTokens +
       budget.emotionalStateTokens +
       budget.longTermMemoryTokens +
+      (budget.relevantNpcTokens ?? 0) +
       budget.knowledgeTokens +
       budget.worldTokens +
       (budget.originPackageTokens ?? 0);

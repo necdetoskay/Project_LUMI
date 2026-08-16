@@ -27,7 +27,7 @@ function query() {
 describe("CanonicalNpcRetrievalAdapter", () => {
   it("combines scoped runtime + identity authority without leaking internal ids in provider-facing summary", async () => {
     const runtimeReader: CanonicalNpcRuntimeReader = {
-      listDecisionReady: async () => [
+      listForContext: async () => [
         {
           npcId: NPC_ID,
           householdId: HOUSEHOLD,
@@ -78,7 +78,7 @@ describe("CanonicalNpcRetrievalAdapter", () => {
   it("drops cross-scope runtime records before identity lookup", async () => {
     let requestedIds: string[] = [];
     const runtimeReader: CanonicalNpcRuntimeReader = {
-      listDecisionReady: async () => [
+      listForContext: async () => [
         {
           npcId: "safe",
           householdId: HOUSEHOLD,
@@ -123,7 +123,7 @@ describe("CanonicalNpcRetrievalAdapter", () => {
   it("does not query NPC authorities when the retrieval policy excludes npc", async () => {
     let runtimeCalled = false;
     const runtimeReader: CanonicalNpcRuntimeReader = {
-      listDecisionReady: async () => {
+      listForContext: async () => {
         runtimeCalled = true;
         return [];
       },

@@ -6,6 +6,8 @@ import type { ContextManifest, ContextRequest, TokenBudget } from "../ports";
  *
  * Story generation deliberately gets a fixed budget so callers cannot
  * accidentally bypass the context policy by constructing ad-hoc manifests.
+ * Until a canonical knowledge authority is wired, its former 390-token share
+ * is assigned to bounded relevant-NPC context without increasing the ceiling.
  */
 export const STORY_GENERATION_CONTEXT_TOKENS = 5_200;
 
@@ -16,7 +18,8 @@ export const STORY_GENERATION_TOKEN_BUDGET: Readonly<TokenBudget> = {
   workingStoryTokens: 1_430,
   emotionalStateTokens: 520,
   longTermMemoryTokens: 650,
-  knowledgeTokens: 390,
+  relevantNpcTokens: 390,
+  knowledgeTokens: 0,
   worldTokens: 650,
   originPackageTokens: 390,
 };

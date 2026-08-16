@@ -10,6 +10,7 @@ export type {
   WorkingStoryCharacterContext,
   EmotionalStateItem,
   LongTermMemoryItem,
+  RelevantNpcItem,
   KnowledgeItem,
   WorldItem,
   OriginPackageItem,
@@ -18,6 +19,7 @@ export type {
   WorkingStorySource,
   EmotionalStateSource,
   LongTermMemorySource,
+  RelevantNpcSource,
   KnowledgeSource,
   WorldSource,
   OriginPackageSource,
@@ -80,8 +82,10 @@ export {
   InMemoryWorldAdapter,
   InMemoryOriginPackageAdapter,
   CanonicalMemoryRetrievalAdapter,
+  CanonicalNpcRetrievalAdapter,
   WorldEventRetrievalAdapter,
   RetrievalLongTermMemorySource,
+  RetrievalNpcSource,
   RetrievalWorldEventSource,
   SystemSafetyPolicySource,
   NoPersistedParentPolicySource,
@@ -93,6 +97,11 @@ export {
 export type {
   CanonicalMemoryReader,
   CanonicalMemoryRecord,
+  CanonicalNpcContextPayload,
+  CanonicalNpcIdentityReader,
+  CanonicalNpcIdentityRecord,
+  CanonicalNpcRuntimeReader,
+  CanonicalNpcRuntimeRecord,
   WorldEventReader,
   WorldEventRecord,
   WorkingStorySnapshotReader,
@@ -100,12 +109,3 @@ export type {
   AcceptedOriginPackageReader,
   AcceptedOriginPackageRecord,
 } from "./adapters";
-
-export { CanonicalNpcRetrievalAdapter } from "./adapters/canonical-npc-retrieval.adapter";
-export type {
-  CanonicalNpcContextPayload,
-  CanonicalNpcIdentityReader,
-  CanonicalNpcIdentityRecord,
-  CanonicalNpcRuntimeReader,
-  CanonicalNpcRuntimeRecord,
-} from "./adapters/canonical-npc-retrieval.adapter";

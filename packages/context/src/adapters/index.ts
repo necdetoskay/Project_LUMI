@@ -12,12 +12,21 @@ export {
   type CanonicalMemoryRecord,
 } from "./canonical-memory-retrieval.adapter";
 export {
+  CanonicalNpcRetrievalAdapter,
+  type CanonicalNpcContextPayload,
+  type CanonicalNpcIdentityReader,
+  type CanonicalNpcIdentityRecord,
+  type CanonicalNpcRuntimeReader,
+  type CanonicalNpcRuntimeRecord,
+} from "./canonical-npc-retrieval.adapter";
+export {
   WorldEventRetrievalAdapter,
   type WorldEventReader,
   type WorldEventRecord,
 } from "./world-event-retrieval.adapter";
 export {
   RetrievalLongTermMemorySource,
+  RetrievalNpcSource,
   RetrievalWorldEventSource,
 } from "./retrieval-context-sources.adapter";
 export {

@@ -88,6 +88,14 @@ export type {
 export { getAcceptedOriginPackageContext } from "./accepted-origin-package.service";
 export type { AcceptedOriginPackageContext } from "./accepted-origin-package.service";
 export {
+  findNpcContextIdentities,
+  npcContextIdentityReader,
+} from "./npc-context-reader.service";
+export type {
+  NpcContextIdentity,
+  NpcContextIdentityQuery,
+} from "./npc-context-reader.service";
+export {
   getCharacterDomain,
   applyTraitDeltas,
   updateEmotions,
