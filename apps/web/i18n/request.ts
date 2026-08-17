@@ -6,9 +6,16 @@ import { resolveUiLocale, uiLocaleCookieName } from "./config";
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
   const locale = resolveUiLocale(cookieStore.get(uiLocaleCookieName)?.value);
+  const [messages, stories] = await Promise.all([
+    import(`../messages/${locale}.json`).then((module) => module.default),
+    import(`../messages/stories/${locale}.json`).then((module) => module.default),
+  ]);
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: {
+      ...messages,
+      stories,
+    },
   };
 });
