@@ -41,6 +41,9 @@ export const SOCIAL_ECOLOGY_ROLES = [
 
 export type SocialEcologyRoleType = (typeof SOCIAL_ECOLOGY_ROLES)[number];
 
+export type FoundationProvenanceOrigin = "generated" | "legacy-derived";
+export type FoundationDerivationConfidence = "low" | "medium" | "high";
+
 export type FoundationProvenance = {
   generationIntent: string;
   promptKey: string;
@@ -50,6 +53,12 @@ export type FoundationProvenance = {
   requestId?: string;
   rngSeed?: string;
   generatedAt: Date;
+  /** Defaults to generated for records created before provenance origins existed. */
+  origin?: FoundationProvenanceOrigin;
+  /** Populated by conservative legacy derivation; never used as story canon. */
+  confidence?: FoundationDerivationConfidence;
+  /** Evidence gaps retained for review instead of being filled with invented history. */
+  unresolvedGaps?: string[];
 };
 
 export interface CharacterGenesis {
