@@ -21,6 +21,14 @@ export const LLM_TASK_TYPES = [
   "character_world_compatibility",
   "character_region_suggestions",
   "character_core_saga",
+  "character_genesis",
+  "creative_divergence",
+  "genesis_evaluation",
+  "saga_foundation",
+  "social_ecology_bootstrap",
+  "living_world_bootstrap",
+  "initial_world_opportunities",
+  "saga_progression",
   "story_outline_generation",
   "story_turn_generation",
   "safety_review",
@@ -66,7 +74,7 @@ export const llmTaskModelSettings = profileSchema.table(
     ),
     check(
       "llm_task_model_settings_task_type_check",
-      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'character_world_compatibility', 'character_region_suggestions', 'character_core_saga', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
+      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'character_world_compatibility', 'character_region_suggestions', 'character_core_saga', 'character_genesis', 'creative_divergence', 'genesis_evaluation', 'saga_foundation', 'social_ecology_bootstrap', 'living_world_bootstrap', 'initial_world_opportunities', 'saga_progression', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
     ),
     check(
       "llm_task_model_settings_reasoning_check",
