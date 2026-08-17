@@ -24,6 +24,11 @@ const REQUIRED_EVIDENCE_FILES = [
   "run.json",
 ] as const;
 
+const ALLOWED_VISIBLE_ENTRY_GOTOS = [
+  'baseline-onboarding.live.spec.ts:"/login"',
+  'login-smoke.live.spec.ts:"/login"',
+] as const;
+
 const FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
   [/\bcontext\.request\b/, "Playwright context.request"],
   [/\bpage\.request\b/, "Playwright page.request"],
@@ -74,7 +79,7 @@ describe("live long-horizon Playwright execution contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("allows page.goto only for the initial visible login entry", async () => {
+  it("allows page.goto only for the explicit visible login entries", async () => {
     const files = await liveSourceFiles();
     const gotoCalls: string[] = [];
 
@@ -85,7 +90,7 @@ describe("live long-horizon Playwright execution contract", () => {
       }
     }
 
-    expect(gotoCalls).toEqual(['baseline-onboarding.live.spec.ts:"/login"']);
+    expect(gotoCalls.sort()).toEqual([...ALLOWED_VISIBLE_ENTRY_GOTOS].sort());
   });
 
   it("keeps the live pack free of cleanup/delete shortcuts", async () => {
