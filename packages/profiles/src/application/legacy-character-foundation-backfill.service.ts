@@ -121,7 +121,12 @@ export class LegacyCharacterFoundationBackfillService {
       };
     }
 
-    const foundation = deriveFoundation(evidence, confidence, unresolvedGaps, this.now());
+    const foundation = deriveFoundation(
+      evidence,
+      confidence,
+      unresolvedGaps,
+      this.now(),
+    );
 
     if (dryRun) {
       return {
@@ -206,7 +211,9 @@ function deriveFoundation(
       knownFacts,
       currentBeliefs,
       unknownQuestions: unresolvedQuestions,
-      socialEcology: dedupeSocialEcology(evidence.establishedSocialEcology ?? []),
+      socialEcology: dedupeSocialEcology(
+        evidence.establishedSocialEcology ?? [],
+      ),
       provenance,
     },
     sagaCanon: {
@@ -274,7 +281,8 @@ function classifyConfidence(
   gaps: string[],
 ): FoundationDerivationConfidence {
   if (evidence.ambiguous || gaps.length >= 5) return "low";
-  const factCount = (evidence.knownFacts?.length ?? 0) +
+  const factCount =
+    (evidence.knownFacts?.length ?? 0) +
     (evidence.currentBeliefs?.length ?? 0);
   if (evidence.priorStoryCount >= 5 && factCount >= 3 && gaps.length <= 2) {
     return "high";
