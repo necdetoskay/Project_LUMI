@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
-import { lumiCharacters } from "../db/schema/profile";
+import { characterRelationships, lumiCharacters } from "../db/schema/profile";
 import type { SocialEcologyRoleType } from "../domain/character-genesis";
 import type { BroadCharacterKind, CharacterType } from "../domain/types";
 import { getProfileDb } from "./db";
@@ -18,6 +18,19 @@ export interface EnsureBootstrapNpcIdentityInput {
 
 export interface EnsureBootstrapNpcIdentityResult {
   npcId: string;
+  reused: boolean;
+}
+
+export interface EnsureBootstrapRelationshipInput {
+  householdId: string;
+  characterId: string;
+  npcId: string;
+  roleType: SocialEcologyRoleType;
+  relationshipSeed: number;
+}
+
+export interface EnsureBootstrapRelationshipResult {
+  entityId: string;
   reused: boolean;
 }
 
@@ -64,6 +77,10 @@ function displayName(plan: SocialEcologyMaterializationPlan): string {
   const label = plan.role.label.trim();
   if (label.length > 0) return label.slice(0, 120);
   return plan.role.roleType.replaceAll("_", " ").slice(0, 120);
+}
+
+function relationshipStrength(seed: number): number {
+  return Math.max(0, Math.min(1, (seed + 1) / 2));
 }
 
 export async function ensureBootstrapNpcIdentity(
@@ -137,4 +154,51 @@ export async function ensureBootstrapNpcIdentity(
   });
 
   return { npcId, reused: false };
+}
+
+export async function ensureBootstrapRelationship(
+  input: EnsureBootstrapRelationshipInput,
+): Promise<EnsureBootstrapRelationshipResult> {
+  const db = getProfileDb();
+  const [npc] = await db
+    .select({
+      id: lumiCharacters.id,
+      householdId: lumiCharacters.householdId,
+      characterSubtype: lumiCharacters.characterSubtype,
+    })
+    .from(lumiCharacters)
+    .where(eq(lumiCharacters.id, input.npcId))
+    .limit(1);
+  if (
+    !npc ||
+    npc.householdId !== input.householdId ||
+    npc.characterSubtype !== "npc"
+  ) {
+    throw new Error("BOOTSTRAP_RELATIONSHIP_NPC_SCOPE_CONFLICT");
+  }
+
+  const strength = relationshipStrength(input.relationshipSeed);
+  const inserted = await db
+    .insert(characterRelationships)
+    .values({
+      characterId: input.characterId,
+      targetCharacterId: input.npcId,
+      trust: strength,
+      affinity: strength,
+      familiarity: Math.max(0.1, Math.min(0.7, strength)),
+      relationshipType: input.roleType,
+      customTypeLabel: `living-world-bootstrap:v1:${input.roleType}`.slice(0, 120),
+    })
+    .onConflictDoNothing({
+      target: [
+        characterRelationships.characterId,
+        characterRelationships.targetCharacterId,
+      ],
+    })
+    .returning({ characterId: characterRelationships.characterId });
+
+  return {
+    entityId: `${input.characterId}:${input.npcId}`,
+    reused: inserted.length === 0,
+  };
 }
