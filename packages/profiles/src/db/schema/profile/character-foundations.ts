@@ -43,7 +43,7 @@ export const characterFoundations = profileSchema.table(
     check("character_foundations_version_check", sql`${table.version} > 0`),
     check(
       "character_foundations_bootstrap_status_check",
-      sql`${table.bootstrapStatus} IN ('pending', 'running', 'completed', 'failed')`,
+      sql`${table.bootstrapStatus} IN ('planned', 'pending', 'running', 'completed', 'failed')`,
     ),
   ],
 );
