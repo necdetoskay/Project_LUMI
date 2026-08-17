@@ -172,20 +172,9 @@ function extractId(pathname: string, pattern: RegExp, label: string): string {
 }
 
 async function openStoriesTab(page: Page): Promise<void> {
-  const storiesButton = page.getByRole("button", {
-    name: "Hikâyeler",
-    exact: true,
-  });
-  const storiesLink = page.getByRole("link", {
-    name: "Hikâyeler",
-    exact: true,
-  });
-  const storiesControl =
-    (await storiesButton.count()) > 0
-      ? storiesButton.first()
-      : storiesLink.first();
-  await expect(storiesControl).toBeVisible({ timeout: 60_000 });
-  await storiesControl.click();
+  const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });
+  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
+  await storiesTab.click();
   await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
     timeout: 60_000,
   });
@@ -696,9 +685,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         stories.filter((story) => story.sourceFamily === "rumor"),
       ).toHaveLength(2);
 
-      await page
-        .getByRole("button", { name: "Karakterler", exact: true })
-        .click();
+      await page.getByRole("button", { name: /Karakterler$/ }).click();
       const characterPanel = page.locator("main article").first();
       await expect(characterPanel).toBeVisible({ timeout: 60_000 });
       const finalCharacterState = (await characterPanel.innerText()).trim();
@@ -709,7 +696,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         `# Final Character State\n\n${finalCharacterState}`,
       );
 
-      const worldLink = page.getByRole("link", { name: /Dünyasını aç/ });
+      const worldLink = page.getByRole("link", {
+        name: /Dünyasına Git|Dünyasını aç/,
+      });
       await expect(worldLink).toBeVisible();
       await worldLink.click();
       await expect(page).toHaveURL(/\/world(?:\?.*)?$/, { timeout: 60_000 });
