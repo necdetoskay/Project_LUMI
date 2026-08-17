@@ -142,7 +142,10 @@ function purposeForRole(
   roleType: SocialEcologyRoleType,
 ): string {
   const support = supportForRole(foundation, roleType);
-  return `${roleLabel(roleType)} exists because the opening situation needs: ${support.join(" | ")}`.slice(0, 800);
+  return `${roleLabel(roleType)} exists because the opening situation needs: ${support.join(" | ")}`.slice(
+    0,
+    800,
+  );
 }
 
 function identityHintForRole(
@@ -220,7 +223,9 @@ function deriveRoleTypes(
   const archetypeRoles = foundation.genesis.archetypes.flatMap(
     (archetype) => ARCHETYPE_ROLE_SETS[archetype],
   );
-  return [...new Set([...archetypeRoles, ...semanticRoleTypes(foundation)])].slice(0, 7);
+  return [
+    ...new Set([...archetypeRoles, ...semanticRoleTypes(foundation)]),
+  ].slice(0, 7);
 }
 
 export function planLivingWorldBootstrap(
@@ -243,7 +248,8 @@ export function planLivingWorldBootstrap(
     };
     return {
       role,
-      identityHint: role.materializationHint ?? identityHintForRole(foundation, roleType),
+      identityHint:
+        role.materializationHint ?? identityHintForRole(foundation, roleType),
       relationshipSeed: ROLE_RELATIONSHIP_SEEDS[roleType] ?? 0,
       needTypes: needTypesForRole(roleType),
       support,
@@ -303,6 +309,7 @@ export class LivingWorldBootstrapService {
     }
     let manifest: LivingWorldBootstrapManifest = {
       ...clearFailureCode(original),
+      provenance: plan.provenance,
       status: "running",
       updatedAt: this.now(),
     };
@@ -320,7 +327,9 @@ export class LivingWorldBootstrapService {
           (ref) => ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
         );
         const existingRelationship = manifest.materialized.find(
-          (ref) => ref.kind === "relationship" && ref.genesisRoleId === rolePlan.role.id,
+          (ref) =>
+            ref.kind === "relationship" &&
+            ref.genesisRoleId === rolePlan.role.id,
         );
         if (existingNpc && existingRelationship) continue;
         const materialized = await this.materializer.ensureNpc({
@@ -342,11 +351,15 @@ export class LivingWorldBootstrapService {
           genesisRoleId: rolePlan.role.id,
           reused: materialized.relationshipReused,
         });
-        await this.store.save(foundation, { ...manifest, updatedAt: this.now() });
+        await this.store.save(foundation, {
+          ...manifest,
+          updatedAt: this.now(),
+        });
       }
 
       manifest = {
         ...clearFailureCode(manifest),
+        provenance: plan.provenance,
         status: "completed",
         updatedAt: this.now(),
       };
@@ -359,6 +372,7 @@ export class LivingWorldBootstrapService {
           : "LIVING_WORLD_BOOTSTRAP_FAILED";
       manifest = {
         ...manifest,
+        provenance: plan.provenance,
         status: "failed",
         failureCode,
         updatedAt: this.now(),
