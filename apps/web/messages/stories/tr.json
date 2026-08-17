@@ -1,0 +1,47 @@
+{
+  "load": {
+    "householdRequired": "Hikâyelere ulaşmak için önce aile alanı hazır olmalı.",
+    "unavailable": "Maceralar şu anda yüklenemedi.",
+    "unexpected": "Maceralar yüklenirken beklenmeyen bir sorun oluştu.",
+    "title": "Maceralar biraz dinleniyor",
+    "retry": "Yeniden dene",
+    "loadingLabel": "Maceralar yükleniyor"
+  },
+  "hub": {
+    "kicker": "Hikâyeler",
+    "characterTitle": "{name}’nın Maceraları",
+    "fallbackTitle": "Karakterinin Maceraları",
+    "intro": "Devam eden maceranı sürdür ya da dünyanın sana hazırladığı yeni bir macerayı keşfet.",
+    "newAdventure": "Yeni Macera",
+    "ongoingSection": "Devam Eden Macera",
+    "pastTitle": "Geçmiş Maceralar",
+    "pastIntro": "Daha önce yaşadığın hikâyelere yeniden göz at.",
+    "ongoingBadge": "Macera devam ediyor",
+    "lastLocation": "En son: {location}",
+    "continue": "Maceraya Devam Et",
+    "openStory": "Hikâyeyi aç",
+    "emptyTitle": "Yeni bir maceraya hazır mısın?",
+    "emptyText": "Dünya, çantandaki eşyalar ve tanıdığın kişiler sana yeni bir hikâye başlangıcı sunabilir."
+  },
+  "sheet": {
+    "overlayClose": "Yeni macera penceresini kapat",
+    "close": "Kapat",
+    "kicker": "Yeni Bir Macera",
+    "title": "Bugün maceran nereden başlasın?",
+    "intro": "Dünyandaki olaylardan, duyduğun söylentilerden, çantandaki eşyalardan ya da tanıdığın birinden gelen çağrıdan birini seç.",
+    "loadFailed": "Yeni macera fikirleri şu anda yüklenemedi.",
+    "loadUnexpected": "Yeni macera fikirleri yüklenirken bir sorun oluştu.",
+    "startFailed": "Macera başlatılamadı. Yeniden deneyebilirsin.",
+    "startUnexpected": "Macera başlatılırken beklenmeyen bir sorun oluştu.",
+    "starting": "Macera hazırlanıyor…",
+    "emptyTitle": "Dünya biraz sessiz görünüyor",
+    "emptyText": "Yeni bir fikir bulmak için başka maceralara bakabilirsin.",
+    "refresh": "Başka maceralar göster",
+    "families": {
+      "world_event": {"eyebrow": "Dünyada Bir Şey Oldu", "cta": "Bu izi takip et"},
+      "rumor": {"eyebrow": "Bir Söylenti Duydun", "cta": "Söylentinin peşine düş"},
+      "inventory_item": {"eyebrow": "Çantandaki Bir Eşya", "cta": "Eşyanın sırrını keşfet"},
+      "npc_call": {"eyebrow": "Birinden Gelen Çağrı", "cta": "Çağrıya cevap ver"}
+    }
+  }
+}
