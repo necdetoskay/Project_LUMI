@@ -16,12 +16,16 @@ import {
 } from "../../src/application/llm-settings";
 
 const GOLDEN_CONTEXTS: Array<
-  Pick<GenesisPipelineContext, "characterKind" | "characterIdentity" | "worldSummary">
+  Pick<
+    GenesisPipelineContext,
+    "characterKind" | "characterIdentity" | "worldSummary"
+  >
 > = [
   {
     characterKind: "human",
     characterIdentity: "curious village child",
-    worldSummary: "A river valley whose old water clocks have started running backwards.",
+    worldSummary:
+      "A river valley whose old water clocks have started running backwards.",
   },
   {
     characterKind: "magical_creature",
@@ -42,14 +46,32 @@ const GOLDEN_CONTEXTS: Array<
 
 describe("creative genesis pipeline", () => {
   it("detects structural duplicates and reports pairwise diversity", () => {
-    const a = concept("a", "hatched", "A dragon wakes under a silent lighthouse", "Why was the lighthouse built for dragons?");
-    const b = concept("b", "hatched", "A dragon wakes under the silent lighthouse", "Why was the lighthouse built for dragons?");
-    const c = concept("c", "awakened", "A robot hears songs from a city that never existed", "Who placed unlived memories in its archive?");
+    const a = concept(
+      "a",
+      "hatched",
+      "A dragon wakes under a silent lighthouse",
+      "Why was the lighthouse built for dragons?",
+    );
+    const b = concept(
+      "b",
+      "hatched",
+      "A dragon wakes under the silent lighthouse",
+      "Why was the lighthouse built for dragons?",
+    );
+    const c = concept(
+      "c",
+      "awakened",
+      "A robot hears songs from a city that never existed",
+      "Who placed unlived memories in its archive?",
+    );
 
     const metrics = measureGenesisDiversity([a, b, c]);
 
     expect(metrics.duplicatePairs).toHaveLength(1);
-    expect(metrics.duplicatePairs[0]).toMatchObject({ leftId: "a", rightId: "b" });
+    expect(metrics.duplicatePairs[0]).toMatchObject({
+      leftId: "a",
+      rightId: "b",
+    });
     expect(metrics.averagePairwiseDistance).toBeGreaterThan(0.3);
   });
 
@@ -78,9 +100,9 @@ describe("creative genesis pipeline", () => {
     expect(contradicted?.rejectionReasons).toContain(
       "accepted_fact_contradiction",
     );
-    expect(result.selected.map((candidate) => candidate.concept.id)).not.toContain(
-      "c-3",
-    );
+    expect(
+      result.selected.map((candidate) => candidate.concept.id),
+    ).not.toContain("c-3");
   });
 
   it("enforces exact five-by-five long-horizon proxy maps", async () => {
@@ -126,12 +148,24 @@ describe("creative genesis pipeline", () => {
       expect(result.diversity.duplicatePairs).toHaveLength(0);
       expect(result.selected.length).toBeGreaterThanOrEqual(1);
       expect(result.selected.length).toBeLessThanOrEqual(3);
-      expect(result.selected[0]?.concept.premise).toContain(golden.characterKind);
-      expect(result.selected[0]?.evaluation.longHorizon.earlyAdventures).toHaveLength(5);
-      expect(result.selected[0]?.evaluation.longHorizon.mediumTermArcs).toHaveLength(5);
-      expect(result.selected[0]?.evaluation.longHorizon.meaningfulReveals).toHaveLength(5);
-      expect(result.selected[0]?.evaluation.longHorizon.relationshipDevelopments).toHaveLength(5);
-      expect(result.selected[0]?.evaluation.longHorizon.worldConsequences).toHaveLength(5);
+      expect(result.selected[0]?.concept.premise).toContain(
+        golden.characterKind,
+      );
+      expect(
+        result.selected[0]?.evaluation.longHorizon.earlyAdventures,
+      ).toHaveLength(5);
+      expect(
+        result.selected[0]?.evaluation.longHorizon.mediumTermArcs,
+      ).toHaveLength(5);
+      expect(
+        result.selected[0]?.evaluation.longHorizon.meaningfulReveals,
+      ).toHaveLength(5);
+      expect(
+        result.selected[0]?.evaluation.longHorizon.relationshipDevelopments,
+      ).toHaveLength(5);
+      expect(
+        result.selected[0]?.evaluation.longHorizon.worldConsequences,
+      ).toHaveLength(5);
     },
   );
 
@@ -145,13 +179,20 @@ describe("creative genesis pipeline", () => {
     );
 
     expect(result.synthesisUsed).toBe(true);
-    expect(result.candidates.some((candidate) => candidate.concept.id === "synthesis-1")).toBe(true);
+    expect(
+      result.candidates.some(
+        (candidate) => candidate.concept.id === "synthesis-1",
+      ),
+    ).toBe(true);
     expect(result.selected.length).toBeGreaterThan(0);
   });
 });
 
 function fullContext(
-  golden: Pick<GenesisPipelineContext, "characterKind" | "characterIdentity" | "worldSummary">,
+  golden: Pick<
+    GenesisPipelineContext,
+    "characterKind" | "characterIdentity" | "worldSummary"
+  >,
 ): GenesisPipelineContext {
   return {
     userId: "user-1",
@@ -162,8 +203,12 @@ function fullContext(
     characterIdentity: golden.characterIdentity,
     worldId: "world-1",
     worldSummary: golden.worldSummary,
-    regionSummary: "A local starting region with room for ordinary life and discovery.",
-    acceptedFacts: ["The character is seven-story-ready", "The world has no time travel"],
+    regionSummary:
+      "A local starting region with room for ordinary life and discovery.",
+    acceptedFacts: [
+      "The character is seven-story-ready",
+      "The world has no time travel",
+    ],
     worldConstraints: ["must_not_include: firearm"],
   };
 }
@@ -205,7 +250,12 @@ function scriptedGenerator(options: {
       }
       if (request.stage === "evaluation") {
         return (request.candidates ?? []).map((candidate, index) => {
-          const score = candidate.id === "synthesis-1" ? 92 : options.lowScores ? 72 : 88 - index;
+          const score =
+            candidate.id === "synthesis-1"
+              ? 92
+              : options.lowScores
+                ? 72
+                : 88 - index;
           const item = evaluation(
             candidate.id,
             score,
@@ -214,7 +264,9 @@ function scriptedGenerator(options: {
             12 + index,
           );
           if (options.contradictionFor === candidate.id) {
-            item.contradictions = ["Conflicts with accepted onboarding fact: no time travel"];
+            item.contradictions = [
+              "Conflicts with accepted onboarding fact: no time travel",
+            ];
           }
           if (options.malformedHorizon && index === 0) {
             item.longHorizon.earlyAdventures = ["only one"];
@@ -240,7 +292,9 @@ const DIVERGENCE_AXES = [
   "seasonal transformation",
 ] as const;
 
-function makeCandidates(context: GenesisPipelineContext): GenesisConceptDraft[] {
+function makeCandidates(
+  context: GenesisPipelineContext,
+): GenesisConceptDraft[] {
   return DIVERGENCE_AXES.map((axis, index) =>
     concept(
       `c-${index + 1}`,
@@ -264,7 +318,8 @@ function concept(
     premise,
     currentSituation: `The character faces a concrete local problem unique to ${id}.`,
     longTermDesire: `Understand the larger meaning behind ${id} without losing ordinary relationships.`,
-    fundamentalNeed: "Learn when to ask for help and when to act independently.",
+    fundamentalNeed:
+      "Learn when to ask for help and when to act independently.",
     centralMystery: mystery,
     relationshipSeeds: [`relationship-${id}`, `mentor-question-${id}`],
     storyModes: ["discovery", "friendship", "ordinary-day", `mode-${id}`],
@@ -311,7 +366,10 @@ function evaluation(
 }
 
 function five(prefix: string, id: string): string[] {
-  return Array.from({ length: 5 }, (_, index) => `${prefix}-${id}-${index + 1}`);
+  return Array.from(
+    { length: 5 },
+    (_, index) => `${prefix}-${id}-${index + 1}`,
+  );
 }
 
 async function fakeResolveRoute(

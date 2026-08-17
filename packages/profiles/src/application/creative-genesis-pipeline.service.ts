@@ -85,7 +85,11 @@ export interface EvaluatedGenesisCandidate {
 
 export interface GenesisDiversityMetrics {
   candidateCount: number;
-  duplicatePairs: Array<{ leftId: string; rightId: string; similarity: number }>;
+  duplicatePairs: Array<{
+    leftId: string;
+    rightId: string;
+    similarity: number;
+  }>;
   averagePairwiseDistance: number;
   minimumPairwiseDistance: number;
 }
@@ -248,7 +252,10 @@ export async function runCreativeGenesisPipeline(
         candidates: [synthesis],
       }),
     );
-    const synthesisDiversity = measureGenesisDiversity([...diverged, synthesis]);
+    const synthesisDiversity = measureGenesisDiversity([
+      ...diverged,
+      synthesis,
+    ]);
     evaluated = [
       ...evaluated,
       ...combineEvaluations(
@@ -318,7 +325,9 @@ export function measureGenesisDiversity(
     averagePairwiseDistance:
       distances.length === 0
         ? 1
-        : round(distances.reduce((sum, value) => sum + value, 0) / distances.length),
+        : round(
+            distances.reduce((sum, value) => sum + value, 0) / distances.length,
+          ),
     minimumPairwiseDistance:
       distances.length === 0 ? 1 : round(Math.min(...distances)),
   };
@@ -335,7 +344,9 @@ export function calculateGenesisWeightedScore(
   const horizonAdjustment =
     evaluation.longHorizon.expansionSpace * 0.08 -
     evaluation.longHorizon.exhaustionRisk * 0.08;
-  return round(Math.max(0, Math.min(100, mean - clichePenalty + horizonAdjustment)));
+  return round(
+    Math.max(0, Math.min(100, mean - clichePenalty + horizonAdjustment)),
+  );
 }
 
 function combineEvaluations(
@@ -394,7 +405,10 @@ function combineEvaluations(
   });
 }
 
-function parseConceptList(value: unknown, stage: string): GenesisConceptDraft[] {
+function parseConceptList(
+  value: unknown,
+  stage: string,
+): GenesisConceptDraft[] {
   if (!Array.isArray(value)) {
     throw new ValidationError(
       "INVALID_GENESIS_PIPELINE_OUTPUT",
@@ -416,7 +430,10 @@ function parseConceptList(value: unknown, stage: string): GenesisConceptDraft[] 
   return result;
 }
 
-function parseSingleConcept(value: unknown, stage: string): GenesisConceptDraft {
+function parseSingleConcept(
+  value: unknown,
+  stage: string,
+): GenesisConceptDraft {
   return parseConcept(value, stage);
 }
 
@@ -454,7 +471,12 @@ function parseConcept(value: unknown, field: string): GenesisConceptDraft {
       8,
     ),
     storyModes: stringList(record.storyModes, `${field}.storyModes`, 3, 10),
-    tropeSignals: stringList(record.tropeSignals, `${field}.tropeSignals`, 0, 8),
+    tropeSignals: stringList(
+      record.tropeSignals,
+      `${field}.tropeSignals`,
+      0,
+      8,
+    ),
   };
 }
 
@@ -480,7 +502,10 @@ function parseEvaluation(value: unknown, index: number): GenesisEvaluation {
       `${field}.scores.${dimension}`,
     );
   }
-  const longHorizonRecord = asRecord(record.longHorizon, `${field}.longHorizon`);
+  const longHorizonRecord = asRecord(
+    record.longHorizon,
+    `${field}.longHorizon`,
+  );
   const longHorizon: LongHorizonPotentialMap = {
     earlyAdventures: exactFive(
       longHorizonRecord.earlyAdventures,
@@ -516,14 +541,23 @@ function parseEvaluation(value: unknown, index: number): GenesisEvaluation {
     candidateId: requiredText(record.candidateId, `${field}.candidateId`, 120),
     scores,
     clicheRisk: boundedScore(record.clicheRisk, `${field}.clicheRisk`),
-    contradictions: stringList(record.contradictions, `${field}.contradictions`, 0, 12),
+    contradictions: stringList(
+      record.contradictions,
+      `${field}.contradictions`,
+      0,
+      12,
+    ),
     rationale: requiredText(record.rationale, `${field}.rationale`, 2_000),
     longHorizon,
   };
 }
 
 function validateContext(context: GenesisPipelineContext): void {
-  if (!Number.isInteger(context.childAge) || context.childAge < 2 || context.childAge > 17) {
+  if (
+    !Number.isInteger(context.childAge) ||
+    context.childAge < 2 ||
+    context.childAge > 17
+  ) {
     throw new ValidationError(
       "INVALID_GENESIS_CHILD_AGE",
       "Genesis child age must be an integer between 2 and 17",
@@ -543,7 +577,9 @@ function validateContext(context: GenesisPipelineContext): void {
   }
 }
 
-function toProvenance(route: ResolvedGenerationRoute): GenerationStageProvenance {
+function toProvenance(
+  route: ResolvedGenerationRoute,
+): GenerationStageProvenance {
   return {
     intent: route.intent,
     provider: route.provider,
@@ -610,8 +646,16 @@ function asRecord(value: unknown, field: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function requiredText(value: unknown, field: string, maxLength: number): string {
-  if (typeof value !== "string" || value.trim().length === 0 || value.length > maxLength) {
+function requiredText(
+  value: unknown,
+  field: string,
+  maxLength: number,
+): string {
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0 ||
+    value.length > maxLength
+  ) {
     throw new ValidationError(
       "INVALID_GENESIS_PIPELINE_TEXT",
       `${field} must be non-empty and at most ${maxLength} characters`,
@@ -634,8 +678,13 @@ function stringList(
       field,
     );
   }
-  const result = value.map((item, index) => requiredText(item, `${field}[${index}]`, 1_000));
-  if (new Set(result.map((item) => item.toLocaleLowerCase("en-US"))).size !== result.length) {
+  const result = value.map((item, index) =>
+    requiredText(item, `${field}[${index}]`, 1_000),
+  );
+  if (
+    new Set(result.map((item) => item.toLocaleLowerCase("en-US"))).size !==
+    result.length
+  ) {
     throw new ValidationError(
       "DUPLICATE_GENESIS_PIPELINE_VALUE",
       `${field} values must be unique`,
@@ -651,7 +700,12 @@ function exactFive(value: unknown, field: string): string[] {
 }
 
 function boundedScore(value: unknown, field: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100) {
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > 100
+  ) {
     throw new ValidationError(
       "INVALID_GENESIS_EVALUATION_SCORE",
       `${field} must be a number between 0 and 100`,
