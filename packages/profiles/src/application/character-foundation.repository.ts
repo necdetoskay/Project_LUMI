@@ -20,7 +20,9 @@ export type SaveCharacterFoundationInput = {
  * in their existing canonical authorities and are never duplicated here.
  */
 export interface CharacterFoundationRepository {
-  findByScope(scope: FoundationScope): Promise<CharacterFoundationRecord | null>;
+  findByScope(
+    scope: FoundationScope,
+  ): Promise<CharacterFoundationRecord | null>;
 
   save(input: SaveCharacterFoundationInput): Promise<CharacterFoundationRecord>;
 }
