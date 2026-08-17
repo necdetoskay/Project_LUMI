@@ -16,21 +16,27 @@ test("production Stories route renders the child-first Adventure Hub", async ({
   await expect(loginForm).toBeVisible();
   await loginForm.locator('input[name="email"]').fill(email);
   await loginForm.locator('input[name="password"]').fill(password);
-  await loginForm.locator('button[type="submit"]').click();
-  await expect(loginForm).not.toBeVisible({ timeout: 15_000 });
 
-  await page.goto("/app/profiles");
+  await Promise.all([
+    page.waitForURL(/\/app(?:[/?#]|$)/, { timeout: 60_000 }),
+    loginForm.locator('button[type="submit"]').click(),
+  ]);
+
   const profileLink = page.locator('a[href^="/app/profiles/"]').first();
-  await expect(profileLink).toBeVisible({ timeout: 15_000 });
-  const href = await profileLink.getAttribute("href");
-  if (!href) throw new Error("Live profile link has no href");
+  await expect(profileLink).toBeVisible({ timeout: 60_000 });
+  await profileLink.click();
+  await expect(page).toHaveURL(/\/app\/profiles\/[^/?#]+(?:[/?#]|$)/, {
+    timeout: 60_000,
+  });
 
-  const profileUrl = new URL(href, page.url());
-  profileUrl.searchParams.set("tab", "stories");
-  await page.goto(profileUrl.toString());
+  const storiesTab = page.getByRole("button", {
+    name: /Hikâyeler|Hikayeler|Stories/i,
+  });
+  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
+  await storiesTab.click();
 
   const stories = page.locator("#stories");
-  await expect(stories).toBeVisible({ timeout: 20_000 });
+  await expect(stories).toBeVisible({ timeout: 60_000 });
   await expect(
     stories.getByRole("button", { name: /Yeni Macera|New Adventure/i }).first(),
   ).toBeVisible();
