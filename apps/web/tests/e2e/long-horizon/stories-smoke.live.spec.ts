@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+// Non-mutating production acceptance for the canonical Stories route.
 test("production Stories route renders the child-first Adventure Hub", async ({
   page,
 }) => {
