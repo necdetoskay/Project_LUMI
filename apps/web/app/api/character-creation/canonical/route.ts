@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { finalizeCharacterOnboarding } from "@/lib/character-onboarding/finalize-character-foundation.service";
+import { runLivingWorldBootstrapForCharacter } from "@/lib/character-onboarding/living-world-bootstrap.service";
 import {
   chooseCharacterCreationDirection,
   chooseCharacterIdentity,
@@ -187,7 +188,19 @@ export async function POST(request: Request) {
             }),
           });
         case "finalize": {
-          const committed = await finalizeCharacterOnboarding(parent.id, input);
+          const committed = await finalizeCharacterOnboarding(parent.id, input, {
+            deferBootstrap: true,
+          });
+          after(async () => {
+            try {
+              await runLivingWorldBootstrapForCharacter(committed.characterId);
+            } catch (error) {
+              console.error("Deferred living-world bootstrap failed", {
+                characterId: committed.characterId,
+                error,
+              });
+            }
+          });
           return NextResponse.json({
             characterId: committed.characterId,
             worldId: committed.world.worldId,
