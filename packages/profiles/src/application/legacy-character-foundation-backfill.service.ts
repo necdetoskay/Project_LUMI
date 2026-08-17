@@ -170,6 +170,9 @@ function deriveFoundation(
   const currentBeliefs = unique(evidence.currentBeliefs ?? []);
   const unresolvedQuestions = unique(evidence.unresolvedQuestions ?? []);
   const explicitTruth = clean(evidence.establishedSagaTruth);
+  const archetypes: GenesisArchetype[] = evidence.archetypes?.length
+    ? unique(evidence.archetypes).slice(0, 4)
+    : ["rooted"];
   const provenance: FoundationProvenance = {
     generationIntent: "legacy-derived-foundation-backfill",
     promptKey: "legacy-derived:no-generation",
@@ -195,7 +198,7 @@ function deriveFoundation(
       id: `${stablePrefix}:genesis`,
       ...scope,
       version: 1,
-      archetypes: unique(evidence.archetypes ?? ["rooted"]).slice(0, 4),
+      archetypes,
       premise:
         clean(evidence.premise) ??
         "This character predates Genesis; established legacy canon remains authoritative.",
