@@ -1,0 +1,59 @@
+name: Fix long-horizon stories control
+on:
+  push:
+    branches:
+      - fix/long-horizon-stories-control
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch stories navigation locator
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
+          s = p.read_text()
+          old = '''async function openStoriesTab(page: Page): Promise<void> {
+  const storiesTab = page.getByRole("button", {
+    name: "Hikâyeler",
+    exact: true,
+  });
+  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
+  await storiesTab.click();
+  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+    timeout: 60_000,
+  });
+}
+'''
+          new = '''async function openStoriesTab(page: Page): Promise<void> {
+  const storiesButton = page.getByRole("button", {
+    name: "Hikâyeler",
+    exact: true,
+  });
+  const storiesLink = page.getByRole("link", {
+    name: "Hikâyeler",
+    exact: true,
+  });
+  const storiesControl =
+    (await storiesButton.count()) > 0 ? storiesButton.first() : storiesLink.first();
+  await expect(storiesControl).toBeVisible({ timeout: 60_000 });
+  await storiesControl.click();
+  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+    timeout: 60_000,
+  });
+}
+'''
+          if old not in s:
+            raise SystemExit('target block not found')
+          p.write_text(s.replace(old, new))
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git commit -m "test(long-horizon): support stories link navigation"
+          git push
