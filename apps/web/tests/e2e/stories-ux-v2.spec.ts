@@ -169,8 +169,12 @@ test.describe("Stories UX v2 governed browser coverage", () => {
 
     await page.goto(`/app/profiles/${childProfileId}`);
 
-    await expect(page.getByRole("heading", { name: /Işıl.*Maceraları/ })).toBeVisible();
-    await expect(page.getByText("Yeni bir maceraya hazır mısın?")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Işıl.*Maceraları/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Yeni bir maceraya hazır mısın?"),
+    ).toBeVisible();
     const trigger = page.getByRole("button", { name: "Yeni Macera" }).first();
     await trigger.focus();
     await trigger.click();
@@ -204,20 +208,26 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     const mocked = await mockStoriesApis(page, childProfileId, householdId);
 
     await page.goto(`/app/profiles/${childProfileId}`);
-    await expect(page.getByRole("heading", { name: "Işıl's Adventures" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Işıl's Adventures" }),
+    ).toBeVisible();
     await expect(page.getByText("Ready for a new adventure?")).toBeVisible();
     await assertNoHorizontalOverflow(page);
 
     await page.getByRole("button", { name: "New Adventure" }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(page.getByText("Something Happened in the World")).toBeVisible();
+    await expect(
+      page.getByText("Something Happened in the World"),
+    ).toBeVisible();
     await expect(page.getByText("An Item in Your Bag")).toBeVisible();
     await expect(page.getByText("A Call from Someone")).toBeVisible();
     await assertNoHorizontalOverflow(page);
 
     const closeButton = page.getByRole("button", { name: "Close" });
-    const refreshButton = page.getByRole("button", { name: "Show other adventures" });
+    const refreshButton = page.getByRole("button", {
+      name: "Show other adventures",
+    });
     await closeButton.focus();
     await page.keyboard.press("Shift+Tab");
     await expect(refreshButton).toBeFocused();
