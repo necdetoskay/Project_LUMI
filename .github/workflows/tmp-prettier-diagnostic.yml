@@ -1,0 +1,34 @@
+name: tmp prettier diagnostic
+
+on:
+  push:
+    branches:
+      - agent/character-genesis-phase2-model-routing
+
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Show Prettier diff
+        run: |
+          pnpm exec prettier --write \
+            "docs/04-architecture/lumi/ai-orchestration/Impact-Aware Generation Routing.md" \
+            packages/profiles/migrations/0072_genesis_generation_task_types.sql \
+            packages/profiles/src/application/llm-settings/generation-routing.ts \
+            packages/profiles/src/application/llm-settings/index.ts \
+            packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
+            packages/profiles/tests/application/generation-routing.test.ts
+          git diff --no-ext-diff -- \
+            "docs/04-architecture/lumi/ai-orchestration/Impact-Aware Generation Routing.md" \
+            packages/profiles/migrations/0072_genesis_generation_task_types.sql \
+            packages/profiles/src/application/llm-settings/generation-routing.ts \
+            packages/profiles/src/application/llm-settings/index.ts \
+            packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
+            packages/profiles/tests/application/generation-routing.test.ts
