@@ -146,8 +146,12 @@ export async function buildSagaFoundation(
     promptVersion: deps.promptProvenance.promptVersion,
     model: route.modelId,
     provider: route.provider,
-    requestId: deps.promptProvenance.requestId,
-    rngSeed: deps.promptProvenance.rngSeed,
+    ...(deps.promptProvenance.requestId
+      ? { requestId: deps.promptProvenance.requestId }
+      : {}),
+    ...(deps.promptProvenance.rngSeed
+      ? { rngSeed: deps.promptProvenance.rngSeed }
+      : {}),
     generatedAt: now,
   };
 
