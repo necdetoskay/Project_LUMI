@@ -181,7 +181,9 @@ async function openStoriesTab(page: Page): Promise<void> {
     exact: true,
   });
   const storiesControl =
-    (await storiesButton.count()) > 0 ? storiesButton.first() : storiesLink.first();
+    (await storiesButton.count()) > 0
+      ? storiesButton.first()
+      : storiesLink.first();
   await expect(storiesControl).toBeVisible({ timeout: 60_000 });
   await storiesControl.click();
   await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
