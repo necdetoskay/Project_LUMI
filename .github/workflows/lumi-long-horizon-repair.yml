@@ -68,6 +68,10 @@ jobs:
           new_profile = '''      await page\n        .locator(`a[href="/app/profiles/${encodeURIComponent(childProfileId)}"]`)\n        .first()\n        .click();'''
           if old_profile in text:
               text = text.replace(old_profile, new_profile, 1)
+          old_stories = '''  const storiesTab = page.getByRole("button", {\n    name: "Hikâyeler",\n    exact: true,\n  });'''
+          new_stories = '''  const storiesTab = page\n    .locator("button")\n    .filter({ hasText: "Hikâyeler" })\n    .first();'''
+          if old_stories in text:
+              text = text.replace(old_stories, new_stories, 1)
           path.write_text(text)
           PY
 
