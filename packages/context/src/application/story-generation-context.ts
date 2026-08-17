@@ -18,8 +18,8 @@ import type {
  *
  * Story generation deliberately gets a fixed budget so callers cannot
  * accidentally bypass the context policy by constructing ad-hoc manifests.
- * Saga receives an independent 390-token slice inside the same 5,200-token
- * ceiling; it is not allowed to crowd out safety, parent policy or world truth.
+ * When saga context is requested, 390 working-story tokens are reserved for a
+ * separate saga slice inside the same 5,200-token ceiling.
  */
 export const STORY_GENERATION_CONTEXT_TOKENS = 5_200;
 export const SAGA_STORY_CONTEXT_TOKENS = 390;
@@ -28,13 +28,20 @@ export const STORY_GENERATION_TOKEN_BUDGET: Readonly<TokenBudget> = {
   totalTokens: STORY_GENERATION_CONTEXT_TOKENS,
   safetyTokens: 780,
   parentPolicyTokens: 390,
-  workingStoryTokens: 1_040,
+  workingStoryTokens: 1_430,
   emotionalStateTokens: 520,
   longTermMemoryTokens: 650,
   relevantNpcTokens: 390,
   knowledgeTokens: 0,
   worldTokens: 650,
   originPackageTokens: 390,
+};
+
+const SAGA_AWARE_STORY_GENERATION_TOKEN_BUDGET: Readonly<TokenBudget> = {
+  ...STORY_GENERATION_TOKEN_BUDGET,
+  workingStoryTokens:
+    STORY_GENERATION_TOKEN_BUDGET.workingStoryTokens -
+    SAGA_STORY_CONTEXT_TOKENS,
 };
 
 /**
@@ -64,19 +71,18 @@ export interface StoryGenerationContextRequest
  * story-specific intent/budget and appends only a reveal-safe saga projection.
  */
 export class StoryGenerationContextComposer {
-  private readonly builder: ContextBuilder;
-
-  constructor(deps: ContextBuilderDeps) {
-    this.builder = new ContextBuilder(deps, {
-      ...STORY_GENERATION_TOKEN_BUDGET,
-    });
-  }
+  constructor(private readonly deps: ContextBuilderDeps) {}
 
   async build(
     request: StoryGenerationContextRequest,
   ): Promise<ContextManifest> {
     const { saga, ...baseRequest } = request;
-    const manifest = await this.builder.build({
+    const builder = new ContextBuilder(this.deps, {
+      ...(saga
+        ? SAGA_AWARE_STORY_GENERATION_TOKEN_BUDGET
+        : STORY_GENERATION_TOKEN_BUDGET),
+    });
+    const manifest = await builder.build({
       ...baseRequest,
       generationIntent: request.generationIntent ?? "story_generation",
     });
