@@ -23,7 +23,9 @@ export async function finalizeCharacterOnboarding(
 
   const existingWorld = await getWorldForCharacter(prepared.characterId);
   const world = existingWorld
-    ? { worldId: existingWorld.id }
+    ? ({
+        worldId: existingWorld.id,
+      } as Awaited<ReturnType<typeof createWorldFromOrigin>>)
     : await createWorldFromOrigin({
         householdId: input.householdId,
         childProfileId: input.childProfileId,
