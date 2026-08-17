@@ -19,6 +19,8 @@ ALTER TABLE profile.llm_task_model_settings
     'social_ecology_generation',
     'living_world_bootstrap',
     'adventure_opportunity_generation',
+    'adventure_teaser',
+    'story_recap',
     'story_outline_generation',
     'story_turn_generation',
     'safety_review',
