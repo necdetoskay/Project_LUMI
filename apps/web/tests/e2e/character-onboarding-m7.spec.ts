@@ -2,6 +2,14 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 const PASSWORD = "m7-browser-test-password-123";
 
+type BootstrapRef = {
+  kind: string;
+  authority: string;
+  entityId: string;
+  genesisRoleId?: string;
+  reused: boolean;
+};
+
 async function createParentFixture(context: BrowserContext) {
   const request = context.request;
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -81,7 +89,7 @@ async function selectFirstCandidateAndContinue(page: Page) {
 }
 
 test.describe("M7 canonical Character Onboarding browser E2E", () => {
-  test("completes all 9 stages, persists a spoiler-safe foundation, and retries idempotently", async ({
+  test("completes all 9 stages, materializes a spoiler-safe living world, and retries idempotently", async ({
     page,
     context,
   }) => {
@@ -165,6 +173,8 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
         status: string;
         manifestStatus: string;
         idempotencyKey: string;
+        materialized: BootstrapRef[];
+        roleCount: number;
       };
     };
     expect(committed.foundationReview.identity.name).toBe("Luna Starwhisperer");
@@ -188,10 +198,23 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     expect(JSON.stringify(committed.foundationReview)).not.toContain(
       "forbiddenEarlyReveals",
     );
-    expect(committed.bootstrap.status).toBe("pending");
-    expect(committed.bootstrap.manifestStatus).toBe("planned");
+    expect(committed.bootstrap.status).toBe("completed");
+    expect(committed.bootstrap.manifestStatus).toBe("completed");
     expect(committed.bootstrap.idempotencyKey).toMatch(
       /^living-world-bootstrap:/,
+    );
+    expect(committed.bootstrap.roleCount).toBeGreaterThan(0);
+    expect(committed.bootstrap.materialized).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "npc",
+          authority: "profile.lumi_characters",
+        }),
+        expect.objectContaining({
+          kind: "relationship",
+          authority: "profile.character_relationships",
+        }),
+      ]),
     );
 
     await expect(page).toHaveURL(
@@ -212,13 +235,28 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     const retried = (await retry.json()) as {
       characterId: string;
       worldId: string;
-      bootstrap: { status: string; idempotencyKey: string };
+      bootstrap: {
+        status: string;
+        manifestStatus: string;
+        idempotencyKey: string;
+        materialized: BootstrapRef[];
+        roleCount: number;
+      };
     };
     expect(retried.characterId).toBe(committed.characterId);
     expect(retried.worldId).toBe(committed.worldId);
-    expect(retried.bootstrap.status).toBe("pending");
+    expect(retried.bootstrap.status).toBe("completed");
+    expect(retried.bootstrap.manifestStatus).toBe("completed");
     expect(retried.bootstrap.idempotencyKey).toBe(
       committed.bootstrap.idempotencyKey,
+    );
+    expect(retried.bootstrap.roleCount).toBe(committed.bootstrap.roleCount);
+    expect(
+      retried.bootstrap.materialized.map((ref) => `${ref.kind}:${ref.entityId}`).sort(),
+    ).toEqual(
+      committed.bootstrap.materialized
+        .map((ref) => `${ref.kind}:${ref.entityId}`)
+        .sort(),
     );
 
     const cycle = await context.request.get(
