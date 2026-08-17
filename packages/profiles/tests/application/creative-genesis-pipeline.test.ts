@@ -345,7 +345,10 @@ const DIVERGENCE_SHAPES = [
       "Separate identity from memory without dismissing the feelings those memories carry.",
     centralMystery:
       "Who recorded unlived moments with accurate private emotions, and why does only one image continue changing?",
-    relationshipSeeds: ["reluctant archivist", "child who appears in no photograph"],
+    relationshipSeeds: [
+      "reluctant archivist",
+      "child who appears in no photograph",
+    ],
     storyModes: ["memory", "investigation", "emotion", "archive"],
   },
   {
@@ -416,8 +419,7 @@ const DIVERGENCE_SHAPES = [
       "Neighbours plan a festival route and must choose which map to trust before anyone realizes the disagreement is systematic.",
     longTermDesire:
       "Help people compare partial truths without turning uncertainty into accusation or blind obedience.",
-    fundamentalNeed:
-      "Learn to ask better questions before choosing sides.",
+    fundamentalNeed: "Learn to ask better questions before choosing sides.",
     centralMystery:
       "Why are all three maps honestly measured yet mutually incompatible, and what changes when nobody is observing the streets?",
     relationshipSeeds: ["junior surveyor", "skeptical festival organizer"],
