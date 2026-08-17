@@ -12,6 +12,7 @@ import { sql } from "drizzle-orm";
 import { primaryId, timestampColumns } from "../common";
 import { profileSchema } from "../schemas";
 import { households } from "./households";
+
 export const LLM_TASK_TYPES = [
   "character_origin_generation",
   "character_world_suggestions",
@@ -21,6 +22,15 @@ export const LLM_TASK_TYPES = [
   "character_world_compatibility",
   "character_region_suggestions",
   "character_core_saga",
+  "character_genesis",
+  "genesis_divergence",
+  "genesis_evaluation",
+  "saga_foundation",
+  "social_ecology_generation",
+  "living_world_bootstrap",
+  "adventure_opportunity_generation",
+  "adventure_teaser",
+  "story_recap",
   "story_outline_generation",
   "story_turn_generation",
   "safety_review",
@@ -28,8 +38,10 @@ export const LLM_TASK_TYPES = [
   "parent_explanation",
 ] as const;
 export type LlmTaskType = (typeof LLM_TASK_TYPES)[number];
+
 export const REASONING_LEVELS = ["low", "medium", "high"] as const;
 export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
+
 export const llmTaskModelSettings = profileSchema.table(
   "llm_task_model_settings",
   {
@@ -66,7 +78,7 @@ export const llmTaskModelSettings = profileSchema.table(
     ),
     check(
       "llm_task_model_settings_task_type_check",
-      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'character_world_compatibility', 'character_region_suggestions', 'character_core_saga', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
+      sql`${table.taskType} IN ('character_origin_generation', 'character_world_suggestions', 'world_character_suggestions', 'character_identity_suggestions', 'character_origin_suggestions', 'character_world_compatibility', 'character_region_suggestions', 'character_core_saga', 'character_genesis', 'genesis_divergence', 'genesis_evaluation', 'saga_foundation', 'social_ecology_generation', 'living_world_bootstrap', 'adventure_opportunity_generation', 'adventure_teaser', 'story_recap', 'story_outline_generation', 'story_turn_generation', 'safety_review', 'character_memory_summary', 'parent_explanation')`,
     ),
     check(
       "llm_task_model_settings_reasoning_check",
@@ -82,6 +94,7 @@ export const llmTaskModelSettings = profileSchema.table(
     ),
   ],
 );
+
 export type LlmTaskModelSettingsRecord =
   typeof llmTaskModelSettings.$inferSelect;
 export type NewLlmTaskModelSettingsRecord =

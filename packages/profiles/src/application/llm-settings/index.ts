@@ -15,6 +15,22 @@ export type {
   UpsertTaskModelSettingInput,
   TestConnectionResult,
 } from "./llm-settings.service";
+export {
+  GENERATION_CRITICALITY_TIERS,
+  IMPACT_AWARE_GENERATION_INTENTS,
+  getGenerationRoutingPolicy,
+  resolveGenerationRoute,
+  assertGenerationIntentMayMutate,
+  buildGenerationTraceRoutingMetadata,
+  getTierDefaultModelForTesting,
+} from "./generation-routing";
+export type {
+  GenerationCriticalityTier,
+  ImpactAwareGenerationIntent,
+  FoundationMutationTarget,
+  GenerationRoutingPolicy,
+  ResolvedGenerationRoute,
+} from "./generation-routing";
 export { encryptApiKey, decryptApiKey, maskApiKey } from "./encryption";
 export { callOpenRouter } from "./openrouter-client";
 export type {
