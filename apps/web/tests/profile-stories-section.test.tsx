@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ProfileStoriesSection } from "@/components/story/profile-stories-section";
 import enStories from "@/messages/stories/en.json";
@@ -11,6 +11,11 @@ vi.mock("@/components/assets/canonical-character-image", () => ({
     <div data-testid="character-image">{characterName}</div>
   ),
 }));
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 function jsonResponse(body: unknown, ok = true, status?: number): Response {
   return new Response(JSON.stringify(body), {
