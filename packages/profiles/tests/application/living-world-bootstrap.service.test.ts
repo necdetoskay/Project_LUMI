@@ -92,7 +92,7 @@ function foundation(archetypes: GenesisArchetype[]): CharacterFoundationRecord {
       foundationVersion: 1,
       bootstrapVersion: 1,
       idempotencyKey: `bootstrap-run-${characterId}`,
-      status: "pending",
+      status: "planned",
       materialized: [],
       createdAt: NOW,
       updatedAt: NOW,
