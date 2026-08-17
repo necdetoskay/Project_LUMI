@@ -18,6 +18,7 @@ import { runLivingWorldBootstrapForCharacter } from "./living-world-bootstrap.se
 export async function finalizeCharacterOnboarding(
   userId: string,
   input: { householdId: string; childProfileId: string },
+  options: { deferBootstrap?: boolean } = {},
 ) {
   const prepared = await prepareCharacterFoundationCommit(userId, input);
   const { evidence } = prepared;
@@ -91,6 +92,23 @@ export async function finalizeCharacterOnboarding(
     prepared.characterId,
     idempotencyKey,
   );
+
+  if (options.deferBootstrap) {
+    return {
+      characterId: prepared.characterId,
+      cycleId: prepared.cycleId,
+      world,
+      foundation,
+      review,
+      bootstrap: {
+        status: "pending" as const,
+        manifestStatus: "pending" as const,
+        idempotencyKey,
+        materialized: foundation.bootstrapManifest?.materialized ?? [],
+        roleCount: 0,
+      },
+    };
+  }
 
   try {
     const bootstrap = await runLivingWorldBootstrapForCharacter(

@@ -1,5 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
+import { getCharacterFoundationByCharacterId } from "@lumi/profiles";
+
 const PASSWORD = "m7-browser-test-password-123";
 
 type BootstrapRef = {
@@ -198,13 +200,28 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     expect(JSON.stringify(committed.foundationReview)).not.toContain(
       "forbiddenEarlyReveals",
     );
-    expect(committed.bootstrap.status).toBe("completed");
-    expect(committed.bootstrap.manifestStatus).toBe("completed");
+    expect(committed.bootstrap.status).toBe("pending");
+    expect(committed.bootstrap.manifestStatus).toBe("pending");
     expect(committed.bootstrap.idempotencyKey).toMatch(
       /^living-world-bootstrap:/,
     );
-    expect(committed.bootstrap.roleCount).toBeGreaterThan(0);
-    expect(committed.bootstrap.materialized).toEqual(
+
+    await expect
+      .poll(
+        async () =>
+          (await getCharacterFoundationByCharacterId(committed.characterId))
+            ?.bootstrapManifest?.status ?? "missing",
+        { timeout: 30_000 },
+      )
+      .toBe("completed");
+    const completedFoundation = await getCharacterFoundationByCharacterId(
+      committed.characterId,
+    );
+    const completedManifest = completedFoundation?.bootstrapManifest;
+    expect(completedManifest?.idempotencyKey).toBe(
+      committed.bootstrap.idempotencyKey,
+    );
+    expect(completedManifest?.materialized).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           kind: "npc",
@@ -216,6 +233,9 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
         }),
       ]),
     );
+    const materializedBeforeRetry = [...(completedManifest?.materialized ?? [])]
+      .map((ref) => `${ref.kind}:${ref.entityId}`)
+      .sort();
 
     await expect(page).toHaveURL(
       new RegExp(`/app/profiles/${childProfileId}/characters/[0-9a-f-]+$`),
@@ -245,21 +265,28 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     };
     expect(retried.characterId).toBe(committed.characterId);
     expect(retried.worldId).toBe(committed.worldId);
-    expect(retried.bootstrap.status).toBe("completed");
-    expect(retried.bootstrap.manifestStatus).toBe("completed");
+    expect(retried.bootstrap.status).toBe("pending");
+    expect(retried.bootstrap.manifestStatus).toBe("pending");
     expect(retried.bootstrap.idempotencyKey).toBe(
       committed.bootstrap.idempotencyKey,
     );
-    expect(retried.bootstrap.roleCount).toBe(committed.bootstrap.roleCount);
-    expect(
-      retried.bootstrap.materialized
-        .map((ref) => `${ref.kind}:${ref.entityId}`)
-        .sort(),
-    ).toEqual(
-      committed.bootstrap.materialized
-        .map((ref) => `${ref.kind}:${ref.entityId}`)
-        .sort(),
+
+    await expect
+      .poll(
+        async () =>
+          (await getCharacterFoundationByCharacterId(retried.characterId))
+            ?.bootstrapManifest?.status ?? "missing",
+        { timeout: 30_000 },
+      )
+      .toBe("completed");
+    const foundationAfterRetry = await getCharacterFoundationByCharacterId(
+      retried.characterId,
     );
+    expect(
+      [...(foundationAfterRetry?.bootstrapManifest?.materialized ?? [])]
+        .map((ref) => `${ref.kind}:${ref.entityId}`)
+        .sort(),
+    ).toEqual(materializedBeforeRetry);
 
     const cycle = await context.request.get(
       `/api/character-creation/canonical?householdId=${encodeURIComponent(householdId)}&childProfileId=${encodeURIComponent(childProfileId)}`,
