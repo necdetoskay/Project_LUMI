@@ -17,12 +17,10 @@ type NewAdventureSheetProps = {
 
 type CandidatesResponse = {
   candidates?: AdventureHookCandidate[];
-  message?: string;
 };
 
 type StartResponse = {
   sessionId?: string;
-  message?: string;
 };
 
 const FAMILY_ICONS: Record<AdventureSourceFamily, string> = {
@@ -61,7 +59,7 @@ export function NewAdventureSheetLocalized({
         );
         const body = (await response.json()) as CandidatesResponse;
         if (!response.ok) {
-          setError(body.message ?? t("loadFailed"));
+          setError(t("loadFailed"));
           return;
         }
         setCandidates(body.candidates ?? []);
@@ -145,7 +143,7 @@ export function NewAdventureSheetLocalized({
       );
       const body = (await response.json()) as StartResponse;
       if (!response.ok || !body.sessionId) {
-        setError(body.message ?? t("startFailed"));
+        setError(t("startFailed"));
         return;
       }
       window.location.assign(

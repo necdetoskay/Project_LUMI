@@ -15,7 +15,6 @@ type AdventureHubResponse = {
 };
 type StoriesResponse = {
   adventureHub?: AdventureHubResponse;
-  message?: string;
 };
 
 export function ProfileStoriesSectionLocalized({
@@ -55,7 +54,7 @@ export function ProfileStoriesSectionLocalized({
       const body = (await response.json()) as StoriesResponse;
       if (!response.ok) {
         setAdventureHub(null);
-        setError(body.message ?? t("load.unavailable"));
+        setError(t("load.unavailable"));
         return;
       }
       setAdventureHub(
