@@ -171,9 +171,11 @@ export async function getOnboardingFoundationGenerationProvenance(
       : undefined;
   };
 
+  const genesis = mapTrace("character_origin_suggestions", "character_genesis");
+  const saga = mapTrace("character_core_saga", "saga_foundation");
   return {
-    genesis: mapTrace("character_origin_suggestions", "character_genesis"),
-    saga: mapTrace("character_core_saga", "saga_foundation"),
+    ...(genesis ? { genesis } : {}),
+    ...(saga ? { saga } : {}),
   };
 }
 
