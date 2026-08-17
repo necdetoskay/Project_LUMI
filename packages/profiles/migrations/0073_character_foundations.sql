@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS profile.character_foundations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT character_foundations_version_check CHECK (version > 0),
-  CONSTRAINT character_foundations_bootstrap_status_check CHECK (bootstrap_status IN ('pending', 'running', 'completed', 'failed'))
+  CONSTRAINT character_foundations_bootstrap_status_check CHECK (bootstrap_status IN ('planned', 'pending', 'running', 'completed', 'failed'))
 );
 
 CREATE INDEX IF NOT EXISTS character_foundations_household_idx
