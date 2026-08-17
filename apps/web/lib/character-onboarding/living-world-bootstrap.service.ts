@@ -198,8 +198,7 @@ async function seedGenesisAdventureOpportunities(
   for (const rolePlan of result.plan.roles) {
     if (rolePlan.relationshipSeed <= 0) continue;
     const npcRef = result.manifest.materialized.find(
-      (ref) =>
-        ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
+      (ref) => ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
     );
     if (!npcRef) continue;
 
