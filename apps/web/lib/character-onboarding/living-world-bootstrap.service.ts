@@ -1,10 +1,20 @@
-import { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence/db";
+import {
+  InteractionOpportunityGenerator,
+  OpportunityDeliveryService,
+  type PerceptionWindow,
+} from "@lumi/npc-intelligence";
+import {
+  DrizzleNpcSnapshotRepository,
+  DrizzleOpportunityInboxRepository,
+  getNpcDb,
+} from "@lumi/npc-intelligence/db";
 import {
   DrizzleLivingWorldBootstrapManifestStore,
   LivingWorldBootstrapService,
   ensureBootstrapNpcIdentity,
   ensureBootstrapRelationship,
   getCharacterFoundationByCharacterId,
+  type CharacterFoundationRecord,
   type LivingWorldBootstrapMaterializer,
   type LivingWorldBootstrapResult,
 } from "@lumi/profiles";
@@ -142,6 +152,92 @@ class CanonicalLivingWorldBootstrapMaterializer
   }
 }
 
+export function buildGenesisOpportunityWindow(input: {
+  foundation: CharacterFoundationRecord;
+  npcId: string;
+  locationId: string;
+  locationName: string;
+  reachedAt: Date;
+}): PerceptionWindow {
+  return {
+    npcId: input.npcId,
+    householdId: input.foundation.householdId,
+    atLocationId: input.locationId,
+    perceivedFacts: [
+      {
+        factId: `genesis-location:${input.locationId}`,
+        category: "location",
+        claim: input.locationName,
+        observedAt: input.reachedAt,
+        confidence: 1,
+        sensitivity: "safe",
+        source: "observation",
+      },
+    ],
+    nearbyCharacterIds: [input.foundation.characterId],
+    spatialProximity: { [input.foundation.characterId]: 1 },
+    timeSensitivity: 1,
+    reachedAt: input.reachedAt,
+  };
+}
+
+async function seedGenesisAdventureOpportunities(
+  foundation: CharacterFoundationRecord,
+  result: LivingWorldBootstrapResult,
+): Promise<void> {
+  const detail = await getWorldDetail(foundation.worldId);
+  const location = detail.locations[0];
+  if (!location) return;
+
+  const delivery = new OpportunityDeliveryService(
+    new DrizzleOpportunityInboxRepository(getNpcDb()),
+  );
+  const generator = new InteractionOpportunityGenerator();
+  const now = new Date();
+
+  for (const rolePlan of result.plan.roles) {
+    if (rolePlan.relationshipSeed <= 0) continue;
+    const npcRef = result.manifest.materialized.find(
+      (ref) =>
+        ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
+    );
+    if (!npcRef) continue;
+
+    const generated = generator.generate({
+      npcId: npcRef.entityId,
+      householdId: foundation.householdId,
+      childProfileId: foundation.childProfileId,
+      window: buildGenesisOpportunityWindow({
+        foundation,
+        npcId: npcRef.entityId,
+        locationId: location.id,
+        locationName: location.displayName,
+        reachedAt: now,
+      }),
+      beliefs: [],
+      relationshipTrust: {
+        [foundation.characterId]: rolePlan.relationshipSeed,
+      },
+      ownedItems: {},
+      pendingConditions: {},
+      forbiddenOpportunityTypes: [],
+      firedCooldownKeys: new Set<string>(),
+      expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      seed: `${result.manifest.idempotencyKey}:${npcRef.entityId}:initial-opportunity`,
+      maxOpportunities: 1,
+    });
+
+    const opportunity = generated.opportunities[0];
+    if (!opportunity) continue;
+
+    await delivery.deliver({
+      householdId: foundation.householdId,
+      idempotencyKey: `${result.manifest.idempotencyKey}:initial-opportunity:${npcRef.entityId}:${opportunity.opportunityType}`,
+      opportunity,
+    });
+  }
+}
+
 export async function runLivingWorldBootstrapForCharacter(
   characterId: string,
 ): Promise<LivingWorldBootstrapResult> {
@@ -152,5 +248,7 @@ export async function runLivingWorldBootstrapForCharacter(
     new CanonicalLivingWorldBootstrapMaterializer(),
     new DrizzleLivingWorldBootstrapManifestStore(),
   );
-  return service.run(foundation);
+  const result = await service.run(foundation);
+  await seedGenesisAdventureOpportunities(foundation, result);
+  return result;
 }
