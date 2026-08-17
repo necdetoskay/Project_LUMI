@@ -282,8 +282,7 @@ function classifyConfidence(
 ): FoundationDerivationConfidence {
   if (evidence.ambiguous || gaps.length >= 5) return "low";
   const factCount =
-    (evidence.knownFacts?.length ?? 0) +
-    (evidence.currentBeliefs?.length ?? 0);
+    (evidence.knownFacts?.length ?? 0) + (evidence.currentBeliefs?.length ?? 0);
   if (evidence.priorStoryCount >= 5 && factCount >= 3 && gaps.length <= 2) {
     return "high";
   }
