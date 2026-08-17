@@ -76,7 +76,9 @@ const ARCHETYPE_ROLE_SETS: Readonly<
   chosen_by_accident: ["mentor", "friend", "unknown_presence"],
 };
 
-const ROLE_RELATIONSHIP_SEEDS: Readonly<Partial<Record<SocialEcologyRoleType, number>>> = {
+const ROLE_RELATIONSHIP_SEEDS: Readonly<
+  Partial<Record<SocialEcologyRoleType, number>>
+> = {
   caregiver: 0.7,
   friend: 0.55,
   mentor: 0.45,
@@ -189,7 +191,9 @@ function normalizeExplicitRoles(
   return roles.map((role) => ({ ...role }));
 }
 
-function deriveRoleTypes(foundation: CharacterFoundationRecord): SocialEcologyRoleType[] {
+function deriveRoleTypes(
+  foundation: CharacterFoundationRecord,
+): SocialEcologyRoleType[] {
   const explicit = foundation.genesis.socialEcology;
   if (explicit.length > 0) {
     return [...new Set(explicit.map((role) => role.roleType))];
@@ -223,7 +227,8 @@ export function planLivingWorldBootstrap(
 
     return {
       role,
-      identityHint: role.materializationHint ?? identityHintForRole(foundation, roleType),
+      identityHint:
+        role.materializationHint ?? identityHintForRole(foundation, roleType),
       relationshipSeed: ROLE_RELATIONSHIP_SEEDS[roleType] ?? 0,
       needTypes: needTypesForRole(roleType),
       support,
@@ -258,14 +263,20 @@ function appendRef(
   return { ...manifest, materialized: [...manifest.materialized, ref] };
 }
 
+function clearFailureCode(
+  manifest: LivingWorldBootstrapManifest,
+): Omit<LivingWorldBootstrapManifest, "failureCode"> {
+  const { failureCode: _failureCode, ...rest } = manifest;
+  return rest;
+}
+
 function runningManifest(
   manifest: LivingWorldBootstrapManifest,
   now: Date,
 ): LivingWorldBootstrapManifest {
   return {
-    ...manifest,
+    ...clearFailureCode(manifest),
     status: "running",
-    failureCode: undefined,
     updatedAt: now,
   };
 }
@@ -320,7 +331,7 @@ export class LivingWorldBootstrapService {
         });
         manifest = appendRef(manifest, {
           kind: "relationship",
-          authority: "npc_intelligence.npc_snapshots",
+          authority: "profile.character_relationships+npc_intelligence.npc_snapshots",
           entityId: materialized.relationshipEntityId,
           genesisRoleId: rolePlan.role.id,
           reused: materialized.relationshipReused,
@@ -332,9 +343,8 @@ export class LivingWorldBootstrapService {
       }
 
       manifest = {
-        ...manifest,
+        ...clearFailureCode(manifest),
         status: "completed",
-        failureCode: undefined,
         updatedAt: this.now(),
       };
       await this.store.save(foundation, manifest);
