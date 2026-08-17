@@ -153,7 +153,7 @@ class CanonicalLivingWorldBootstrapMaterializer
 }
 
 export function buildGenesisOpportunityWindow(input: {
-  foundation: CharacterFoundationRecord;
+  foundation: Pick<CharacterFoundationRecord, "householdId" | "characterId">;
   npcId: string;
   locationId: string;
   locationName: string;
