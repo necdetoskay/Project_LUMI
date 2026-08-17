@@ -1,4 +1,4 @@
-name: LUMI Live Login Smoke
+name: LUMI Live Production Smoke
 
 on:
   workflow_dispatch:
@@ -8,14 +8,15 @@ on:
     paths:
       - .github/workflows/lumi-live-login-smoke.yml
       - apps/web/tests/e2e/long-horizon/login-smoke.live.spec.ts
+      - apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts
 
 permissions:
   contents: read
 
 jobs:
-  login-smoke:
+  live-smoke:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       LUMI_LONG_HORIZON_LIVE: "1"
       LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
@@ -37,5 +38,9 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
-      - name: Verify production login only
-        run: pnpm --filter @lumi/web exec playwright test --config playwright.long-horizon-live.config.ts tests/e2e/long-horizon/login-smoke.live.spec.ts
+      - name: Verify production login and Stories UX v2
+        run: |
+          pnpm --filter @lumi/web exec playwright test \
+            --config playwright.long-horizon-live.config.ts \
+            tests/e2e/long-horizon/login-smoke.live.spec.ts \
+            tests/e2e/long-horizon/stories-smoke.live.spec.ts
