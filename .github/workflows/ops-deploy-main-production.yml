@@ -13,18 +13,18 @@ jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch canonical Vercel production workflow on main
+      - name: Dispatch format fix for Stories stabilization branch
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          payload='{"ref":"main","inputs":{"target":"production"}}'
+          payload='{"ref":"main","inputs":{"branch":"stabilize/stories-ux-v2-release"}}'
           curl --fail-with-body --silent --show-error \
             --request POST \
             --header "Authorization: Bearer $GH_TOKEN" \
             --header "Accept: application/vnd.github+json" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             --data "$payload" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/vercel-deploy.yml/dispatches"
-          echo "Canonical production deploy dispatched for main."
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/format-fix.yml/dispatches"
+          echo "Format fix dispatched for Stories stabilization branch."
