@@ -9,5 +9,6 @@ export * from "./application/character-foundation-finalization.service";
 export * from "./application/living-world-bootstrap.service";
 export * from "./application/living-world-bootstrap-manifest.store";
 export * from "./application/living-world-bootstrap-profile-materializer.service";
+export * from "./application/legacy-character-foundation-backfill.service";
 export * from "./application/npc-context-reader.service";
 export * from "./adapters";
