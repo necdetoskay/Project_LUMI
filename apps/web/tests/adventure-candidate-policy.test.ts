@@ -27,6 +27,7 @@ function candidate(
 }
 
 describe("Genesis adventure candidate policy", () => {
+  // Regression: family-aware windows prevent large inventories from starving real Genesis sources.
   it("keeps a real world event in the first window even with a large inventory", () => {
     const inventory = Array.from({ length: 100 }, (_, index) =>
       candidate(`inventory:${index}`, "inventory_item"),
