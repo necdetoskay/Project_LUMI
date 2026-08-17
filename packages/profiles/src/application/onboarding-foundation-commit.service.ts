@@ -151,6 +151,7 @@ export async function getOnboardingFoundationGenerationProvenance(
       ),
     )
     .orderBy(desc(aiGenerationTraces.createdAt));
+
   const mapTrace = (
     taskType: string,
     intent: string,
@@ -169,6 +170,7 @@ export async function getOnboardingFoundationGenerationProvenance(
         }
       : undefined;
   };
+
   return {
     genesis: mapTrace("character_origin_suggestions", "character_genesis"),
     saga: mapTrace("character_core_saga", "saga_foundation"),
@@ -196,6 +198,7 @@ export function buildOnboardingFoundationRecord(
   const facts = acceptedFacts(input.evidence);
   const sagaCanonId = `saga:${input.characterId}`;
   const deepTruth = `${input.evidence.origin.storyHook} görünen açıklamanın ötesinde, ${input.evidence.saga.title} ile bağlantılı henüz bilinmeyen daha eski bir gerçeğin işaretidir.`;
+
   const record: CharacterFoundationRecord = {
     id: `foundation:${input.characterId}`,
     householdId: input.householdId,
@@ -292,6 +295,7 @@ export function buildOnboardingFoundationRecord(
     createdAt: now,
     updatedAt: now,
   };
+
   validateCharacterFoundation(record);
   return record;
 }
@@ -309,10 +313,11 @@ export async function saveOnboardingFoundationIdempotently(
       householdId: foundation.householdId,
       version: foundation.version,
       foundation,
-      bootstrapStatus: "pending",
+      bootstrapStatus: "planned",
       bootstrapRunId: foundation.bootstrapManifest?.idempotencyKey,
     })
     .onConflictDoNothing({ target: characterFoundations.characterId });
+
   const [row] = await db
     .select({ foundation: characterFoundations.foundation })
     .from(characterFoundations)
@@ -327,6 +332,31 @@ export async function saveOnboardingFoundationIdempotently(
   if (!row) throw new Error("CHARACTER_FOUNDATION_PERSIST_FAILED");
   validateCharacterFoundation(row.foundation);
   return row.foundation;
+}
+
+export async function activateOnboardingFoundationBootstrap(
+  characterId: string,
+  idempotencyKey: string,
+): Promise<"pending"> {
+  const db = getProfileDb();
+  const updated = await db
+    .update(characterFoundations)
+    .set({
+      bootstrapStatus: "pending",
+      bootstrapRunId: idempotencyKey,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(characterFoundations.characterId, characterId),
+        eq(characterFoundations.bootstrapRunId, idempotencyKey),
+      ),
+    )
+    .returning({ characterId: characterFoundations.characterId });
+  if (updated.length === 0) {
+    throw new Error("CHARACTER_FOUNDATION_BOOTSTRAP_ACTIVATION_FAILED");
+  }
+  return "pending";
 }
 
 export async function getCharacterFoundationByCharacterId(
