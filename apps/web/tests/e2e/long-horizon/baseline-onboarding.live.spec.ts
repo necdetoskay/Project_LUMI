@@ -172,12 +172,18 @@ function extractId(pathname: string, pattern: RegExp, label: string): string {
 }
 
 async function openStoriesTab(page: Page): Promise<void> {
-  const storiesTab = page.getByRole("button", {
+  const storiesButton = page.getByRole("button", {
     name: "Hikâyeler",
     exact: true,
   });
-  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
-  await storiesTab.click();
+  const storiesLink = page.getByRole("link", {
+    name: "Hikâyeler",
+    exact: true,
+  });
+  const storiesControl =
+    (await storiesButton.count()) > 0 ? storiesButton.first() : storiesLink.first();
+  await expect(storiesControl).toBeVisible({ timeout: 60_000 });
+  await storiesControl.click();
   await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
     timeout: 60_000,
   });
