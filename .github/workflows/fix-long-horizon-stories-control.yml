@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Patch stories navigation locator
-        shell: python
+        shell: python {0}
         run: |
           from pathlib import Path
           p = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
