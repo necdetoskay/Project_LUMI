@@ -191,10 +191,18 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await expect(
       page.getByRole("button", { name: "Kapat", exact: true }),
     ).toBeFocused();
-    await expect(page.getByText("Dünyada Bir Şey Oldu")).toBeVisible();
-    await expect(page.getByText("Bir Söylenti Duydun")).toBeVisible();
-    await expect(page.getByText("Çantandaki Bir Eşya")).toBeVisible();
-    await expect(page.getByText("Birinden Gelen Çağrı")).toBeVisible();
+    await expect(
+      page.getByText("Dünyada Bir Şey Oldu", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Bir Söylenti Duydun", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Çantandaki Bir Eşya", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Birinden Gelen Çağrı", { exact: true }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Başka maceralar göster" }).click();
     await expect(page.getByText("Parlayan orman 2")).toBeVisible();
@@ -227,13 +235,20 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(
-      page.getByText("Something Happened in the World"),
+      page.getByText("Something Happened in the World", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("An Item in Your Bag")).toBeVisible();
-    await expect(page.getByText("A Call from Someone")).toBeVisible();
+    await expect(
+      page.getByText("An Item in Your Bag", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("A Call from Someone", { exact: true }),
+    ).toBeVisible();
     await assertNoHorizontalOverflow(page);
 
-    const closeButton = page.getByRole("button", { name: "Close" });
+    const closeButton = page.getByRole("button", {
+      name: "Close",
+      exact: true,
+    });
     const refreshButton = page.getByRole("button", {
       name: "Show other adventures",
     });
@@ -243,7 +258,12 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await page.keyboard.press("Tab");
     await expect(closeButton).toBeFocused();
 
-    await page.getByRole("button", { name: "Follow this clue" }).click();
+    const worldCard = page
+      .getByTestId("adventure-candidate")
+      .filter({ hasText: "Parlayan orman" });
+    await worldCard
+      .getByRole("button", { name: "Follow this clue", exact: true })
+      .click();
     await page.waitForURL("**/app/stories/e2e-session");
     expect(mocked.getStartedCandidateId()).toBe("world-0");
   });
