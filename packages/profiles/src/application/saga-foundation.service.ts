@@ -215,7 +215,11 @@ export function validateTruthKnowledgeBeliefInvariant(
   const identicalKnowledgeBelief = knowledge.some((fact) =>
     beliefs.includes(fact),
   );
-  if (identicalKnowledgeBelief && knowledge.length === 1 && beliefs.length === 1) {
+  if (
+    identicalKnowledgeBelief &&
+    knowledge.length === 1 &&
+    beliefs.length === 1
+  ) {
     throw new ValidationError(
       "SAGA_KNOWLEDGE_EQUALS_BELIEF",
       "Character knowledge and current belief must not collapse into the same single statement",
@@ -310,7 +314,11 @@ function validateContext(context: SagaFoundationContext): void {
       );
     }
   }
-  if (!Number.isInteger(context.childAge) || context.childAge < 2 || context.childAge > 17) {
+  if (
+    !Number.isInteger(context.childAge) ||
+    context.childAge < 2 ||
+    context.childAge > 17
+  ) {
     throw new ValidationError(
       "INVALID_SAGA_CHILD_AGE",
       "Saga Foundation requires a child age between 2 and 17",
@@ -394,9 +402,17 @@ function validateDraftAgainstGenesis(
 function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
   const record = asRecord(value, "sagaFoundation");
   const tension = asRecord(record.coreTension, "coreTension");
-  const forces = stringList(tension.opposingForces, "coreTension.opposingForces", 2, 2);
+  const forces = stringList(
+    tension.opposingForces,
+    "coreTension.opposingForces",
+    2,
+    2,
+  );
   const timeScales = asRecord(record.timeScales, "timeScales");
-  const immediate = asRecord(timeScales.immediateNeed, "timeScales.immediateNeed");
+  const immediate = asRecord(
+    timeScales.immediateNeed,
+    "timeScales.immediateNeed",
+  );
   const medium = asRecord(timeScales.mediumArc, "timeScales.mediumArc");
   const core = asRecord(timeScales.coreSaga, "timeScales.coreSaga");
   const canon = asRecord(record.canon, "canon");
@@ -406,7 +422,11 @@ function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
     coreTension: {
       question: requiredText(tension.question, "coreTension.question", 1_000),
       opposingForces: [forces[0]!, forces[1]!],
-      whyItPersists: requiredText(tension.whyItPersists, "coreTension.whyItPersists", 1_200),
+      whyItPersists: requiredText(
+        tension.whyItPersists,
+        "coreTension.whyItPersists",
+        1_200,
+      ),
       ordinaryLifePressure: requiredText(
         tension.ordinaryLifePressure,
         "coreTension.ordinaryLifePressure",
@@ -415,7 +435,11 @@ function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
     },
     timeScales: {
       immediateNeed: {
-        goal: requiredText(immediate.goal, "timeScales.immediateNeed.goal", 800),
+        goal: requiredText(
+          immediate.goal,
+          "timeScales.immediateNeed.goal",
+          800,
+        ),
         horizon: literal(
           immediate.horizon,
           "one_to_few_stories",
@@ -440,10 +464,22 @@ function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
       },
     },
     canon: {
-      centralQuestion: requiredText(canon.centralQuestion, "canon.centralQuestion", 1_000),
+      centralQuestion: requiredText(
+        canon.centralQuestion,
+        "canon.centralQuestion",
+        1_000,
+      ),
       deepTruth: requiredText(canon.deepTruth, "canon.deepTruth", 2_500),
-      longTermDesire: requiredText(canon.longTermDesire, "canon.longTermDesire", 1_000),
-      fundamentalFear: requiredText(canon.fundamentalFear, "canon.fundamentalFear", 1_000),
+      longTermDesire: requiredText(
+        canon.longTermDesire,
+        "canon.longTermDesire",
+        1_000,
+      ),
+      fundamentalFear: requiredText(
+        canon.fundamentalFear,
+        "canon.fundamentalFear",
+        1_000,
+      ),
       stakes: requiredText(canon.stakes, "canon.stakes", 1_500),
       hiddenForces: stringList(canon.hiddenForces, "canon.hiddenForces", 0, 8),
       possibleTransformations: stringList(
@@ -461,7 +497,12 @@ function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
       ),
     },
     progression: {
-      knownFacts: stringList(progression.knownFacts, "progression.knownFacts", 1, 12),
+      knownFacts: stringList(
+        progression.knownFacts,
+        "progression.knownFacts",
+        1,
+        12,
+      ),
       currentBeliefs: stringList(
         progression.currentBeliefs,
         "progression.currentBeliefs",
@@ -474,14 +515,24 @@ function parseSagaFoundationDraft(value: unknown): SagaFoundationDraft {
         0,
         12,
       ),
-      falseLeads: stringList(progression.falseLeads, "progression.falseLeads", 0, 8),
+      falseLeads: stringList(
+        progression.falseLeads,
+        "progression.falseLeads",
+        0,
+        8,
+      ),
       unresolvedQuestions: stringList(
         progression.unresolvedQuestions,
         "progression.unresolvedQuestions",
         1,
         12,
       ),
-      revealStage: integer(progression.revealStage, "progression.revealStage", 0, 100),
+      revealStage: integer(
+        progression.revealStage,
+        "progression.revealStage",
+        0,
+        100,
+      ),
     },
   };
 }
@@ -498,9 +549,22 @@ function parseRevealLayers(value: unknown): SagaCanon["revealLayers"] {
     const record = asRecord(entry, `canon.revealLayers[${index}]`);
     return {
       id: requiredText(record.id, `canon.revealLayers[${index}].id`, 120),
-      order: integer(record.order, `canon.revealLayers[${index}].order`, 0, 100),
-      label: requiredText(record.label, `canon.revealLayers[${index}].label`, 160),
-      reveal: requiredText(record.reveal, `canon.revealLayers[${index}].reveal`, 1_200),
+      order: integer(
+        record.order,
+        `canon.revealLayers[${index}].order`,
+        0,
+        100,
+      ),
+      label: requiredText(
+        record.label,
+        `canon.revealLayers[${index}].label`,
+        160,
+      ),
+      reveal: requiredText(
+        record.reveal,
+        `canon.revealLayers[${index}].reveal`,
+        1_200,
+      ),
       prerequisites: stringList(
         record.prerequisites,
         `canon.revealLayers[${index}].prerequisites`,
@@ -513,13 +577,21 @@ function parseRevealLayers(value: unknown): SagaCanon["revealLayers"] {
 
 function asRecord(value: unknown, field: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new ValidationError("INVALID_SAGA_FOUNDATION_OUTPUT", `${field} must be an object`, field);
+    throw new ValidationError(
+      "INVALID_SAGA_FOUNDATION_OUTPUT",
+      `${field} must be an object`,
+      field,
+    );
   }
   return value as Record<string, unknown>;
 }
 
 function requiredText(value: unknown, field: string, max: number): string {
-  if (typeof value !== "string" || value.trim().length === 0 || value.length > max) {
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0 ||
+    value.length > max
+  ) {
     throw new ValidationError(
       "INVALID_SAGA_FOUNDATION_TEXT",
       `${field} must be between 1 and ${max} characters`,
@@ -542,7 +614,9 @@ function stringList(
       field,
     );
   }
-  const result = value.map((entry, index) => requiredText(entry, `${field}[${index}]`, 1_500));
+  const result = value.map((entry, index) =>
+    requiredText(entry, `${field}[${index}]`, 1_500),
+  );
   if (new Set(result.map(normalize)).size !== result.length) {
     throw new ValidationError(
       "DUPLICATE_SAGA_FOUNDATION_VALUE",
@@ -553,8 +627,17 @@ function stringList(
   return result;
 }
 
-function integer(value: unknown, field: string, min: number, max: number): number {
-  if (!Number.isInteger(value) || (value as number) < min || (value as number) > max) {
+function integer(
+  value: unknown,
+  field: string,
+  min: number,
+  max: number,
+): number {
+  if (
+    !Number.isInteger(value) ||
+    (value as number) < min ||
+    (value as number) > max
+  ) {
     throw new ValidationError(
       "INVALID_SAGA_FOUNDATION_INTEGER",
       `${field} must be an integer between ${min} and ${max}`,
@@ -564,7 +647,11 @@ function integer(value: unknown, field: string, min: number, max: number): numbe
   return value as number;
 }
 
-function literal<T extends string>(value: unknown, expected: T, field: string): T {
+function literal<T extends string>(
+  value: unknown,
+  expected: T,
+  field: string,
+): T {
   if (value !== expected) {
     throw new ValidationError(
       "INVALID_SAGA_FOUNDATION_LITERAL",

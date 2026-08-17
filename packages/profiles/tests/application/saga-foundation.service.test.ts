@@ -71,7 +71,9 @@ describe("saga foundation", () => {
     const result = await buildSagaFoundation(CONTEXT, deps());
 
     expect(result.progression.knownFacts).not.toContain(result.canon.deepTruth);
-    expect(result.progression.currentBeliefs).not.toContain(result.canon.deepTruth);
+    expect(result.progression.currentBeliefs).not.toContain(
+      result.canon.deepTruth,
+    );
     expect(() =>
       validateTruthKnowledgeBeliefInvariant(result.canon, {
         ...result.progression,
@@ -282,7 +284,10 @@ function foundationDraft(): {
           label: "The old dragon role",
           reveal:
             "Old dragons were bridge companions who strengthened cooperation; they were not rulers or chosen monarchs.",
-          prerequisites: ["two bridge towers understood", "a conflicting legend encountered"],
+          prerequisites: [
+            "two bridge towers understood",
+            "a conflicting legend encountered",
+          ],
         },
         {
           id: "layer-3",
