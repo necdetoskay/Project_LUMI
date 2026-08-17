@@ -8,6 +8,7 @@ on:
       - .github/workflows/lumi-long-horizon-repair.yml
       - apps/web/tests/e2e/long-horizon/**
       - apps/web/playwright.long-horizon-live.config.ts
+      - packages/profiles/src/application/llm-settings/openrouter-client.ts
 
 permissions:
   contents: read
@@ -20,8 +21,8 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
       VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      VERCEL_PROJECT_NAME: project-lumi-web
       LUMI_LONG_HORIZON_LIVE: "1"
-      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-47djmdws3-necdetoskay-8234s-projects.vercel.app
       LUMI_LONG_HORIZON_CHILD_AGE: "6"
       LUMI_LONG_HORIZON_RNG_SEED: ""
       LUMI_LONG_HORIZON_RUN_ID: ""
@@ -38,6 +39,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
       - name: Guard repair credentials
         shell: bash
         run: |
@@ -45,6 +47,7 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
           test -n "${VERCEL_TOKEN}"
+
       - name: Patch brittle locators for repair run
         shell: bash
         run: |
@@ -62,9 +65,71 @@ jobs:
               text = text.replace(old_profile, new_profile, 1)
           path.write_text(text)
           PY
+
+      - name: Create fresh repair Preview deployment
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          request="$RUNNER_TEMP/vercel-repair-deployment.json"
+          response="$RUNNER_TEMP/vercel-repair-deployment-response.json"
+          jq -n \
+            --arg name "$VERCEL_PROJECT_NAME" \
+            --arg project "$VERCEL_PROJECT_ID" \
+            --arg org "$GITHUB_REPOSITORY_OWNER" \
+            --arg repo "${GITHUB_REPOSITORY#*/}" \
+            --arg ref "$GITHUB_REF_NAME" \
+            --arg sha "$GITHUB_SHA" \
+            '{name:$name,project:$project,gitSource:{type:"github",org:$org,repo:$repo,ref:$ref,sha:$sha}}' > "$request"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --output "$response" \
+            --header "Authorization: Bearer $VERCEL_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$request" \
+            "https://api.vercel.com/v13/deployments?teamId=$VERCEL_ORG_ID"
+          deployment_id="$(jq -r '.id // empty' "$response")"
+          deployment_url="$(jq -r '.url // empty' "$response")"
+          target="$(jq -r '.target // empty' "$response")"
+          test -n "$deployment_id"
+          test -n "$deployment_url"
+          test "$target" != "production"
+          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=https://$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for repair Preview READY
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.deployment_id }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 120); do
+            response="$RUNNER_TEMP/vercel-repair-status.json"
+            curl --fail-with-body --silent --show-error \
+              --output "$response" \
+              --header "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID"
+            state="$(jq -r '.readyState // .state // empty' "$response")"
+            target="$(jq -r '.target // empty' "$response")"
+            test "$target" != "production"
+            if [ "$state" = "READY" ]; then
+              echo "Repair Preview READY: $DEPLOYMENT_ID"
+              exit 0
+            fi
+            if [ "$state" = "ERROR" ] || [ "$state" = "CANCELED" ]; then
+              echo "Repair Preview ended in $state"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Repair Preview did not become READY within 10 minutes"
+          exit 1
+
       - name: Create temporary Vercel automation bypass
         id: bypass
         shell: bash
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment_url }}
         run: |
           set -euo pipefail
           secret="$(openssl rand -hex 16)"
@@ -77,13 +142,25 @@ jobs:
             --header "Content-Type: application/json" \
             --data-binary "@$request" \
             "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
+          result="$(curl --silent --show-error --location --max-redirs 5 --output /dev/null --write-out '%{http_code}|%{url_effective}' \
+            --header "x-vercel-protection-bypass: $secret" \
+            --header "x-vercel-set-bypass-cookie: true" \
+            "$PREVIEW_URL/login")"
+          status="${result%%|*}"
+          final_url="${result#*|}"
+          test "$status" = "200"
+          [[ "$final_url" != *"/sso-api"* ]]
           echo "secret=$secret" >> "$GITHUB_OUTPUT"
+
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+
       - name: Run persistent age-6 repair acceptance
         env:
+          LUMI_LONG_HORIZON_BASE_URL: ${{ steps.deploy.outputs.deployment_url }}
           LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ steps.bypass.outputs.secret }}
         run: pnpm --filter @lumi/web exec playwright test --config playwright.long-horizon-live.config.ts tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+
       - name: Upload repair evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,6 +169,7 @@ jobs:
           path: apps/web/tests/e2e/long-horizon/evidence/
           if-no-files-found: warn
           retention-days: 30
+
       - name: Revoke temporary Vercel automation bypass
         if: always() && steps.bypass.outputs.secret != ''
         shell: bash
