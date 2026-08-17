@@ -50,9 +50,9 @@ describe("impact-aware generation routing", () => {
 
   it("maps bootstrap work to Tier A and presentation work to Tier B", () => {
     expect(getGenerationRoutingPolicy("living_world_bootstrap").tier).toBe("A");
-    expect(getGenerationRoutingPolicy("adventure_opportunity_generation").tier).toBe(
-      "A",
-    );
+    expect(
+      getGenerationRoutingPolicy("adventure_opportunity_generation").tier,
+    ).toBe("A");
     expect(getGenerationRoutingPolicy("adventure_teaser").tier).toBe("B");
     expect(getGenerationRoutingPolicy("story_recap").tier).toBe("B");
   });
@@ -100,11 +100,24 @@ describe("impact-aware generation routing", () => {
     expect(getTierDefaultModelForTesting("B")).toBe("vendor/fast-model");
   });
 
-  it("falls back to the general deployment model when a tier override is absent", () => {
+  it("allows an explicit general deployment model for Tier S", () => {
     delete process.env.LUMI_TIER_S_DEFAULT_MODEL;
     process.env.LUMI_DEFAULT_OPENROUTER_MODEL = "vendor/general-model";
 
     expect(getTierDefaultModelForTesting("S")).toBe("vendor/general-model");
+  });
+
+  it("does not silently use the built-in cheap fallback for Tier S", () => {
+    delete process.env.LUMI_TIER_S_DEFAULT_MODEL;
+    delete process.env.LUMI_DEFAULT_OPENROUTER_MODEL;
+
+    expect(getTierDefaultModelForTesting("S")).toBeNull();
+    expect(getTierDefaultModelForTesting("A")).toBe(
+      "aion-labs/aion-3.0-mini",
+    );
+    expect(getTierDefaultModelForTesting("B")).toBe(
+      "aion-labs/aion-3.0-mini",
+    );
   });
 
   it("produces trace metadata containing intent, tier, model and route source", () => {
