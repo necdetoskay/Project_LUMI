@@ -120,6 +120,14 @@ export async function resolveGenerationRoute(
   }
 
   const modelId = tierDefaultModel(policy.tier);
+  if (!modelId) {
+    throw new ValidationError(
+      "FOUNDATION_CRITICAL_MODEL_NOT_CONFIGURED",
+      `Tier S generation route ${intent} requires an explicit household model or LUMI_TIER_S_DEFAULT_MODEL`,
+      "generationIntent",
+    );
+  }
+
   return {
     ...policy,
     provider: "openrouter",
@@ -173,7 +181,7 @@ export function buildGenerationTraceRoutingMetadata(
 
 export function getTierDefaultModelForTesting(
   tier: GenerationCriticalityTier,
-): string {
+): string | null {
   return tierDefaultModel(tier);
 }
 
@@ -222,7 +230,7 @@ function operational(taskType: LlmTaskType): GenerationRoutingPolicy {
   };
 }
 
-function tierDefaultModel(tier: GenerationCriticalityTier): string {
+function tierDefaultModel(tier: GenerationCriticalityTier): string | null {
   const envName =
     tier === "S"
       ? "LUMI_TIER_S_DEFAULT_MODEL"
@@ -235,5 +243,6 @@ function tierDefaultModel(tier: GenerationCriticalityTier): string {
   const general = process.env.LUMI_DEFAULT_OPENROUTER_MODEL?.trim();
   if (general) return general;
 
+  if (tier === "S") return null;
   return "aion-labs/aion-3.0-mini";
 }
