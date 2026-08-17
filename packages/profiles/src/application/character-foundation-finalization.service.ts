@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import {
   characterCreationCycles,
@@ -10,9 +10,7 @@ import {
 } from "../db/schema/profile";
 import type { AgeBand, BroadCharacterKind, CharacterType } from "../domain/types";
 import { getActiveCharacterCreationCycle } from "./character-creation-cycle.service";
-import {
-  type AcceptedOnboardingFoundationEvidence,
-} from "./onboarding-foundation-commit.service";
+import type { AcceptedOnboardingFoundationEvidence } from "./onboarding-foundation-commit.service";
 import { getProfileDb } from "./db";
 
 function broadKindFromCanonical(value: unknown): BroadCharacterKind {
@@ -42,34 +40,27 @@ function readEvidence(summary: Record<string, unknown>): AcceptedOnboardingFound
   const region = summary.region as AcceptedOnboardingFoundationEvidence["region"] | undefined;
   const origin = summary.origin as AcceptedOnboardingFoundationEvidence["origin"] | undefined;
   const saga = summary.coreSaga as AcceptedOnboardingFoundationEvidence["saga"] | undefined;
-  if (!identity || !universe || !world || !region || !origin || !saga) {
-    throw new Error("FOUNDATION_INCOMPLETE");
-  }
-  return {
-    characterType: summary.characterType,
-    identity,
-    universe,
-    world,
-    ...(compatibility ? { compatibility } : {}),
-    region,
-    origin,
-    saga,
-  };
+  if (!identity || !universe || !world || !region || !origin || !saga) throw new Error("FOUNDATION_INCOMPLETE");
+  return { characterType: summary.characterType, identity, universe, world, ...(compatibility ? { compatibility } : {}), region, origin, saga };
 }
 
 export async function prepareCharacterFoundationCommit(
   userId: string,
   input: { householdId: string; childProfileId: string },
 ) {
-  const cycle = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
-  if (!cycle || cycle.currentStep !== "final_review") throw new Error("FINAL_REVIEW_REQUIRED");
+  const active = await getActiveCharacterCreationCycle(userId, input.householdId, input.childProfileId);
+  const db = getProfileDb();
+  const [latest] = active ? [active] : await db.select().from(characterCreationCycles).where(and(
+    eq(characterCreationCycles.householdId, input.householdId),
+    eq(characterCreationCycles.childProfileId, input.childProfileId),
+  )).orderBy(desc(characterCreationCycles.updatedAt)).limit(1);
+  const cycle = active ?? latest;
+  const resumableCompleted = cycle?.status === "completed" && cycle.currentStep === "completed";
+  if (!cycle || (!resumableCompleted && cycle.currentStep !== "final_review")) throw new Error("FINAL_REVIEW_REQUIRED");
+
   const summary = (cycle.latestSummary ?? {}) as Record<string, unknown>;
   const evidence = readEvidence(summary);
-  const db = getProfileDb();
-
-  const existingCharacterId = typeof summary.committedCharacterId === "string"
-    ? summary.committedCharacterId
-    : null;
+  const existingCharacterId = typeof summary.committedCharacterId === "string" ? summary.committedCharacterId : null;
   if (existingCharacterId) {
     const [existing] = await db.select({ id: lumiCharacters.id }).from(lumiCharacters).where(and(
       eq(lumiCharacters.id, existingCharacterId),
@@ -79,10 +70,10 @@ export async function prepareCharacterFoundationCommit(
     if (!existing) throw new Error("PREPARED_CHARACTER_MISSING");
     return { characterId: existingCharacterId, cycleId: cycle.id, evidence };
   }
+  if (resumableCompleted) throw new Error("COMPLETED_FOUNDATION_CHARACTER_MISSING");
 
   const [child] = await db.select({ ageBand: childProfiles.ageBand }).from(childProfiles).where(and(
-    eq(childProfiles.id, input.childProfileId),
-    eq(childProfiles.householdId, input.householdId),
+    eq(childProfiles.id, input.childProfileId), eq(childProfiles.householdId, input.householdId),
   )).limit(1);
   const [policy] = await db.select({
     contentBoundary: parentalSettings.contentBoundary,
@@ -93,12 +84,7 @@ export async function prepareCharacterFoundationCommit(
   const characterId = crypto.randomUUID();
   const role = roleFromIdentity(evidence.identity);
   const broadKind = broadKindFromCanonical(evidence.characterType);
-  const firstOriginPackageId = crypto.randomUUID();
-  const latestSummary = {
-    ...summary,
-    committedCharacterId: characterId,
-    foundationCommitState: "prepared",
-  };
+  const latestSummary = { ...summary, committedCharacterId: characterId, foundationCommitState: "prepared" };
 
   await db.transaction(async (tx) => {
     await tx.insert(lumiCharacters).values({
@@ -110,7 +96,7 @@ export async function prepareCharacterFoundationCommit(
       characterType: role,
       subtype: evidence.identity.identity.slice(0, 80) || evidence.identity.name.slice(0, 80),
       originMode: "manual",
-      firstOriginPackageId,
+      firstOriginPackageId: crypto.randomUUID(),
       originConcept: evidence.origin.origin.slice(0, 500),
       startingRegionArchetype: evidence.region.name.slice(0, 120),
       startingLocation: evidence.region.description.slice(0, 200),
@@ -125,16 +111,12 @@ export async function prepareCharacterFoundationCommit(
       },
     });
     await tx.insert(characterGoals).values({
-      id: crypto.randomUUID(),
-      characterId,
-      needType: "core_saga",
+      id: crypto.randomUUID(), characterId, needType: "core_saga",
       description: `${evidence.saga.title}: ${evidence.saga.longTermGoal}`.slice(0, 500),
-      priority: 1,
-      status: "active",
+      priority: 1, status: "active",
     });
     await tx.update(characterCreationCycles).set({ latestSummary, updatedAt: new Date() }).where(eq(characterCreationCycles.id, cycle.id));
   });
-
   return { characterId, cycleId: cycle.id, evidence };
 }
 
@@ -159,21 +141,16 @@ export async function completeCharacterFoundationCommit(input: {
 
   await db.transaction(async (tx) => {
     await tx.insert(characterCreationSelections).values({
-      id: crypto.randomUUID(),
-      cycleId: input.cycleId,
-      childProfileId: input.childProfileId,
-      householdId: input.householdId,
-      stepKey: "final_review",
-      selectionKey: "commit",
+      id: crypto.randomUUID(), cycleId: input.cycleId,
+      childProfileId: input.childProfileId, householdId: input.householdId,
+      stepKey: "final_review", selectionKey: "commit",
       selectionPayload: { characterId: input.characterId, worldId: input.worldId, sagaKey: input.sagaKey },
       selectedBy: "user",
     });
     await tx.update(characterCreationCycles).set({
-      status: "completed",
-      currentStep: "completed",
+      status: "completed", currentStep: "completed",
       latestSummary: { ...summary, foundationCommitState: "committed", committedWorldId: input.worldId },
-      completedAt: new Date(),
-      updatedAt: new Date(),
+      completedAt: new Date(), updatedAt: new Date(),
     }).where(and(eq(characterCreationCycles.id, input.cycleId), eq(characterCreationCycles.status, "draft")));
   });
 }
