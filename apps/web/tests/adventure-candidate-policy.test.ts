@@ -3,6 +3,15 @@ import { describe, expect, it } from "vitest";
 import { selectAdventureCandidateWindow } from "@/lib/stories/adventure-candidate-policy";
 import type { AdventureHookCandidate } from "@/lib/stories/adventure-presentation";
 
+function ctaKeyForFamily(
+  sourceFamily: AdventureHookCandidate["sourceFamily"],
+): AdventureHookCandidate["ctaKey"] {
+  if (sourceFamily === "world_event") return "chooseWorldEvent";
+  if (sourceFamily === "rumor") return "investigateRumor";
+  if (sourceFamily === "npc_call") return "answerNpcCall";
+  return "followItem";
+}
+
 function candidate(
   id: string,
   sourceFamily: AdventureHookCandidate["sourceFamily"],
@@ -12,14 +21,7 @@ function candidate(
     sourceFamily,
     title: id,
     teaser: id,
-    ctaKey:
-      sourceFamily === "world_event"
-        ? "chooseWorldEvent"
-        : sourceFamily === "rumor"
-          ? "investigateRumor"
-          : sourceFamily === "npc_call"
-            ? "answerNpcCall"
-            : "followItem",
+    ctaKey: ctaKeyForFamily(sourceFamily),
     image: null,
   };
 }
