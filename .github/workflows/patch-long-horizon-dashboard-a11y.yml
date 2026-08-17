@@ -1,0 +1,34 @@
+name: Patch long-horizon dashboard accessible names
+on:
+  push:
+    branches:
+      - fix/long-horizon-dashboard-a11y-names
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: "${{ github.actor != 'github-actions[bot]' }}"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align live locators with accessible names
+        shell: python {0}
+        run: |
+          from pathlib import Path
+          p = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
+          s = p.read_text()
+          old = '  const storiesButton = page.getByRole("button", {\n    name: "Hikâyeler",\n    exact: true,\n  });\n  const storiesLink = page.getByRole("link", {\n    name: "Hikâyeler",\n    exact: true,\n  });\n  const storiesControl =\n    (await storiesButton.count()) > 0\n      ? storiesButton.first()\n      : storiesLink.first();\n  await expect(storiesControl).toBeVisible({ timeout: 60_000 });\n  await storiesControl.click();'
+          new = '  const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });\n  await expect(storiesTab).toBeVisible({ timeout: 60_000 });\n  await storiesTab.click();'
+          if old not in s:
+            raise SystemExit('stories locator block not found')
+          s = s.replace(old, new)
+          s = s.replace('.getByRole("button", { name: "Karakterler", exact: true })', '.getByRole("button", { name: /Karakterler$/ })')
+          s = s.replace('page.getByRole("link", { name: /Dünyasını aç/ })', 'page.getByRole("link", { name: /Dünyasına Git|Dünyasını aç/ })')
+          p.write_text(s)
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git commit -m "test(long-horizon): match dashboard accessible names"
+          git push
