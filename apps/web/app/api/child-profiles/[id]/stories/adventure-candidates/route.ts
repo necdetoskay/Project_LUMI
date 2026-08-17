@@ -24,10 +24,7 @@ import {
   getCharacterCurrentLocation,
   getWorldForCharacter,
 } from "@lumi/world/application";
-import {
-  DrizzleWorldEventReader,
-  getDatabase as getWorldDb,
-} from "@lumi/world/db";
+import { DrizzleWorldEventReader, getWorldDb } from "@lumi/world/db";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 const querySchema = z.object({
@@ -141,10 +138,7 @@ export const GET = observeHandler(
           const state = entry.getState();
           return projectOpportunityCandidate({
             id: state.id,
-            type:
-              state.opportunityType === "npc_interaction"
-                ? "invitation"
-                : state.opportunityType,
+            type: state.opportunityType,
             message: state.message,
             sourceNpcId: state.sourceNpcId,
             evidence: state.evidence,
