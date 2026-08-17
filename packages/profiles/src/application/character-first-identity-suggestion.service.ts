@@ -26,6 +26,7 @@ export async function generateCharacterFirstIdentitySuggestions(
     ...toPromptGenerationContext(assembled),
     characterType: summary.characterType as object,
     previousSelections: summary,
+    locale: generationContext.child.locale,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.character_first_identity_suggestions",

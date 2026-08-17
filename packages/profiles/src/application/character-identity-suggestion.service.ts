@@ -38,6 +38,7 @@ export async function generateCharacterIdentitySuggestions(
     ...toPromptGenerationContext(assembledContext),
     worldFeeling: summary.worldFeeling,
     characterArchetype: summary.characterArchetype,
+    locale: generationContext.child.locale,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.character_identity_suggestions",

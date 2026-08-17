@@ -62,6 +62,7 @@ export async function generateCharacterOriginSuggestions(
     },
     characterIdentity: summary.characterIdentity as object,
     previousSelections: summary,
+    locale: generationContext.child.locale,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.character_origin_suggestions",

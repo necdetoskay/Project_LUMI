@@ -101,6 +101,7 @@ async function generateSuggestions<T>(
   const context = {
     ...toPromptGenerationContext(assembled),
     previousSelections: summary,
+    locale: generationContext.child.locale,
     ...(spec.contextExtras?.(summary) ?? {}),
   };
   const prompt = await resolveActivePrompt(spec.promptKey, context);

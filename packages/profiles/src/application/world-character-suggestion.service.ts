@@ -40,6 +40,7 @@ export async function generateWorldCharacterSuggestions(
   const context = {
     ...toPromptGenerationContext(assembledContext),
     worldFeeling,
+    locale: generationContext.child.locale,
   };
   const prompt = await resolveActivePrompt(
     "character_onboarding.world_character_suggestions",

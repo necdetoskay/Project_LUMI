@@ -24,3 +24,6 @@ apps/web/tests/e2e/long-horizon/evidence/*
 .graphify_detect.json
 .graphify_python
 graphify-out/
+
+.vercel
+.env*
