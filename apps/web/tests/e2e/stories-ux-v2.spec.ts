@@ -163,6 +163,10 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(dimensions.bodyWidth).toBeLessThanOrEqual(dimensions.viewport);
 }
 
+function candidateCard(page: Page, title: string) {
+  return page.getByTestId("adventure-candidate").filter({ hasText: title });
+}
+
 test.describe("Stories UX v2 governed browser coverage", () => {
   test("TR desktop: empty state, localized source families, refresh and Escape focus restore", async ({
     page,
@@ -191,18 +195,18 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await expect(
       page.getByRole("button", { name: "Kapat", exact: true }),
     ).toBeFocused();
-    await expect(
-      page.getByText("Dünyada Bir Şey Oldu", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Bir Söylenti Duydun", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Çantandaki Bir Eşya", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Birinden Gelen Çağrı", { exact: true }),
-    ).toBeVisible();
+    await expect(candidateCard(page, "Parlayan orman")).toContainText(
+      "Dünyada Bir Şey Oldu",
+    );
+    await expect(candidateCard(page, "Fısıltı")).toContainText(
+      "Bir Söylenti Duydun",
+    );
+    await expect(candidateCard(page, "Pusulanın sırrı")).toContainText(
+      "Çantandaki Bir Eşya",
+    );
+    await expect(candidateCard(page, "Mira çağırıyor")).toContainText(
+      "Birinden Gelen Çağrı",
+    );
 
     await page.getByRole("button", { name: "Başka maceralar göster" }).click();
     await expect(page.getByText("Parlayan orman 2")).toBeVisible();
@@ -234,15 +238,15 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await page.getByRole("button", { name: "New Adventure" }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(
-      page.getByText("Something Happened in the World", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("An Item in Your Bag", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("A Call from Someone", { exact: true }),
-    ).toBeVisible();
+    await expect(candidateCard(page, "Parlayan orman")).toContainText(
+      "Something Happened in the World",
+    );
+    await expect(candidateCard(page, "Pusulanın sırrı")).toContainText(
+      "An Item in Your Bag",
+    );
+    await expect(candidateCard(page, "Mira çağırıyor")).toContainText(
+      "A Call from Someone",
+    );
     await assertNoHorizontalOverflow(page);
 
     const closeButton = page.getByRole("button", {
@@ -258,9 +262,7 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await page.keyboard.press("Tab");
     await expect(closeButton).toBeFocused();
 
-    const worldCard = page
-      .getByTestId("adventure-candidate")
-      .filter({ hasText: "Parlayan orman" });
+    const worldCard = candidateCard(page, "Parlayan orman");
     await worldCard
       .getByRole("button", { name: "Follow this clue", exact: true })
       .click();
