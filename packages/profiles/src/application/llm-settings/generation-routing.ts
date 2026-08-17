@@ -1,12 +1,15 @@
+import type {
+  LlmTaskType,
+  ReasoningLevel,
+} from "../../db/schema/profile/llm-task-model-settings";
 import { ValidationError } from "../../domain";
-import type { LlmTaskType, ReasoningLevel } from "../../db/schema/profile/llm-task-model-settings";
 import { getTaskModelSetting } from "./llm-settings.service";
 
 export const GENERATION_CRITICALITY_TIERS = ["S", "A", "B"] as const;
 export type GenerationCriticalityTier =
   (typeof GENERATION_CRITICALITY_TIERS)[number];
 
-export const FOUNDATION_GENERATION_INTENTS = [
+export const IMPACT_AWARE_GENERATION_INTENTS = [
   "character_genesis",
   "genesis_divergence",
   "genesis_evaluation",
@@ -14,9 +17,11 @@ export const FOUNDATION_GENERATION_INTENTS = [
   "social_ecology_generation",
   "living_world_bootstrap",
   "adventure_opportunity_generation",
+  "adventure_teaser",
+  "story_recap",
 ] as const;
-export type FoundationGenerationIntent =
-  (typeof FOUNDATION_GENERATION_INTENTS)[number];
+export type ImpactAwareGenerationIntent =
+  (typeof IMPACT_AWARE_GENERATION_INTENTS)[number];
 
 export type FoundationMutationTarget =
   | "genesis"
@@ -26,7 +31,7 @@ export type FoundationMutationTarget =
   | "presentation";
 
 export interface GenerationRoutingPolicy {
-  intent: FoundationGenerationIntent;
+  intent: ImpactAwareGenerationIntent;
   taskType: LlmTaskType;
   tier: GenerationCriticalityTier;
   defaultReasoningLevel: ReasoningLevel;
@@ -44,27 +49,39 @@ export interface ResolvedGenerationRoute extends GenerationRoutingPolicy {
   maxOutputTokens: number;
   source: "household_setting" | "tier_default";
   traceMetadata: {
-    generationIntent: FoundationGenerationIntent;
+    generationIntent: ImpactAwareGenerationIntent;
     criticalityTier: GenerationCriticalityTier;
     routeSource: "household_setting" | "tier_default";
   };
 }
 
-const POLICIES: Record<FoundationGenerationIntent, GenerationRoutingPolicy> = {
+const POLICIES: Record<
+  ImpactAwareGenerationIntent,
+  GenerationRoutingPolicy
+> = {
   character_genesis: critical("character_genesis", ["genesis"]),
   genesis_divergence: critical("genesis_divergence", ["genesis"]),
   genesis_evaluation: critical("genesis_evaluation", []),
-  saga_foundation: critical("saga_foundation", ["saga_canon", "saga_progression"]),
-  social_ecology_generation: important("social_ecology_generation", ["genesis"]),
-  living_world_bootstrap: important("living_world_bootstrap", ["bootstrap_manifest"]),
+  saga_foundation: critical("saga_foundation", [
+    "saga_canon",
+    "saga_progression",
+  ]),
+  social_ecology_generation: important("social_ecology_generation", [
+    "genesis",
+  ]),
+  living_world_bootstrap: important("living_world_bootstrap", [
+    "bootstrap_manifest",
+  ]),
   adventure_opportunity_generation: important(
     "adventure_opportunity_generation",
     ["bootstrap_manifest"],
   ),
+  adventure_teaser: operational("adventure_teaser"),
+  story_recap: operational("story_recap"),
 };
 
 export function getGenerationRoutingPolicy(
-  intent: FoundationGenerationIntent,
+  intent: ImpactAwareGenerationIntent,
 ): GenerationRoutingPolicy {
   return POLICIES[intent];
 }
@@ -72,7 +89,7 @@ export function getGenerationRoutingPolicy(
 export async function resolveGenerationRoute(
   userId: string,
   householdId: string,
-  intent: FoundationGenerationIntent,
+  intent: ImpactAwareGenerationIntent,
 ): Promise<ResolvedGenerationRoute> {
   const policy = getGenerationRoutingPolicy(intent);
   const setting = await getTaskModelSetting(userId, householdId, policy.taskType);
@@ -103,14 +120,6 @@ export async function resolveGenerationRoute(
   }
 
   const modelId = tierDefaultModel(policy.tier);
-  if (!modelId) {
-    throw new ValidationError(
-      "FOUNDATION_MODEL_NOT_CONFIGURED",
-      `No model is configured for ${intent} (${policy.tier})`,
-      "generationIntent",
-    );
-  }
-
   return {
     ...policy,
     provider: "openrouter",
@@ -128,22 +137,23 @@ export async function resolveGenerationRoute(
 }
 
 export function assertGenerationIntentMayMutate(
-  intent: FoundationGenerationIntent,
+  intent: ImpactAwareGenerationIntent,
   target: FoundationMutationTarget,
 ): void {
   const policy = getGenerationRoutingPolicy(intent);
-  if (!policy.mayMutate.includes(target)) {
-    throw new ValidationError(
-      "GENERATION_MUTATION_NOT_ALLOWED",
-      `${intent} (${policy.tier}) may not mutate ${target}`,
-      "generationIntent",
-    );
-  }
 
   if (policy.tier === "B" && (target === "genesis" || target === "saga_canon")) {
     throw new ValidationError(
       "OPERATIONAL_MODEL_CANNOT_MUTATE_CANON",
       "Tier B generation may not mutate protected Genesis or Saga Canon",
+      "generationIntent",
+    );
+  }
+
+  if (!policy.mayMutate.includes(target)) {
+    throw new ValidationError(
+      "GENERATION_MUTATION_NOT_ALLOWED",
+      `${intent} (${policy.tier}) may not mutate ${target}`,
       "generationIntent",
     );
   }
@@ -161,12 +171,18 @@ export function buildGenerationTraceRoutingMetadata(
   };
 }
 
+export function getTierDefaultModelForTesting(
+  tier: GenerationCriticalityTier,
+): string {
+  return tierDefaultModel(tier);
+}
+
 function critical(
   taskType: LlmTaskType,
   mayMutate: readonly FoundationMutationTarget[],
 ): GenerationRoutingPolicy {
   return {
-    intent: taskType as FoundationGenerationIntent,
+    intent: taskType as ImpactAwareGenerationIntent,
     taskType,
     tier: "S",
     defaultReasoningLevel: "high",
@@ -182,7 +198,7 @@ function important(
   mayMutate: readonly FoundationMutationTarget[],
 ): GenerationRoutingPolicy {
   return {
-    intent: taskType as FoundationGenerationIntent,
+    intent: taskType as ImpactAwareGenerationIntent,
     taskType,
     tier: "A",
     defaultReasoningLevel: "medium",
@@ -193,7 +209,20 @@ function important(
   };
 }
 
-function tierDefaultModel(tier: GenerationCriticalityTier): string | null {
+function operational(taskType: LlmTaskType): GenerationRoutingPolicy {
+  return {
+    intent: taskType as ImpactAwareGenerationIntent,
+    taskType,
+    tier: "B",
+    defaultReasoningLevel: "low",
+    defaultTemperature: 0.7,
+    defaultMaxOutputTokens: 1200,
+    allowTierDowngrade: true,
+    mayMutate: ["presentation"],
+  };
+}
+
+function tierDefaultModel(tier: GenerationCriticalityTier): string {
   const envName =
     tier === "S"
       ? "LUMI_TIER_S_DEFAULT_MODEL"
