@@ -55,10 +55,7 @@ export interface ResolvedGenerationRoute extends GenerationRoutingPolicy {
   };
 }
 
-const POLICIES: Record<
-  ImpactAwareGenerationIntent,
-  GenerationRoutingPolicy
-> = {
+const POLICIES: Record<ImpactAwareGenerationIntent, GenerationRoutingPolicy> = {
   character_genesis: critical("character_genesis", ["genesis"]),
   genesis_divergence: critical("genesis_divergence", ["genesis"]),
   genesis_evaluation: critical("genesis_evaluation", []),
@@ -92,7 +89,11 @@ export async function resolveGenerationRoute(
   intent: ImpactAwareGenerationIntent,
 ): Promise<ResolvedGenerationRoute> {
   const policy = getGenerationRoutingPolicy(intent);
-  const setting = await getTaskModelSetting(userId, householdId, policy.taskType);
+  const setting = await getTaskModelSetting(
+    userId,
+    householdId,
+    policy.taskType,
+  );
 
   if (setting?.enabled) {
     return {
@@ -150,7 +151,10 @@ export function assertGenerationIntentMayMutate(
 ): void {
   const policy = getGenerationRoutingPolicy(intent);
 
-  if (policy.tier === "B" && (target === "genesis" || target === "saga_canon")) {
+  if (
+    policy.tier === "B" &&
+    (target === "genesis" || target === "saga_canon")
+  ) {
     throw new ValidationError(
       "OPERATIONAL_MODEL_CANNOT_MUTATE_CANON",
       "Tier B generation may not mutate protected Genesis or Saga Canon",

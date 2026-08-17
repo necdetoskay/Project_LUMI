@@ -60,11 +60,15 @@ describe("impact-aware generation routing", () => {
   it("prevents Tier B operational generation from mutating protected canon", () => {
     expect(() =>
       assertGenerationIntentMayMutate("adventure_teaser", "genesis"),
-    ).toThrow("Tier B generation may not mutate protected Genesis or Saga Canon");
+    ).toThrow(
+      "Tier B generation may not mutate protected Genesis or Saga Canon",
+    );
 
     expect(() =>
       assertGenerationIntentMayMutate("story_recap", "saga_canon"),
-    ).toThrow("Tier B generation may not mutate protected Genesis or Saga Canon");
+    ).toThrow(
+      "Tier B generation may not mutate protected Genesis or Saga Canon",
+    );
 
     expect(() =>
       assertGenerationIntentMayMutate("adventure_teaser", "presentation"),
@@ -112,12 +116,8 @@ describe("impact-aware generation routing", () => {
     delete process.env.LUMI_DEFAULT_OPENROUTER_MODEL;
 
     expect(getTierDefaultModelForTesting("S")).toBeNull();
-    expect(getTierDefaultModelForTesting("A")).toBe(
-      "aion-labs/aion-3.0-mini",
-    );
-    expect(getTierDefaultModelForTesting("B")).toBe(
-      "aion-labs/aion-3.0-mini",
-    );
+    expect(getTierDefaultModelForTesting("A")).toBe("aion-labs/aion-3.0-mini");
+    expect(getTierDefaultModelForTesting("B")).toBe("aion-labs/aion-3.0-mini");
   });
 
   it("produces trace metadata containing intent, tier, model and route source", () => {
