@@ -45,6 +45,11 @@ async function setLocale(page: Page, locale: Locale) {
   }, locale);
 }
 
+async function openStoriesTab(page: Page, childProfileId: string) {
+  await page.goto(`/app/profiles/${childProfileId}`);
+  await page.getByRole("button", { name: /Hikâyeler/ }).click();
+}
+
 function candidateSet(pageIndex: number) {
   const suffix = pageIndex === 0 ? "" : ` ${pageIndex + 1}`;
   return [
@@ -167,7 +172,7 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     );
     const mocked = await mockStoriesApis(page, childProfileId, householdId);
 
-    await page.goto(`/app/profiles/${childProfileId}`);
+    await openStoriesTab(page, childProfileId);
 
     await expect(
       page.getByRole("heading", { name: /Işıl.*Maceraları/ }),
@@ -207,7 +212,7 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     );
     const mocked = await mockStoriesApis(page, childProfileId, householdId);
 
-    await page.goto(`/app/profiles/${childProfileId}`);
+    await openStoriesTab(page, childProfileId);
     await expect(
       page.getByRole("heading", { name: "Işıl's Adventures" }),
     ).toBeVisible();
