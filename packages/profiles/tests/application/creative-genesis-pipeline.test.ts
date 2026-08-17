@@ -224,11 +224,21 @@ function scriptedGenerator(options: {
         return makeCandidates(request.context);
       }
       if (request.stage === "divergence") {
-        return request.candidates?.map((candidate, index) => ({
-          ...candidate,
-          centralMystery: `${candidate.centralMystery} Divergence-axis-${index}: ${DIVERGENCE_AXES[index]}`,
-          tropeSignals: [`axis-${index}`, DIVERGENCE_AXES[index]!],
-        }));
+        return request.candidates?.map((candidate, index) => {
+          const shape = DIVERGENCE_SHAPES[index];
+          if (!shape) throw new Error(`Missing divergence shape ${index}`);
+          return {
+            ...candidate,
+            premise: `${request.context.characterKind} ${shape.premise}`,
+            currentSituation: shape.currentSituation,
+            longTermDesire: shape.longTermDesire,
+            fundamentalNeed: shape.fundamentalNeed,
+            centralMystery: shape.centralMystery,
+            relationshipSeeds: shape.relationshipSeeds,
+            storyModes: shape.storyModes,
+            tropeSignals: [shape.axis, `shape-${index}`],
+          };
+        });
       }
       if (request.stage === "synthesis") {
         return {
@@ -290,6 +300,159 @@ const DIVERGENCE_AXES = [
   "community trust",
   "nonhuman communication",
   "seasonal transformation",
+] as const;
+
+const DIVERGENCE_SHAPES = [
+  {
+    axis: "social-belonging",
+    premise:
+      "arrives during a village bell ceremony where every household recognizes a different name for the newcomer.",
+    currentSituation:
+      "Three families each insist the newcomer belongs with them, but none can explain the same missing portrait.",
+    longTermDesire:
+      "Discover what belonging means without allowing strangers to decide identity on the character's behalf.",
+    fundamentalNeed:
+      "Build trust through chosen relationships rather than inherited labels.",
+    centralMystery:
+      "Why do unrelated homes remember the same child-shaped absence in mutually incompatible ways?",
+    relationshipSeeds: ["patient potter", "jealous foster cousin"],
+    storyModes: ["community", "friendship", "domestic", "identity"],
+  },
+  {
+    axis: "ecological-change",
+    premise:
+      "finds a dry riverbed filling overnight with silver reeds while local animals quietly relocate uphill.",
+    currentSituation:
+      "A fishing family needs help moving stranded eggs before the reeds harden into glass at sunrise.",
+    longTermDesire:
+      "Understand why the landscape is changing and learn how to protect life without freezing the world in place.",
+    fundamentalNeed:
+      "Accept that caring for a place sometimes means helping it transform.",
+    centralMystery:
+      "What is teaching the river to grow plants where water should be, and why did the change begin now?",
+    relationshipSeeds: ["young fisher", "retired flood keeper"],
+    storyModes: ["ecology", "rescue", "exploration", "stewardship"],
+  },
+  {
+    axis: "memory-provenance",
+    premise:
+      "discovers a box of photographs showing celebrations and mistakes the character remembers emotionally but never lived.",
+    currentSituation:
+      "One photograph changes whenever the character makes a choice, while an elderly archivist refuses to look at it.",
+    longTermDesire:
+      "Learn which memories deserve trust and whether borrowed experiences can still create real responsibility.",
+    fundamentalNeed:
+      "Separate identity from memory without dismissing the feelings those memories carry.",
+    centralMystery:
+      "Who recorded unlived moments with accurate private emotions, and why does only one image continue changing?",
+    relationshipSeeds: ["reluctant archivist", "child who appears in no photograph"],
+    storyModes: ["memory", "investigation", "emotion", "archive"],
+  },
+  {
+    axis: "ordinary-responsibility",
+    premise:
+      "agrees to deliver warm bread across town and discovers every normal shortcut has been rerouted by tiny handwritten signs.",
+    currentSituation:
+      "The delivery matters to an ill neighbour, yet following the signs reveals people quietly solving each other's problems.",
+    longTermDesire:
+      "Understand who coordinates the hidden chain of ordinary kindness and why the character was added to it.",
+    fundamentalNeed:
+      "Learn that small promises can matter as much as spectacular quests.",
+    centralMystery:
+      "Who knows everyone's unmet everyday need well enough to redirect strangers without ever being seen?",
+    relationshipSeeds: ["bakery apprentice", "housebound mapmaker"],
+    storyModes: ["ordinary-day", "errand", "kindness", "neighbourhood"],
+  },
+  {
+    axis: "migration",
+    premise:
+      "wakes as an island's nesting cliffs detach from the horizon and begin following an ancient flock toward unknown weather.",
+    currentSituation:
+      "Families argue over leaving, staying, or boarding the moving cliffs before the seasonal passage closes.",
+    longTermDesire:
+      "Find a way to keep meaningful ties while learning why home itself has begun to migrate.",
+    fundamentalNeed:
+      "Accept that home can be a relationship and practice rather than a fixed coordinate.",
+    centralMystery:
+      "What signal awakened a migration route no living resident remembers, and what waits at its forgotten destination?",
+    relationshipSeeds: ["homesick navigator", "fearless nest watcher"],
+    storyModes: ["journey", "navigation", "family", "weather"],
+  },
+  {
+    axis: "reciprocal-friendship",
+    premise:
+      "is rescued from a collapsing footbridge by a local rival who immediately asks for help hiding a deeply embarrassing failure.",
+    currentSituation:
+      "The rival's secret is harmless but exposes a larger problem that neither child can solve alone.",
+    longTermDesire:
+      "Turn rivalry into a relationship where both characters can be strong, wrong, frightened, and useful at different times.",
+    fundamentalNeed:
+      "Practice reciprocity instead of treating allies as helpers orbiting the protagonist.",
+    centralMystery:
+      "Why does the bridge repair itself differently after each act of cooperation between people who dislike one another?",
+    relationshipSeeds: ["proud rival", "bridge caretaker"],
+    storyModes: ["rivalry", "friendship", "repair", "comedy"],
+  },
+  {
+    axis: "lost-craft",
+    premise:
+      "inherits a broken instrument whose strings vibrate near objects repaired with techniques nobody remembers learning.",
+    currentSituation:
+      "A market stall collapses and the instrument points toward an unnoticed joint made with the same vanished craft.",
+    longTermDesire:
+      "Recover a lost way of making things while deciding which forgotten techniques should return and which should remain abandoned.",
+    fundamentalNeed:
+      "Value patient practice and judgment over instant mastery.",
+    centralMystery:
+      "Why can the instrument recognize a craft erased from written history, and who deliberately removed its teaching lineage?",
+    relationshipSeeds: ["impatient tinkerer", "quiet carpenter"],
+    storyModes: ["craft", "puzzle", "history", "making"],
+  },
+  {
+    axis: "community-trust",
+    premise:
+      "receives three official maps of the same district, each accurate on its own but impossible when placed together.",
+    currentSituation:
+      "Neighbours plan a festival route and must choose which map to trust before anyone realizes the disagreement is systematic.",
+    longTermDesire:
+      "Help people compare partial truths without turning uncertainty into accusation or blind obedience.",
+    fundamentalNeed:
+      "Learn to ask better questions before choosing sides.",
+    centralMystery:
+      "Why are all three maps honestly measured yet mutually incompatible, and what changes when nobody is observing the streets?",
+    relationshipSeeds: ["junior surveyor", "skeptical festival organizer"],
+    storyModes: ["mapping", "community", "mystery", "negotiation"],
+  },
+  {
+    axis: "nonhuman-communication",
+    premise:
+      "notices moss lanterns blinking in patterns that local residents dismiss as weather until the pattern answers a joke.",
+    currentSituation:
+      "The lights lead toward a damaged greenhouse where plants are being moved in precise but unexplained arrangements.",
+    longTermDesire:
+      "Develop a respectful language with a form of life whose needs and concepts may not resemble human conversation.",
+    fundamentalNeed:
+      "Listen for meaning without forcing every intelligence into familiar categories.",
+    centralMystery:
+      "Are the lantern patterns one speaker, a colony, or a message passing through many organisms for another purpose?",
+    relationshipSeeds: ["curious gardener", "protective groundskeeper"],
+    storyModes: ["communication", "science", "garden", "humour"],
+  },
+  {
+    axis: "seasonal-transformation",
+    premise:
+      "discovers that every shadow in the region points north at noon on the first cold day instead of following its owner.",
+    currentSituation:
+      "Children turn the event into a game while adults quietly close an old observatory that has not opened in decades.",
+    longTermDesire:
+      "Learn why seasons alter different rules of the world and how communities adapt without losing wonder.",
+    fundamentalNeed:
+      "Balance curiosity with patience when answers are only available at certain times.",
+    centralMystery:
+      "What does the northern convergence measure, and why does the abandoned observatory track shadows rather than stars?",
+    relationshipSeeds: ["observatory caretaker", "inventive younger friend"],
+    storyModes: ["season", "observation", "festival", "astronomy"],
+  },
 ] as const;
 
 function makeCandidates(
