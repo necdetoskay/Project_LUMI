@@ -86,6 +86,8 @@ export {
 export type {
   GenesisArchetype,
   SocialEcologyRoleType,
+  FoundationProvenanceOrigin,
+  FoundationDerivationConfidence,
   FoundationProvenance,
   CharacterGenesis,
   SocialEcologyRole,
