@@ -75,6 +75,28 @@ export type {
   ResolvedTraitDelta,
   CharacterDomainEvent,
 } from "./character-domain";
+export {
+  GENESIS_ARCHETYPES,
+  SOCIAL_ECOLOGY_ROLES,
+  validateCharacterFoundation,
+  validateGenesis,
+  validateSagaCanon,
+  validateSagaProgression,
+} from "./character-genesis";
+export type {
+  GenesisArchetype,
+  SocialEcologyRoleType,
+  FoundationProvenance,
+  CharacterGenesis,
+  SocialEcologyRole,
+  SagaCanon,
+  SagaRevealLayer,
+  SagaProgression,
+  BootstrapMaterializationKind,
+  BootstrapMaterializationRef,
+  LivingWorldBootstrapManifest,
+  CharacterFoundationRecord,
+} from "./character-genesis";
 export { createCharacterEvent } from "./events";
 export type { CharacterEventType } from "./events";
 
