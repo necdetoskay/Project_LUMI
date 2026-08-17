@@ -39,7 +39,6 @@ export interface LivingWorldBootstrapMaterializer {
     plan: SocialEcologyMaterializationPlan;
     idempotencyKey: string;
   }): Promise<LivingWorldBootstrapNpcResult>;
-
   resolveLocalContext(input: {
     foundation: CharacterFoundationRecord;
     idempotencyKey: string;
@@ -129,7 +128,6 @@ function supportForRole(
     foundation.genesis.currentSituation,
     foundation.genesis.fundamentalNeed,
   ].filter((value) => value.trim().length > 0);
-
   if (roleType === "unknown_presence" || roleType === "distant_kin_signal") {
     support.push(...foundation.genesis.unknownQuestions.slice(0, 1));
   }
@@ -144,10 +142,7 @@ function purposeForRole(
   roleType: SocialEcologyRoleType,
 ): string {
   const support = supportForRole(foundation, roleType);
-  return `${roleLabel(roleType)} exists because the opening situation needs: ${support.join(" | ")}`.slice(
-    0,
-    800,
-  );
+  return `${roleLabel(roleType)} exists because the opening situation needs: ${support.join(" | ")}`.slice(0, 800);
 }
 
 function identityHintForRole(
@@ -161,34 +156,58 @@ function identityHintForRole(
 function needTypesForRole(roleType: SocialEcologyRoleType): string[] {
   switch (roleType) {
     case "caregiver":
+      return ["love", "safety"];
     case "rescuer":
     case "local_guardian":
-      return ["protect", "support"];
+      return ["safety", "purpose"];
     case "friend":
     case "neighbour":
     case "community_member":
     case "symbiotic_creature":
+    case "sibling":
+    case "family":
       return ["belonging"];
     case "mentor":
-    case "creator":
     case "facility_ai":
     case "maintenance_companion":
-      return ["guide"];
+      return ["learning", "purpose"];
+    case "creator":
+      return ["purpose", "achievement"];
     case "rival":
+      return ["achievement"];
     case "predator":
-      return ["compete"];
+      return ["hunger", "safety"];
     case "unknown_presence":
     case "distant_kin_signal":
-      return ["discover"];
+    case "first_neutral_contact":
+      return ["curiosity"];
     default:
-      return ["connect"];
+      return ["purpose"];
   }
 }
 
-function normalizeExplicitRoles(
-  roles: readonly SocialEcologyRole[],
-): SocialEcologyRole[] {
-  return roles.map((role) => ({ ...role }));
+function semanticRoleTypes(
+  foundation: CharacterFoundationRecord,
+): SocialEcologyRoleType[] {
+  const text = [
+    foundation.genesis.premise,
+    foundation.genesis.currentSituation,
+    ...foundation.genesis.knownFacts,
+    ...foundation.genesis.unknownQuestions,
+  ]
+    .join(" ")
+    .toLocaleLowerCase("tr-TR");
+  const roles: SocialEcologyRoleType[] = [];
+  if (/robot|makine|machine|android|tesis|facility|sistem/.test(text)) {
+    roles.push("facility_ai");
+  }
+  if (/hafıza|hatırla|memoryless|memory loss/.test(text)) {
+    roles.push("rescuer");
+  }
+  if (/mercan|resif|reef|okyanus|deniz|sürü|koloni|shoal/.test(text)) {
+    roles.push("community_member", "symbiotic_creature");
+  }
+  return roles;
 }
 
 function deriveRoleTypes(
@@ -198,21 +217,19 @@ function deriveRoleTypes(
   if (explicit.length > 0) {
     return [...new Set(explicit.map((role) => role.roleType))];
   }
-
   const archetypeRoles = foundation.genesis.archetypes.flatMap(
     (archetype) => ARCHETYPE_ROLE_SETS[archetype],
   );
-  return [...new Set(archetypeRoles)].slice(0, 5);
+  return [...new Set([...archetypeRoles, ...semanticRoleTypes(foundation)])].slice(0, 7);
 }
 
 export function planLivingWorldBootstrap(
   foundation: CharacterFoundationRecord,
 ): LivingWorldBootstrapPlan {
   validateCharacterFoundation(foundation);
-  const explicit = normalizeExplicitRoles(foundation.genesis.socialEcology);
+  const explicit = foundation.genesis.socialEcology.map((role) => ({ ...role }));
   const explicitByType = new Map(explicit.map((role) => [role.roleType, role]));
   const roleTypes = deriveRoleTypes(foundation);
-
   const roles = roleTypes.map((roleType, index) => {
     const existing = explicitByType.get(roleType);
     const support = supportForRole(foundation, roleType);
@@ -224,17 +241,14 @@ export function planLivingWorldBootstrap(
       required: index === 0,
       materializationHint: identityHintForRole(foundation, roleType),
     };
-
     return {
       role,
-      identityHint:
-        role.materializationHint ?? identityHintForRole(foundation, roleType),
+      identityHint: role.materializationHint ?? identityHintForRole(foundation, roleType),
       relationshipSeed: ROLE_RELATIONSHIP_SEEDS[roleType] ?? 0,
       needTypes: needTypesForRole(roleType),
       support,
     } satisfies SocialEcologyMaterializationPlan;
   });
-
   return {
     version: LIVING_WORLD_BOOTSTRAP_VERSION,
     roles,
@@ -270,17 +284,6 @@ function clearFailureCode(
   return rest;
 }
 
-function runningManifest(
-  manifest: LivingWorldBootstrapManifest,
-  now: Date,
-): LivingWorldBootstrapManifest {
-  return {
-    ...clearFailureCode(manifest),
-    status: "running",
-    updatedAt: now,
-  };
-}
-
 export class LivingWorldBootstrapService {
   constructor(
     private readonly materializer: LivingWorldBootstrapMaterializer,
@@ -294,15 +297,16 @@ export class LivingWorldBootstrapService {
     validateCharacterFoundation(foundation);
     const original = foundation.bootstrapManifest;
     if (!original) throw new Error("LIVING_WORLD_BOOTSTRAP_MANIFEST_REQUIRED");
-
     const plan = planLivingWorldBootstrap(foundation);
     if (original.status === "completed") {
       return { status: "completed", plan, manifest: original };
     }
-
-    let manifest = runningManifest(original, this.now());
+    let manifest: LivingWorldBootstrapManifest = {
+      ...clearFailureCode(original),
+      status: "running",
+      updatedAt: this.now(),
+    };
     await this.store.save(foundation, manifest);
-
     try {
       const localRefs = await this.materializer.resolveLocalContext({
         foundation,
@@ -315,8 +319,10 @@ export class LivingWorldBootstrapService {
         const existingNpc = manifest.materialized.find(
           (ref) => ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
         );
-        if (existingNpc) continue;
-
+        const existingRelationship = manifest.materialized.find(
+          (ref) => ref.kind === "relationship" && ref.genesisRoleId === rolePlan.role.id,
+        );
+        if (existingNpc && existingRelationship) continue;
         const materialized = await this.materializer.ensureNpc({
           foundation,
           plan: rolePlan,
@@ -331,15 +337,12 @@ export class LivingWorldBootstrapService {
         });
         manifest = appendRef(manifest, {
           kind: "relationship",
-          authority: "profile.character_relationships+npc_intelligence.npc_snapshots",
+          authority: "profile.character_relationships",
           entityId: materialized.relationshipEntityId,
           genesisRoleId: rolePlan.role.id,
           reused: materialized.relationshipReused,
         });
-        await this.store.save(foundation, {
-          ...manifest,
-          updatedAt: this.now(),
-        });
+        await this.store.save(foundation, { ...manifest, updatedAt: this.now() });
       }
 
       manifest = {
