@@ -22,6 +22,9 @@ jobs:
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
       VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
       VERCEL_PROJECT_NAME: project-lumi-web
+      VERCEL_PREVIEW_BRANCH: agent/long-horizon-repair
+      STAGING_DATABASE_URL: ${{ secrets.LUMI_DEV_DATABASE_URL }}
+      PREVIEW_OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       LUMI_LONG_HORIZON_LIVE: "1"
       LUMI_LONG_HORIZON_CHILD_AGE: "6"
       LUMI_LONG_HORIZON_RNG_SEED: ""
@@ -47,6 +50,8 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
           test -n "${VERCEL_TOKEN}"
+          test -n "${STAGING_DATABASE_URL}"
+          test -n "${PREVIEW_OPENROUTER_API_KEY}"
 
       - name: Patch brittle locators for repair run
         shell: bash
@@ -65,6 +70,33 @@ jobs:
               text = text.replace(old_profile, new_profile, 1)
           path.write_text(text)
           PY
+
+      - name: Bind staging DB and OpenRouter to repair Preview branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          upsert_env() {
+            key="$1"
+            value="$2"
+            request="$RUNNER_TEMP/vercel-env-$key.json"
+            response="$RUNNER_TEMP/vercel-env-$key-response.json"
+            jq -n \
+              --arg key "$key" \
+              --arg value "$value" \
+              --arg branch "$VERCEL_PREVIEW_BRANCH" \
+              '{key:$key,value:$value,type:"encrypted",target:["preview"],gitBranch:$branch,comment:"Project LUMI long-horizon repair Preview"}' > "$request"
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --output "$response" \
+              --header "Authorization: Bearer $VERCEL_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data-binary "@$request" \
+              "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?upsert=true&teamId=$VERCEL_ORG_ID"
+            env_id="$(jq -r '.created.id // .id // empty' "$response")"
+            test -n "$env_id"
+          }
+          upsert_env DATABASE_URL "$STAGING_DATABASE_URL"
+          upsert_env OPENROUTER_API_KEY "$PREVIEW_OPENROUTER_API_KEY"
 
       - name: Create fresh repair Preview deployment
         id: deploy
