@@ -18,6 +18,7 @@ on:
       - packages/profiles/migrations/**
       - packages/world/**
       - packages/story/**
+      - packages/npc-intelligence/**
 
 permissions:
   contents: read
@@ -76,11 +77,14 @@ jobs:
         run: pnpm --filter @lumi/world world:migrate
       - name: Apply story migrations
         run: pnpm --filter @lumi/story story:migrate
+      - name: Apply NPC intelligence migrations
+        run: pnpm --filter @lumi/npc-intelligence npc:migrate
       - name: Typecheck browser onboarding path
         run: |
           pnpm --filter @lumi/profiles typecheck
           pnpm --filter @lumi/world typecheck
           pnpm --filter @lumi/story typecheck
+          pnpm --filter @lumi/npc-intelligence typecheck
           pnpm --filter @lumi/web typecheck
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium

@@ -13,6 +13,7 @@ import {
   projectOnboardingFoundationForFinalReview,
   saveOnboardingFoundationIdempotently,
 } from "../../../../packages/profiles/src/application/onboarding-foundation-commit.service";
+import { runLivingWorldBootstrapForCharacter } from "./living-world-bootstrap.service";
 
 export async function finalizeCharacterOnboarding(
   userId: string,
@@ -86,21 +87,48 @@ export async function finalizeCharacterOnboarding(
   if (!idempotencyKey) {
     throw new Error("CHARACTER_FOUNDATION_BOOTSTRAP_KEY_MISSING");
   }
-  const bootstrapStatus = await activateOnboardingFoundationBootstrap(
+  await activateOnboardingFoundationBootstrap(
     prepared.characterId,
     idempotencyKey,
   );
 
-  return {
-    characterId: prepared.characterId,
-    cycleId: prepared.cycleId,
-    world,
-    foundation,
-    review,
-    bootstrap: {
-      status: bootstrapStatus,
-      manifestStatus: foundation.bootstrapManifest?.status ?? "planned",
-      idempotencyKey,
-    },
-  };
+  try {
+    const bootstrap = await runLivingWorldBootstrapForCharacter(
+      prepared.characterId,
+    );
+    return {
+      characterId: prepared.characterId,
+      cycleId: prepared.cycleId,
+      world,
+      foundation,
+      review,
+      bootstrap: {
+        status: bootstrap.status,
+        manifestStatus: bootstrap.manifest.status,
+        idempotencyKey,
+        materialized: bootstrap.manifest.materialized,
+        roleCount: bootstrap.plan.roles.length,
+      },
+    };
+  } catch (error) {
+    const failureCode =
+      error instanceof Error && error.message
+        ? error.message.slice(0, 120)
+        : "LIVING_WORLD_BOOTSTRAP_FAILED";
+    return {
+      characterId: prepared.characterId,
+      cycleId: prepared.cycleId,
+      world,
+      foundation,
+      review,
+      bootstrap: {
+        status: "failed" as const,
+        manifestStatus: "failed" as const,
+        idempotencyKey,
+        materialized: foundation.bootstrapManifest?.materialized ?? [],
+        roleCount: 0,
+        failureCode,
+      },
+    };
+  }
 }
