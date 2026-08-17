@@ -148,6 +148,7 @@ export interface LivingWorldBootstrapManifest {
   idempotencyKey: string;
   status: "planned" | "running" | "completed" | "failed";
   materialized: BootstrapMaterializationRef[];
+  provenance?: FoundationProvenance;
   failureCode?: string;
   createdAt: Date;
   updatedAt: Date;
