@@ -47,7 +47,9 @@ async function setLocale(page: Page, locale: Locale) {
 
 async function openStoriesTab(page: Page, childProfileId: string) {
   await page.goto(`/app/profiles/${childProfileId}`);
-  await page.getByRole("button", { name: /Hikâyeler/ }).click();
+  await page
+    .getByRole("button", { name: "auto_stories Hikâyeler", exact: true })
+    .click();
 }
 
 function candidateSet(pageIndex: number) {
