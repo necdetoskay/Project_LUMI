@@ -7,7 +7,19 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "env": ["DATABASE_URL", "OPENROUTER_API_KEY"],
+      "env": [
+        "DATABASE_URL",
+        "OPENROUTER_API_KEY",
+        "AUTH_COOKIE_SECURE",
+        "LUMI_SETTINGS_ENCRYPTION_KEY",
+        "CLOUDFLARE_R2_BUCKET",
+        "OBJECT_STORAGE_ENDPOINT",
+        "OBJECT_STORAGE_BUCKET",
+        "OBJECT_STORAGE_ACCESS_KEY_ID",
+        "OBJECT_STORAGE_SECRET_ACCESS_KEY",
+        "OBJECT_STORAGE_REGION",
+        "OBJECT_STORAGE_PUBLIC_URL"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
