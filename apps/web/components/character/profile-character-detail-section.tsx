@@ -99,7 +99,8 @@ export function ProfileCharacterDetailSection({
         };
         const assetId =
           body.canon?.selectedAssetId ??
-          body.assets?.find((asset) => asset.lifecycleState !== "rejected")?.id ??
+          body.assets?.find((asset) => asset.lifecycleState !== "rejected")
+            ?.id ??
           null;
 
         if (!assetId) throw new Error("LOCATION_VISUAL_NOT_READY");
