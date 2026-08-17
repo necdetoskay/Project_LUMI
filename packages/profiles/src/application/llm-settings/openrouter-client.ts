@@ -4,6 +4,19 @@ function getOpenRouterBaseUrl(): string {
   );
 }
 
+const DEFAULT_OPENROUTER_REQUEST_TIMEOUT_MS = 60_000;
+
+function getOpenRouterRequestTimeoutMs(): number {
+  const configured = process.env["OPENROUTER_REQUEST_TIMEOUT_MS"]?.trim();
+  if (!configured) return DEFAULT_OPENROUTER_REQUEST_TIMEOUT_MS;
+
+  const parsed = Number.parseInt(configured, 10);
+  if (!Number.isFinite(parsed) || parsed < 1_000 || parsed > 300_000) {
+    return DEFAULT_OPENROUTER_REQUEST_TIMEOUT_MS;
+  }
+  return parsed;
+}
+
 export interface OpenRouterMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -49,18 +62,43 @@ export async function callOpenRouter(
   if (temperature !== undefined) body.temperature = temperature;
   if (maxTokens !== undefined) body.max_tokens = maxTokens;
 
-  const fetchSignal = signal ?? (null as AbortSignal | null);
-  const response = await fetch(`${getOpenRouterBaseUrl()}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://lumi.app",
-      "X-Title": "Project LUMI",
-    },
-    body: JSON.stringify(body),
-    signal: fetchSignal,
-  });
+  const timeoutMs = getOpenRouterRequestTimeoutMs();
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const abortFromCaller = () => controller.abort(signal?.reason);
+  if (signal) {
+    if (signal.aborted) abortFromCaller();
+    else signal.addEventListener("abort", abortFromCaller, { once: true });
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${getOpenRouterBaseUrl()}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://lumi.app",
+        "X-Title": "Project LUMI",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (timedOut) {
+      throw new Error(
+        `OpenRouter request timed out after ${timeoutMs}ms for model ${model}`,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromCaller);
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();
