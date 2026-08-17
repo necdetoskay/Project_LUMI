@@ -274,7 +274,10 @@ export function validateSagaCanon(canon: SagaCanon): void {
   validateText(canon.stakes, "stakes", 1_500);
 
   const orders = canon.revealLayers.map((layer) => layer.order);
-  if (new Set(orders).size !== orders.length || orders.some((order) => order < 0)) {
+  if (
+    new Set(orders).size !== orders.length ||
+    orders.some((order) => order < 0)
+  ) {
     throw new ValidationError(
       "INVALID_SAGA_REVEAL_ORDER",
       "Saga reveal layer order must be unique and non-negative",
@@ -295,7 +298,10 @@ export function validateSagaProgression(
     );
   }
   validateVersion(progression.version, "sagaProgression.version");
-  if (!Number.isInteger(progression.revealStage) || progression.revealStage < 0) {
+  if (
+    !Number.isInteger(progression.revealStage) ||
+    progression.revealStage < 0
+  ) {
     throw new ValidationError(
       "INVALID_SAGA_REVEAL_STAGE",
       "Saga reveal stage must be a non-negative integer",
@@ -324,9 +330,18 @@ function validateScope(value: {
   worldId: string;
 }): void {
   if ("id" in value && !value.id) {
-    throw new ValidationError("MISSING_FOUNDATION_ID", "Foundation id is required", "id");
+    throw new ValidationError(
+      "MISSING_FOUNDATION_ID",
+      "Foundation id is required",
+      "id",
+    );
   }
-  for (const key of ["householdId", "childProfileId", "characterId", "worldId"] as const) {
+  for (const key of [
+    "householdId",
+    "childProfileId",
+    "characterId",
+    "worldId",
+  ] as const) {
     if (!value[key]) {
       throw new ValidationError(
         "MISSING_FOUNDATION_SCOPE",
