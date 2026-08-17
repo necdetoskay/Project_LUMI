@@ -24,7 +24,10 @@ import {
   getCharacterCurrentLocation,
   getWorldForCharacter,
 } from "@lumi/world/application";
-import { DrizzleWorldEventReader, getDatabase as getWorldDb } from "@lumi/world/db";
+import {
+  DrizzleWorldEventReader,
+  getDatabase as getWorldDb,
+} from "@lumi/world/db";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 const querySchema = z.object({
@@ -165,7 +168,13 @@ export const GET = observeHandler(
 
         for (const event of events) {
           const title =
-            payloadString(event.payload, "title", "name", "claim", "summary") ??
+            payloadString(
+              event.payload,
+              "title",
+              "name",
+              "claim",
+              "summary",
+            ) ??
             currentLocation?.displayName ??
             "Dünyada yeni bir olay";
           const teaser =
