@@ -32,9 +32,7 @@ const CANONICAL_NEEDS: Readonly<Record<string, readonly string[]>> = {
   custom: ["purpose"],
 };
 
-function localContextRefs(
-  detail: Awaited<ReturnType<typeof getWorldDetail>>,
-) {
+function localContextRefs(detail: Awaited<ReturnType<typeof getWorldDetail>>) {
   const refs: Array<{
     kind: "location_fact";
     authority: string;
@@ -79,7 +77,9 @@ class CanonicalLivingWorldBootstrapMaterializer
   }
 
   async resolveLocalContext(
-    input: Parameters<LivingWorldBootstrapMaterializer["resolveLocalContext"]>[0],
+    input: Parameters<
+      LivingWorldBootstrapMaterializer["resolveLocalContext"]
+    >[0],
   ) {
     const detail = await this.worldDetail(input.foundation.worldId);
     return localContextRefs(detail);
@@ -125,7 +125,9 @@ class CanonicalLivingWorldBootstrapMaterializer
       childProfileId: input.foundation.childProfileId,
       characterId: input.foundation.characterId,
       locationId,
-      needTypes: [...(CANONICAL_NEEDS[input.plan.role.roleType] ?? ["purpose"])],
+      needTypes: [
+        ...(CANONICAL_NEEDS[input.plan.role.roleType] ?? ["purpose"]),
+      ],
       relationshipToCharacter: input.plan.relationshipSeed,
       lastInteractionAt: existing?.lastInteractionAt ?? now,
       updatedAt: now,

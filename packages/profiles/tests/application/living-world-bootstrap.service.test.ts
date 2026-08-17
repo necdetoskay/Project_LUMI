@@ -32,8 +32,10 @@ function foundation(archetypes: GenesisArchetype[]): CharacterFoundationRecord {
       worldId: "world-1",
       version: 1,
       archetypes,
-      premise: "A character begins life in an unfamiliar but coherent local world.",
-      currentSituation: "The opening situation needs only relationships that make it feel real.",
+      premise:
+        "A character begins life in an unfamiliar but coherent local world.",
+      currentSituation:
+        "The opening situation needs only relationships that make it feel real.",
       longTermDesire: "Find a meaningful place in the world.",
       fundamentalNeed: "Build trust without losing curiosity.",
       knownFacts: ["The starting region is real and reachable."],
@@ -65,7 +67,9 @@ function foundation(archetypes: GenesisArchetype[]): CharacterFoundationRecord {
           prerequisites: ["One trusted local relationship"],
         },
       ],
-      forbiddenEarlyReveals: ["The oldest local promise was made for someone else."],
+      forbiddenEarlyReveals: [
+        "The oldest local promise was made for someone else.",
+      ],
       provenance: provenance("saga_foundation"),
     },
     sagaProgression: {
@@ -122,10 +126,23 @@ describe("living world bootstrap", () => {
     const hatched = roleTypes("hatched");
     const created = roleTypes("created");
 
-    expect(new Set([rooted.join(","), lost.join(","), hatched.join(","), created.join(",")]).size).toBe(4);
-    expect(rooted).toEqual(expect.arrayContaining(["community_member", "friend"]));
-    expect(lost).toEqual(expect.arrayContaining(["rescuer", "first_neutral_contact"]));
-    expect(hatched).toEqual(expect.arrayContaining(["local_guardian", "symbiotic_creature"]));
+    expect(
+      new Set([
+        rooted.join(","),
+        lost.join(","),
+        hatched.join(","),
+        created.join(","),
+      ]).size,
+    ).toBe(4);
+    expect(rooted).toEqual(
+      expect.arrayContaining(["community_member", "friend"]),
+    );
+    expect(lost).toEqual(
+      expect.arrayContaining(["rescuer", "first_neutral_contact"]),
+    );
+    expect(hatched).toEqual(
+      expect.arrayContaining(["local_guardian", "symbiotic_creature"]),
+    );
     expect(created).toEqual(expect.arrayContaining(["creator", "facility_ai"]));
   });
 
@@ -244,7 +261,10 @@ describe("living world bootstrap", () => {
       },
     };
 
-    const result = await new LivingWorldBootstrapService(materializer, store).run(input);
+    const result = await new LivingWorldBootstrapService(
+      materializer,
+      store,
+    ).run(input);
     expect(result.status).toBe("completed");
     expect(calls).toBe(0);
   });
@@ -276,11 +296,15 @@ describe("living world bootstrap", () => {
     };
 
     await expect(
-      new LivingWorldBootstrapService(materializer, store, () => NOW).run(input),
+      new LivingWorldBootstrapService(materializer, store, () => NOW).run(
+        input,
+      ),
     ).rejects.toThrow("NPC_RUNTIME_UNAVAILABLE");
     expect(saved.at(-1)?.status).toBe("failed");
     expect(saved.at(-1)?.failureCode).toBe("NPC_RUNTIME_UNAVAILABLE");
-    expect(saved.at(-1)?.materialized.some((ref) => ref.kind === "npc")).toBe(true);
+    expect(saved.at(-1)?.materialized.some((ref) => ref.kind === "npc")).toBe(
+      true,
+    );
     expect(input.genesis).toEqual(originalGenesis);
   });
 });

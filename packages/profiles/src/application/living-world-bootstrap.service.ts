@@ -69,7 +69,11 @@ const ARCHETYPE_ROLE_SETS: Readonly<
   arrived: ["first_neutral_contact", "neighbour", "community_member"],
   adopted: ["caregiver", "friend", "community_member"],
   hidden: ["local_guardian", "unknown_presence"],
-  last_known: ["distant_kin_signal", "first_neutral_contact", "unknown_presence"],
+  last_known: [
+    "distant_kin_signal",
+    "first_neutral_contact",
+    "unknown_presence",
+  ],
   created: ["creator", "facility_ai", "maintenance_companion"],
   escaped: ["rescuer", "first_neutral_contact", "unknown_presence"],
   chosen_by_accident: ["mentor", "friend", "unknown_presence"],
@@ -232,7 +236,9 @@ export function planLivingWorldBootstrap(
   foundation: CharacterFoundationRecord,
 ): LivingWorldBootstrapPlan {
   validateCharacterFoundation(foundation);
-  const explicit = foundation.genesis.socialEcology.map((role) => ({ ...role }));
+  const explicit = foundation.genesis.socialEcology.map((role) => ({
+    ...role,
+  }));
   const explicitByType = new Map(explicit.map((role) => [role.roleType, role]));
   const roleTypes = deriveRoleTypes(foundation);
   const roles = roleTypes.map((roleType, index) => {

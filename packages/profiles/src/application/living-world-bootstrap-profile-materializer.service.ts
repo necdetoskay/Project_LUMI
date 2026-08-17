@@ -198,7 +198,10 @@ export async function ensureBootstrapRelationship(
       affinity: strength,
       familiarity: Math.max(0.1, Math.min(0.7, strength)),
       relationshipType: input.roleType,
-      customTypeLabel: `living-world-bootstrap:v1:${input.roleType}`.slice(0, 120),
+      customTypeLabel: `living-world-bootstrap:v1:${input.roleType}`.slice(
+        0,
+        120,
+      ),
     })
     .onConflictDoNothing({
       target: [
