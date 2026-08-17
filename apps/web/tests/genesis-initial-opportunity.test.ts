@@ -42,6 +42,7 @@ describe("Genesis initial adventure opportunities", () => {
     expect(result.opportunities).toHaveLength(1);
     expect(result.opportunities[0]?.opportunityType).toBe("invitation");
     expect(result.opportunities[0]?.sourceNpcId).toBe("npc-1");
+    expect(result.opportunities[0]?.reason).toContain("character-1");
     expect(result.opportunities[0]?.evidence).toMatchObject({
       targetNpcId: "character-1",
       trust: 0.55,
