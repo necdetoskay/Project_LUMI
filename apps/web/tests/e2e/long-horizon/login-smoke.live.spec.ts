@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("production parent credentials can establish a real UI session", async ({ page }) => {
+test("production parent credentials can establish a real UI session", async ({
+  page,
+}) => {
   const email = process.env.LUMI_LONG_HORIZON_PARENT_EMAIL;
   const password = process.env.LUMI_LONG_HORIZON_PARENT_PASSWORD;
 
@@ -20,7 +22,9 @@ test("production parent credentials can establish a real UI session", async ({ p
 
   const currentUrl = page.url();
   const formVisible = await loginForm.isVisible().catch(() => false);
-  const visibleText = (await page.locator("body").innerText()).replace(/\s+/g, " ").trim();
+  const visibleText = (await page.locator("body").innerText())
+    .replace(/\s+/g, " ")
+    .trim();
   const safeExcerpt = visibleText.slice(0, 800);
 
   console.log(`LOGIN_SMOKE_URL=${currentUrl}`);
