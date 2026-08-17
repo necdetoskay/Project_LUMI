@@ -161,7 +161,11 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
         currentSituation: string;
         publicSaga: { title: string; premise: string; longTermGoal: string };
       };
-      bootstrap: { status: string; idempotencyKey: string };
+      bootstrap: {
+        status: string;
+        manifestStatus: string;
+        idempotencyKey: string;
+      };
     };
     expect(committed.foundationReview.identity.name).toBe("Luna Starwhisperer");
     expect(committed.foundationReview.world.name).toBe("Starglow Forest");
@@ -184,7 +188,8 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     expect(JSON.stringify(committed.foundationReview)).not.toContain(
       "forbiddenEarlyReveals",
     );
-    expect(committed.bootstrap.status).toBe("planned");
+    expect(committed.bootstrap.status).toBe("pending");
+    expect(committed.bootstrap.manifestStatus).toBe("planned");
     expect(committed.bootstrap.idempotencyKey).toMatch(
       /^living-world-bootstrap:/,
     );
@@ -207,10 +212,11 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     const retried = (await retry.json()) as {
       characterId: string;
       worldId: string;
-      bootstrap: { idempotencyKey: string };
+      bootstrap: { status: string; idempotencyKey: string };
     };
     expect(retried.characterId).toBe(committed.characterId);
     expect(retried.worldId).toBe(committed.worldId);
+    expect(retried.bootstrap.status).toBe("pending");
     expect(retried.bootstrap.idempotencyKey).toBe(
       committed.bootstrap.idempotencyKey,
     );
