@@ -252,7 +252,9 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     );
     expect(retried.bootstrap.roleCount).toBe(committed.bootstrap.roleCount);
     expect(
-      retried.bootstrap.materialized.map((ref) => `${ref.kind}:${ref.entityId}`).sort(),
+      retried.bootstrap.materialized
+        .map((ref) => `${ref.kind}:${ref.entityId}`)
+        .sort(),
     ).toEqual(
       committed.bootstrap.materialized
         .map((ref) => `${ref.kind}:${ref.entityId}`)
