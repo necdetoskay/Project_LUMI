@@ -42,16 +42,18 @@ function validation(message: string) {
 
 function serviceError(error: unknown) {
   const err = error as Error;
-  if (err.name === "AuthorizationError")
+  if (err.name === "AuthorizationError") {
     return NextResponse.json(
       { error: "FORBIDDEN", message: err.message },
       { status: 403 },
     );
-  if (err.message?.startsWith("ONBOARDING_STEP_OUT_OF_ORDER"))
+  }
+  if (err.message?.startsWith("ONBOARDING_STEP_OUT_OF_ORDER")) {
     return NextResponse.json(
       { error: "STEP_OUT_OF_ORDER", message: err.message },
       { status: 409 },
     );
+  }
   return NextResponse.json(
     {
       error: "ONBOARDING_ERROR",
@@ -84,8 +86,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return withParent(async (parent) => {
     const body = (await request.json()) as Body;
-    if (!body.householdId || !body.childProfileId || !body.action)
+    if (!body.householdId || !body.childProfileId || !body.action) {
       return validation("action, householdId and childProfileId are required");
+    }
     const input = {
       householdId: body.householdId,
       childProfileId: body.childProfileId,
@@ -188,6 +191,8 @@ export async function POST(request: Request) {
           return NextResponse.json({
             characterId: committed.characterId,
             worldId: committed.world.worldId,
+            foundationReview: committed.review,
+            bootstrap: committed.bootstrap,
           });
         }
         default:

@@ -16,28 +16,20 @@ async function createParentFixture(context: BrowserContext) {
     },
   });
   expect(register.status()).toBe(201);
-
   const login = await request.post("/api/auth/login", {
     data: { email, password: PASSWORD, rememberMe: true },
   });
   expect(login.status()).toBe(200);
-
   const household = await request.post("/api/households", {
     data: { name: "M7 Family", slug: `m7-family-${suffix}` },
   });
   expect(household.status()).toBe(201);
   const householdId = (await household.json()).household.id as string;
-
   const child = await request.post("/api/child-profiles", {
-    data: {
-      householdId,
-      displayName: "Lina M7",
-      ageBand: "6-8",
-    },
+    data: { householdId, displayName: "Lina M7", ageBand: "6-8" },
   });
   expect(child.status()).toBe(201);
   const childProfileId = (await child.json()).profile.id as string;
-
   const key = await request.put("/api/settings/llm", {
     data: {
       action: "upsert-key",
@@ -69,7 +61,6 @@ async function createParentFixture(context: BrowserContext) {
     });
     expect(setting.status()).toBe(200);
   }
-
   return { householdId, childProfileId };
 }
 
@@ -90,7 +81,7 @@ async function selectFirstCandidateAndContinue(page: Page) {
 }
 
 test.describe("M7 canonical Character Onboarding browser E2E", () => {
-  test("completes all 9 stages, survives refresh/back, and opens committed character", async ({
+  test("completes all 9 stages, persists a spoiler-safe foundation, and retries idempotently", async ({
     page,
     context,
   }) => {
@@ -105,7 +96,6 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     await page.getByTestId("choice-fantastic").click();
     await expect(page.getByTestId("continue-step")).toBeEnabled();
     await page.getByTestId("continue-step").click();
-
     await expectStep(page, "character_identity");
     await expect(page.getByTestId("generation-loading")).toBeVisible();
     await selectFirstCandidateAndContinue(page);
@@ -113,17 +103,14 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     await expectStep(page, "universe");
     await page.getByTestId("choice-lumi-prime").click();
     await page.getByTestId("continue-step").click();
-
     await expectStep(page, "world");
     await expect(page.getByTestId("candidate-card").first()).toBeVisible({
       timeout: 30_000,
     });
 
-    // Refresh must rehydrate the same persisted cycle instead of restarting it.
     await page.reload();
     await expectStep(page, "world");
     await selectFirstCandidateAndContinue(page);
-
     await expectStep(page, "compatibility");
     await selectFirstCandidateAndContinue(page);
 
@@ -131,8 +118,6 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
     await expect(page.getByTestId("candidate-card").first()).toBeVisible({
       timeout: 30_000,
     });
-
-    // Leave the wizard and use browser Back. The persisted step must resume.
     await page.getByRole("link", { name: "Çocuk alanına dön" }).click();
     await expect(page).toHaveURL(
       new RegExp(
@@ -145,28 +130,70 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
 
     await expectStep(page, "origin");
     await selectFirstCandidateAndContinue(page);
-
     await expectStep(page, "core_saga");
     await selectFirstCandidateAndContinue(page);
-
     await expectStep(page, "final_review");
-    await expect(page.getByTestId("final-review")).toContainText(
-      "Luna Starwhisperer",
+
+    const review = page.getByTestId("final-review");
+    await expect(review).toContainText("Luna Starwhisperer");
+    await expect(review).toContainText("Starglow Forest");
+    await expect(review).toContainText("Whispering Crystal Glades");
+    await expect(review).toContainText("Starlight Weaver");
+    await expect(review).toContainText("The Lost Melody of the Crystal Glades");
+
+    const finalizeResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/character-creation/canonical") &&
+        response.request().method() === "POST" &&
+        response.request().postData()?.includes('"action":"finalize"') === true,
     );
-    await expect(page.getByTestId("final-review")).toContainText(
-      "Starglow Forest",
-    );
-    await expect(page.getByTestId("final-review")).toContainText(
+    await page.getByTestId("finalize-character").click();
+    const finalizeResponse = await finalizeResponsePromise;
+    expect(finalizeResponse.status()).toBe(200);
+    const committed = (await finalizeResponse.json()) as {
+      characterId: string;
+      worldId: string;
+      foundationReview: {
+        identity: { name: string };
+        world: { name: string };
+        region: { name: string };
+        origin: { title: string };
+        currentSituation: string;
+        publicSaga: { title: string; premise: string; longTermGoal: string };
+      };
+      bootstrap: {
+        status: string;
+        manifestStatus: string;
+        idempotencyKey: string;
+      };
+    };
+    expect(committed.foundationReview.identity.name).toBe("Luna Starwhisperer");
+    expect(committed.foundationReview.world.name).toBe("Starglow Forest");
+    expect(committed.foundationReview.region.name).toBe(
       "Whispering Crystal Glades",
     );
-    await expect(page.getByTestId("final-review")).toContainText(
-      "Starlight Weaver",
-    );
-    await expect(page.getByTestId("final-review")).toContainText(
+    expect(committed.foundationReview.origin.title).toBe("Starlight Weaver");
+    expect(committed.foundationReview.publicSaga.title).toBe(
       "The Lost Melody of the Crystal Glades",
     );
+    expect(committed.foundationReview.currentSituation.length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      committed.foundationReview.publicSaga.premise.length,
+    ).toBeGreaterThan(0);
+    expect(JSON.stringify(committed.foundationReview)).not.toContain(
+      "deepTruth",
+    );
+    expect(JSON.stringify(committed.foundationReview)).not.toContain(
+      "forbiddenEarlyReveals",
+    );
+    expect(committed.bootstrap.status).toBe("pending");
+    expect(committed.bootstrap.manifestStatus).toBe("planned");
+    expect(committed.bootstrap.idempotencyKey).toMatch(
+      /^living-world-bootstrap:/,
+    );
 
-    await page.getByTestId("finalize-character").click();
     await expect(page).toHaveURL(
       new RegExp(`/app/profiles/${childProfileId}/characters/[0-9a-f-]+$`),
       { timeout: 30_000 },
@@ -175,7 +202,25 @@ test.describe("M7 canonical Character Onboarding browser E2E", () => {
       page.getByRole("heading", { name: "Luna Starwhisperer", exact: true }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // The draft cycle must be gone after final commit.
+    const retry = await context.request.post(
+      "/api/character-creation/canonical",
+      {
+        data: { action: "finalize", householdId, childProfileId },
+      },
+    );
+    expect(retry.status()).toBe(200);
+    const retried = (await retry.json()) as {
+      characterId: string;
+      worldId: string;
+      bootstrap: { status: string; idempotencyKey: string };
+    };
+    expect(retried.characterId).toBe(committed.characterId);
+    expect(retried.worldId).toBe(committed.worldId);
+    expect(retried.bootstrap.status).toBe("pending");
+    expect(retried.bootstrap.idempotencyKey).toBe(
+      committed.bootstrap.idempotencyKey,
+    );
+
     const cycle = await context.request.get(
       `/api/character-creation/canonical?householdId=${encodeURIComponent(householdId)}&childProfileId=${encodeURIComponent(childProfileId)}`,
     );
