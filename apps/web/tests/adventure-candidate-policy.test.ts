@@ -33,10 +33,9 @@ describe("Genesis adventure candidate policy", () => {
     );
     const worldEvent = candidate("world-event:event-1", "world_event");
 
-    const result = selectAdventureCandidateWindow(
-      [...inventory, worldEvent],
-      { limit: 6 },
-    );
+    const result = selectAdventureCandidateWindow([...inventory, worldEvent], {
+      limit: 6,
+    });
 
     expect(result.candidates[0]).toEqual(worldEvent);
     expect(result.candidates).toContainEqual(worldEvent);

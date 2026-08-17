@@ -97,12 +97,14 @@ export const GET = observeHandler(
             {
               sourceFamily: "world_event",
               available: false,
-              reason: "No finalized character is available for world discovery.",
+              reason:
+                "No finalized character is available for world discovery.",
             },
             {
               sourceFamily: "rumor",
               available: false,
-              reason: "No finalized character is available for rumor discovery.",
+              reason:
+                "No finalized character is available for rumor discovery.",
             },
             {
               sourceFamily: "npc_call",
@@ -168,13 +170,7 @@ export const GET = observeHandler(
 
         for (const event of events) {
           const title =
-            payloadString(
-              event.payload,
-              "title",
-              "name",
-              "claim",
-              "summary",
-            ) ??
+            payloadString(event.payload, "title", "name", "claim", "summary") ??
             currentLocation?.displayName ??
             "Dünyada yeni bir olay";
           const teaser =
@@ -185,8 +181,7 @@ export const GET = observeHandler(
               "message",
               "summary",
               "claim",
-            ) ??
-            `${title} ile ilgili gerçek bir değişim dünyada iz bırakıyor.`;
+            ) ?? `${title} ile ilgili gerçek bir değişim dünyada iz bırakıyor.`;
 
           candidates.push({
             id: `world-event:${event.id}`,
