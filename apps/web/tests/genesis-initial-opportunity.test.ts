@@ -49,6 +49,7 @@ describe("Genesis initial adventure opportunities", () => {
     });
   });
 
+  // Regression: Genesis must never invent a rumor merely to fill a source-family slot.
   it("does not fabricate a rumor when Genesis has not established a belief-backed source", () => {
     const result = generate(0.55);
 
