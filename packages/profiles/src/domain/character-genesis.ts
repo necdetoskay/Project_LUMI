@@ -195,7 +195,8 @@ export function validateCharacterFoundation(
   if (
     foundation.bootstrapManifest &&
     (foundation.bootstrapManifest.householdId !== foundation.householdId ||
-      foundation.bootstrapManifest.childProfileId !== foundation.childProfileId ||
+      foundation.bootstrapManifest.childProfileId !==
+        foundation.childProfileId ||
       foundation.bootstrapManifest.characterId !== foundation.characterId ||
       foundation.bootstrapManifest.worldId !== foundation.worldId)
   ) {
@@ -310,9 +311,10 @@ export function validateSagaProgression(
   }
 
   const hiddenTruth = normalize(canon.deepTruth);
-  const leaked = [...progression.knownFacts, ...progression.currentBeliefs].some(
-    (value) => normalize(value) === hiddenTruth,
-  );
+  const leaked = [
+    ...progression.knownFacts,
+    ...progression.currentBeliefs,
+  ].some((value) => normalize(value) === hiddenTruth);
   if (leaked && canon.forbiddenEarlyReveals.length > 0) {
     throw new ValidationError(
       "SAGA_DEEP_TRUTH_LEAK",
