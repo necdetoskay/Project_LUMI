@@ -18,16 +18,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Show Prettier diff
         run: |
-          pnpm exec prettier --write \
-            "docs/04-architecture/lumi/ai-orchestration/Impact-Aware Generation Routing.md" \
-            packages/profiles/migrations/0072_genesis_generation_task_types.sql \
-            packages/profiles/src/application/llm-settings/generation-routing.ts \
-            packages/profiles/src/application/llm-settings/index.ts \
-            packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
-            packages/profiles/tests/application/generation-routing.test.ts
+          pnpm format
           git diff --no-ext-diff -- \
             "docs/04-architecture/lumi/ai-orchestration/Impact-Aware Generation Routing.md" \
-            packages/profiles/migrations/0072_genesis_generation_task_types.sql \
             packages/profiles/src/application/llm-settings/generation-routing.ts \
             packages/profiles/src/application/llm-settings/index.ts \
             packages/profiles/src/db/schema/profile/llm-task-model-settings.ts \
