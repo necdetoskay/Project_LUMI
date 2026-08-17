@@ -147,7 +147,10 @@ describe("LegacyCharacterFoundationBackfillService", () => {
       currentSituation: "The winter tide is approaching.",
       longTermDesire: "Keep the harbor safe.",
       fundamentalNeed: "Accept help from her community.",
-      knownFacts: ["The lighthouse lens is cracked.", "Sera knows the old routes."],
+      knownFacts: [
+        "The lighthouse lens is cracked.",
+        "Sera knows the old routes.",
+      ],
       currentBeliefs: ["The winter tide will arrive early."],
       unresolvedQuestions: ["Why is the tide changing?"],
       establishedSagaTruth: "The moon engine controls the winter tide.",
