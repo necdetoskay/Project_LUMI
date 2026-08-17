@@ -19,6 +19,7 @@ export {
   matchesOriginPackageContract,
 } from "./character";
 export type { CharacterState } from "./character";
+export * from "./character-genesis";
 export {
   DomainError,
   ValidationError,
