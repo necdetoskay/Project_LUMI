@@ -84,7 +84,6 @@ export function ProfileCharacterDetailSection({
       location: NonNullable<
         NonNullable<WorldResponse["world"]>["currentLocation"]
       >,
-      regionName: string | null,
       householdId: string,
     ) => {
       setLocationVisual({ assetId: "", imageUrl: "", loading: true });
@@ -98,55 +97,11 @@ export function ProfileCharacterDetailSection({
           assets?: Array<{ id: string; lifecycleState: string }>;
           canon?: { selectedAssetId: string | null } | null;
         };
-        let assetId = body.canon?.selectedAssetId ?? null;
-        const candidate = body.assets?.find(
-          (asset) => asset.lifecycleState !== "rejected",
-        );
-        if (!assetId && candidate) {
-          assetId = candidate.id;
-          await fetch(`${baseUrl}${query}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "select", assetId }),
-          });
-        }
-
-        if (!assetId) {
-          const generation = await fetch(`${baseUrl}${query}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "generate",
-              assetKind: "location-background",
-              idempotencyKey: `location-background:${location.id}:v1`,
-              prompt: [
-                `A warm, child-friendly establishing illustration of ${location.displayName}.`,
-                `Location type: ${location.locationType}.`,
-                regionName ? `Region: ${regionName}.` : "",
-                "Storybook fantasy environment, clear readable shapes, inviting atmosphere, no characters, no text, landscape composition.",
-              ]
-                .filter(Boolean)
-                .join(" "),
-              candidateCount: 1,
-              aspectRatio: "16:9",
-              requestMaxCostUsd: 0.1,
-              allowGrid: false,
-            }),
-          });
-          if (!generation.ok)
-            throw new Error("LOCATION_VISUAL_GENERATION_FAILED");
-          const generated = (await generation.json()) as {
-            candidates?: Array<{ id: string }>;
-          };
-          assetId = generated.candidates?.[0]?.id ?? null;
-          if (assetId) {
-            await fetch(`${baseUrl}${query}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "select", assetId }),
-            });
-          }
-        }
+        const assetId =
+          body.canon?.selectedAssetId ??
+          body.assets?.find((asset) => asset.lifecycleState !== "rejected")
+            ?.id ??
+          null;
 
         if (!assetId) throw new Error("LOCATION_VISUAL_NOT_READY");
         setLocationVisual({
@@ -220,12 +175,7 @@ export function ProfileCharacterDetailSection({
         const nextWorld = worldBody.world ?? null;
         setWorld(nextWorld);
         if (nextWorld?.currentLocation) {
-          const region = nextWorld.regions.find((item) => item.isCurrentRegion);
-          void ensureLocationVisual(
-            nextWorld.currentLocation,
-            region?.displayName ?? null,
-            householdId,
-          );
+          void ensureLocationVisual(nextWorld.currentLocation, householdId);
         } else {
           setLocationVisual(null);
         }
