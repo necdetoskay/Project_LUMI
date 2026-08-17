@@ -1,38 +1,90 @@
-import { createWorldFromOrigin } from "@lumi/world/application";
-import { finalizeCharacterFoundation } from "../../../../packages/profiles/src/application/character-foundation-onboarding.service";
+import {
+  createWorldFromOrigin,
+  getWorldForCharacter,
+} from "@lumi/world/application";
+import {
+  completeCharacterFoundationCommit,
+  prepareCharacterFoundationCommit,
+} from "../../../../packages/profiles/src/application/character-foundation-finalization.service";
+import {
+  buildOnboardingFoundationRecord,
+  getOnboardingFoundationGenerationProvenance,
+  projectOnboardingFoundationForFinalReview,
+  saveOnboardingFoundationIdempotently,
+} from "../../../../packages/profiles/src/application/onboarding-foundation-commit.service";
 
 export async function finalizeCharacterOnboarding(
   userId: string,
   input: { householdId: string; childProfileId: string },
 ) {
-  const committed = await finalizeCharacterFoundation(userId, input);
-  const { foundation } = committed;
-  const world = await createWorldFromOrigin({
+  const prepared = await prepareCharacterFoundationCommit(userId, input);
+  const { evidence } = prepared;
+
+  const existingWorld = await getWorldForCharacter(prepared.characterId);
+  const world = existingWorld
+    ? { worldId: existingWorld.id }
+    : await createWorldFromOrigin({
+        householdId: input.householdId,
+        childProfileId: input.childProfileId,
+        characterId: prepared.characterId,
+        universeSeed: evidence.universe.key,
+        originSeed: evidence.origin.key,
+        acceptedCandidateSeed: evidence.world.key,
+        generatorVersion: "character-onboarding-v2",
+        vectorVersion: "v1",
+        actorUserId: userId,
+        originPackage: {
+          characterType: String(evidence.characterType ?? "fantasy"),
+          subtype: evidence.identity.identity,
+          originConcept: evidence.origin.origin,
+          startingRegionArchetype: evidence.region.name,
+          startingLocation: evidence.region.description,
+          homeArchetype: evidence.origin.home,
+          nearbyNpcSeed: evidence.origin.formativeExperience,
+          firstMysterySeed: evidence.origin.storyHook,
+          noveltyMarkers: [
+            evidence.world.key,
+            evidence.region.key,
+            evidence.saga.key,
+          ],
+          safetyBounds: {},
+        },
+      });
+
+  const provenance = await getOnboardingFoundationGenerationProvenance(
+    prepared.cycleId,
+  );
+  const candidate = buildOnboardingFoundationRecord({
     householdId: input.householdId,
     childProfileId: input.childProfileId,
-    characterId: committed.characterId,
-    universeSeed: foundation.universe.key,
-    originSeed: foundation.origin.key,
-    acceptedCandidateSeed: foundation.world.key,
-    generatorVersion: "character-onboarding-v2",
-    vectorVersion: "v1",
-    actorUserId: userId,
-    originPackage: {
-      characterType: foundation.role,
-      subtype: foundation.identity.identity,
-      originConcept: foundation.origin.origin,
-      startingRegionArchetype: foundation.region.name,
-      startingLocation: foundation.region.description,
-      homeArchetype: foundation.origin.home,
-      nearbyNpcSeed: foundation.origin.formativeExperience,
-      firstMysterySeed: foundation.origin.storyHook,
-      noveltyMarkers: [
-        foundation.world.key,
-        foundation.region.key,
-        foundation.saga.key,
-      ],
-      safetyBounds: {},
-    },
+    characterId: prepared.characterId,
+    worldId: world.worldId,
+    cycleId: prepared.cycleId,
+    evidence,
+    ...(provenance.genesis ? { genesisProvenance: provenance.genesis } : {}),
+    ...(provenance.saga ? { sagaProvenance: provenance.saga } : {}),
   });
-  return { ...committed, world };
+  const foundation = await saveOnboardingFoundationIdempotently(candidate);
+  const review = projectOnboardingFoundationForFinalReview(evidence, foundation);
+
+  await completeCharacterFoundationCommit({
+    cycleId: prepared.cycleId,
+    householdId: input.householdId,
+    childProfileId: input.childProfileId,
+    characterId: prepared.characterId,
+    worldId: world.worldId,
+    sagaKey: evidence.saga.key,
+  });
+
+  return {
+    characterId: prepared.characterId,
+    cycleId: prepared.cycleId,
+    world,
+    foundation,
+    review,
+    bootstrap: {
+      status: foundation.bootstrapManifest?.status ?? "planned",
+      idempotencyKey: foundation.bootstrapManifest?.idempotencyKey ?? null,
+    },
+  };
 }
