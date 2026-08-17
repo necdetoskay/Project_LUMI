@@ -95,6 +95,11 @@ export type {
   NpcContextIdentity,
   NpcContextIdentityQuery,
 } from "./npc-context-reader.service";
+export type {
+  FoundationScope,
+  SaveCharacterFoundationInput,
+  CharacterFoundationRepository,
+} from "./character-foundation.repository";
 export {
   getCharacterDomain,
   applyTraitDeltas,
