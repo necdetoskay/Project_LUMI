@@ -72,7 +72,9 @@ export class StoryGenerationContextComposer {
     });
   }
 
-  async build(request: StoryGenerationContextRequest): Promise<ContextManifest> {
+  async build(
+    request: StoryGenerationContextRequest,
+  ): Promise<ContextManifest> {
     const { saga, ...baseRequest } = request;
     const manifest = await this.builder.build({
       ...baseRequest,

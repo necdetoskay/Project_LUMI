@@ -1,6 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import { characterDomainEvents, characterFoundations } from "../db/schema/profile";
+import {
+  characterDomainEvents,
+  characterFoundations,
+} from "../db/schema/profile";
 import {
   validateCharacterFoundation,
   validateSagaProgression,
@@ -99,15 +102,20 @@ export function applySagaProgressionMutation(
     knownFacts: mergeUnique(current.knownFacts, mutation.addKnownFacts),
     currentBeliefs: mergeUnique(
       current.currentBeliefs.filter(
-        (belief) => !normalizedSet(mutation.removeCurrentBeliefs).has(normalize(belief)),
+        (belief) =>
+          !normalizedSet(mutation.removeCurrentBeliefs).has(normalize(belief)),
       ),
       mutation.addCurrentBeliefs,
     ),
-    revealedClues: mergeUnique(current.revealedClues, mutation.addRevealedClues),
+    revealedClues: mergeUnique(
+      current.revealedClues,
+      mutation.addRevealedClues,
+    ),
     falseLeads: mergeUnique(current.falseLeads, mutation.addFalseLeads),
     unresolvedQuestions: mergeUnique(
       current.unresolvedQuestions.filter(
-        (question) => !normalizedSet(mutation.resolveQuestions).has(normalize(question)),
+        (question) =>
+          !normalizedSet(mutation.resolveQuestions).has(normalize(question)),
       ),
       mutation.addUnresolvedQuestions,
     ),

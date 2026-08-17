@@ -95,7 +95,9 @@ describe("Saga progression", () => {
     const serialized = JSON.stringify(projection);
 
     expect(serialized).not.toContain(foundation.sagaCanon.deepTruth);
-    expect(serialized).not.toContain(foundation.sagaCanon.revealLayers[1]!.reveal);
+    expect(serialized).not.toContain(
+      foundation.sagaCanon.revealLayers[1]!.reveal,
+    );
     expect(projection.revealStage).toBe(0);
   });
 
@@ -145,7 +147,9 @@ describe("Saga progression", () => {
         foundation.sagaProgression,
         { addKnownFacts: [foundation.sagaCanon.deepTruth] },
       ),
-    ).toThrow(/SAGA_TRUTH_EQUALS_CHARACTER_KNOWLEDGE|SAGA_FORBIDDEN_REVEAL_LEAK/);
+    ).toThrow(
+      /SAGA_TRUTH_EQUALS_CHARACTER_KNOWLEDGE|SAGA_FORBIDDEN_REVEAL_LEAK/,
+    );
   });
 
   it.each(["mystery", "identity", "world-change"] as const)(
