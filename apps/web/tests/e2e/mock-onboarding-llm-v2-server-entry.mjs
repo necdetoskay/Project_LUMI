@@ -102,7 +102,6 @@ const compatibility = [
     classification: "natural",
     explanation:
       "The selected fantastic character naturally belongs in this world because its crystal and starlight ecology supports the character's abilities without requiring a forced exception.",
-    adaptationPremise: "",
   },
 ];
 
