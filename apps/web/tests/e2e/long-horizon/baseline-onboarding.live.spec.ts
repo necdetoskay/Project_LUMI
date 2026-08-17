@@ -685,9 +685,7 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         stories.filter((story) => story.sourceFamily === "rumor"),
       ).toHaveLength(2);
 
-      await page
-        .getByRole("button", { name: /Karakterler$/ })
-        .click();
+      await page.getByRole("button", { name: /Karakterler$/ }).click();
       const characterPanel = page.locator("main article").first();
       await expect(characterPanel).toBeVisible({ timeout: 60_000 });
       const finalCharacterState = (await characterPanel.innerText()).trim();
@@ -698,7 +696,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         `# Final Character State\n\n${finalCharacterState}`,
       );
 
-      const worldLink = page.getByRole("link", { name: /Dünyasına Git|Dünyasını aç/ });
+      const worldLink = page.getByRole("link", {
+        name: /Dünyasına Git|Dünyasını aç/,
+      });
       await expect(worldLink).toBeVisible();
       await worldLink.click();
       await expect(page).toHaveURL(/\/world(?:\?.*)?$/, { timeout: 60_000 });
