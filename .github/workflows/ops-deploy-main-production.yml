@@ -1,0 +1,53 @@
+name: Ops Deploy Current Main Production
+
+on:
+  push:
+    branches:
+      - ops/deploy-main-production
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
+      VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      VERCEL_PROJECT_NAME: project-lumi-web
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      MAIN_SHA: d1bf7858563596939a32432a88936494af6da1ae
+    steps:
+      - name: Verify Vercel token
+        run: test -n "$VERCEL_TOKEN"
+      - name: Deploy current main SHA to production
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          request="$RUNNER_TEMP/request.json"
+          response="$RUNNER_TEMP/response.json"
+          jq -n --arg name "$VERCEL_PROJECT_NAME" --arg project "$VERCEL_PROJECT_ID" --arg sha "$MAIN_SHA" '{name:$name,project:$project,target:"production",gitSource:{type:"github",org:"necdetoskay",repo:"Project_LUMI",ref:"main",sha:$sha},gitMetadata:{remoteUrl:"https://github.com/necdetoskay/Project_LUMI",commitRef:"main",commitSha:$sha,dirty:false,ci:true,ciType:"github-actions",rootDirectory:"apps/web"}}' > "$request"
+          curl --fail-with-body --silent --show-error --request POST --output "$response" --header "Authorization: Bearer $VERCEL_TOKEN" --header "Content-Type: application/json" --data-binary "@$request" "https://api.vercel.com/v13/deployments?teamId=$VERCEL_ORG_ID"
+          id="$(jq -r '.id // empty' "$response")"
+          url="$(jq -r '.url // empty' "$response")"
+          test -n "$id"
+          test -n "$url"
+          echo "deployment_id=$id" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$url" >> "$GITHUB_OUTPUT"
+          echo "Created production deployment $id for $MAIN_SHA"
+      - name: Wait until ready
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.deployment_id }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            response="$(curl --fail-with-body --silent --show-error --header "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/$DEPLOYMENT_ID?teamId=$VERCEL_ORG_ID")"
+            state="$(printf '%s' "$response" | jq -r '.readyState // .state // empty')"
+            echo "Deployment state: $state"
+            if [ "$state" = "READY" ]; then exit 0; fi
+            if [ "$state" = "ERROR" ] || [ "$state" = "CANCELED" ]; then exit 1; fi
+            sleep 10
+          done
+          exit 1
