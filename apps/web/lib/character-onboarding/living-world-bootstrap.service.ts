@@ -1,5 +1,4 @@
 import { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence/db";
-import { getWorldDetail } from "@lumi/world/application";
 import {
   DrizzleLivingWorldBootstrapManifestStore,
   LivingWorldBootstrapService,
@@ -7,7 +6,8 @@ import {
   getCharacterFoundationByCharacterId,
   type LivingWorldBootstrapMaterializer,
   type LivingWorldBootstrapResult,
-} from "@lumi/profiles/application";
+} from "@lumi/profiles";
+import { getWorldDetail } from "@lumi/world/application";
 
 function localContextRefs(
   detail: Awaited<ReturnType<typeof getWorldDetail>>,
@@ -42,7 +42,7 @@ class CanonicalLivingWorldBootstrapMaterializer
   implements LivingWorldBootstrapMaterializer
 {
   private readonly snapshots = new DrizzleNpcSnapshotRepository();
-  private worldDetailCache = new Map<
+  private readonly worldDetailCache = new Map<
     string,
     Awaited<ReturnType<typeof getWorldDetail>>
   >();
@@ -55,12 +55,16 @@ class CanonicalLivingWorldBootstrapMaterializer
     return detail;
   }
 
-  async resolveLocalContext(input: Parameters<LivingWorldBootstrapMaterializer["resolveLocalContext"]>[0]) {
+  async resolveLocalContext(
+    input: Parameters<LivingWorldBootstrapMaterializer["resolveLocalContext"]>[0],
+  ) {
     const detail = await this.worldDetail(input.foundation.worldId);
     return localContextRefs(detail);
   }
 
-  async ensureNpc(input: Parameters<LivingWorldBootstrapMaterializer["ensureNpc"]>[0]) {
+  async ensureNpc(
+    input: Parameters<LivingWorldBootstrapMaterializer["ensureNpc"]>[0],
+  ) {
     const identity = await ensureBootstrapNpcIdentity({
       householdId: input.foundation.householdId,
       childProfileId: input.foundation.childProfileId,
