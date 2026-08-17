@@ -10,6 +10,7 @@
   "hub": {
     "kicker": "Stories",
     "characterTitle": "{name}'s Adventures",
+    "characterTitleTr": "{possessive} Adventures",
     "fallbackTitle": "Your Character's Adventures",
     "intro": "Continue your current adventure or discover a new one waiting in your world.",
     "newAdventure": "New Adventure",
