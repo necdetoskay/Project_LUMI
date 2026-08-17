@@ -60,6 +60,10 @@ jobs:
           for old, new in replacements:
               if old in text:
                   text = text.replace(old, new, 1)
+          text = text.replace(
+              'page.getByRole("button", { name: "Yeni Macera" })',
+              'page.getByRole("button", { name: "Yeni Macera", exact: true }).first()',
+          )
           path.write_text(text)
           PY
 
