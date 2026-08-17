@@ -2,5 +2,6 @@ export * from "./domain";
 export * from "./db";
 export * from "./policy";
 export * from "./application";
+export * from "./application/creative-genesis-pipeline.service";
 export * from "./application/npc-context-reader.service";
 export * from "./adapters";
