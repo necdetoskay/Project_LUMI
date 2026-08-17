@@ -1,4 +1,11 @@
-import { check, index, integer, jsonb, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  jsonb,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import type { CharacterFoundationRecord } from "../../../domain/character-genesis";
@@ -21,7 +28,9 @@ export const characterFoundations = profileSchema.table(
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
     version: integer("version").notNull().default(1),
-    foundation: jsonb("foundation").$type<CharacterFoundationRecord>().notNull(),
+    foundation: jsonb("foundation")
+      .$type<CharacterFoundationRecord>()
+      .notNull(),
     bootstrapStatus: varchar("bootstrap_status", { length: 20 })
       .notNull()
       .default("pending"),
@@ -40,4 +49,5 @@ export const characterFoundations = profileSchema.table(
 );
 
 export type CharacterFoundationRow = typeof characterFoundations.$inferSelect;
-export type NewCharacterFoundationRow = typeof characterFoundations.$inferInsert;
+export type NewCharacterFoundationRow =
+  typeof characterFoundations.$inferInsert;

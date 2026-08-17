@@ -65,7 +65,10 @@ export async function finalizeCharacterOnboarding(
     ...(provenance.saga ? { sagaProvenance: provenance.saga } : {}),
   });
   const foundation = await saveOnboardingFoundationIdempotently(candidate);
-  const review = projectOnboardingFoundationForFinalReview(evidence, foundation);
+  const review = projectOnboardingFoundationForFinalReview(
+    evidence,
+    foundation,
+  );
 
   await completeCharacterFoundationCommit({
     cycleId: prepared.cycleId,
