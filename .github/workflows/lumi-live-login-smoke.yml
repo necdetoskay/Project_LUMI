@@ -1,0 +1,41 @@
+name: LUMI Live Login Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/lumi-live-login-smoke.yml
+      - apps/web/tests/e2e/long-horizon/login-smoke.live.spec.ts
+
+permissions:
+  contents: read
+
+jobs:
+  login-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard credentials
+        run: |
+          test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Verify production login only
+        run: pnpm --filter @lumi/web exec playwright test --config playwright.long-horizon-live.config.ts tests/e2e/long-horizon/login-smoke.live.spec.ts
