@@ -175,7 +175,9 @@ async function openStoriesTab(page: Page): Promise<void> {
   const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });
   await expect(storiesTab).toBeVisible({ timeout: 60_000 });
   await storiesTab.click();
-  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+  await expect(
+    page.getByRole("button", { name: "Yeni Macera", exact: true }).first(),
+  ).toBeVisible({
     timeout: 60_000,
   });
 }
@@ -210,7 +212,9 @@ async function chooseVisibleAdventureCandidate(
   requireDistinct: boolean,
   random: () => number,
 ): Promise<VisibleAdventureCandidate> {
-  const newAdventure = page.getByRole("button", { name: "Yeni Macera" });
+  const newAdventure = page
+    .getByRole("button", { name: "Yeni Macera", exact: true })
+    .first();
   await expect(newAdventure).toBeVisible({ timeout: 60_000 });
   await newAdventure.click();
   const dialog = page.getByRole("dialog");
@@ -347,7 +351,9 @@ async function startAndCompleteStory(
   await expect(page).toHaveURL(/\/app\/profiles\/[^/?#]+(?:\?tab=stories)?$/i, {
     timeout: 60_000,
   });
-  await expect(page.getByRole("button", { name: "Yeni Macera" })).toBeVisible({
+  await expect(
+    page.getByRole("button", { name: "Yeni Macera", exact: true }).first(),
+  ).toBeVisible({
     timeout: 60_000,
   });
 
