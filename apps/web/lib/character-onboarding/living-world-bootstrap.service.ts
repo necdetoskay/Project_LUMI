@@ -3,11 +3,34 @@ import {
   DrizzleLivingWorldBootstrapManifestStore,
   LivingWorldBootstrapService,
   ensureBootstrapNpcIdentity,
+  ensureBootstrapRelationship,
   getCharacterFoundationByCharacterId,
   type LivingWorldBootstrapMaterializer,
   type LivingWorldBootstrapResult,
 } from "@lumi/profiles";
 import { getWorldDetail } from "@lumi/world/application";
+
+const CANONICAL_NEEDS: Readonly<Record<string, readonly string[]>> = {
+  caregiver: ["love", "safety"],
+  sibling: ["belonging"],
+  family: ["belonging", "love"],
+  friend: ["belonging"],
+  neighbour: ["belonging"],
+  mentor: ["learning", "purpose"],
+  rival: ["achievement"],
+  rescuer: ["safety", "purpose"],
+  creator: ["purpose", "achievement"],
+  facility_ai: ["purpose", "learning"],
+  maintenance_companion: ["belonging", "purpose"],
+  symbiotic_creature: ["safety", "belonging"],
+  predator: ["hunger", "safety"],
+  local_guardian: ["safety", "purpose"],
+  first_neutral_contact: ["curiosity"],
+  distant_kin_signal: ["belonging", "curiosity"],
+  community_member: ["belonging"],
+  unknown_presence: ["curiosity"],
+  custom: ["purpose"],
+};
 
 function localContextRefs(
   detail: Awaited<ReturnType<typeof getWorldDetail>>,
@@ -74,6 +97,14 @@ class CanonicalLivingWorldBootstrapMaterializer
       plan: input.plan,
     });
 
+    const relationship = await ensureBootstrapRelationship({
+      householdId: input.foundation.householdId,
+      characterId: input.foundation.characterId,
+      npcId: identity.npcId,
+      roleType: input.plan.role.roleType,
+      relationshipSeed: input.plan.relationshipSeed,
+    });
+
     const existingSnapshots = await this.snapshots.listForContext(
       input.foundation.householdId,
       input.foundation.worldId,
@@ -84,7 +115,7 @@ class CanonicalLivingWorldBootstrapMaterializer
       (snapshot) => snapshot.npcId === identity.npcId,
     );
     const detail = await this.worldDetail(input.foundation.worldId);
-    const locationId = detail.locations[0]?.id ?? null;
+    const locationId = detail.locations[0]?.id ?? detail.home?.id ?? null;
     const now = new Date();
 
     await this.snapshots.upsert({
@@ -94,7 +125,7 @@ class CanonicalLivingWorldBootstrapMaterializer
       childProfileId: input.foundation.childProfileId,
       characterId: input.foundation.characterId,
       locationId,
-      needTypes: [...input.plan.needTypes],
+      needTypes: [...(CANONICAL_NEEDS[input.plan.role.roleType] ?? ["purpose"])],
       relationshipToCharacter: input.plan.relationshipSeed,
       lastInteractionAt: existing?.lastInteractionAt ?? now,
       updatedAt: now,
@@ -102,9 +133,9 @@ class CanonicalLivingWorldBootstrapMaterializer
 
     return {
       npcId: identity.npcId,
-      npcReused: identity.reused,
-      relationshipEntityId: identity.npcId,
-      relationshipReused: Boolean(existing),
+      npcReused: identity.reused && Boolean(existing),
+      relationshipEntityId: relationship.entityId,
+      relationshipReused: relationship.reused,
     };
   }
 }
