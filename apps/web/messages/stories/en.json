@@ -1,0 +1,47 @@
+{
+  "load": {
+    "householdRequired": "Prepare the family space before opening stories.",
+    "unavailable": "Adventures cannot be loaded right now.",
+    "unexpected": "Something went wrong while loading adventures.",
+    "title": "Adventures are taking a short rest",
+    "retry": "Try again",
+    "loadingLabel": "Loading adventures"
+  },
+  "hub": {
+    "kicker": "Stories",
+    "characterTitle": "{name}'s Adventures",
+    "fallbackTitle": "Your Character's Adventures",
+    "intro": "Continue your current adventure or discover a new one waiting in your world.",
+    "newAdventure": "New Adventure",
+    "ongoingSection": "Ongoing Adventure",
+    "pastTitle": "Past Adventures",
+    "pastIntro": "Look back at the stories you have already lived.",
+    "ongoingBadge": "Adventure in progress",
+    "lastLocation": "Last seen: {location}",
+    "continue": "Continue Adventure",
+    "openStory": "Open story",
+    "emptyTitle": "Ready for a new adventure?",
+    "emptyText": "Your world, the items in your bag, and people you know can offer a new story beginning."
+  },
+  "sheet": {
+    "overlayClose": "Close new adventure window",
+    "close": "Close",
+    "kicker": "A New Adventure",
+    "title": "Where should today's adventure begin?",
+    "intro": "Choose an event in your world, a rumor you heard, an item in your bag, or a call from someone you know.",
+    "loadFailed": "New adventure ideas cannot be loaded right now.",
+    "loadUnexpected": "Something went wrong while loading new adventure ideas.",
+    "startFailed": "The adventure could not be started. Please try again.",
+    "startUnexpected": "Something unexpected happened while starting the adventure.",
+    "starting": "Preparing adventure…",
+    "emptyTitle": "The world seems a little quiet",
+    "emptyText": "Try another set to find a new adventure idea.",
+    "refresh": "Show other adventures",
+    "families": {
+      "world_event": {"eyebrow": "Something Happened in the World", "cta": "Follow this clue"},
+      "rumor": {"eyebrow": "You Heard a Rumor", "cta": "Follow the rumor"},
+      "inventory_item": {"eyebrow": "An Item in Your Bag", "cta": "Discover the item's secret"},
+      "npc_call": {"eyebrow": "A Call from Someone", "cta": "Answer the call"}
+    }
+  }
+}
