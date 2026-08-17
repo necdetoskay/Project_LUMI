@@ -39,10 +39,22 @@
     "emptyText": "Yeni bir fikir bulmak için başka maceralara bakabilirsin.",
     "refresh": "Başka maceralar göster",
     "families": {
-      "world_event": {"eyebrow": "Dünyada Bir Şey Oldu", "cta": "Bu izi takip et"},
-      "rumor": {"eyebrow": "Bir Söylenti Duydun", "cta": "Söylentinin peşine düş"},
-      "inventory_item": {"eyebrow": "Çantandaki Bir Eşya", "cta": "Eşyanın sırrını keşfet"},
-      "npc_call": {"eyebrow": "Birinden Gelen Çağrı", "cta": "Çağrıya cevap ver"}
+      "world_event": {
+        "eyebrow": "Dünyada Bir Şey Oldu",
+        "cta": "Bu izi takip et"
+      },
+      "rumor": {
+        "eyebrow": "Bir Söylenti Duydun",
+        "cta": "Söylentinin peşine düş"
+      },
+      "inventory_item": {
+        "eyebrow": "Çantandaki Bir Eşya",
+        "cta": "Eşyanın sırrını keşfet"
+      },
+      "npc_call": {
+        "eyebrow": "Birinden Gelen Çağrı",
+        "cta": "Çağrıya cevap ver"
+      }
     }
   }
 }

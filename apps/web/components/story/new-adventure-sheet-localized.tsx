@@ -83,8 +83,13 @@ export function NewAdventureSheetLocalized({
   useEffect(() => {
     if (!open) return;
     restoreFocusRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const focusTimer = window.setTimeout(
+      () => closeButtonRef.current?.focus(),
+      0,
+    );
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -143,7 +148,9 @@ export function NewAdventureSheetLocalized({
         setError(body.message ?? t("startFailed"));
         return;
       }
-      window.location.assign(`/app/stories/${encodeURIComponent(body.sessionId)}`);
+      window.location.assign(
+        `/app/stories/${encodeURIComponent(body.sessionId)}`,
+      );
     } catch {
       setError(t("startUnexpected"));
     } finally {
@@ -173,7 +180,10 @@ export function NewAdventureSheetLocalized({
             <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
               {t("kicker")}
             </div>
-            <h2 className="mt-1 text-2xl font-black text-on-surface sm:text-3xl" id="new-adventure-title">
+            <h2
+              className="mt-1 text-2xl font-black text-on-surface sm:text-3xl"
+              id="new-adventure-title"
+            >
               {t("title")}
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-on-surface-variant">
@@ -187,13 +197,18 @@ export function NewAdventureSheetLocalized({
             ref={closeButtonRef}
             type="button"
           >
-            <span aria-hidden="true" className="material-symbols-outlined">close</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              close
+            </span>
           </button>
         </header>
 
         <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           {error ? (
-            <div className="mb-4 rounded-2xl border border-error/20 bg-error-container/50 px-4 py-3 text-sm text-on-error-container" role="alert">
+            <div
+              className="mb-4 rounded-2xl border border-error/20 bg-error-container/50 px-4 py-3 text-sm text-on-error-container"
+              role="alert"
+            >
               {error}
             </div>
           ) : null}
@@ -201,7 +216,10 @@ export function NewAdventureSheetLocalized({
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div className="h-44 animate-pulse rounded-3xl bg-surface-container" key={index} />
+                <div
+                  className="h-44 animate-pulse rounded-3xl bg-surface-container"
+                  key={index}
+                />
               ))}
             </div>
           ) : groupedCandidates.length > 0 ? (
@@ -210,15 +228,26 @@ export function NewAdventureSheetLocalized({
                 const family = `families.${candidate.sourceFamily}` as const;
                 const isStarting = startingId === candidate.id;
                 return (
-                  <article className="flex min-h-52 flex-col rounded-3xl border border-outline-variant/60 bg-white p-5 shadow-sm" data-testid="adventure-candidate" key={candidate.id}>
+                  <article
+                    className="flex min-h-52 flex-col rounded-3xl border border-outline-variant/60 bg-white p-5 shadow-sm"
+                    data-testid="adventure-candidate"
+                    key={candidate.id}
+                  >
                     <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.08em] text-primary">
-                      <span aria-hidden="true" className="material-symbols-outlined text-lg">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-lg"
+                      >
                         {FAMILY_ICONS[candidate.sourceFamily]}
                       </span>
                       {t(`${family}.eyebrow`)}
                     </div>
-                    <h3 className="mt-3 text-lg font-black leading-6 text-on-surface">{candidate.title}</h3>
-                    <p className="mt-2 flex-1 text-sm leading-6 text-on-surface-variant">{candidate.teaser}</p>
+                    <h3 className="mt-3 text-lg font-black leading-6 text-on-surface">
+                      {candidate.title}
+                    </h3>
+                    <p className="mt-2 flex-1 text-sm leading-6 text-on-surface-variant">
+                      {candidate.teaser}
+                    </p>
                     <button
                       className="mt-4 inline-flex min-h-11 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-extrabold text-on-primary disabled:opacity-60"
                       disabled={startingId !== null}
@@ -233,9 +262,18 @@ export function NewAdventureSheetLocalized({
             </div>
           ) : (
             <div className="rounded-3xl border border-dashed border-outline-variant bg-white px-6 py-12 text-center">
-              <span aria-hidden="true" className="material-symbols-outlined text-5xl text-primary/60">nights_stay</span>
-              <h3 className="mt-3 text-lg font-black text-on-surface">{t("emptyTitle")}</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-on-surface-variant">{t("emptyText")}</p>
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-5xl text-primary/60"
+              >
+                nights_stay
+              </span>
+              <h3 className="mt-3 text-lg font-black text-on-surface">
+                {t("emptyTitle")}
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-on-surface-variant">
+                {t("emptyText")}
+              </p>
             </div>
           )}
         </div>
@@ -251,7 +289,9 @@ export function NewAdventureSheetLocalized({
             }}
             type="button"
           >
-            <span aria-hidden="true" className="material-symbols-outlined">auto_awesome</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              auto_awesome
+            </span>
             {t("refresh")}
           </button>
         </footer>

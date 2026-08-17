@@ -8,7 +8,9 @@ export default getRequestConfig(async () => {
   const locale = resolveUiLocale(cookieStore.get(uiLocaleCookieName)?.value);
   const [messages, stories] = await Promise.all([
     import(`../messages/${locale}.json`).then((module) => module.default),
-    import(`../messages/stories/${locale}.json`).then((module) => module.default),
+    import(`../messages/stories/${locale}.json`).then(
+      (module) => module.default,
+    ),
   ]);
 
   return {

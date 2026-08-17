@@ -24,7 +24,9 @@ function stubAdventureHubFetch() {
     const url = String(input);
     if (url === "/api/onboarding") {
       return Promise.resolve(
-        jsonResponse({ onboarding: { householdId: "household-1", hasHousehold: true } }),
+        jsonResponse({
+          onboarding: { householdId: "household-1", hasHousehold: true },
+        }),
       );
     }
     if (url === "/api/child-profiles/child-1/stories?householdId=household-1") {
@@ -36,10 +38,15 @@ function stubAdventureHubFetch() {
               sessionId: "session-1",
               title: "Fısıldayan Ormandaki İlk Işık",
               semanticState: "ongoing",
-              playerRecap: "Lina, eski meşe ağacının yanında parlayan izleri buldu.",
+              playerRecap:
+                "Lina, eski meşe ağacının yanında parlayan izleri buldu.",
               currentSceneTitle: "Eski Meşe Ağacı",
               highlights: [
-                { kind: "location", label: "Eski Meşe Ağacı", subjectId: "location-1" },
+                {
+                  kind: "location",
+                  label: "Eski Meşe Ağacı",
+                  subjectId: "location-1",
+                },
               ],
               image: null,
             },
@@ -56,7 +63,8 @@ function stubAdventureHubFetch() {
               id: "opportunity:rumor-1",
               sourceFamily: "rumor",
               title: "Ormandaki Mavi Işıklar",
-              teaser: "Gece olduğunda ağaçların arasında mavi ışıklar görülüyor.",
+              teaser:
+                "Gece olduğunda ağaçların arasında mavi ışıklar görülüyor.",
               ctaKey: "investigateRumor",
               image: null,
             },
@@ -103,7 +111,9 @@ describe("ProfileStoriesSection", () => {
     expect(await screen.findByText("Lina’nın Maceraları")).toBeTruthy();
     expect(screen.getByText("Hikâyeler")).toBeTruthy();
     expect(screen.getByText("En son: Eski Meşe Ağacı")).toBeTruthy();
-    expect(screen.queryByText(/Durum:|Mod:|Versiyon|Checkpoint|active|reading/i)).toBeNull();
+    expect(
+      screen.queryByText(/Durum:|Mod:|Versiyon|Checkpoint|active|reading/i),
+    ).toBeNull();
   });
 
   it("renders English UI copy through the canonical locale catalog", async () => {
@@ -132,7 +142,9 @@ describe("ProfileStoriesSection", () => {
     await waitFor(() => expect(document.activeElement).toBe(close));
     expect(await screen.findByText("Bir Söylenti Duydun")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Başka maceralar göster" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Başka maceralar göster" }),
+    );
     expect(await screen.findByText("Dünyada Bir Şey Oldu")).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/child-profiles/child-1/stories/adventure-candidates?householdId=household-1&page=1",
