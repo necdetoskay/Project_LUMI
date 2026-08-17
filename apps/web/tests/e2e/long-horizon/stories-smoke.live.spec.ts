@@ -35,14 +35,14 @@ test("production Stories route renders the child-first Adventure Hub", async ({
   await expect(storiesTab).toBeVisible({ timeout: 60_000 });
   await storiesTab.click();
 
-  const stories = page.locator("#stories");
+  const newAdventure = page
+    .getByRole("button", { name: /Yeni Macera|New Adventure/i })
+    .first();
+  await expect(newAdventure).toBeVisible({ timeout: 60_000 });
+
+  const stories = page.locator("section").filter({ has: newAdventure }).first();
   await expect(stories).toBeVisible({ timeout: 60_000 });
-  await expect(
-    stories.getByRole("button", { name: /Yeni Macera|New Adventure/i }).first(),
-  ).toBeVisible();
-  await expect(
-    stories.locator("text=/Macera|Adventure/i").first(),
-  ).toBeVisible();
+  await expect(stories.locator("text=/Macera|Adventure/i").first()).toBeVisible();
 
   const text = (await stories.innerText()).replace(/\s+/g, " ").trim();
   expect(text).not.toMatch(
