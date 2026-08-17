@@ -27,6 +27,7 @@ const REQUIRED_EVIDENCE_FILES = [
 const ALLOWED_VISIBLE_ENTRY_GOTOS = [
   'baseline-onboarding.live.spec.ts:"/login"',
   'login-smoke.live.spec.ts:"/login"',
+  'stories-smoke.live.spec.ts:"/login"',
 ] as const;
 
 const FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
