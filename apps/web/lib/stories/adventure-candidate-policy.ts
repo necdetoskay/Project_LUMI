@@ -61,7 +61,9 @@ export function selectAdventureCandidateWindow(
   const start = page * limit;
   const selected = ordered.slice(start, start + limit);
 
-  const availableFamilies = new Set(candidates.map((item) => item.sourceFamily));
+  const availableFamilies = new Set(
+    candidates.map((item) => item.sourceFamily),
+  );
   const diagnostics = SOURCE_FAMILY_ORDER.map((sourceFamily) => ({
     sourceFamily,
     available: availableFamilies.has(sourceFamily),
