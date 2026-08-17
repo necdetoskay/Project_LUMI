@@ -292,8 +292,9 @@ function appendRef(
 function clearFailureCode(
   manifest: LivingWorldBootstrapManifest,
 ): Omit<LivingWorldBootstrapManifest, "failureCode"> {
-  const { failureCode: _failureCode, ...rest } = manifest;
-  return rest;
+  const next = { ...manifest };
+  delete next.failureCode;
+  return next;
 }
 
 export class LivingWorldBootstrapService {
