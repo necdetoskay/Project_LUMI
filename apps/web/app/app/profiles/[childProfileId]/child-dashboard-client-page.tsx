@@ -274,8 +274,8 @@ export default function ChildDashboardClientPage({
 
   return (
     <main className="min-h-screen bg-[#f8f4ea] text-[#34281f]">
-      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[190px_minmax(0,1fr)]">
-        <aside className="border-b border-[#e8dcc8] bg-[#fffaf0] px-4 py-5 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
+      <div className="mx-auto grid min-h-screen w-full min-w-0 max-w-[1600px] lg:grid-cols-[190px_minmax(0,1fr)]">
+        <aside className="min-w-0 border-b border-[#e8dcc8] bg-[#fffaf0] px-4 py-5 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-7">
           <div className="flex items-center justify-between lg:block">
             <Link
               href="/app/profiles"
@@ -422,7 +422,7 @@ export default function ChildDashboardClientPage({
           ) : null}
 
           {view === "stories" ? (
-            <section className="mt-6 rounded-[28px] border border-[#eadfce] bg-white p-4 shadow-sm sm:p-6">
+            <section className="mt-6 min-w-0 rounded-[28px] border border-[#eadfce] bg-white p-4 shadow-sm sm:p-6">
               <ProfileStoriesSection childProfileId={childProfileId} />
             </section>
           ) : null}

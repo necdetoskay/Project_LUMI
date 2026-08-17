@@ -188,7 +188,9 @@ test.describe("Stories UX v2 governed browser coverage", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(page.getByRole("button", { name: "Kapat" })).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Kapat", exact: true }),
+    ).toBeFocused();
     await expect(page.getByText("Dünyada Bir Şey Oldu")).toBeVisible();
     await expect(page.getByText("Bir Söylenti Duydun")).toBeVisible();
     await expect(page.getByText("Çantandaki Bir Eşya")).toBeVisible();
