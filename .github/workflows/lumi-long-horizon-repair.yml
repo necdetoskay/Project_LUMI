@@ -45,7 +45,7 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
           test -n "${VERCEL_TOKEN}"
-      - name: Patch first brittle locator for repair run
+      - name: Patch brittle locators for repair run
         shell: bash
         run: |
           python <<'PY'
@@ -56,6 +56,10 @@ jobs:
           new = '''      const newChildLink = page\n        .locator('a[href^="/app/onboarding"]')\n        .filter({ hasText: /Yeni çocuk profili|New child profile/i })\n        .first();'''
           if old in text:
               text = text.replace(old, new, 1)
+          old_profile = '''      await page.getByRole("link", { name: "Profil", exact: true }).click();'''
+          new_profile = '''      await page\n        .locator(`a[href="/app/profiles/${encodeURIComponent(childProfileId)}"]`)\n        .first()\n        .click();'''
+          if old_profile in text:
+              text = text.replace(old_profile, new_profile, 1)
           path.write_text(text)
           PY
       - name: Create temporary Vercel automation bypass
