@@ -7,6 +7,7 @@ import {
   prepareCharacterFoundationCommit,
 } from "../../../../packages/profiles/src/application/character-foundation-finalization.service";
 import {
+  activateOnboardingFoundationBootstrap,
   buildOnboardingFoundationRecord,
   getOnboardingFoundationGenerationProvenance,
   projectOnboardingFoundationForFinalReview,
@@ -79,6 +80,15 @@ export async function finalizeCharacterOnboarding(
     sagaKey: evidence.saga.key,
   });
 
+  const idempotencyKey = foundation.bootstrapManifest?.idempotencyKey;
+  if (!idempotencyKey) {
+    throw new Error("CHARACTER_FOUNDATION_BOOTSTRAP_KEY_MISSING");
+  }
+  const bootstrapStatus = await activateOnboardingFoundationBootstrap(
+    prepared.characterId,
+    idempotencyKey,
+  );
+
   return {
     characterId: prepared.characterId,
     cycleId: prepared.cycleId,
@@ -86,8 +96,9 @@ export async function finalizeCharacterOnboarding(
     foundation,
     review,
     bootstrap: {
-      status: foundation.bootstrapManifest?.status ?? "planned",
-      idempotencyKey: foundation.bootstrapManifest?.idempotencyKey ?? null,
+      status: bootstrapStatus,
+      manifestStatus: foundation.bootstrapManifest?.status ?? "planned",
+      idempotencyKey,
     },
   };
 }
