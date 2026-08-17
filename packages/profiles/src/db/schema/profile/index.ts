@@ -9,6 +9,7 @@ export * from "./lumi-characters";
 export * from "./character-origin-packages";
 export * from "./first-run-handoff-consumptions";
 export * from "./character-creation-cycles";
+export * from "./character-foundations";
 export * from "./character-trait-state";
 export * from "./character-trait-history";
 export * from "./character-emotion-state";
