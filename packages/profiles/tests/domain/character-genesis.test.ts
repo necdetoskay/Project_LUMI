@@ -28,7 +28,9 @@ function foundation(): CharacterFoundationRecord {
       fundamentalNeed: "Safety, belonging and a trustworthy first connection.",
       knownFacts: ["The observatory has been abandoned for a long time."],
       currentBeliefs: ["Its creator probably lived nearby."],
-      unknownQuestions: ["Why are unfamiliar childhood memories stored inside it?"],
+      unknownQuestions: [
+        "Why are unfamiliar childhood memories stored inside it?",
+      ],
       socialEcology: [
         {
           id: "role-1",
@@ -41,7 +43,8 @@ function foundation(): CharacterFoundationRecord {
           id: "role-2",
           roleType: "unknown_presence",
           label: "Distant observer",
-          purpose: "Seed uncertainty without forcing an immediate NPC encounter.",
+          purpose:
+            "Seed uncertainty without forcing an immediate NPC encounter.",
           required: false,
         },
       ],
@@ -61,10 +64,13 @@ function foundation(): CharacterFoundationRecord {
       worldId: "world-1",
       version: 1,
       centralQuestion: "Why does it remember a life it never lived?",
-      deepTruth: "Its memory core preserves fragments from the lost observatory keepers.",
-      longTermDesire: "Discover its purpose without becoming a copy of the people in its memory.",
+      deepTruth:
+        "Its memory core preserves fragments from the lost observatory keepers.",
+      longTermDesire:
+        "Discover its purpose without becoming a copy of the people in its memory.",
       fundamentalFear: "That its own identity is not real.",
-      stakes: "The memory core may contain knowledge that changes the surrounding world.",
+      stakes:
+        "The memory core may contain knowledge that changes the surrounding world.",
       hiddenForces: ["A dormant observatory network"],
       possibleTransformations: ["Build a chosen identity and community"],
       revealLayers: [
@@ -146,7 +152,8 @@ describe("Character Genesis foundation", () => {
     const value = foundation();
     value.genesis.archetypes = ["hatched", "last_known"];
     value.genesis.socialEcology = [];
-    value.genesis.premise = "A hatchling emerges alone on an empty volcanic island.";
+    value.genesis.premise =
+      "A hatchling emerges alone on an empty volcanic island.";
 
     expect(() => validateCharacterFoundation(value)).not.toThrow();
   });
