@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
+import { selectAdventureCandidateWindow } from "@/lib/stories/adventure-candidate-policy";
 import {
   projectInventoryCandidate,
   projectOpportunityCandidate,
@@ -23,6 +24,7 @@ import {
   getCharacterCurrentLocation,
   getWorldForCharacter,
 } from "@lumi/world/application";
+import { DrizzleWorldEventReader, getWorldDb } from "@lumi/world/db";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 const querySchema = z.object({
@@ -30,16 +32,15 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(0).default(0),
 });
 
-function rotateCandidates(
-  candidates: AdventureHookCandidate[],
-  page: number,
-): AdventureHookCandidate[] {
-  if (candidates.length <= 1) return candidates;
-  const offset = page % candidates.length;
-  return [...candidates.slice(offset), ...candidates.slice(0, offset)].slice(
-    0,
-    6,
-  );
+function payloadString(
+  payload: Record<string, unknown>,
+  ...keys: string[]
+): string | null {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 export const GET = observeHandler(
@@ -85,7 +86,35 @@ export const GET = observeHandler(
       );
       const character = characters[0] ?? null;
       if (!character) {
-        return NextResponse.json({ candidates: [], page });
+        return NextResponse.json({
+          candidates: [],
+          page,
+          hasMoreUnseen: false,
+          diagnostics: [
+            {
+              sourceFamily: "world_event",
+              available: false,
+              reason:
+                "No finalized character is available for world discovery.",
+            },
+            {
+              sourceFamily: "rumor",
+              available: false,
+              reason:
+                "No finalized character is available for rumor discovery.",
+            },
+            {
+              sourceFamily: "npc_call",
+              available: false,
+              reason: "No finalized character is available for NPC discovery.",
+            },
+            {
+              sourceFamily: "inventory_item",
+              available: false,
+              reason: "No finalized character inventory is available.",
+            },
+          ],
+        });
       }
 
       const [continuity, opportunities, world, currentLocation] =
@@ -126,25 +155,64 @@ export const GET = observeHandler(
         );
       }
 
+      let worldEventsAvailable = false;
       if (world) {
-        const title = currentLocation?.displayName ?? "Dünyada yeni bir iz";
-        candidates.push({
-          id: `world:${world.id}`,
-          sourceFamily: "world_event",
-          title,
-          teaser: currentLocation
-            ? `${currentLocation.displayName} çevresinde yeni ve merak uyandıran bir şey oluyor.`
-            : "Dünyada keşfedilmeyi bekleyen yeni bir olay var.",
-          ctaKey: "chooseWorldEvent",
-          image: currentLocation
-            ? { kind: "environment", subjectId: currentLocation.id }
-            : null,
-        });
+        const events = await new DrizzleWorldEventReader(getWorldDb())
+          .listRecent(world.id, 30)
+          .catch(() => []);
+        worldEventsAvailable = events.length > 0;
+
+        for (const event of events) {
+          const title =
+            payloadString(event.payload, "title", "name", "claim", "summary") ??
+            currentLocation?.displayName ??
+            "Dünyada yeni bir olay";
+          const teaser =
+            payloadString(
+              event.payload,
+              "teaser",
+              "description",
+              "message",
+              "summary",
+              "claim",
+            ) ?? `${title} ile ilgili gerçek bir değişim dünyada iz bırakıyor.`;
+
+          candidates.push({
+            id: `world-event:${event.id}`,
+            sourceFamily: "world_event",
+            title,
+            teaser,
+            ctaKey: "chooseWorldEvent",
+            image: currentLocation
+              ? { kind: "environment", subjectId: currentLocation.id }
+              : null,
+          });
+        }
       }
 
-      return NextResponse.json({
-        candidates: rotateCandidates(candidates, page),
+      const selection = selectAdventureCandidateWindow(candidates, {
         page,
+        limit: 6,
+        unavailableReasons: {
+          world_event: world
+            ? worldEventsAvailable
+              ? ""
+              : "The canonical world event store has no event for this world yet. Genesis event materialization may not have completed."
+            : "The character is not attached to a canonical world.",
+          rumor:
+            "No eligible canonical rumor is currently proposed in the Opportunity Inbox.",
+          npc_call:
+            "No eligible NPC interaction is currently proposed. Sparse Genesis ecologies may legitimately have no NPC call.",
+          inventory_item:
+            "No story-selectable inventory item is currently available.",
+        },
+      });
+
+      return NextResponse.json({
+        candidates: selection.candidates,
+        page,
+        hasMoreUnseen: selection.hasMoreUnseen,
+        diagnostics: selection.diagnostics,
       });
     }),
   "/api/child-profiles/{id}/stories/adventure-candidates",
