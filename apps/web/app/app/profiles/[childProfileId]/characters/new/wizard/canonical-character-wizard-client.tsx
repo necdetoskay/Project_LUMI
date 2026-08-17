@@ -553,7 +553,7 @@ function formatSummary(value: unknown): string {
   if (typeof value === "string") return value;
   if (!value || typeof value !== "object") return "—";
   const record = value as Record<string, unknown>;
-  return String(
+  const primary = String(
     record.name ??
       record.title ??
       record.characterType ??
@@ -561,4 +561,18 @@ function formatSummary(value: unknown): string {
       record.key ??
       "Seçildi",
   );
+  const details = [
+    record.identity,
+    record.description,
+    record.origin,
+    record.storyHook,
+    record.premise,
+    record.longTermGoal,
+  ]
+    .filter(
+      (item): item is string =>
+        typeof item === "string" && item.trim().length > 0,
+    )
+    .filter((item) => item !== primary);
+  return [primary, ...details].join(" — ");
 }
