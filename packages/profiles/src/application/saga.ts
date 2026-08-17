@@ -1,3 +1,5 @@
+export const SAGA_SAFE_PROJECTION_VERSION = 1;
+
 export {
   SAGA_FOUNDATION_SCHEMA_VERSION,
   buildSagaFoundation,
