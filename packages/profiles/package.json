@@ -9,6 +9,7 @@
     "./db": "./src/db/index.ts",
     "./policy": "./src/policy/index.ts",
     "./application": "./src/application/index.ts",
+    "./saga": "./src/application/saga.ts",
     "./visual-presentation": "./src/application/character-visual-presentation.ts",
     "./adapters": "./src/adapters/index.ts",
     "./package.json": "./package.json"
