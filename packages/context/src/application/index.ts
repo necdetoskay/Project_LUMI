@@ -21,8 +21,14 @@ export type {
 
 export {
   STORY_GENERATION_CONTEXT_TOKENS,
+  SAGA_STORY_CONTEXT_TOKENS,
   STORY_GENERATION_TOKEN_BUDGET,
   StoryGenerationContextComposer,
   createStoryGenerationContextComposer,
+  sagaStoryContextToItems,
+  appendSagaContext,
 } from "./story-generation-context";
-export type { StoryGenerationContextRequest } from "./story-generation-context";
+export type {
+  StoryGenerationContextRequest,
+  SagaStoryContext,
+} from "./story-generation-context";
