@@ -1,0 +1,61 @@
+name: Stories UX Temporary Finalize
+
+on:
+  push:
+    branches:
+      - fix/stories-ux-v2-closeout
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/stories-ux-v2-closeout
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Keep child-facing errors locale-owned
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+            Path('apps/web/components/story/new-adventure-sheet-localized.tsx'): [
+              ('setError(body.message ?? t("loadFailed"));', 'setError(t("loadFailed"));'),
+              ('setError(body.message ?? t("startFailed"));', 'setError(t("startFailed"));'),
+              ('  message?: string;\n', ''),
+            ],
+            Path('apps/web/components/story/profile-stories-section-localized.tsx'): [
+              ('setError(body.message ?? t("load.unavailable"));', 'setError(t("load.unavailable"));'),
+              ('  message?: string;\n', ''),
+            ],
+          }
+          for path, pairs in replacements.items():
+            text = path.read_text()
+            for old, new in pairs:
+              if old not in text:
+                raise SystemExit(f'missing expected text in {path}: {old!r}')
+              text = text.replace(old, new)
+            path.write_text(text)
+          PY
+      - name: Format changed Stories files
+        run: pnpm exec prettier --write apps/web/components/story/new-adventure-sheet-localized.tsx apps/web/components/story/profile-stories-section-localized.tsx apps/web/tests/profile-stories-section.test.tsx
+      - name: Commit finalized files
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/components/story/new-adventure-sheet-localized.tsx apps/web/components/story/profile-stories-section-localized.tsx apps/web/tests/profile-stories-section.test.tsx
+          git commit -m "fix(stories): localize error presentation and format tests"
+          git push origin HEAD:fix/stories-ux-v2-closeout
