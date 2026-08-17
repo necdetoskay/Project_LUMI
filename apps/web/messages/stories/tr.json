@@ -9,7 +9,8 @@
   },
   "hub": {
     "kicker": "Hikâyeler",
-    "characterTitle": "{name}’nın Maceraları",
+    "characterTitle": "{name} Maceraları",
+    "characterTitleTr": "{possessive} Maceraları",
     "fallbackTitle": "Karakterinin Maceraları",
     "intro": "Devam eden maceranı sürdür ya da dünyanın sana hazırladığı yeni bir macerayı keşfet.",
     "newAdventure": "Yeni Macera",
