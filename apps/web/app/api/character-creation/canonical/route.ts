@@ -188,9 +188,13 @@ export async function POST(request: Request) {
             }),
           });
         case "finalize": {
-          const committed = await finalizeCharacterOnboarding(parent.id, input, {
-            deferBootstrap: true,
-          });
+          const committed = await finalizeCharacterOnboarding(
+            parent.id,
+            input,
+            {
+              deferBootstrap: true,
+            },
+          );
           after(async () => {
             try {
               await runLivingWorldBootstrapForCharacter(committed.characterId);
