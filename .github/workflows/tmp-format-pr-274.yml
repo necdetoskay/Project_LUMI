@@ -32,3 +32,4 @@ jobs:
           git add apps/web/app/api/character-creation/canonical/route.ts vercel.json
           git commit -m "style: format PR 274"
           git push origin HEAD:fix/finalize-bootstrap-critical-path
+# trigger
