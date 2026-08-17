@@ -1,0 +1,68 @@
+name: LUMI Long-Horizon Repair Loop
+
+on:
+  push:
+    branches:
+      - agent/long-horizon-repair
+    paths:
+      - .github/workflows/lumi-long-horizon-repair.yml
+      - apps/web/tests/e2e/long-horizon/**
+      - apps/web/playwright.long-horizon-live.config.ts
+
+permissions:
+  contents: read
+
+jobs:
+  repair-live-playwright:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_CHILD_AGE: "6"
+      LUMI_LONG_HORIZON_RNG_SEED: ""
+      LUMI_LONG_HORIZON_RUN_ID: ""
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard repair credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
+      - name: Patch first brittle locator for repair run
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts')
+          text = path.read_text()
+          old = '''      const newChildLink = page\n        .locator('a[href="/app/onboarding?addProfile=1"]')\n        .first();'''
+          new = '''      const newChildLink = page\n        .locator('a[href^="/app/onboarding"]')\n        .filter({ hasText: /Yeni çocuk profili|New child profile/i })\n        .first();'''
+          if old not in text:
+              raise SystemExit('repair patch target not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Run persistent age-6 repair acceptance
+        run: pnpm --filter @lumi/web test:long-horizon:live
+      - name: Upload repair evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumi-long-horizon-repair-6-${{ github.run_id }}
+          path: apps/web/tests/e2e/long-horizon/evidence/
+          if-no-files-found: warn
+          retention-days: 30
