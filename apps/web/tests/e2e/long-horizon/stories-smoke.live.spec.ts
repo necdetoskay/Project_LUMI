@@ -33,10 +33,14 @@ test("production Stories route renders the child-first Adventure Hub", async ({
   await expect(
     stories.getByRole("button", { name: /Yeni Macera|New Adventure/i }).first(),
   ).toBeVisible();
-  await expect(stories.locator("text=/Macera|Adventure/i").first()).toBeVisible();
+  await expect(
+    stories.locator("text=/Macera|Adventure/i").first(),
+  ).toBeVisible();
 
   const text = (await stories.innerText()).replace(/\s+/g, " ").trim();
-  expect(text).not.toMatch(/\b(active|paused|reading|checkpoint|playbackMode)\b/i);
+  expect(text).not.toMatch(
+    /\b(active|paused|reading|checkpoint|playbackMode)\b/i,
+  );
   expect(text).not.toMatch(/\bWorld\s+[0-9a-f]{4,}\b/i);
 
   console.log(`STORIES_SMOKE_URL=${page.url()}`);
