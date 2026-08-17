@@ -83,16 +83,14 @@ function relationshipStrength(seed: number): number {
   return Math.max(0, Math.min(1, (seed + 1) / 2));
 }
 
-export async function ensureBootstrapNpcIdentity(
-  input: EnsureBootstrapNpcIdentityInput,
-): Promise<EnsureBootstrapNpcIdentityResult> {
+async function validateExistingNpc(
+  npcId: string,
+  householdId: string,
+  childProfileId: string,
+): Promise<void> {
   const db = getProfileDb();
-  const npcId = stableBootstrapUuid(
-    `${input.idempotencyKey}:npc:${input.plan.role.id}`,
-  );
   const [existing] = await db
     .select({
-      id: lumiCharacters.id,
       householdId: lumiCharacters.householdId,
       childProfileId: lumiCharacters.childProfileId,
       characterSubtype: lumiCharacters.characterSubtype,
@@ -100,18 +98,23 @@ export async function ensureBootstrapNpcIdentity(
     .from(lumiCharacters)
     .where(eq(lumiCharacters.id, npcId))
     .limit(1);
-
-  if (existing) {
-    if (
-      existing.householdId !== input.householdId ||
-      existing.childProfileId !== input.childProfileId ||
-      existing.characterSubtype !== "npc"
-    ) {
-      throw new Error("BOOTSTRAP_NPC_IDEMPOTENCY_SCOPE_CONFLICT");
-    }
-    return { npcId, reused: true };
+  if (
+    !existing ||
+    existing.householdId !== householdId ||
+    existing.childProfileId !== childProfileId ||
+    existing.characterSubtype !== "npc"
+  ) {
+    throw new Error("BOOTSTRAP_NPC_IDEMPOTENCY_SCOPE_CONFLICT");
   }
+}
 
+export async function ensureBootstrapNpcIdentity(
+  input: EnsureBootstrapNpcIdentityInput,
+): Promise<EnsureBootstrapNpcIdentityResult> {
+  const db = getProfileDb();
+  const npcId = stableBootstrapUuid(
+    `${input.idempotencyKey}:npc:${input.plan.role.id}`,
+  );
   const [source] = await db
     .select()
     .from(lumiCharacters)
@@ -128,32 +131,40 @@ export async function ensureBootstrapNpcIdentity(
   const firstOriginPackageId = stableBootstrapUuid(
     `${input.idempotencyKey}:origin:${input.plan.role.id}`,
   );
-  await db.insert(lumiCharacters).values({
-    id: npcId,
-    childProfileId: input.childProfileId,
-    householdId: input.householdId,
-    name: displayName(input.plan),
-    broadKind: broadKindForRole(
-      input.plan.role.roleType,
-      source.broadKind as BroadCharacterKind,
-    ),
-    characterType: characterTypeForRole(input.plan.role.roleType),
-    subtype: input.plan.identityHint.slice(0, 80),
-    originMode: "auto",
-    firstOriginPackageId,
-    originConcept: input.plan.role.purpose.slice(0, 500),
-    startingRegionArchetype: source.startingRegionArchetype,
-    startingLocation: source.startingLocation,
-    homeArchetype: source.homeArchetype,
-    nearbyNpcSeed: input.plan.support.join(" | ").slice(0, 500),
-    firstMysterySeed: source.firstMysterySeed,
-    universeSeed: source.universeSeed,
-    safetyBounds: source.safetyBounds,
-    characterSubtype: "npc",
-    lifecycleStage: "adulthood",
-  });
+  const inserted = await db
+    .insert(lumiCharacters)
+    .values({
+      id: npcId,
+      childProfileId: input.childProfileId,
+      householdId: input.householdId,
+      name: displayName(input.plan),
+      broadKind: broadKindForRole(
+        input.plan.role.roleType,
+        source.broadKind as BroadCharacterKind,
+      ),
+      characterType: characterTypeForRole(input.plan.role.roleType),
+      subtype: input.plan.identityHint.slice(0, 80),
+      originMode: "auto",
+      firstOriginPackageId,
+      originConcept: input.plan.role.purpose.slice(0, 500),
+      startingRegionArchetype: source.startingRegionArchetype,
+      startingLocation: source.startingLocation,
+      homeArchetype: source.homeArchetype,
+      nearbyNpcSeed: input.plan.support.join(" | ").slice(0, 500),
+      firstMysterySeed: source.firstMysterySeed,
+      universeSeed: source.universeSeed,
+      safetyBounds: source.safetyBounds,
+      characterSubtype: "npc",
+      lifecycleStage: "adulthood",
+    })
+    .onConflictDoNothing({ target: lumiCharacters.id })
+    .returning({ id: lumiCharacters.id });
 
-  return { npcId, reused: false };
+  const reused = inserted.length === 0;
+  if (reused) {
+    await validateExistingNpc(npcId, input.householdId, input.childProfileId);
+  }
+  return { npcId, reused };
 }
 
 export async function ensureBootstrapRelationship(
