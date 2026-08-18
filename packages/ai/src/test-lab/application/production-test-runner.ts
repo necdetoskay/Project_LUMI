@@ -3,7 +3,7 @@ import type { ModelPricingSnapshot } from "../domain/model-profile";
 import type { TestRun, TestRunCandidate } from "../domain/test-lab-types";
 import type { ProductionScenarioAdapter } from "../ports/production-scenario-adapter";
 import type { TestLabRepository } from "../ports/test-lab-repository";
-import { TestLabCoordinator } from "./test-lab-coordinator";
+import type { TestLabCoordinator } from "./test-lab-coordinator";
 
 export interface TestLabIdFactory {
   create(): string;
