@@ -24,7 +24,9 @@ export class TestLabCoordinator {
     now: string;
   }): Promise<{ session: TestSession; initialState: StateSnapshot }> {
     if (await this.repository.getSession(input.sessionId)) {
-      throw new TestLabInvariantError(`TEST_LAB_SESSION_ALREADY_EXISTS:${input.sessionId}`);
+      throw new TestLabInvariantError(
+        `TEST_LAB_SESSION_ALREADY_EXISTS:${input.sessionId}`,
+      );
     }
 
     const branch: TestBranch = {
@@ -84,7 +86,9 @@ export class TestLabCoordinator {
         (selection) => selection.selectedStateId === parentState.id,
       );
       if (!selectedOnBranch) {
-        throw new TestLabInvariantError("TEST_LAB_PARENT_STATE_NOT_SELECTED_ON_BRANCH");
+        throw new TestLabInvariantError(
+          "TEST_LAB_PARENT_STATE_NOT_SELECTED_ON_BRANCH",
+        );
       }
     }
 
@@ -125,7 +129,11 @@ export class TestLabCoordinator {
     strategy?: string | null;
     forkBranchId?: string;
     now: string;
-  }): Promise<{ selection: TestSelection; activeBranchId: string; forked: boolean }> {
+  }): Promise<{
+    selection: TestSelection;
+    activeBranchId: string;
+    forked: boolean;
+  }> {
     const session = await this.requireSession(input.sessionId);
     const branch = await this.requireBranch(input.branchId);
     const run = await this.requireRun(input.runId);
@@ -137,23 +145,38 @@ export class TestLabCoordinator {
       throw new TestLabInvariantError("TEST_LAB_RUN_PHASE_MISMATCH");
     }
 
-    const existing = await this.repository.getSelection(input.branchId, input.phaseId);
+    const existing = await this.repository.getSelection(
+      input.branchId,
+      input.phaseId,
+    );
     if (!existing) {
       if (run.branchId !== input.branchId) {
         throw new TestLabInvariantError("TEST_LAB_RUN_BRANCH_MISMATCH");
       }
-      const selection = this.buildSelection({ ...input, selectedStateId: run.candidateStateId });
+      const selection = this.buildSelection({
+        ...input,
+        selectedStateId: run.candidateStateId,
+      });
       await this.repository.saveSelection(selection);
-      await this.repository.saveSession({ ...session, activeBranchId: input.branchId });
+      await this.repository.saveSession({
+        ...session,
+        activeBranchId: input.branchId,
+      });
       return { selection, activeBranchId: input.branchId, forked: false };
     }
 
     if (existing.runId === run.id) {
-      return { selection: existing, activeBranchId: input.branchId, forked: false };
+      return {
+        selection: existing,
+        activeBranchId: input.branchId,
+        forked: false,
+      };
     }
 
     if (!input.forkBranchId) {
-      throw new TestLabInvariantError("TEST_LAB_RESELECTION_REQUIRES_FORK_BRANCH");
+      throw new TestLabInvariantError(
+        "TEST_LAB_RESELECTION_REQUIRES_FORK_BRANCH",
+      );
     }
 
     const fork: TestBranch = {
@@ -202,25 +225,33 @@ export class TestLabCoordinator {
 
   private async requireSession(id: string): Promise<TestSession> {
     const value = await this.repository.getSession(id);
-    if (!value) throw new TestLabInvariantError(`TEST_LAB_SESSION_NOT_FOUND:${id}`);
+    if (!value) {
+      throw new TestLabInvariantError(`TEST_LAB_SESSION_NOT_FOUND:${id}`);
+    }
     return value;
   }
 
   private async requireBranch(id: string): Promise<TestBranch> {
     const value = await this.repository.getBranch(id);
-    if (!value) throw new TestLabInvariantError(`TEST_LAB_BRANCH_NOT_FOUND:${id}`);
+    if (!value) {
+      throw new TestLabInvariantError(`TEST_LAB_BRANCH_NOT_FOUND:${id}`);
+    }
     return value;
   }
 
   private async requireState(id: string): Promise<StateSnapshot> {
     const value = await this.repository.getState(id);
-    if (!value) throw new TestLabInvariantError(`TEST_LAB_STATE_NOT_FOUND:${id}`);
+    if (!value) {
+      throw new TestLabInvariantError(`TEST_LAB_STATE_NOT_FOUND:${id}`);
+    }
     return value;
   }
 
   private async requireRun(id: string): Promise<TestRun> {
     const value = await this.repository.getRun(id);
-    if (!value) throw new TestLabInvariantError(`TEST_LAB_RUN_NOT_FOUND:${id}`);
+    if (!value) {
+      throw new TestLabInvariantError(`TEST_LAB_RUN_NOT_FOUND:${id}`);
+    }
     return value;
   }
 }
