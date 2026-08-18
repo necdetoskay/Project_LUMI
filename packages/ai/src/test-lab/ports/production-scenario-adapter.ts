@@ -23,7 +23,7 @@ export interface ProductionScenarioExecutionRequest {
 }
 
 export interface ProductionScenarioExecutionProvenance {
-  promptKey: string;
+  promptKey: string | null;
   promptVersion: number | null;
   promptTemplateSnapshot: {
     system: string;
