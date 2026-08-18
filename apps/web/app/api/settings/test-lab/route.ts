@@ -8,11 +8,20 @@ import {
   ProductionTestRunner,
   TestLabCoordinator,
   type JsonObject,
+  type StateSnapshot,
 } from "@lumi/ai/test-lab";
 import { withParent } from "@/lib/auth/with-parent";
 import { characterOnboardingProductionScenarioAdapter } from "@/lib/ai/character-onboarding-test-lab-adapter";
 import { readRequestBody } from "@/lib/http/request-body";
 import { observeHandler } from "@/lib/observability/observed-api-route";
+
+const OWNER_KEY = "__testLabOwner";
+
+type SandboxOwner = {
+  parentId: string;
+  householdId: string;
+  childProfileId: string;
+};
 
 function services() {
   const repository = new DrizzleTestLabRepository(getAiDb());
@@ -22,7 +31,7 @@ function services() {
     coordinator,
     characterOnboardingProductionScenarioAdapter,
   );
-  return { coordinator, runner };
+  return { repository, coordinator, runner };
 }
 
 export const GET = observeHandler(() => {
@@ -48,11 +57,25 @@ export const POST = observeHandler(async (request: Request) => {
     const body = (await readRequestBody(request)) as Record<string, unknown>;
     const action = String(body.action ?? "");
     const now = new Date().toISOString();
-    const { coordinator, runner } = services();
+    const { repository, coordinator, runner } = services();
 
     try {
       if (action === "create-session") {
-        const initialState = asJsonObject(body.initialState, "initialState");
+        const suppliedState = asJsonObject(body.initialState, "initialState");
+        const householdId = requiredString(body.householdId, "householdId");
+        const childProfileId = requiredString(
+          body.childProfileId,
+          "childProfileId",
+        );
+        const owner = {
+          parentId: parent.id,
+          householdId,
+          childProfileId,
+        } satisfies SandboxOwner;
+        const initialState: JsonObject = {
+          ...suppliedState,
+          [OWNER_KEY]: owner,
+        };
         const sessionId = crypto.randomUUID();
         const branchId = crypto.randomUUID();
         const initialStateId = crypto.randomUUID();
@@ -81,6 +104,13 @@ export const POST = observeHandler(async (request: Request) => {
           body.childProfileId,
           "childProfileId",
         );
+        const parentState = await repository.getState(parentStateId);
+        assertSandboxOwner(parentState, {
+          parentId: parent.id,
+          householdId,
+          childProfileId,
+        });
+
         const phase = CHARACTER_ONBOARDING_SCENARIO.phases.find(
           (candidate) => candidate.id === phaseId,
         );
@@ -112,12 +142,22 @@ export const POST = observeHandler(async (request: Request) => {
       }
 
       if (action === "select-candidate") {
+        const runId = requiredString(body.runId, "runId");
+        const run = await repository.getRun(runId);
+        if (!run) throw new Error(`TEST_LAB_RUN_NOT_FOUND:${runId}`);
+        const parentState = await repository.getState(run.parentStateId);
+        assertSandboxOwner(parentState, {
+          parentId: parent.id,
+          householdId: ownerString(parentState, "householdId"),
+          childProfileId: ownerString(parentState, "childProfileId"),
+        });
+
         const result = await coordinator.selectCandidate({
           selectionId: crypto.randomUUID(),
           sessionId: requiredString(body.sessionId, "sessionId"),
           branchId: requiredString(body.branchId, "branchId"),
           phaseId: requiredString(body.phaseId, "phaseId"),
-          runId: requiredString(body.runId, "runId"),
+          runId,
           candidateId: requiredString(body.candidateId, "candidateId"),
           actor: "human",
           forkBranchId:
@@ -156,4 +196,33 @@ function asJsonObject(value: unknown, field: string): JsonObject {
     throw new Error(`TEST_LAB_JSON_OBJECT_REQUIRED:${field}`);
   }
   return value as JsonObject;
+}
+
+function assertSandboxOwner(
+  state: StateSnapshot | null,
+  expected: SandboxOwner,
+): void {
+  if (!state) throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  const owner = state.value[OWNER_KEY];
+  if (!owner || typeof owner !== "object" || Array.isArray(owner)) {
+    throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  }
+  if (
+    owner.parentId !== expected.parentId ||
+    owner.householdId !== expected.householdId ||
+    owner.childProfileId !== expected.childProfileId
+  ) {
+    throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  }
+}
+
+function ownerString(state: StateSnapshot | null, field: keyof SandboxOwner): string {
+  if (!state) throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  const owner = state.value[OWNER_KEY];
+  if (!owner || typeof owner !== "object" || Array.isArray(owner)) {
+    throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  }
+  const value = owner[field];
+  if (typeof value !== "string") throw new Error("TEST_LAB_FORBIDDEN_SANDBOX");
+  return value;
 }
