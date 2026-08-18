@@ -86,6 +86,10 @@ export interface AiGenerationContextInspectorView {
     profile: string | null;
     maxContextTokens: number | null;
     estimatedTokens: number | null;
+    observability: {
+      budgetUtilizationRatio: number | null;
+      contextToOutputTokenRatio: number | null;
+    };
     droppedSections: string[];
     sections: AiGenerationContextInspectorSection[];
   };
@@ -104,6 +108,21 @@ function asString(value: unknown): string | null {
 
 function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function safeRatio(
+  numerator: number | null,
+  denominator: number | null,
+): number | null {
+  if (
+    numerator === null ||
+    denominator === null ||
+    numerator < 0 ||
+    denominator <= 0
+  ) {
+    return null;
+  }
+  return numerator / denominator;
 }
 
 function fingerprintSourceRevision(input: {
@@ -304,6 +323,8 @@ export function toAiGenerationContextInspectorView(
     hasAuditEvidence,
     sections,
   });
+  const maxContextTokens = asNumber(provenance?.maxContextTokens);
+  const estimatedContextTokens = asNumber(provenance?.estimatedTokens);
 
   return {
     id: record.id,
@@ -323,8 +344,18 @@ export function toAiGenerationContextInspectorView(
       fingerprint: record.contextFingerprint,
       ...reconstruction,
       profile: asString(provenance?.profile),
-      maxContextTokens: asNumber(provenance?.maxContextTokens),
-      estimatedTokens: asNumber(provenance?.estimatedTokens),
+      maxContextTokens,
+      estimatedTokens: estimatedContextTokens,
+      observability: {
+        budgetUtilizationRatio: safeRatio(
+          estimatedContextTokens,
+          maxContextTokens,
+        ),
+        contextToOutputTokenRatio: safeRatio(
+          estimatedContextTokens,
+          record.completionTokens,
+        ),
+      },
       droppedSections,
       sections,
     },
