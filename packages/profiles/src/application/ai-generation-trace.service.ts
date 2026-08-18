@@ -91,6 +91,8 @@ export interface AiGenerationContextInspectorView {
   };
 }
 
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
@@ -128,9 +130,10 @@ function toInspectorReplayReference(
 
   if (
     kind !== "content_addressed_snapshot" ||
-    !store ||
+    !store?.trim() ||
+    !snapshotVersion?.trim() ||
     !snapshotDigest ||
-    !snapshotVersion
+    !SHA256_HEX.test(snapshotDigest)
   ) {
     return null;
   }
