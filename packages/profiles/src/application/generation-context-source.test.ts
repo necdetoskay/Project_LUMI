@@ -5,7 +5,9 @@ import type { GenerationContext } from "./generation-context.service";
 import {
   createGenerationContextSourceRegistry,
   getDefaultGenerationContextSources,
+  replayGenerationContextSource,
   type GenerationContextSource,
+  type GenerationContextSourceReplayReference,
 } from "./generation-context-source";
 
 function onboardingContext(): GenerationContext {
@@ -42,6 +44,13 @@ function source(
   };
 }
 
+const REPLAY_REFERENCE: GenerationContextSourceReplayReference = {
+  kind: "content_addressed_snapshot",
+  store: "test.context-snapshots",
+  snapshotDigest: "a".repeat(64),
+  snapshotVersion: "v1",
+};
+
 describe("generation context sources", () => {
   it("registers one canonical source for every current generation section", () => {
     const registry = createGenerationContextSourceRegistry();
@@ -56,6 +65,12 @@ describe("generation context sources", () => {
       "recent_story_state",
       "relevant_memories",
     ]);
+  });
+
+  it("keeps current-state default sources non-replayable until a historical store exists", () => {
+    expect(getDefaultGenerationContextSources().every((entry) => !entry.replay)).toBe(
+      true,
+    );
   });
 
   it("rejects duplicate source ownership for the same section", () => {
@@ -92,6 +107,89 @@ describe("generation context sources", () => {
       { startDirection: "character_first" },
       { worldFeeling: "floating_islands" },
     ]);
+  });
+
+  it("attaches immutable replay evidence only when the source has a historical loader", () => {
+    const replayableIdentity: GenerationContextSource = {
+      ...source("child_identity", {
+        ageBand: "6-8",
+        ageYears: 7,
+        locale: "tr-TR",
+      }),
+      resolve: () => ({
+        value: { ageBand: "6-8", ageYears: 7, locale: "tr-TR" },
+        replayReference: REPLAY_REFERENCE,
+      }),
+      replay: (reference) => ({
+        ageBand: reference.snapshotDigest === "a".repeat(64) ? "6-8" : "9-12",
+        ageYears: 7,
+        locale: "tr-TR",
+      }),
+    };
+
+    const assembled = assembleGenerationContext(onboardingContext(), {
+      sources: [
+        replayableIdentity,
+        source("child_personalization", { interests: ["space"] }),
+        source("creation_direction", { startDirection: "world_first" }),
+        source("creation_selections", { worldFeeling: "crystal_caves" }),
+      ],
+    });
+
+    expect(assembled.sections[0]?.provenance.replay).toEqual(REPLAY_REFERENCE);
+    expect(replayGenerationContextSource(replayableIdentity, REPLAY_REFERENCE)).toEqual(
+      { ageBand: "6-8", ageYears: 7, locale: "tr-TR" },
+    );
+  });
+
+  it("rejects replay evidence when a source cannot actually reload history", () => {
+    const falseReplayClaim: GenerationContextSource = {
+      ...source("child_identity", { ageBand: "6-8" }),
+      resolve: () => ({
+        value: { ageBand: "6-8" },
+        replayReference: REPLAY_REFERENCE,
+      }),
+    };
+
+    expect(() =>
+      assembleGenerationContext(onboardingContext(), {
+        sources: [
+          falseReplayClaim,
+          source("child_personalization", { interests: ["space"] }),
+          source("creation_direction", { startDirection: "world_first" }),
+          source("creation_selections", { worldFeeling: "crystal_caves" }),
+        ],
+      }),
+    ).toThrow(
+      "GENERATION_CONTEXT_REPLAY_REFERENCE_INVALID:child_identity:test.child_identity",
+    );
+  });
+
+  it("rejects replay references that are not privacy-safe content digests", () => {
+    const unsafeReplaySource: GenerationContextSource = {
+      ...source("child_identity", { ageBand: "6-8" }),
+      resolve: () => ({
+        value: { ageBand: "6-8" },
+        replayReference: {
+          ...REPLAY_REFERENCE,
+          snapshotDigest: "internal-child-id",
+        },
+      }),
+      replay: () => ({ ageBand: "6-8" }),
+    };
+
+    expect(() =>
+      assembleGenerationContext(onboardingContext(), {
+        sources: [
+          unsafeReplaySource,
+          source("child_personalization", { interests: ["space"] }),
+          source("creation_direction", { startDirection: "world_first" }),
+          source("creation_selections", { worldFeeling: "crystal_caves" }),
+        ],
+      }),
+    ).toThrow(
+      "GENERATION_CONTEXT_REPLAY_REFERENCE_INVALID:child_identity:test.child_identity",
+    );
   });
 
   it("fails explicitly when a required policy section has no registered source", () => {
