@@ -5,6 +5,9 @@ import CanonicalTestLabDashboard from "../../app/settings/test-lab/canonical-das
 export const dynamic = "force-dynamic";
 
 export default function TestLabVisualPage() {
-  if (process.env.LUMI_VISUAL_TEST !== "1") notFound();
+  const visualTestEnabled =
+    process.env.LUMI_VISUAL_TEST === "1" ||
+    process.env.NEXT_DIST_DIR === ".next-e2e";
+  if (!visualTestEnabled) notFound();
   return <CanonicalTestLabDashboard />;
 }
