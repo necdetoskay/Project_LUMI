@@ -91,9 +91,7 @@ export function EvaluationPanel(props: {
   storyScenario: boolean;
 }) {
   const [rubric, setRubric] = useState<Rubric | null>(null);
-  const [judgeModelSlug, setJudgeModelSlug] = useState(
-    "openai/gpt-4.1-mini",
-  );
+  const [judgeModelSlug, setJudgeModelSlug] = useState("openai/gpt-4.1-mini");
   const [mode, setMode] = useState<"absolute" | "blind_ranking">(
     "blind_ranking",
   );
@@ -246,8 +244,9 @@ export function EvaluationPanel(props: {
     <section style={panelStyle}>
       <h2>8. Evaluation Engine</h2>
       <p style={{ opacity: 0.75 }}>
-        Judge değerlendirmeleri blind Candidate A/B/C payload&apos;larıyla çalışır.
-        AI recommendation veya human score TestSelection&apos;ı otomatik değiştirmez.
+        Judge değerlendirmeleri blind Candidate A/B/C payload&apos;larıyla
+        çalışır. AI recommendation veya human score TestSelection&apos;ı
+        otomatik değiştirmez.
       </p>
 
       <div style={gridStyle}>
@@ -415,7 +414,9 @@ async function evaluationPost(body: Record<string, unknown>) {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Beklenmeyen evaluation hatası";
+  return error instanceof Error
+    ? error.message
+    : "Beklenmeyen evaluation hatası";
 }
 
 const panelStyle = {

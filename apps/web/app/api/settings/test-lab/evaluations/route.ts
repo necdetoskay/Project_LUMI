@@ -80,14 +80,15 @@ export const POST = observeHandler(async (request: Request) => {
       if (action === "run-arc-judge") {
         const sessionId = requiredString(body.sessionId, "sessionId");
         const branchId = requiredString(body.branchId, "branchId");
-        const selections = (await testLabRepository.listSelections(branchId)).sort(
-          (left, right) => left.createdAt.localeCompare(right.createdAt),
-        );
+        const selections = (
+          await testLabRepository.listSelections(branchId)
+        ).sort((left, right) => left.createdAt.localeCompare(right.createdAt));
         if (selections.length === 0) {
           throw new Error("TEST_LAB_EVALUATION_ARC_REQUIRES_SELECTIONS");
         }
         const entries = [];
-        let anchor: Awaited<ReturnType<typeof loadOwnedCandidateDetails>> = null;
+        let anchor: Awaited<ReturnType<typeof loadOwnedCandidateDetails>> =
+          null;
         for (const selection of selections) {
           const details = await loadOwnedCandidateDetails({
             candidateId: selection.candidateId,
@@ -265,7 +266,9 @@ async function loadOwnedCandidateDetails(input: {
   childProfileId: string;
   testLabRepository: DrizzleTestLabRepository;
 }) {
-  const candidate = await input.testLabRepository.getCandidate(input.candidateId);
+  const candidate = await input.testLabRepository.getCandidate(
+    input.candidateId,
+  );
   if (!candidate) {
     throw new Error(`TEST_LAB_CANDIDATE_NOT_FOUND:${input.candidateId}`);
   }

@@ -79,7 +79,8 @@ describe("evaluation consistency", () => {
     const payload = createStoryArcEvaluationPayload([
       {
         storyId: "story-1",
-        narrative: "Lumi ormanda eski bir kapı buldu ve tilki Mira ile tanıştı.",
+        narrative:
+          "Lumi ormanda eski bir kapı buldu ve tilki Mira ile tanıştı.",
         resultingState: {
           character: { courage: 2 },
           world: { gateOpen: false },
@@ -88,7 +89,8 @@ describe("evaluation consistency", () => {
       },
       {
         storyId: "story-2",
-        narrative: "Lumi Mira ile kapının sırrını çözdü ve cesaretini gösterdi.",
+        narrative:
+          "Lumi Mira ile kapının sırrını çözdü ve cesaretini gösterdi.",
         resultingState: {
           character: { courage: 3 },
           world: { gateOpen: true },
@@ -97,7 +99,8 @@ describe("evaluation consistency", () => {
       },
       {
         storyId: "story-3",
-        narrative: "Lumi yeni açılan kapıdan geçip başka bir vadinin izini buldu.",
+        narrative:
+          "Lumi yeni açılan kapıdan geçip başka bir vadinin izini buldu.",
         resultingState: {
           character: { courage: 3 },
           world: { gateOpen: true, valleyKnown: true },

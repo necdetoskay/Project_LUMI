@@ -1,7 +1,4 @@
-import type {
-  CandidateEvaluation,
-  JudgeConsensus,
-} from "./evaluation";
+import type { CandidateEvaluation, JudgeConsensus } from "./evaluation";
 import type { JsonObject, JsonValue } from "./test-lab-types";
 
 export type ConsistencySeverity = "warning" | "error";
@@ -267,7 +264,9 @@ function repeatedNarrativePairs(narratives: string[]): number {
 
 function tokenJaccard(left: string, right: string): number {
   const leftTokens = new Set(normalizeText(left).split(/\W+/u).filter(Boolean));
-  const rightTokens = new Set(normalizeText(right).split(/\W+/u).filter(Boolean));
+  const rightTokens = new Set(
+    normalizeText(right).split(/\W+/u).filter(Boolean),
+  );
   const union = new Set([...leftTokens, ...rightTokens]);
   if (union.size === 0) return 1;
   let intersection = 0;
