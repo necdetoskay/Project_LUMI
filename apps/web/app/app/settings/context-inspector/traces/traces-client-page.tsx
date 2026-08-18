@@ -285,9 +285,7 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-950">
-          Included sections
-        </h3>
+        <h3 className="text-lg font-bold text-slate-950">Included sections</h3>
         <div className="mt-4 space-y-3">
           {trace.context.sections.map((section) => (
             <div
