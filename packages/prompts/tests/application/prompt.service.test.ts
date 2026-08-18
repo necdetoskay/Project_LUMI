@@ -1,14 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activatePromptVersion,
-  createPromptDraft,
   createPromptRegistry,
   createPromptVersion,
   getActivePromptVersion,
-  getPromptWorkspace,
   publishPromptVersion,
   renderActivePrompt,
-  renderPromptVersion,
   __setTestPromptDb,
   __setTestPromptRepository,
 } from "../../src/application/prompt.service";
@@ -30,17 +27,6 @@ describe("PromptService", () => {
   const mockDb = {
     transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({})),
   } as unknown as Database;
-
-  function registryRecord() {
-    return {
-      id: registryId,
-      householdId,
-      promptKey: "story.test",
-      purpose: "test",
-      createdAt: now,
-      updatedAt: now,
-    };
-  }
 
   function publishedVersionRecord() {
     return {
@@ -68,7 +54,7 @@ describe("PromptService", () => {
     })),
     createVersion: vi.fn(async (_tx, data) => ({
       ...data,
-      id: crypto.randomUUID(),
+      id: versionId,
       status: "draft" as const,
       createdAt: data.createdAt ?? now,
       updatedAt: data.updatedAt ?? now,
@@ -87,10 +73,9 @@ describe("PromptService", () => {
       activatedAt: now,
       deactivatedAt: null,
     })),
-    getRegistryByKey: vi.fn(async () => registryRecord()),
     getActiveVersion: vi.fn(async () => publishedVersionRecord()),
     getVersionById: vi.fn(async () => publishedVersionRecord()),
-    listVersionsByRegistry: vi.fn(async () => [publishedVersionRecord()]),
+    listVersionsByRegistry: vi.fn(async () => []),
   };
 
   beforeEach(() => {
@@ -118,32 +103,6 @@ describe("PromptService", () => {
     });
     expect(result.registryId).toBe(registryId);
     expect(result.status).toBe("draft");
-  });
-
-  it("loads active prompt plus full revision history by household and key", async () => {
-    const result = await getPromptWorkspace(householdId, "story.test");
-    expect(result.registry.id).toBe(registryId);
-    expect(result.activeVersion?.id).toBe(versionId);
-    expect(result.versions).toHaveLength(1);
-    expect(mockRepo.getRegistryByKey).toHaveBeenCalledWith(
-      expect.anything(),
-      householdId,
-      "story.test",
-    );
-  });
-
-  it("creates a new immutable draft from the active revision", async () => {
-    const result = await createPromptDraft({
-      householdId,
-      promptKey: "story.test",
-      templateBody: "Hi {{childName}}",
-    });
-    expect(result.status).toBe("draft");
-    expect(result.versionNumber).toBe(2);
-    expect(result.templateBody).toBe("Hi {{childName}}");
-    expect(result.variableSchema).toEqual(variables);
-    expect(mockRepo.publishVersion).not.toHaveBeenCalled();
-    expect(mockRepo.activateVersion).not.toHaveBeenCalled();
   });
 
   it("publishes a version", async () => {
@@ -200,21 +159,14 @@ describe("PromptService", () => {
     expect(result?.id).toBe(versionId);
   });
 
-  it("renders any exact revision without activating it", async () => {
-    const result = await renderPromptVersion(versionId, { childName: "Ada" });
-    expect(result.renderedText).toBe("Hello Ada");
-    expect(result.versionId).toBe(versionId);
-    expect(mockRepo.activateVersion).not.toHaveBeenCalled();
-  });
-
   it("renders the active prompt", async () => {
     const result = await renderActivePrompt(registryId, { childName: "Ada" });
     expect(result.renderedText).toBe("Hello Ada");
     expect(result.versionId).toBe(versionId);
   });
 
-  it("fails before generation when a revision is missing required variables", async () => {
-    await expect(renderPromptVersion(versionId, {})).rejects.toThrow(
+  it("throws when rendering active prompt with missing variable", async () => {
+    await expect(renderActivePrompt(registryId, {})).rejects.toThrow(
       ValidationError,
     );
   });
