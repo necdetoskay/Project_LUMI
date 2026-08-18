@@ -80,11 +80,7 @@ export function PromptWorkspace(props: {
     return () => {
       cancelled = true;
     };
-  }, [
-    props.householdId,
-    props.onPromptVersionOverrideChange,
-    props.promptKey,
-  ]);
+  }, [props.householdId, props.onPromptVersionOverrideChange, props.promptKey]);
 
   const selectedRevision = useMemo(() => {
     if (!workspace || sourceVersion === null) return null;
