@@ -12,7 +12,7 @@ function assembledContext(): AssembledGenerationContext {
     droppedSections: ["relevant_memories"],
     sections: [
       {
-        section: "child_profile",
+        section: "child_personalization",
         priority: "required",
         maxTokens: 600,
         estimatedTokens: 120,
@@ -26,7 +26,7 @@ function assembledContext(): AssembledGenerationContext {
           sourceVersion: "v1",
           revision: "SECRET-REVISION",
           authority: "canonical",
-          reason: "profile_context",
+          reason: "personalization",
           updatedAt: "2026-08-18T00:00:00.000Z",
           compaction: {
             strategy: "dedupe-and-tail-prune-v1",
