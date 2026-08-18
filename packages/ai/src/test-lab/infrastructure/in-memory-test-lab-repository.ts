@@ -6,6 +6,8 @@ import type {
   TestBranchId,
   TestPhaseId,
   TestRun,
+  TestRunCandidate,
+  TestRunCandidateId,
   TestRunId,
   TestSelection,
   TestSession,
@@ -18,6 +20,7 @@ export class InMemoryTestLabRepository implements TestLabRepository {
   private readonly branches = new Map<TestBranchId, TestBranch>();
   private readonly states = new Map<StateSnapshotId, StateSnapshot>();
   private readonly runs = new Map<TestRunId, TestRun>();
+  private readonly candidates = new Map<TestRunCandidateId, TestRunCandidate>();
   private readonly selections = new Map<string, TestSelection>();
 
   async saveSession(session: TestSession): Promise<void> {
@@ -73,6 +76,35 @@ export class InMemoryTestLabRepository implements TestLabRepository {
     return [...this.runs.values()]
       .filter((run) => run.branchId === branchId)
       .map((run) => structuredClone(run));
+  }
+
+  async saveCandidate(candidate: TestRunCandidate): Promise<void> {
+    if (this.candidates.has(candidate.id)) {
+      throw new TestLabInvariantError(
+        `TEST_LAB_CANDIDATE_ALREADY_EXISTS:${candidate.id}`,
+      );
+    }
+    const duplicateOrdinal = [...this.candidates.values()].some(
+      (value) => value.runId === candidate.runId && value.ordinal === candidate.ordinal,
+    );
+    if (duplicateOrdinal) {
+      throw new TestLabInvariantError(
+        `TEST_LAB_CANDIDATE_ORDINAL_ALREADY_EXISTS:${candidate.runId}:${candidate.ordinal}`,
+      );
+    }
+    this.candidates.set(candidate.id, structuredClone(candidate));
+  }
+
+  async getCandidate(id: TestRunCandidateId): Promise<TestRunCandidate | null> {
+    const value = this.candidates.get(id);
+    return value ? structuredClone(value) : null;
+  }
+
+  async listCandidates(runId: TestRunId): Promise<TestRunCandidate[]> {
+    return [...this.candidates.values()]
+      .filter((candidate) => candidate.runId === runId)
+      .sort((a, b) => a.ordinal - b.ordinal)
+      .map((candidate) => structuredClone(candidate));
   }
 
   async saveSelection(selection: TestSelection): Promise<void> {
