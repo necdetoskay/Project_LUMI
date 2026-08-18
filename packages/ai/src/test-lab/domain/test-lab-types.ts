@@ -26,6 +26,15 @@ export interface TestRunExecutionSnapshot {
   productionOperation: string;
   promptKey: string | null;
   promptVersion: number | null;
+  promptTemplateSnapshot: {
+    system: string;
+    user: string;
+  } | null;
+  renderedPrompt: {
+    system: string;
+    user: string;
+  } | null;
+  finalProviderRequest: JsonObject | null;
   renderedPromptFingerprint: string | null;
   contextFingerprint: string | null;
 }
