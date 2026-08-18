@@ -16,7 +16,8 @@ export interface TextLlmGatewayInput {
   generationConfig?: Record<string, unknown> | null;
 }
 
-export interface TextLlmProviderRequestSnapshot {
+export interface TextLlmProviderRequestSnapshot
+  extends Record<string, unknown> {
   provider: "openrouter";
   model: string;
   messages: Array<{
