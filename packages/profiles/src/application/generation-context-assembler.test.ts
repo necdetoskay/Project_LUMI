@@ -45,9 +45,9 @@ describe("generation context assembler", () => {
   });
 
   it("rejects a required section when its canonical value is missing", () => {
-    expect(() => assembleGenerationContext(context("story_generation"))).toThrow(
-      "GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:character_state",
-    );
+    expect(() =>
+      assembleGenerationContext(context("story_generation")),
+    ).toThrow("GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:character_state");
   });
 
   it("removes internal child and creation-cycle ids from provider-visible context", () => {
@@ -141,7 +141,9 @@ describe("generation context assembler", () => {
   });
 
   it("verifies the final provider-bound payload against the total budget", () => {
-    const assembled = assembleGenerationContext(context("character_onboarding"));
+    const assembled = assembleGenerationContext(
+      context("character_onboarding"),
+    );
     const promptContext = toPromptGenerationContext(assembled);
 
     expect(estimateGenerationContextTokens(promptContext)).toBe(
