@@ -7,6 +7,7 @@ export type TestSessionId = string;
 export type TestBranchId = string;
 export type TestPhaseId = string;
 export type TestRunId = string;
+export type TestRunCandidateId = string;
 export type StateSnapshotId = string;
 export type TestSelectionId = string;
 
@@ -53,11 +54,22 @@ export interface TestRun {
   branchId: TestBranchId;
   phaseId: TestPhaseId;
   parentStateId: StateSnapshotId;
-  candidateStateId: StateSnapshotId;
   status: TestRunStatus;
   modelSlug: string | null;
   pricingSnapshot: ModelPricingSnapshot | null;
   usageSnapshot: TestRunUsageSnapshot | null;
+  createdAt: string;
+}
+
+export interface TestRunCandidate {
+  id: TestRunCandidateId;
+  runId: TestRunId;
+  sessionId: TestSessionId;
+  branchId: TestBranchId;
+  phaseId: TestPhaseId;
+  ordinal: number;
+  payload: JsonObject;
+  candidateStateId: StateSnapshotId;
   createdAt: string;
 }
 
@@ -67,6 +79,7 @@ export interface TestSelection {
   branchId: TestBranchId;
   phaseId: TestPhaseId;
   runId: TestRunId;
+  candidateId: TestRunCandidateId;
   selectedStateId: StateSnapshotId;
   actor: TestSelectionActor;
   strategy: string | null;
