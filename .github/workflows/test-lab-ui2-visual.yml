@@ -1,0 +1,39 @@
+name: Test Lab UI2 Visual
+
+on:
+  push:
+    branches:
+      - agent/test-lab-canonical-ui-2
+    paths:
+      - .github/workflows/test-lab-ui2-visual.yml
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      LUMI_VISUAL_TEST: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture UI2 dashboard
+        run: |
+          google-chrome --version
+          pnpm --filter @lumi/web exec playwright test tests/e2e/test-lab-ui2-visual.spec.ts
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-ui2-visual
+          path: apps/web/test-results/test-lab-ui2.png
+          if-no-files-found: warn
