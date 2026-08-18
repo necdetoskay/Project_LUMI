@@ -1,6 +1,6 @@
 # LUMI Test Lab — Stateful Quality & Prompt Optimization Architecture
 
-Status: planned
+Status: active implementation — Phase 1 merged, Phase 2 in validation
 Date: 2026-08-18
 
 ## Purpose
@@ -125,7 +125,19 @@ Sandbox state includes only canonical domain projections required by production 
 A candidate resulting state is calculated from its parent state plus validated production state transitions. A full snapshot and a normalized diff are retained.
 
 ### ModelProfile
-User enters the exact OpenRouter model slug. The system resolves current model metadata/pricing when available and snapshots it for the run. Manual price override may be supported, but fetched and overridden values must be distinguishable.
+User enters the exact OpenRouter model slug. The system resolves current model metadata/pricing when available and snapshots it for the run. Manual price override is supported with explicit provenance.
+
+Phase 2 accounting rules:
+- exact catalog slug resolution only; unresolved slugs never silently fall back to another model;
+- canonical catalog prices are stored per token and UI-friendly `/1M token` values are derived from the snapshot;
+- prompt and completion prices are mandatory for a traceable paid run;
+- missing cache/reasoning rates inherit their corresponding prompt/completion rate when the catalog omits them, while an explicit zero price remains zero;
+- manual overrides are validated, versioned by snapshot, and marked `manual_override` rather than being confused with catalog prices;
+- every priced TestRun stores the exact model slug and immutable pricing snapshot used at execution time;
+- provider-reported actual cost is stored separately from catalog-estimated cost;
+- cached input, cache-write, reasoning tokens, provider latency, upstream inference cost and retry count are preserved when available;
+- a usage snapshot cannot be recorded without its model and pricing snapshot, preventing untraceable cost records;
+- model preset/favorite contracts remain provider-neutral so UI convenience does not leak OpenRouter-specific behavior into the Test Lab domain.
 
 ### EvaluationRubric / EvaluationRun
 Rubrics are versioned and test-type specific. Story examples:
