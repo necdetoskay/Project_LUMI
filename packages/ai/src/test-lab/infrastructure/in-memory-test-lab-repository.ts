@@ -59,9 +59,7 @@ export class InMemoryTestLabRepository implements TestLabRepository {
 
   async saveRun(run: TestRun): Promise<void> {
     if (this.runs.has(run.id)) {
-      throw new TestLabInvariantError(
-        `TEST_LAB_RUN_ALREADY_EXISTS:${run.id}`,
-      );
+      throw new TestLabInvariantError(`TEST_LAB_RUN_ALREADY_EXISTS:${run.id}`);
     }
     this.runs.set(run.id, structuredClone(run));
   }
