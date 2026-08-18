@@ -80,7 +80,11 @@ export function PromptWorkspace(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.householdId, props.promptKey]);
+  }, [
+    props.householdId,
+    props.onPromptVersionOverrideChange,
+    props.promptKey,
+  ]);
 
   const selectedRevision = useMemo(() => {
     if (!workspace || sourceVersion === null) return null;
@@ -153,7 +157,9 @@ export function PromptWorkspace(props: {
       });
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.message ?? "Prompt production işlemi başarısız");
+        throw new Error(
+          payload.message ?? "Prompt production işlemi başarısız",
+        );
       }
       setWorkspace(payload.data.workspace as PromptWorkspaceData);
       props.onPromptVersionOverrideChange(undefined);
@@ -170,7 +176,9 @@ export function PromptWorkspace(props: {
   }
 
   function chooseWorkspaceRevision(data: PromptWorkspaceData, version: number) {
-    const selected = data.versions.find((candidate) => candidate.version === version);
+    const selected = data.versions.find(
+      (candidate) => candidate.version === version,
+    );
     if (!selected) return;
     setSourceVersion(version);
     setSystemTemplate(selected.systemTemplate);
@@ -284,9 +292,7 @@ export function PromptWorkspace(props: {
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button
-              disabled={
-                busy || !systemTemplate.trim() || !userTemplate.trim()
-              }
+              disabled={busy || !systemTemplate.trim() || !userTemplate.trim()}
               onClick={createDraft}
               style={buttonStyle}
             >
