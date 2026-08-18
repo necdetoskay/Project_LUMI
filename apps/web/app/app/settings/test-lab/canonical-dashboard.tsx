@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type {
   CanonicalTestLabDashboardData,
+  CanonicalTestLabEvaluationView,
+  CanonicalTestLabQualityMetric,
   CanonicalTestLabRunView,
 } from "@/lib/ai/test-lab-dashboard-view-model";
 
@@ -16,15 +18,6 @@ const testItems = [
   "Provider Failover",
   "Görsel Prompt Kalitesi",
 ];
-
-const qualityMetrics = [
-  { label: "Bütünlük", score: 0, pending: true },
-  { label: "Duygusal Etki", score: 0, pending: true },
-  { label: "Yaratıcılık", score: 0, pending: true },
-  { label: "Merak", score: 0, pending: true },
-  { label: "Karakter Tutarlılığı", score: 0, pending: true },
-  { label: "Güvenlik", score: 0, pending: true },
-] as const;
 
 function Icon({
   name,
@@ -218,17 +211,40 @@ function ModelSettings({
 
 function LiveRunPanel({
   latestRun,
+  evaluation,
 }: {
   latestRun: CanonicalTestLabRunView | null;
+  evaluation: CanonicalTestLabEvaluationView;
 }) {
   const hasRun = latestRun !== null;
+  const evaluationReady = evaluation.ready;
   const steps = [
     ["Örnek üret", hasRun ? "100%" : "Queued", hasRun ? "done" : "queued"],
-    ["Yargılayıcı model\ndeğerlendir", "UI-3", "queued"],
-    ["Rubrik puanla", "UI-3", "queued"],
+    [
+      "Yargılayıcı model\ndeğerlendir",
+      evaluationReady ? `${evaluation.progressPercent}%` : "Queued",
+      evaluationReady ? "done" : "queued",
+    ],
+    [
+      "Rubrik puanla",
+      evaluationReady ? "100%" : "Queued",
+      evaluationReady ? "done" : "queued",
+    ],
     ["Promptu iyileştir", "UI-4", "queued"],
     ["Final raporu oluştur", "Queued", "queued"],
   ] as const;
+  const trendGeometry = evaluation.trend.map((point, index, items) => {
+    const x = 42 + (items.length <= 1 ? 0 : (474 * index) / (items.length - 1));
+    const y = 102 - point.score * 0.86;
+    return { x, y, ...point };
+  });
+  const trendPoints = trendGeometry
+    .map((point) => `${point.x},${point.y}`)
+    .join(" ");
+  const trendArea =
+    trendGeometry.length === 0
+      ? ""
+      : `M${trendGeometry[0]?.x ?? 42} 102 L ${trendPoints} L ${trendGeometry.at(-1)?.x ?? 42} 102 Z`;
 
   return (
     <section className={`${styles.panel} ${styles.liveRunPanel}`}>
@@ -237,7 +253,8 @@ function LiveRunPanel({
           <div className={styles.liveTitleRow}>
             <h2>Canlı Koşu Durumu</h2>
             <span className={styles.runningBadge}>
-              ●&nbsp; {latestRun?.status ?? "Idle"}
+              ●&nbsp;{" "}
+              {evaluationReady ? "Evaluated" : (latestRun?.status ?? "Idle")}
             </span>
           </div>
           <p>
@@ -279,39 +296,42 @@ function LiveRunPanel({
         <div className={styles.progressStats}>
           <strong>İlerleme</strong>
           <div className={styles.progressLabels}>
-            <span>Koşu Kaydı</span>
-            <b>{hasRun ? 1 : 0}</b>
+            <span>Judge İlerlemesi</span>
+            <b>{evaluation.totalCandidates}</b>
           </div>
           <div className={styles.progressTrack}>
-            <span style={{ width: hasRun ? "100%" : "0%" }} />
+            <span style={{ width: `${evaluation.progressPercent}%` }} />
           </div>
           <div className={styles.progressBottom}>
             <span>
-              <b>{hasRun ? 1 : 0}</b> / {hasRun ? 1 : 0} tamamlandı
+              <b>{evaluation.evaluatedCandidates}</b> /{" "}
+              {evaluation.totalCandidates} değerlendirildi
             </span>
-            <b>{hasRun ? "%100" : "%0"}</b>
+            <b>%{evaluation.progressPercent}</b>
           </div>
         </div>
         <div className={styles.currentJudge}>
           <div>
             <span>Geçerli Adım: </span>
             <strong>
-              {hasRun ? "Run kaydı tamamlandı" : "Koşu bekleniyor"}
+              {evaluationReady
+                ? "Judge değerlendirmesi tamamlandı"
+                : "Judge bekleniyor"}
             </strong>
           </div>
-          <p>{latestRun?.model ?? "Model seçimi bekleniyor"}</p>
+          <p>{evaluation.judgeModel ?? "Judge modeli bekleniyor"}</p>
           <span>
-            {latestRun
-              ? `${latestRun.scenarioLabel} • ${latestRun.phaseLabel}`
-              : "Advanced yüzeyinden yeni koşu başlatılabilir."}
+            {evaluation.rubricLabel
+              ? evaluation.rubricLabel
+              : "Advanced yüzeyinden judge değerlendirmesi başlatılabilir."}
           </span>
-          <Icon name={hasRun ? "check_circle" : "schedule"} />
+          <Icon name={evaluationReady ? "check_circle" : "schedule"} />
         </div>
       </div>
 
       <div className={styles.chartBox}>
         <div className={styles.chartArea}>
-          <strong>Canlı Skor Trendi · UI-3</strong>
+          <strong>Canlı Skor Trendi</strong>
           <svg
             className={styles.scoreChart}
             viewBox="0 0 560 120"
@@ -330,35 +350,50 @@ function LiveRunPanel({
               <line x1="34" y1="68" x2="540" y2="68" />
               <line x1="34" y1="94" x2="540" y2="94" />
             </g>
+            {trendGeometry.length > 0 ? (
+              <>
+                <path d={trendArea} fill="url(#scoreArea)" />
+                <polyline className={styles.chartLine} points={trendPoints} />
+                {trendGeometry.map((point) => (
+                  <circle
+                    key={`${point.label}:${point.score}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r="2.4"
+                  />
+                ))}
+              </>
+            ) : null}
           </svg>
           <div className={styles.chartAxis}>
-            <span>—</span>
-            <span>—</span>
-            <span>—</span>
-            <span>—</span>
-            <span>—</span>
-            <span>UI-3</span>
+            {Array.from({ length: 6 }, (_, index) => (
+              <span key={index}>{evaluation.trend[index]?.label ?? "—"}</span>
+            ))}
           </div>
         </div>
         <div className={styles.currentScore}>
           <span>Güncel Skor</span>
           <div>
-            <strong>—</strong>
+            <strong>{evaluation.overallScore ?? "—"}</strong>
             <small>/100</small>
           </div>
-          <b>●&nbsp; UI-3</b>
+          <b>●&nbsp; {evaluation.scoreState}</b>
         </div>
       </div>
     </section>
   );
 }
 
-function QualityPanel() {
+function QualityPanel({
+  metrics,
+}: {
+  metrics: CanonicalTestLabQualityMetric[];
+}) {
   return (
     <section className={`${styles.panel} ${styles.qualityPanel}`}>
       <PanelTitle icon="bar_chart">Kalite Boyutları</PanelTitle>
       <div className={styles.qualityList}>
-        {qualityMetrics.map((metric) => (
+        {metrics.map((metric) => (
           <div className={styles.qualityRow} key={metric.label}>
             <div>
               <span>{metric.label}</span>
@@ -421,7 +456,17 @@ function RecentRuns({ runs }: { runs: CanonicalTestLabRunView[] }) {
                 <td>{run.model}</td>
                 <td>
                   <strong>{run.score}</strong>
-                  <span className={styles.scoreMedium}>● {run.scoreState}</span>
+                  <span
+                    className={
+                      run.scoreState === "İyi"
+                        ? styles.scoreGood
+                        : run.scoreState === "Zayıf"
+                          ? styles.scoreBad
+                          : styles.scoreMedium
+                    }
+                  >
+                    ● {run.scoreState}
+                  </span>
                 </td>
                 <td>{run.cost}</td>
                 <td>{run.duration}</td>
@@ -511,22 +556,28 @@ export default function CanonicalTestLabDashboard({
             label="Son Koşu Skoru"
             footnote={
               <>
-                <span className={styles.goodDot}>● UI-3</span>
+                <span className={styles.goodDot}>
+                  ● {data.evaluation.scoreState}
+                </span>
                 <span>{latestRun?.createdAtLabel ?? "Değerlendirme yok"}</span>
               </>
             }
           >
-            <strong className={styles.kpiScoreGood}>—</strong>
+            <strong className={styles.kpiScoreGood}>
+              {data.evaluation.overallScore ?? "—"}
+            </strong>
             <span>/ 100</span>
           </KpiCard>
           <KpiCard
             icon="check"
             accent="blue"
             label="Başarılı Test"
-            footnote={<>Değerlendirme UI-3 kapsamında</>}
+            footnote={<>Judge değerlendirmesi tamamlanan koşular</>}
           >
-            <strong className={styles.kpiScoreBlue}>—</strong>
-            <span>/ —</span>
+            <strong className={styles.kpiScoreBlue}>
+              {data.evaluation.successfulRuns}
+            </strong>
+            <span>/ {data.evaluation.evaluatedRuns}</span>
           </KpiCard>
           <KpiCard
             icon="attach_money"
@@ -545,9 +596,9 @@ export default function CanonicalTestLabDashboard({
             <TestPlan />
             <ModelSettings latestRun={latestRun} />
           </div>
-          <LiveRunPanel latestRun={latestRun} />
+          <LiveRunPanel latestRun={latestRun} evaluation={data.evaluation} />
           <div className={styles.rightColumn}>
-            <QualityPanel />
+            <QualityPanel metrics={data.evaluation.qualityMetrics} />
             <PromptSuggestion />
           </div>
         </section>

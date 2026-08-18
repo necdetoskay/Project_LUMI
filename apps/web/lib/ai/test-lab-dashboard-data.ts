@@ -78,7 +78,10 @@ export async function loadCanonicalTestLabDashboardData(
         testLabEvaluationExecutions.id,
       ),
     )
-    .innerJoin(testLabRuns, eq(testLabCandidateEvaluations.runId, testLabRuns.id))
+    .innerJoin(
+      testLabRuns,
+      eq(testLabCandidateEvaluations.runId, testLabRuns.id),
+    )
     .innerJoin(
       testLabStateSnapshots,
       eq(testLabRuns.parentStateId, testLabStateSnapshots.id),
@@ -96,7 +99,9 @@ export async function loadCanonicalTestLabDashboardData(
         ),
       ),
     )
-    .where(and(ownerFilter, eq(testLabCandidateEvaluations.authorType, "judge")))
+    .where(
+      and(ownerFilter, eq(testLabCandidateEvaluations.authorType, "judge")),
+    )
     .orderBy(desc(testLabEvaluationExecutions.createdAt))
     .limit(100);
 

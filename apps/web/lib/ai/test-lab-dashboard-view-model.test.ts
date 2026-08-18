@@ -53,19 +53,38 @@ describe("buildCanonicalTestLabDashboardData", () => {
         },
       ],
       [
-        evaluation("exec-new", "run-1", "candidate-a", 8, "2026-08-18T15:40:00.000Z", [
-          { criterionKey: "continuity", score: 9 },
-          { criterionKey: "creativity", score: 7 },
-          { criterionKey: "curiosity", score: 8 },
-        ]),
-        evaluation("exec-new", "run-1", "candidate-b", 7, "2026-08-18T15:40:00.000Z", [
-          { criterionKey: "continuity", score: 8 },
-          { criterionKey: "creativity", score: 6 },
-          { criterionKey: "curiosity", score: 7 },
-        ]),
-        evaluation("exec-old", "run-1", "candidate-a", 4, "2026-08-18T15:38:00.000Z", [
-          { criterionKey: "continuity", score: 4 },
-        ]),
+        evaluation(
+          "exec-new",
+          "run-1",
+          "candidate-a",
+          8,
+          "2026-08-18T15:40:00.000Z",
+          [
+            { criterionKey: "continuity", score: 9 },
+            { criterionKey: "creativity", score: 7 },
+            { criterionKey: "curiosity", score: 8 },
+          ],
+        ),
+        evaluation(
+          "exec-new",
+          "run-1",
+          "candidate-b",
+          7,
+          "2026-08-18T15:40:00.000Z",
+          [
+            { criterionKey: "continuity", score: 8 },
+            { criterionKey: "creativity", score: 6 },
+            { criterionKey: "curiosity", score: 7 },
+          ],
+        ),
+        evaluation(
+          "exec-old",
+          "run-1",
+          "candidate-a",
+          4,
+          "2026-08-18T15:38:00.000Z",
+          [{ criterionKey: "continuity", score: 4 }],
+        ),
       ],
       [{ runId: "run-1", count: 3 }],
     );
@@ -90,8 +109,16 @@ describe("buildCanonicalTestLabDashboardData", () => {
     });
     expect(data.evaluation.qualityMetrics).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ label: "Bütünlük", score: 83, pending: false }),
-        expect.objectContaining({ label: "Yaratıcılık", score: 61, pending: false }),
+        expect.objectContaining({
+          label: "Bütünlük",
+          score: 83,
+          pending: false,
+        }),
+        expect.objectContaining({
+          label: "Yaratıcılık",
+          score: 61,
+          pending: false,
+        }),
         expect.objectContaining({ label: "Merak", score: 72, pending: false }),
       ]),
     );
