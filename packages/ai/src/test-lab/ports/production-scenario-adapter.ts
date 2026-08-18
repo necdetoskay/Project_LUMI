@@ -5,6 +5,8 @@ import type {
 import type { JsonObject } from "../domain/test-lab-types";
 
 export interface ProductionScenarioExecutionRequest {
+  testSessionId: string;
+  branchId: string;
   scenarioKey: string;
   phaseId: string;
   productionOperation: string;
