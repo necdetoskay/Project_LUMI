@@ -68,9 +68,9 @@ describe("generation context sources", () => {
   });
 
   it("keeps current-state default sources non-replayable until a historical store exists", () => {
-    expect(getDefaultGenerationContextSources().every((entry) => !entry.replay)).toBe(
-      true,
-    );
+    expect(
+      getDefaultGenerationContextSources().every((entry) => !entry.replay),
+    ).toBe(true);
   });
 
   it("rejects duplicate source ownership for the same section", () => {
@@ -121,7 +121,8 @@ describe("generation context sources", () => {
         replayReference: REPLAY_REFERENCE,
       }),
       replay: (reference) => ({
-        ageBand: reference.snapshotDigest === "a".repeat(64) ? "6-8" : "9-12",
+        ageBand:
+          reference.snapshotDigest === "a".repeat(64) ? "6-8" : "9-12",
         ageYears: 7,
         locale: "tr-TR",
       }),
@@ -137,9 +138,9 @@ describe("generation context sources", () => {
     });
 
     expect(assembled.sections[0]?.provenance.replay).toEqual(REPLAY_REFERENCE);
-    expect(replayGenerationContextSource(replayableIdentity, REPLAY_REFERENCE)).toEqual(
-      { ageBand: "6-8", ageYears: 7, locale: "tr-TR" },
-    );
+    expect(
+      replayGenerationContextSource(replayableIdentity, REPLAY_REFERENCE),
+    ).toEqual({ ageBand: "6-8", ageYears: 7, locale: "tr-TR" });
   });
 
   it("rejects replay evidence when a source cannot actually reload history", () => {
