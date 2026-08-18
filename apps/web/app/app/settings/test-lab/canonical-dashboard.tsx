@@ -502,7 +502,7 @@ export default function CanonicalTestLabDashboard({
           >
             <strong className={styles.kpiTextValue}>LUMI Çekirdek Suite</strong>
             <span className={styles.versionBadge}>
-              {latestRun?.scenarioLabel ?? "Hazır"}
+              {latestRun ? "Live" : "Hazır"}
             </span>
           </KpiCard>
           <KpiCard
