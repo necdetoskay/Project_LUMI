@@ -25,6 +25,13 @@ export interface RecordAiGenerationTraceInput {
   generated: TextLlmGatewayResult;
 }
 
+export interface AiGenerationContextInspectorReplayReference {
+  kind: "content_addressed_snapshot";
+  store: string;
+  snapshotDigest: string;
+  snapshotVersion: string;
+}
+
 export interface AiGenerationContextInspectorSection {
   section: string;
   priority: string | null;
@@ -33,6 +40,7 @@ export interface AiGenerationContextInspectorSection {
   source: string | null;
   sourceVersion: string | null;
   revisionFingerprint: string | null;
+  replay: AiGenerationContextInspectorReplayReference | null;
   authority: string | null;
   reason: string | null;
   updatedAt: string | null;
@@ -51,6 +59,8 @@ export type AiGenerationContextReconstructability =
 
 export type AiGenerationContextReconstructabilityReason =
   | "all_sources_replayable"
+  | "replay_requires_historical_compaction"
+  | "some_sources_not_replayable"
   | "source_revisions_verifiable_but_not_replayable"
   | "source_revision_evidence_incomplete"
   | "context_evidence_missing";
@@ -81,6 +91,8 @@ export interface AiGenerationContextInspectorView {
   };
 }
 
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
@@ -106,6 +118,34 @@ function fingerprintSourceRevision(input: {
     .digest("hex");
 }
 
+function toInspectorReplayReference(
+  value: unknown,
+): AiGenerationContextInspectorReplayReference | null {
+  const replay = asRecord(value);
+  if (!replay) return null;
+  const kind = asString(replay.kind);
+  const store = asString(replay.store);
+  const snapshotDigest = asString(replay.snapshotDigest);
+  const snapshotVersion = asString(replay.snapshotVersion);
+
+  if (
+    kind !== "content_addressed_snapshot" ||
+    !store?.trim() ||
+    !snapshotVersion?.trim() ||
+    !snapshotDigest ||
+    !SHA256_HEX.test(snapshotDigest)
+  ) {
+    return null;
+  }
+
+  return {
+    kind,
+    store,
+    snapshotDigest,
+    snapshotVersion,
+  };
+}
+
 function toInspectorSection(
   value: unknown,
 ): AiGenerationContextInspectorSection | null {
@@ -125,6 +165,7 @@ function toInspectorSection(
     source: asString(provenance?.source),
     sourceVersion: asString(provenance?.sourceVersion),
     revisionFingerprint: asString(provenance?.revisionFingerprint),
+    replay: toInspectorReplayReference(provenance?.replay),
     authority: asString(provenance?.authority),
     reason: asString(provenance?.reason),
     updatedAt: asString(provenance?.updatedAt),
@@ -168,6 +209,9 @@ export function createAiGenerationContextTraceEvidence(
                 }),
               }
             : {}),
+          ...(section.provenance.replay
+            ? { replay: section.provenance.replay }
+            : {}),
           ...(section.provenance.updatedAt
             ? { updatedAt: section.provenance.updatedAt }
             : {}),
@@ -195,6 +239,32 @@ function resolveReconstructability(input: {
   }
 
   const hasSections = input.sections.length > 0;
+  const replayableSectionCount = input.sections.filter((section) =>
+    Boolean(section.replay),
+  ).length;
+  const allSectionsReplayable =
+    hasSections && replayableSectionCount === input.sections.length;
+
+  if (allSectionsReplayable) {
+    if (input.sections.some((section) => Boolean(section.compaction))) {
+      return {
+        reconstructability: "partial",
+        reconstructabilityReason: "replay_requires_historical_compaction",
+      };
+    }
+    return {
+      reconstructability: "exact",
+      reconstructabilityReason: "all_sources_replayable",
+    };
+  }
+
+  if (replayableSectionCount > 0) {
+    return {
+      reconstructability: "partial",
+      reconstructabilityReason: "some_sources_not_replayable",
+    };
+  }
+
   const allSectionsHaveRevisionEvidence =
     hasSections &&
     input.sections.every((section) => Boolean(section.revisionFingerprint));

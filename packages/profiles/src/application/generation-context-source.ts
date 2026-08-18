@@ -14,11 +14,27 @@ export type GenerationContextSourceReason =
   | "recent"
   | "retrieved";
 
+/**
+ * Privacy-safe address for an immutable historical source projection.
+ *
+ * `snapshotDigest` is content-addressed rather than a domain/source identifier,
+ * so it can be persisted in generation trace provenance without exposing child,
+ * household, cycle or other internal IDs. A source may advertise this reference
+ * only when it also implements `replay()` against the named immutable store.
+ */
+export interface GenerationContextSourceReplayReference {
+  kind: "content_addressed_snapshot";
+  store: string;
+  snapshotDigest: string;
+  snapshotVersion: string;
+}
+
 export interface GenerationContextSourceResult {
   value: unknown;
   sourceId?: string;
   revision?: string;
   updatedAt?: string;
+  replayReference?: GenerationContextSourceReplayReference;
 }
 
 export interface GenerationContextSource {
@@ -28,6 +44,11 @@ export interface GenerationContextSource {
   readonly authority: GenerationContextSourceAuthority;
   readonly reason: GenerationContextSourceReason;
   resolve(context: GenerationContext): GenerationContextSourceResult;
+  /**
+   * Reloads the exact historical section value addressed by an immutable replay
+   * reference. Mutable/current-state readers must leave this undefined.
+   */
+  replay?(reference: GenerationContextSourceReplayReference): unknown;
 }
 
 function source(
@@ -128,4 +149,16 @@ export function createGenerationContextSourceRegistry(
 
 export function getDefaultGenerationContextSources(): readonly GenerationContextSource[] {
   return DEFAULT_GENERATION_CONTEXT_SOURCES;
+}
+
+export function replayGenerationContextSource(
+  source: GenerationContextSource,
+  reference: GenerationContextSourceReplayReference,
+): unknown {
+  if (!source.replay) {
+    throw new Error(
+      `GENERATION_CONTEXT_SOURCE_NOT_REPLAYABLE:${source.section}`,
+    );
+  }
+  return source.replay(reference);
 }
