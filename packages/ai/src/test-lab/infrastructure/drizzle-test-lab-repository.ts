@@ -9,6 +9,10 @@ import {
   testLabStateSnapshots,
 } from "../../db/schema/ai";
 import type {
+  ModelPricingSnapshot,
+  TestRunUsageSnapshot,
+} from "../domain/model-profile";
+import type {
   JsonObject,
   StateSnapshot,
   StateSnapshotId,
@@ -125,6 +129,9 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       parentStateId: run.parentStateId,
       candidateStateId: run.candidateStateId,
       status: run.status,
+      modelSlug: run.modelSlug,
+      pricingSnapshot: run.pricingSnapshot,
+      usageSnapshot: run.usageSnapshot,
       createdAt: new Date(run.createdAt),
     });
   }
@@ -194,6 +201,9 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       parentStateId: row.parentStateId,
       candidateStateId: row.candidateStateId,
       status: row.status as TestRun["status"],
+      modelSlug: row.modelSlug,
+      pricingSnapshot: row.pricingSnapshot as ModelPricingSnapshot | null,
+      usageSnapshot: row.usageSnapshot as TestRunUsageSnapshot | null,
       createdAt: row.createdAt.toISOString(),
     };
   }
