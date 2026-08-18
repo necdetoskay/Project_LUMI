@@ -1,0 +1,172 @@
+name: UI2 Canonical Bind Once
+
+on:
+  push:
+    branches:
+      - agent/test-lab-canonical-ui-2
+    paths:
+      - .github/workflows/ui2-canonical-bind-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/test-lab-canonical-ui-2
+      - name: Bind canonical dashboard to UI2 view model
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('apps/web/app/app/settings/test-lab/canonical-dashboard.tsx')
+          text = path.read_text()
+
+          text = text.replace(
+              'import Link from "next/link";\n\nimport styles from "./canonical-dashboard.module.css";',
+              'import Link from "next/link";\n\nimport type {\n  CanonicalTestLabDashboardData,\n  CanonicalTestLabRunView,\n} from "@/lib/ai/test-lab-dashboard-view-model";\n\nimport styles from "./canonical-dashboard.module.css";'
+          )
+
+          text = re.sub(
+              r'\nconst recentRuns = \[.*?\n\] as const;\n',
+              '\n',
+              text,
+              count=1,
+              flags=re.S,
+          )
+
+          text = text.replace(
+              'function ModelSettings() {',
+              'function ModelSettings({\n  latestRun,\n}: {\n  latestRun: CanonicalTestLabRunView | null;\n}) {'
+          )
+          text = text.replace(
+              '<select defaultValue="openrouter/anthropic/claude-sonnet-4.5">\n          <option value="openrouter/anthropic/claude-sonnet-4.5">\n            openrouter/anthropic/claude-sonnet-4.5\n          </option>\n        </select>',
+              '<select defaultValue={latestRun?.model ?? "no-run"}>\n          <option value={latestRun?.model ?? "no-run"}>\n            {latestRun?.model ?? "Henüz koşu yok"}\n          </option>\n        </select>'
+          )
+
+          text = text.replace(
+              'function LiveRunPanel() {\n  const steps = [\n    ["Örnek üret", "100%", "done"],\n    ["Yargılayıcı model\\ndeğerlendir", "68%", "active"],\n    ["Rubrik puanla", "Queued", "queued"],\n    ["Promptu iyileştir", "Queued", "queued"],\n    ["Final raporu oluştur", "Queued", "queued"],\n  ] as const;',
+              'function LiveRunPanel({\n  latestRun,\n}: {\n  latestRun: CanonicalTestLabRunView | null;\n}) {\n  const hasRun = latestRun !== null;\n  const steps = [\n    ["Örnek üret", hasRun ? "100%" : "Queued", hasRun ? "done" : "queued"],\n    ["Yargılayıcı model\\ndeğerlendir", "UI-3", "queued"],\n    ["Rubrik puanla", "UI-3", "queued"],\n    ["Promptu iyileştir", "UI-4", "queued"],\n    ["Final raporu oluştur", "Queued", "queued"],\n  ] as const;'
+          )
+          text = text.replace(
+              '<span className={styles.runningBadge}>●&nbsp; Running</span>',
+              '<span className={styles.runningBadge}>\n              ●&nbsp; {latestRun?.status ?? "Idle"}\n            </span>'
+          )
+          text = text.replace(
+              '<p>Başlangıç: 12 May 2025 14:35&nbsp; • &nbsp;Tahmini bitiş: 14:48</p>',
+              '<p>\n            {latestRun\n              ? `Başlangıç: ${latestRun.createdAtLabel} • Süre: ${latestRun.duration}`\n              : "Henüz sandbox koşusu yok."}\n          </p>'
+          )
+          text = text.replace(
+              '<div className={styles.runId}>\n          <span>Koşu ID: run_20250512_1435</span>\n          <Icon name="content_copy" />\n        </div>',
+              '<div className={styles.runId}>\n          <span>\n            {latestRun\n              ? `${latestRun.scenarioLabel} • ${latestRun.phaseLabel}`\n              : "Sandbox hazır"}\n          </span>\n        </div>'
+          )
+          text = text.replace(
+              '<span>Toplam Test</span>\n            <b>35</b>',
+              '<span>Koşu Kaydı</span>\n            <b>{hasRun ? 1 : 0}</b>'
+          )
+          text = text.replace(
+              '<div className={styles.progressTrack}>\n            <span />\n          </div>',
+              '<div className={styles.progressTrack}>\n            <span style={{ width: hasRun ? "100%" : "0%" }} />\n          </div>'
+          )
+          text = text.replace(
+              '<span>\n              <b>24</b> / 35 tamamlandı\n            </span>\n            <b>%68</b>',
+              '<span>\n              <b>{hasRun ? 1 : 0}</b> / {hasRun ? 1 : 0} tamamlandı\n            </span>\n            <b>{hasRun ? "%100" : "%0"}</b>'
+          )
+          text = text.replace(
+              '<span>Geçerli Adım: </span>\n            <strong>Yargılayıcı model değerlendir</strong>',
+              '<span>Geçerli Adım: </span>\n            <strong>{hasRun ? "Run kaydı tamamlandı" : "Koşu bekleniyor"}</strong>'
+          )
+          text = text.replace(
+              '<p>openrouter/anthropic/claude-sonnet-4.5-judge</p>\n          <span>24 / 35 örnek değerlendirildi</span>\n          <Icon name="progress_activity" />',
+              '<p>{latestRun?.model ?? "Model seçimi bekleniyor"}</p>\n          <span>\n            {latestRun\n              ? `${latestRun.scenarioLabel} • ${latestRun.phaseLabel}`\n              : "Advanced yüzeyinden yeni koşu başlatılabilir."}\n          </span>\n          <Icon name={hasRun ? "check_circle" : "schedule"} />'
+          )
+          text = text.replace(
+              '<strong>Canlı Skor Trendi</strong>',
+              '<strong>Canlı Skor Trendi · UI-3</strong>'
+          )
+          text = text.replace(
+              '<strong>82</strong>\n            <small>/100</small>',
+              '<strong>—</strong>\n            <small>/100</small>'
+          )
+          text = text.replace(
+              '<b>●&nbsp; İyi</b>',
+              '<b>●&nbsp; UI-3</b>'
+          )
+
+          text = text.replace(
+              'function RecentRuns() {',
+              'function RecentRuns({\n  runs,\n}: {\n  runs: CanonicalTestLabRunView[];\n}) {'
+          )
+          text = text.replace(
+              '{recentRuns.map((run) => (',
+              '{runs.map((run) => ('
+          )
+          text = text.replace(
+              'run.scoreState === "Zayıf"\n                        ? styles.scoreBad\n                        : run.scoreState === "Orta"\n                          ? styles.scoreMedium\n                          : styles.scoreGood',
+              'styles.scoreMedium'
+          )
+          text = text.replace(
+              'run.status === "Running"\n                        ? styles.statusRunning\n                        : styles.statusCompleted',
+              'run.status === "Failed"\n                        ? styles.statusRunning\n                        : styles.statusCompleted'
+          )
+          text = text.replace(
+              'run.status === "Running" ? "progress_activity" : "check"',
+              'run.status === "Failed" ? "error" : "check"'
+          )
+          text = text.replace(
+              '          </tbody>',
+              '            {runs.length === 0 ? (\n              <tr>\n                <td colSpan={7}>Henüz kayıtlı Test Lab koşusu yok.</td>\n              </tr>\n            ) : null}\n          </tbody>',
+              1,
+          )
+
+          text = text.replace(
+              'export default function CanonicalTestLabDashboard() {',
+              'export default function CanonicalTestLabDashboard({\n  data,\n}: {\n  data: CanonicalTestLabDashboardData;\n}) {\n  const latestRun = data.latestRun;'
+          )
+          text = text.replace(
+              'footnote={<>Son güncelleme: 12 May 2025</>}',
+              'footnote={<>Son koşu: {latestRun?.createdAtLabel ?? "Henüz yok"}</>}'
+          )
+          text = text.replace(
+              '<strong className={styles.kpiTextValue}>LUMI Çekirdek Suite</strong>\n            <span className={styles.versionBadge}>v2.4</span>',
+              '<strong className={styles.kpiTextValue}>LUMI Çekirdek Suite</strong>\n            <span className={styles.versionBadge}>\n              {latestRun?.scenarioLabel ?? "Hazır"}\n            </span>'
+          )
+          text = text.replace(
+              '<span className={styles.goodDot}>● İyi</span>\n                <span>12 May 2025 14:35</span>',
+              '<span className={styles.goodDot}>● UI-3</span>\n                <span>{latestRun?.createdAtLabel ?? "Değerlendirme yok"}</span>'
+          )
+          text = text.replace(
+              '<strong className={styles.kpiScoreGood}>82</strong>\n            <span>/ 100</span>',
+              '<strong className={styles.kpiScoreGood}>—</strong>\n            <span>/ 100</span>'
+          )
+          text = text.replace(
+              'footnote={<>%80 başarı oranı</>}',
+              'footnote={<>Değerlendirme UI-3 kapsamında</>}'
+          )
+          text = text.replace(
+              '<strong className={styles.kpiScoreBlue}>28</strong>\n            <span>/ 35</span>',
+              '<strong className={styles.kpiScoreBlue}>—</strong>\n            <span>/ —</span>'
+          )
+          text = text.replace(
+              '<strong className={styles.kpiMoney}>$2.48</strong>',
+              '<strong className={styles.kpiMoney}>{latestRun?.cost ?? "—"}</strong>'
+          )
+          text = text.replace('<ModelSettings />', '<ModelSettings latestRun={latestRun} />')
+          text = text.replace('<LiveRunPanel />', '<LiveRunPanel latestRun={latestRun} />')
+          text = text.replace('<RecentRuns />', '<RecentRuns runs={data.recentRuns} />')
+
+          path.write_text(text)
+          PY
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/ui2-canonical-bind-once.yml
+      - name: Commit binding
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/settings/test-lab/canonical-dashboard.tsx .github/workflows/ui2-canonical-bind-once.yml
+          git commit -m "feat(test-lab): bind canonical dashboard to run data"
+          git push origin HEAD:agent/test-lab-canonical-ui-2
