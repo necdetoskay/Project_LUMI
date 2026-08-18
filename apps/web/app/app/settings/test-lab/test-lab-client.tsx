@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { EvaluationPanel } from "./evaluation-panel";
 import { PromptWorkspace } from "./prompt-workspace";
 
 type ScenarioKey = "character_onboarding" | "story_generation";
@@ -723,6 +724,15 @@ export default function TestLabClient() {
               ))}
             </div>
           </section>
+
+          <EvaluationPanel
+            householdId={householdId}
+            childProfileId={childProfileId}
+            sessionId={sessionId}
+            branchId={branchId}
+            candidateIds={result.candidates.map((candidate) => candidate.id)}
+            storyScenario={scenarioKey === "story_generation"}
+          />
         </>
       ) : null}
     </main>

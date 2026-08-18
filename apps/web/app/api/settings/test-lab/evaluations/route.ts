@@ -87,8 +87,9 @@ export const POST = observeHandler(async (request: Request) => {
           throw new Error("TEST_LAB_EVALUATION_ARC_REQUIRES_SELECTIONS");
         }
         const entries = [];
-        let anchor: Awaited<ReturnType<typeof loadOwnedCandidateDetails>> =
-          null;
+        let anchor: Awaited<
+          ReturnType<typeof loadOwnedCandidateDetails>
+        > | null = null;
         for (const selection of selections) {
           const details = await loadOwnedCandidateDetails({
             candidateId: selection.candidateId,
