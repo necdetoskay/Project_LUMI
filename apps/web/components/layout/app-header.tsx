@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 
 export async function AppHeader() {
-  const t = useTranslations("header");
-  const common = useTranslations("common");
+  const t = await getTranslations("header");
+  const common = await getTranslations("common");
   const parent = await getParentFromSessionToken(
     await getParentSessionCookie(),
   );
