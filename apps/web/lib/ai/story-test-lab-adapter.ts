@@ -89,7 +89,9 @@ export const storyProductionScenarioAdapter: ProductionScenarioAdapter = {
       phaseId: request.phaseId,
       story,
     });
-    const renderedPrompt = renderedPromptFromRequest(generation.providerRequest);
+    const renderedPrompt = renderedPromptFromRequest(
+      generation.providerRequest,
+    );
 
     return {
       output: story,
@@ -131,7 +133,9 @@ function readNarrativeTarget(config?: JsonObject): StoryNarrativeTarget {
   });
 }
 
-function isLengthPreset(value: JsonValue | undefined): value is StoryLengthPreset {
+function isLengthPreset(
+  value: JsonValue | undefined,
+): value is StoryLengthPreset {
   return (
     value === "short" ||
     value === "medium" ||
