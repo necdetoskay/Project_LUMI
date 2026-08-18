@@ -19,12 +19,6 @@ CREATE TABLE IF NOT EXISTS ai.test_lab_branches (
     FOREIGN KEY (parent_branch_id) REFERENCES ai.test_lab_branches(id)
 );
 
-ALTER TABLE ai.test_lab_sessions
-  DROP CONSTRAINT IF EXISTS fk_test_lab_session_active_branch;
-ALTER TABLE ai.test_lab_sessions
-  ADD CONSTRAINT fk_test_lab_session_active_branch
-  FOREIGN KEY (active_branch_id) REFERENCES ai.test_lab_branches(id);
-
 CREATE TABLE IF NOT EXISTS ai.test_lab_state_snapshots (
   id uuid PRIMARY KEY,
   session_id uuid NOT NULL REFERENCES ai.test_lab_sessions(id) ON DELETE CASCADE,
@@ -79,6 +73,9 @@ CREATE INDEX IF NOT EXISTS test_lab_runs_phase_idx
   ON ai.test_lab_runs(session_id, branch_id, phase_id);
 CREATE INDEX IF NOT EXISTS test_lab_selections_run_idx
   ON ai.test_lab_selections(run_id);
+
+COMMENT ON COLUMN ai.test_lab_sessions.active_branch_id IS
+  'Navigation pointer maintained by TestLabCoordinator. Canonical history is stored in append-only branches/selections.';
 
 COMMENT ON CONSTRAINT test_lab_one_selection_per_branch_phase_uq
   ON ai.test_lab_selections IS
