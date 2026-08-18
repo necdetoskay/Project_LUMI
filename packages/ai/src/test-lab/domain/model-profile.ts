@@ -121,7 +121,10 @@ export function estimateRunCostUsd(input: {
   cacheWriteTokens?: number;
   reasoningTokens?: number;
 }): number {
-  const cached = clampTokenCount(input.cachedInputTokens ?? 0, input.promptTokens);
+  const cached = clampTokenCount(
+    input.cachedInputTokens ?? 0,
+    input.promptTokens,
+  );
   const cacheWrite = clampTokenCount(
     input.cacheWriteTokens ?? 0,
     Math.max(0, input.promptTokens - cached),
