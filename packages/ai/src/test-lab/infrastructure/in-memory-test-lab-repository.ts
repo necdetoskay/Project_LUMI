@@ -85,7 +85,8 @@ export class InMemoryTestLabRepository implements TestLabRepository {
       );
     }
     const duplicateOrdinal = [...this.candidates.values()].some(
-      (value) => value.runId === candidate.runId && value.ordinal === candidate.ordinal,
+      (value) =>
+        value.runId === candidate.runId && value.ordinal === candidate.ordinal,
     );
     if (duplicateOrdinal) {
       throw new TestLabInvariantError(
