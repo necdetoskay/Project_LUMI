@@ -22,18 +22,19 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Emit exact Prettier output
+      - name: Format known base files
         run: |
-          files=(
+          pnpm exec prettier --write \
+            apps/web/app/app/profiles/profiles-client-page.tsx \
+            apps/web/components/profile/delete-profile-button.tsx \
+            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts \
+            packages/profiles/tests/integration/profile-repository.integration.test.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prettier-formatted-base-files
+          path: |
             apps/web/app/app/profiles/profiles-client-page.tsx
             apps/web/components/profile/delete-profile-button.tsx
             packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts
             packages/profiles/tests/integration/profile-repository.integration.test.ts
-          )
-          pnpm exec prettier --write "${files[@]}"
-          for file in "${files[@]}"; do
-            echo "__FORMAT_FILE_BEGIN__${file}"
-            base64 -w0 "$file"
-            echo
-            echo "__FORMAT_FILE_END__${file}"
-          done
+          if-no-files-found: error
