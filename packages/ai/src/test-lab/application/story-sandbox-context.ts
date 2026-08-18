@@ -116,7 +116,10 @@ export function appendSelectedStoryCandidate(input: {
   });
 }
 
-function selectedStoryFact(story: JsonObject, storyNumber: number): string | null {
+function selectedStoryFact(
+  story: JsonObject,
+  storyNumber: number,
+): string | null {
   const scene = story["scene"];
   if (!scene || typeof scene !== "object" || Array.isArray(scene)) return null;
   const sceneObject = scene as JsonObject;
@@ -133,17 +136,18 @@ function stateFacts(value: JsonValue | undefined, label: string): string[] {
   return serialized ? [`${label}: ${serialized.slice(0, 900)}`] : [];
 }
 
-function sourceFamily(value: JsonValue | undefined): StorySandboxScope["sourceFamily"] {
-  return value === "rumor" ||
-    value === "inventory_item" ||
-    value === "npc_call"
+function sourceFamily(
+  value: JsonValue | undefined,
+): StorySandboxScope["sourceFamily"] {
+  return value === "rumor" || value === "inventory_item" || value === "npc_call"
     ? value
     : "world_event";
 }
 
 function requiredString(value: JsonValue | undefined, field: string): string {
   const result = optionalString(value);
-  if (!result) throw new TestLabInvariantError(`TEST_LAB_REQUIRED_FIELD:${field}`);
+  if (!result)
+    throw new TestLabInvariantError(`TEST_LAB_REQUIRED_FIELD:${field}`);
   return result;
 }
 
