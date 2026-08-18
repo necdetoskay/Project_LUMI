@@ -28,8 +28,8 @@ type ExecutionSnapshot = {
   renderedPromptFingerprint: string | null;
   contextFingerprint: string | null;
   promptTemplateSnapshot: {
-    systemTemplate: string;
-    userTemplate: string;
+    system: string;
+    user: string;
   } | null;
   renderedPrompt: { system: string; user: string } | null;
   finalProviderRequest: Record<string, unknown> | null;
@@ -380,8 +380,8 @@ export default function TestLabClient() {
             <section style={panelStyle}>
               <h2>6. Active vs Draft / Revision Comparison</h2>
               <p style={{ opacity: 0.75 }}>
-                Aynı phase, parent state ve model ile yapılan run&apos;lar. Böylece
-                yalnız prompt revision etkisi karşılaştırılabilir.
+                Aynı phase, parent state ve model ile yapılan run&apos;lar.
+                Böylece yalnız prompt revision etkisi karşılaştırılabilir.
               </p>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -428,7 +428,10 @@ export default function TestLabClient() {
             <h2>7. Candidates — Generate Many → Select One</h2>
             <div style={{ display: "grid", gap: 16 }}>
               {result.candidates.map((candidate) => (
-                <article key={candidate.id} style={{ ...panelStyle, margin: 0 }}>
+                <article
+                  key={candidate.id}
+                  style={{ ...panelStyle, margin: 0 }}
+                >
                   <div
                     style={{
                       display: "flex",
