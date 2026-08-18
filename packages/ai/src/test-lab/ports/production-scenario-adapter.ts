@@ -27,9 +27,14 @@ export interface ProductionScenarioExecutionProvenance {
   usage: TestRunUsageSnapshot | null;
 }
 
+export interface ProductionScenarioExecutionCandidate {
+  payload: JsonObject;
+  candidateState: JsonObject;
+}
+
 export interface ProductionScenarioExecutionResult {
   output: JsonObject;
-  candidateState: JsonObject;
+  candidates: ProductionScenarioExecutionCandidate[];
   provenance: ProductionScenarioExecutionProvenance;
 }
 
