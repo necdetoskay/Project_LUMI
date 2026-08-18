@@ -1,5 +1,6 @@
 name: Format Fix
 
+# One-shot branch formatter; restored before merge.
 on:
   push:
     branches:
