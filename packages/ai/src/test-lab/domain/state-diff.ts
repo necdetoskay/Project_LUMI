@@ -1,7 +1,7 @@
 import type { JsonObject, JsonValue, StateDiff } from "./test-lab-types";
 
 function stableJson(value: JsonValue | undefined): string {
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? "undefined";
 }
 
 export function createStateDiff(input: {
@@ -13,7 +13,9 @@ export function createStateDiff(input: {
   const beforeKeys = new Set(Object.keys(input.before));
   const afterKeys = new Set(Object.keys(input.after));
 
-  const addedKeys = [...afterKeys].filter((key) => !beforeKeys.has(key)).sort();
+  const addedKeys = [...afterKeys]
+    .filter((key) => !beforeKeys.has(key))
+    .sort();
   const removedKeys = [...beforeKeys]
     .filter((key) => !afterKeys.has(key))
     .sort();
