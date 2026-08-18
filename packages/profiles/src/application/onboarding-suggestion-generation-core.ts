@@ -42,6 +42,8 @@ export interface OnboardingSuggestionGenerationResult<T> {
   modelId: string;
   promptKey: string;
   promptVersion: number;
+  systemTemplate: string;
+  userTemplate: string;
   systemPrompt: string;
   userPrompt: string;
   inputContext: Record<string, string | number | boolean | null | object>;
@@ -128,6 +130,8 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
         modelId: generated.model,
         promptKey: prompt.promptKey,
         promptVersion: prompt.promptVersion,
+        systemTemplate: prompt.systemTemplate,
+        userTemplate: prompt.userTemplate,
         systemPrompt: prompt.system,
         userPrompt: prompt.user,
         inputContext: context,
