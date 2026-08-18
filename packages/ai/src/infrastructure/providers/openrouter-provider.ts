@@ -67,7 +67,8 @@ export class OpenRouterProvider implements GenerationProvider {
   }
 
   public supportsModel(modelId: string): boolean {
-    if (modelId === this.defaultModel || modelId === "openrouter/auto") return true;
+    if (modelId === this.defaultModel || modelId === "openrouter/auto")
+      return true;
     return modelId.includes("/") && !modelId.startsWith("test-");
   }
 
