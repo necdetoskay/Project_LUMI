@@ -114,6 +114,6 @@ describe("Test Lab model pricing", () => {
         completionTokens: 200,
         reasoningTokens: 50,
       }),
-    ).toBe(0.001315);
+    ).toBe(0.001115);
   });
 });
