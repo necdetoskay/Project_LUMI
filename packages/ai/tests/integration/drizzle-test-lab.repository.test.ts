@@ -42,8 +42,17 @@ describe("DrizzleTestLabRepository integration", () => {
     }
 
     await pool.query("DROP SCHEMA IF EXISTS ai CASCADE");
-    for (const migration of ["0001_ai_usage_schema.sql", "0002_test_lab_foundation.sql"]) {
-      const migrationPath = path.resolve(import.meta.dirname, "..", "..", "migrations", migration);
+    for (const migration of [
+      "0001_ai_usage_schema.sql",
+      "0002_test_lab_foundation.sql",
+    ]) {
+      const migrationPath = path.resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "migrations",
+        migration,
+      );
       await pool.query(readFileSync(migrationPath, "utf-8"));
     }
 
@@ -53,7 +62,9 @@ describe("DrizzleTestLabRepository integration", () => {
 
   afterAll(async () => {
     if (pool) {
-      await pool.query("DROP SCHEMA IF EXISTS ai CASCADE").catch(() => undefined);
+      await pool
+        .query("DROP SCHEMA IF EXISTS ai CASCADE")
+        .catch(() => undefined);
       await pool.end();
     }
   });
@@ -102,8 +113,12 @@ describe("DrizzleTestLabRepository integration", () => {
       now,
     });
 
-    expect((await repository.getSelection(ids.branch, "world"))?.selectedStateId).toBe(ids.stateA);
-    expect((await repository.getState(ids.stateB))?.value).toEqual({ world: "B" });
+    expect(
+      (await repository.getSelection(ids.branch, "world"))?.selectedStateId,
+    ).toBe(ids.stateA);
+    expect((await repository.getState(ids.stateB))?.value).toEqual({
+      world: "B",
+    });
   });
 
   it("enforces one selection per session/branch/phase at the database boundary", async () => {
@@ -123,6 +138,8 @@ describe("DrizzleTestLabRepository integration", () => {
       }),
     ).rejects.toThrow();
 
-    expect((await repository.getSelection(ids.branch, "world"))?.runId).toBe(ids.runA);
+    expect(
+      (await repository.getSelection(ids.branch, "world"))?.runId,
+    ).toBe(ids.runA);
   });
 });
