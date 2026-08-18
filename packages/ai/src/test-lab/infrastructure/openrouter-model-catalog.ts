@@ -70,7 +70,9 @@ export class OpenRouterModelCatalog {
     };
   }
 
-  private async findExactModel(modelSlug: string): Promise<OpenRouterCatalogModel> {
+  private async findExactModel(
+    modelSlug: string,
+  ): Promise<OpenRouterCatalogModel> {
     const response = await this.fetchImpl(`${this.baseUrl}/models`);
     if (!response.ok) {
       throw new Error(`OPENROUTER_MODELS_REQUEST_FAILED:${response.status}`);
