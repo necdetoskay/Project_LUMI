@@ -69,10 +69,12 @@ export async function getPromptWorkspace(promptKey: string) {
     .from(aiPromptVersions)
     .where(eq(aiPromptVersions.promptKey, promptKey))
     .orderBy(desc(aiPromptVersions.version));
-  if (versions.length === 0) throw new Error(`PROMPT_KEY_NOT_FOUND:${promptKey}`);
+  if (versions.length === 0)
+    throw new Error(`PROMPT_KEY_NOT_FOUND:${promptKey}`);
   return {
     promptKey,
-    activeVersion: versions.find((version) => version.status === "active") ?? null,
+    activeVersion:
+      versions.find((version) => version.status === "active") ?? null,
     versions,
   };
 }
