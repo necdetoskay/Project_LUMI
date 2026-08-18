@@ -147,12 +147,12 @@ describe("TestLabCoordinator", () => {
 
     expect(reselection.forked).toBe(true);
     expect(reselection.activeBranchId).toBe("branch-a");
-    expect(
-      (await repository.getSelection("branch-main", "world"))?.runId,
-    ).toBe("run-b");
-    expect(
-      (await repository.getSelection("branch-a", "world"))?.runId,
-    ).toBe("run-a");
+    expect((await repository.getSelection("branch-main", "world"))?.runId).toBe(
+      "run-b",
+    );
+    expect((await repository.getSelection("branch-a", "world"))?.runId).toBe(
+      "run-a",
+    );
     expect((await repository.getRun("run-region-b"))?.branchId).toBe(
       "branch-main",
     );
