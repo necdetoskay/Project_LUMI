@@ -1,13 +1,5 @@
 import { createHash } from "node:crypto";
 
-import type { CharacterIdentitySuggestion } from "./character-identity-suggestion.service";
-import type {
-  CompatibilitySuggestion,
-  CoreSagaSuggestion,
-  RegionSuggestion,
-  WorldSuggestion,
-} from "./character-foundation-onboarding.service";
-import type { CharacterOriginSuggestion } from "./character-origin-suggestion.service";
 import {
   generateOnboardingSuggestionsWithProductionPipeline,
   pickSuggestionArray,
@@ -55,6 +47,7 @@ export interface CharacterOnboardingTestLabExecutionResult {
 }
 
 type Suggestion = Record<string, unknown>;
+const pickSuggestions = pickSuggestionArray<Suggestion>;
 
 export async function executeCharacterOnboardingTestLabPhase(
   input: CharacterOnboardingTestLabExecutionInput,
@@ -109,9 +102,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
           contextExtras: (summary) => ({
             characterType: summary.characterType as object,
           }),
-          pick: pickSuggestionArray<CharacterIdentitySuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
     case "world_suggestions":
@@ -129,9 +120,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
             universe: summary.universe as object,
             characterType: summary.characterType as object,
           }),
-          pick: pickSuggestionArray<WorldSuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
     case "compatibility":
@@ -148,9 +137,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
             characterIdentity: summary.characterIdentity as object,
             world: summary.world as object,
           }),
-          pick: pickSuggestionArray<CompatibilitySuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
     case "region_suggestions":
@@ -168,9 +155,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
             compatibility: summary.compatibility as object,
             characterIdentity: summary.characterIdentity as object,
           }),
-          pick: pickSuggestionArray<RegionSuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
     case "origin_suggestions":
@@ -204,9 +189,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
               characterIdentity: summary.characterIdentity as object,
             };
           },
-          pick: pickSuggestionArray<CharacterOriginSuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
     case "core_saga":
@@ -230,9 +213,7 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
             origin: summary.origin as object,
             characterIdentity: summary.characterIdentity as object,
           }),
-          pick: pickSuggestionArray<CoreSagaSuggestion> as (
-            validated: unknown,
-          ) => Suggestion[],
+          pick: pickSuggestions,
         },
       };
   }
