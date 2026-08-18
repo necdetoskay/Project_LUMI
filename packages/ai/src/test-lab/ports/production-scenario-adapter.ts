@@ -22,6 +22,15 @@ export interface ProductionScenarioExecutionRequest {
 export interface ProductionScenarioExecutionProvenance {
   promptKey: string;
   promptVersion: number | null;
+  promptTemplateSnapshot: {
+    system: string;
+    user: string;
+  } | null;
+  renderedPrompt: {
+    system: string;
+    user: string;
+  } | null;
+  finalProviderRequest: JsonObject | null;
   renderedPromptFingerprint: string | null;
   contextFingerprint: string | null;
   modelSlug: string;
