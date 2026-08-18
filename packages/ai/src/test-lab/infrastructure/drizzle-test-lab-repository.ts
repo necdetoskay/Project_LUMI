@@ -11,6 +11,7 @@ import {
 import type {
   JsonObject,
   StateSnapshot,
+  StateSnapshotId,
   TestBranch,
   TestBranchId,
   TestPhaseId,
@@ -19,7 +20,6 @@ import type {
   TestSelection,
   TestSession,
   TestSessionId,
-  StateSnapshotId,
 } from "../domain/test-lab-types";
 import type { TestLabRepository } from "../ports/test-lab-repository";
 
@@ -139,7 +139,10 @@ export class DrizzleTestLabRepository implements TestLabRepository {
   }
 
   async listRuns(branchId: TestBranchId): Promise<TestRun[]> {
-    const rows = await this.db.select().from(testLabRuns).where(eq(testLabRuns.branchId, branchId));
+    const rows = await this.db
+      .select()
+      .from(testLabRuns)
+      .where(eq(testLabRuns.branchId, branchId));
     return rows.map((row) => this.mapRun(row));
   }
 
@@ -164,7 +167,12 @@ export class DrizzleTestLabRepository implements TestLabRepository {
     const [row] = await this.db
       .select()
       .from(testLabSelections)
-      .where(and(eq(testLabSelections.branchId, branchId), eq(testLabSelections.phaseId, phaseId)))
+      .where(
+        and(
+          eq(testLabSelections.branchId, branchId),
+          eq(testLabSelections.phaseId, phaseId),
+        ),
+      )
       .limit(1);
     return row ? this.mapSelection(row) : null;
   }
@@ -190,7 +198,9 @@ export class DrizzleTestLabRepository implements TestLabRepository {
     };
   }
 
-  private mapSelection(row: typeof testLabSelections.$inferSelect): TestSelection {
+  private mapSelection(
+    row: typeof testLabSelections.$inferSelect,
+  ): TestSelection {
     return {
       id: row.id,
       sessionId: row.sessionId,
