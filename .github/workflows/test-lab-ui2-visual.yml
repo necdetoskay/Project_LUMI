@@ -6,6 +6,16 @@ on:
       - agent/test-lab-canonical-ui-2
     paths:
       - .github/workflows/test-lab-ui2-visual.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/test-lab-ui2-visual.yml
+      - apps/web/app/app/settings/test-lab/visual-test/page.tsx
+      - apps/web/app/app/settings/test-lab/canonical-dashboard.tsx
+      - apps/web/app/app/settings/test-lab/canonical-dashboard.module.css
+      - apps/web/app/app/settings/test-lab/canonical-dashboard-tuning.module.css
+      - apps/web/tests/e2e/test-lab-ui2-visual.spec.ts
 
 permissions:
   contents: read
