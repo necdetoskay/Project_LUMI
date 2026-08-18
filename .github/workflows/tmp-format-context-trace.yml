@@ -1,22 +1,20 @@
 name: Temporary Format Context Trace
 
 on:
-  push:
-    branches:
-      - agent/context-trace-persistence
-
-permissions:
-  contents: write
+  pull_request:
+    paths:
+      - "packages/profiles/src/db/schema/profile/ai-generation-traces.ts"
+      - "packages/profiles/src/application/ai-generation-trace.service.ts"
+      - "packages/profiles/src/application/ai-generation-trace.service.test.ts"
+      - "packages/profiles/src/application/world-character-suggestion.service.ts"
+      - "packages/profiles/migrations/0076_ai_generation_context_trace.sql"
+      - ".github/workflows/tmp-format-context-trace.yml"
 
 jobs:
-  format:
-    # One-shot branch formatter; bot-authored formatting commits do not recurse.
-    if: github.actor != 'github-actions[bot]'
+  format-diff:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/context-trace-persistence
       - uses: pnpm/action-setup@v4
         with:
           version: 11.7.0
@@ -25,16 +23,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec prettier --write packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
-      - name: Commit formatting
+      - name: Show exact Prettier diff
         shell: bash
         run: |
-          if git diff --quiet; then
-            echo "No formatting changes needed"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
-          git commit -m "style(context): format trace persistence"
-          git push origin HEAD:agent/context-trace-persistence
+          pnpm exec prettier --write packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
+          git diff -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
+          test -z "$(git status --short -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql)"
