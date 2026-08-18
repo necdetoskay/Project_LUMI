@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.use({ viewport: { width: 1672, height: 941 } });
+test.use({ channel: "chrome", viewport: { width: 1672, height: 941 } });
 
 test("captures the canonical Test Lab dashboard", async ({ page }) => {
   await page.goto("/__visual__/test-lab", { waitUntil: "networkidle" });
