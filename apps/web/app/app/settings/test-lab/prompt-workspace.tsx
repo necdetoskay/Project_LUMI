@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type PromptVersion = {
-  id: string;
-  versionNumber: number;
+  version: number;
   status: string;
-  templateBody: string;
-  variableSchema: unknown;
-  modelPreferences: unknown;
-  outputSchema: unknown;
+  systemTemplate: string;
+  userTemplate: string;
+  allowedVariables: string[];
+  requiredVariables: string[];
+  outputSchema: Record<string, unknown>;
+  schemaVersion: string;
+  providerOverride: string | null;
+  modelOverride: string | null;
+  generationConfig: Record<string, unknown>;
 };
 
 type PromptWorkspaceData = {
-  registry: { id: string; promptKey: string; purpose: string };
+  promptKey: string;
   activeVersion: PromptVersion | null;
   versions: PromptVersion[];
 };
@@ -21,53 +25,84 @@ type PromptWorkspaceData = {
 export function PromptWorkspace(props: {
   householdId: string;
   promptKey: string | null;
+  promptVersionOverride: number | undefined;
+  onPromptVersionOverrideChange: (version: number | undefined) => void;
 }) {
   const [workspace, setWorkspace] = useState<PromptWorkspaceData | null>(null);
-  const [draftBody, setDraftBody] = useState("");
+  const [sourceVersion, setSourceVersion] = useState<number | null>(null);
+  const [systemTemplate, setSystemTemplate] = useState("");
+  const [userTemplate, setUserTemplate] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     setWorkspace(null);
-    setDraftBody("");
+    setSourceVersion(null);
+    setSystemTemplate("");
+    setUserTemplate("");
     setMessage("");
+    props.onPromptVersionOverrideChange(undefined);
+
+    if (!props.promptKey || !props.householdId.trim()) return;
+
+    let cancelled = false;
+    const query = new URLSearchParams({
+      householdId: props.householdId,
+      promptKey: props.promptKey,
+    });
+
+    setBusy(true);
+    fetch(`/api/settings/test-lab/prompts?${query}`)
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.message ?? "Prompt yüklenemedi");
+        }
+        return payload.data as PromptWorkspaceData;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setWorkspace(data);
+        const source = data.activeVersion ?? data.versions[0] ?? null;
+        if (source) {
+          setSourceVersion(source.version);
+          setSystemTemplate(source.systemTemplate);
+          setUserTemplate(source.userTemplate);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setMessage(errorMessage(error));
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [props.householdId, props.promptKey]);
 
-  if (!props.promptKey) {
+  const selectedRevision = useMemo(() => {
+    if (!workspace || sourceVersion === null) return null;
     return (
-      <section style={panelStyle}>
-        <h2>3. Prompt Workspace</h2>
-        <p>Bu phase LLM promptu kullanmıyor.</p>
-      </section>
+      workspace.versions.find((version) => version.version === sourceVersion) ??
+      null
     );
-  }
+  }, [sourceVersion, workspace]);
 
-  async function loadWorkspace() {
-    if (!props.householdId.trim()) {
-      setMessage("Prompt workspace için Household ID gerekli.");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    try {
-      const query = new URLSearchParams({
-        householdId: props.householdId,
-        promptKey: props.promptKey!,
-      });
-      const response = await fetch(`/api/settings/test-lab/prompts?${query}`);
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? "Prompt yüklenemedi");
-      setWorkspace(payload.data);
-      setDraftBody(payload.data.activeVersion?.templateBody ?? "");
-    } catch (error) {
-      setMessage(errorMessage(error));
-    } finally {
-      setBusy(false);
-    }
+  function chooseSource(version: number) {
+    if (!workspace) return;
+    const selected = workspace.versions.find(
+      (candidate) => candidate.version === version,
+    );
+    if (!selected) return;
+    setSourceVersion(version);
+    setSystemTemplate(selected.systemTemplate);
+    setUserTemplate(selected.userTemplate);
   }
 
   async function createDraft() {
-    if (!workspace) return;
+    if (!workspace || sourceVersion === null) return;
     setBusy(true);
     setMessage("");
     try {
@@ -78,14 +113,21 @@ export function PromptWorkspace(props: {
           action: "create-draft",
           householdId: props.householdId,
           promptKey: props.promptKey,
-          templateBody: draftBody,
+          sourceVersion,
+          patch: { systemTemplate, userTemplate },
         }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? "Draft oluşturulamadı");
-      setWorkspace(payload.data.workspace);
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Draft oluşturulamadı");
+      }
+      const data = payload.data.workspace as PromptWorkspaceData;
+      const draft = payload.data.draft as PromptVersion;
+      setWorkspace(data);
+      chooseWorkspaceRevision(data, draft.version);
+      props.onPromptVersionOverrideChange(draft.version);
       setMessage(
-        `Draft v${payload.data.draft.versionNumber} oluşturuldu. Active production prompt değişmedi.`,
+        `Draft v${draft.version} oluşturuldu. Production active prompt değişmedi; sonraki Test Lab run bu draft ile çalışacak.`,
       );
     } catch (error) {
       setMessage(errorMessage(error));
@@ -94,57 +136,144 @@ export function PromptWorkspace(props: {
     }
   }
 
+  async function mutateProduction(action: "activate-version" | "rollback") {
+    if (!workspace || sourceVersion === null) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/settings/test-lab/prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          householdId: props.householdId,
+          promptKey: props.promptKey,
+          version: sourceVersion,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Prompt production işlemi başarısız");
+      }
+      setWorkspace(payload.data.workspace as PromptWorkspaceData);
+      props.onPromptVersionOverrideChange(undefined);
+      setMessage(
+        action === "rollback"
+          ? `Production prompt v${sourceVersion} revision'ına rollback edildi.`
+          : `Production active prompt v${sourceVersion} olarak değiştirildi.`,
+      );
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function chooseWorkspaceRevision(data: PromptWorkspaceData, version: number) {
+    const selected = data.versions.find((candidate) => candidate.version === version);
+    if (!selected) return;
+    setSourceVersion(version);
+    setSystemTemplate(selected.systemTemplate);
+    setUserTemplate(selected.userTemplate);
+  }
+
+  if (!props.promptKey) {
+    return (
+      <section style={panelStyle}>
+        <h2>3. Prompt Workspace</h2>
+        <p>Bu phase LLM promptu kullanmıyor.</p>
+      </section>
+    );
+  }
+
   return (
     <section style={panelStyle}>
       <h2>3. Prompt Workspace</h2>
       <p style={{ opacity: 0.75 }}>
-        <code>{props.promptKey}</code> — active revision yerinde değiştirilemez;
-        düzenleme yeni draft revision üretir.
+        <code>{props.promptKey}</code> — production active revision hiçbir zaman
+        yerinde overwrite edilmez. Düzenleme yeni immutable draft üretir.
       </p>
-      <button disabled={busy} onClick={loadWorkspace} style={buttonStyle}>
-        Active prompt ve revision geçmişini yükle
-      </button>
+
+      {!props.householdId.trim() ? (
+        <p>Prompt Workspace için önce Household ID girin.</p>
+      ) : null}
 
       {workspace ? (
         <>
           <div style={gridStyle}>
+            <label>
+              Revision
+              <select
+                value={sourceVersion ?? ""}
+                onChange={(event) => chooseSource(Number(event.target.value))}
+                style={inputStyle}
+              >
+                {workspace.versions.map((version) => (
+                  <option key={version.version} value={version.version}>
+                    v{version.version} · {version.status}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div>
-              <strong>Active</strong>
+              <strong>Production active</strong>
               <p>
                 {workspace.activeVersion
-                  ? `v${workspace.activeVersion.versionNumber} · ${workspace.activeVersion.status}`
+                  ? `v${workspace.activeVersion.version}`
                   : "Active revision yok"}
               </p>
             </div>
             <div>
-              <strong>Revision history</strong>
+              <strong>Bu Test Lab run</strong>
               <p>
-                {workspace.versions
-                  .map((version) => `v${version.versionNumber}:${version.status}`)
-                  .join(" · ") || "Revision yok"}
+                {props.promptVersionOverride === undefined
+                  ? "Production active revision"
+                  : `Exact revision v${props.promptVersionOverride}`}
               </p>
             </div>
           </div>
 
           <label style={{ display: "block", marginTop: 16 }}>
-            Draft template
+            System prompt
             <textarea
-              rows={14}
-              value={draftBody}
-              onChange={(event) => setDraftBody(event.target.value)}
-              style={{ ...inputStyle, fontFamily: "monospace", resize: "vertical" }}
+              rows={8}
+              value={systemTemplate}
+              onChange={(event) => setSystemTemplate(event.target.value)}
+              style={{
+                ...inputStyle,
+                fontFamily: "monospace",
+                resize: "vertical",
+              }}
             />
           </label>
 
-          {workspace.activeVersion ? (
+          <label style={{ display: "block", marginTop: 16 }}>
+            User prompt
+            <textarea
+              rows={14}
+              value={userTemplate}
+              onChange={(event) => setUserTemplate(event.target.value)}
+              style={{
+                ...inputStyle,
+                fontFamily: "monospace",
+                resize: "vertical",
+              }}
+            />
+          </label>
+
+          {selectedRevision ? (
             <details style={{ marginTop: 12 }}>
-              <summary>Allowed variables / model / output schema</summary>
+              <summary>Variables / model / output schema</summary>
               <pre style={metaStyle}>
                 {JSON.stringify(
                   {
-                    variableSchema: workspace.activeVersion.variableSchema,
-                    modelPreferences: workspace.activeVersion.modelPreferences,
-                    outputSchema: workspace.activeVersion.outputSchema,
+                    allowedVariables: selectedRevision.allowedVariables,
+                    requiredVariables: selectedRevision.requiredVariables,
+                    providerOverride: selectedRevision.providerOverride,
+                    modelOverride: selectedRevision.modelOverride,
+                    generationConfig: selectedRevision.generationConfig,
+                    schemaVersion: selectedRevision.schemaVersion,
+                    outputSchema: selectedRevision.outputSchema,
                   },
                   null,
                   2,
@@ -153,23 +282,60 @@ export function PromptWorkspace(props: {
             </details>
           ) : null}
 
-          <button
-            disabled={busy || !draftBody.trim()}
-            onClick={createDraft}
-            style={buttonStyle}
-          >
-            Yeni draft revision oluştur
-          </button>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              disabled={
+                busy || !systemTemplate.trim() || !userTemplate.trim()
+              }
+              onClick={createDraft}
+              style={buttonStyle}
+            >
+              Yeni draft revision oluştur
+            </button>
+            <button
+              disabled={busy || sourceVersion === null}
+              onClick={() =>
+                props.onPromptVersionOverrideChange(sourceVersion ?? undefined)
+              }
+              style={buttonStyle}
+            >
+              Bu revision ile test et
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => props.onPromptVersionOverrideChange(undefined)}
+              style={buttonStyle}
+            >
+              Active revision ile test et
+            </button>
+            <button
+              disabled={busy || sourceVersion === null}
+              onClick={() => mutateProduction("activate-version")}
+              style={buttonStyle}
+            >
+              Production active yap
+            </button>
+            <button
+              disabled={busy || sourceVersion === null}
+              onClick={() => mutateProduction("rollback")}
+              style={buttonStyle}
+            >
+              Bu revision&apos;a rollback
+            </button>
+          </div>
         </>
       ) : null}
 
+      {busy ? <p>Prompt workspace güncelleniyor…</p> : null}
       {message ? <p style={{ marginTop: 12 }}>{message}</p> : null}
     </section>
   );
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Beklenmeyen prompt workspace hatası";
+  return error instanceof Error
+    ? error.message
+    : "Beklenmeyen prompt workspace hatası";
 }
 
 const panelStyle = {
