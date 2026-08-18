@@ -121,8 +121,7 @@ describe("generation context sources", () => {
         replayReference: REPLAY_REFERENCE,
       }),
       replay: (reference) => ({
-        ageBand:
-          reference.snapshotDigest === "a".repeat(64) ? "6-8" : "9-12",
+        ageBand: reference.snapshotDigest === "a".repeat(64) ? "6-8" : "9-12",
         ageYears: 7,
         locale: "tr-TR",
       }),
