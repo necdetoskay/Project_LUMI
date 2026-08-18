@@ -1,4 +1,7 @@
-import type { TestPhaseDefinition, TestScenarioDefinition } from "./test-scenario";
+import type {
+  TestPhaseDefinition,
+  TestScenarioDefinition,
+} from "./test-scenario";
 
 export const STORY_GENERATION_SCENARIO_KEY = "story_generation";
 export const STORY_GENERATION_OPERATION = "generateStoryCandidate";
