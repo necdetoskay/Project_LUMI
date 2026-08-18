@@ -1,6 +1,10 @@
 import { TestLabInvariantError } from "../domain/test-lab-errors";
 import type { ModelPricingSnapshot } from "../domain/model-profile";
-import type { TestRun, TestRunCandidate } from "../domain/test-lab-types";
+import type {
+  JsonObject,
+  TestRun,
+  TestRunCandidate,
+} from "../domain/test-lab-types";
 import type { ProductionScenarioAdapter } from "../ports/production-scenario-adapter";
 import type { TestLabRepository } from "../ports/test-lab-repository";
 import type { TestLabCoordinator } from "./test-lab-coordinator";
@@ -29,6 +33,7 @@ export class ProductionTestRunner {
     parentStateId: string;
     modelSlug: string;
     promptVersionOverride?: number;
+    generationConfig?: JsonObject;
     pricingSnapshot: ModelPricingSnapshot;
     actor: {
       userId: string;
@@ -59,6 +64,9 @@ export class ProductionTestRunner {
       ...(input.promptVersionOverride === undefined
         ? {}
         : { promptVersionOverride: input.promptVersionOverride }),
+      ...(input.generationConfig === undefined
+        ? {}
+        : { generationConfig: input.generationConfig }),
       pricingSnapshot: input.pricingSnapshot,
       actor: input.actor,
     });
@@ -91,6 +99,7 @@ export class ProductionTestRunner {
       usageSnapshot: result.provenance.usage,
       executionSnapshot: {
         productionOperation: input.productionOperation,
+        generationConfig: input.generationConfig ?? null,
         promptKey: result.provenance.promptKey,
         promptVersion: result.provenance.promptVersion,
         renderedPromptFingerprint: result.provenance.renderedPromptFingerprint,
