@@ -34,6 +34,12 @@ export interface PromptRepository {
     householdId: string,
   ): Promise<PromptActivationRecord>;
 
+  getRegistryByKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    promptKey: string,
+  ): Promise<PromptRegistryRecord | undefined>;
+
   getActiveVersion(
     tx: { select: QueryExecutor["select"] },
     registryId: string,
