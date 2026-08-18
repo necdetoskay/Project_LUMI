@@ -4,6 +4,10 @@ import {
   type GenerationContextPriority,
   type GenerationContextSection,
 } from "./generation-context-policy";
+import {
+  createGenerationContextSourceRegistry,
+  type GenerationContextSource,
+} from "./generation-context-source";
 
 export interface AssembledGenerationContextSection {
   section: GenerationContextSection;
@@ -21,6 +25,11 @@ export interface AssembledGenerationContext {
   droppedSections: readonly GenerationContextSection[];
 }
 
+export interface AssembleGenerationContextOptions {
+  maxContextTokens?: number;
+  sources?: readonly GenerationContextSource[];
+}
+
 const PRIORITY_WEIGHT: Record<GenerationContextPriority, number> = {
   required: 0,
   high: 1,
@@ -33,37 +42,6 @@ export function estimateGenerationContextTokens(value: unknown): number {
   const serialized = JSON.stringify(value);
   if (!serialized) return 1;
   return Math.max(1, Math.ceil(serialized.length / 4));
-}
-
-function resolveSectionValue(
-  context: GenerationContext,
-  section: GenerationContextSection,
-): unknown {
-  switch (section) {
-    case "child_identity":
-      return {
-        ageBand: context.child.ageBand,
-        ageYears: context.child.ageYears,
-        locale: context.child.locale,
-      };
-    case "child_personalization":
-      return {
-        interests: context.child.interests,
-        customInterests: context.child.customInterests,
-        developmentGoals: context.child.developmentGoals,
-      };
-    case "creation_direction":
-      return {
-        startDirection: context.creation.startDirection,
-      };
-    case "creation_selections":
-      return context.creation.previousSelections;
-    case "character_state":
-    case "world_state":
-    case "recent_story_state":
-    case "relevant_memories":
-      return null;
-  }
 }
 
 function hasMeaningfulValue(value: unknown): boolean {
@@ -158,15 +136,39 @@ function applyTotalTokenBudget(
 
 export function assembleGenerationContext(
   context: GenerationContext,
-  options: { maxContextTokens?: number } = {},
+  options: AssembleGenerationContextOptions = {},
 ): AssembledGenerationContext {
   const policy = getGenerationContextPolicy(context.profile);
   const maxContextTokens = options.maxContextTokens ?? policy.maxContextTokens;
+  const sourceRegistry = createGenerationContextSourceRegistry(options.sources);
   const candidateSections: AssembledGenerationContextSection[] = [];
-  const sectionBudgetDropped: GenerationContextSection[] = [];
+  const droppedSections = new Set<GenerationContextSection>();
 
   for (const sectionPolicy of policy.sections) {
-    const value = resolveSectionValue(context, sectionPolicy.section);
+    const contextSource = sourceRegistry.get(sectionPolicy.section);
+    if (!contextSource) {
+      if (sectionPolicy.priority === "required") {
+        throw new Error(
+          `GENERATION_CONTEXT_SOURCE_UNREGISTERED:${sectionPolicy.section}`,
+        );
+      }
+      droppedSections.add(sectionPolicy.section);
+      continue;
+    }
+
+    let value: unknown;
+    try {
+      value = contextSource.resolve(context).value;
+    } catch (error) {
+      if (sectionPolicy.priority === "required") {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `GENERATION_CONTEXT_SOURCE_FAILED:${sectionPolicy.section}:${contextSource.source}:${message}`,
+        );
+      }
+      droppedSections.add(sectionPolicy.section);
+      continue;
+    }
 
     if (!hasMeaningfulValue(value)) {
       if (sectionPolicy.priority === "required") {
@@ -184,7 +186,7 @@ export function assembleGenerationContext(
           `GENERATION_CONTEXT_REQUIRED_SECTION_BUDGET_EXCEEDED:${sectionPolicy.section}:${estimatedTokens}:${sectionPolicy.maxTokens}`,
         );
       }
-      sectionBudgetDropped.push(sectionPolicy.section);
+      droppedSections.add(sectionPolicy.section);
       continue;
     }
 
@@ -198,12 +200,10 @@ export function assembleGenerationContext(
   }
 
   const budgeted = applyTotalTokenBudget(candidateSections, maxContextTokens);
-  const droppedSections = [
-    ...sectionBudgetDropped,
-    ...budgeted.droppedSections.filter(
-      (section) => !sectionBudgetDropped.includes(section),
-    ),
-  ];
+  for (const section of budgeted.droppedSections) {
+    droppedSections.add(section);
+  }
+
   const promptContext = promptContextFromSections(budgeted.sections);
   const estimatedTokens = estimateGenerationContextTokens(promptContext);
 
@@ -218,7 +218,9 @@ export function assembleGenerationContext(
     maxContextTokens,
     estimatedTokens,
     sections: budgeted.sections,
-    droppedSections,
+    droppedSections: policy.sections
+      .map((section) => section.section)
+      .filter((section) => droppedSections.has(section)),
   };
 }
 
