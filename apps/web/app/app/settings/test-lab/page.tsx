@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 
-import "./canonical-dashboard-tuning.module.css";
+import tuningStyles from "./canonical-dashboard-tuning.module.css";
 import CanonicalTestLabDashboard from "./canonical-dashboard";
 
 export default async function TestLabPage() {
@@ -11,5 +11,10 @@ export default async function TestLabPage() {
     await getParentSessionCookie(),
   );
   if (!parent) redirect("/login");
-  return <CanonicalTestLabDashboard />;
+
+  return (
+    <div className={tuningStyles.tuned}>
+      <CanonicalTestLabDashboard />
+    </div>
+  );
 }
