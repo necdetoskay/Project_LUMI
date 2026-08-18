@@ -95,8 +95,7 @@ export default function ProfilesClientPage() {
 
       if (!response.ok) {
         setDeleteError(
-          data.message ??
-            "İşlem başarısız oldu. Biraz sonra tekrar deneyin.",
+          data.message ?? "İşlem başarısız oldu. Biraz sonra tekrar deneyin.",
         );
         return;
       }
@@ -365,7 +364,10 @@ export default function ProfilesClientPage() {
                 onClick={() => handleDelete("archive")}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-[18px]"
+                  aria-hidden="true"
+                >
                   archive
                 </span>
                 {deletingMode === "archive" ? "Arşivleniyor…" : "Arşivle"}
@@ -376,7 +378,10 @@ export default function ProfilesClientPage() {
                 onClick={() => handleDelete("permanent")}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-error bg-error-container/60 px-5 text-sm font-extrabold text-error transition-colors hover:bg-error-container disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-[18px]"
+                  aria-hidden="true"
+                >
                   delete_forever
                 </span>
                 {deletingMode === "permanent"
@@ -404,8 +409,8 @@ export default function ProfilesClientPage() {
 
             <p className="mt-4 text-xs leading-5 text-on-surface-variant">
               Arşivleme profili bu sayfadan gizler ve geri alınabilir. Kalıcı
-              silme, bu profille bağlantılı hikâyeleri ve dünyaları da
-              kaldırır ve geri alınamaz.
+              silme, bu profille bağlantılı hikâyeleri ve dünyaları da kaldırır
+              ve geri alınamaz.
             </p>
           </div>
         </div>
