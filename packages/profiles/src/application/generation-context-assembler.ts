@@ -119,6 +119,13 @@ function hasMeaningfulValue(value: unknown): boolean {
   return false;
 }
 
+function isMissingRequiredSourceValue(value: unknown): boolean {
+  if (value == null) return true;
+  if (typeof value === "string") return value.trim().length === 0;
+  if (typeof value === "number") return !Number.isFinite(value);
+  return false;
+}
+
 function promptContextFromSections(
   sections: readonly AssembledGenerationContextSection[],
 ): Record<string, unknown> {
@@ -252,7 +259,11 @@ export function assembleGenerationContext(
     }
 
     let value = result.value;
-    if (!hasMeaningfulValue(value)) {
+    const sourceValueMissing =
+      sectionPolicy.priority === "required"
+        ? isMissingRequiredSourceValue(value)
+        : !hasMeaningfulValue(value);
+    if (sourceValueMissing) {
       if (sectionPolicy.priority === "required") {
         throw new Error(
           `GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:${sectionPolicy.section}`,
