@@ -2,20 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { pricingSnapshot } from "@lumi/ai/test-lab";
 
-type ProfilesModule = typeof import("@lumi/profiles");
-
 const mocks = vi.hoisted(() => ({
   executeCharacterOnboardingTestLabPhase: vi.fn(),
 }));
 
-vi.mock("@lumi/profiles", async (importOriginal) => {
-  const actual = await importOriginal<ProfilesModule>();
-  return {
-    ...actual,
-    executeCharacterOnboardingTestLabPhase:
-      mocks.executeCharacterOnboardingTestLabPhase,
-  };
-});
+vi.mock("@lumi/profiles", () => ({
+  executeCharacterOnboardingTestLabPhase:
+    mocks.executeCharacterOnboardingTestLabPhase,
+}));
 
 import { characterOnboardingProductionScenarioAdapter } from "../lib/ai/character-onboarding-test-lab-adapter";
 
