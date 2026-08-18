@@ -1,9 +1,9 @@
 name: Temporary Phase 5 Prettier Diff
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/test-lab-phase-5-stateful-story
+      - main
 
 jobs:
   diff:
