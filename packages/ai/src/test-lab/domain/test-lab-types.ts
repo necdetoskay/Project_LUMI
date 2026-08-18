@@ -22,6 +22,14 @@ export type JsonValue =
   | { [key: string]: JsonValue };
 export type JsonObject = { [key: string]: JsonValue };
 
+export interface TestRunExecutionSnapshot {
+  productionOperation: string;
+  promptKey: string | null;
+  promptVersion: number | null;
+  renderedPromptFingerprint: string | null;
+  contextFingerprint: string | null;
+}
+
 export interface TestSession {
   id: TestSessionId;
   scenarioKey: string;
@@ -58,6 +66,7 @@ export interface TestRun {
   modelSlug: string | null;
   pricingSnapshot: ModelPricingSnapshot | null;
   usageSnapshot: TestRunUsageSnapshot | null;
+  executionSnapshot: TestRunExecutionSnapshot | null;
   createdAt: string;
 }
 
