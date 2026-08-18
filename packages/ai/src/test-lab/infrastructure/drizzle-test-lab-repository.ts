@@ -23,6 +23,7 @@ import type {
   TestRun,
   TestRunCandidate,
   TestRunCandidateId,
+  TestRunExecutionSnapshot,
   TestRunId,
   TestSelection,
   TestSession,
@@ -34,20 +35,18 @@ export class DrizzleTestLabRepository implements TestLabRepository {
   constructor(private readonly db: Database) {}
 
   async saveSession(session: TestSession): Promise<void> {
-    await this.db
-      .insert(testLabSessions)
-      .values({
-        id: session.id,
-        scenarioKey: session.scenarioKey,
-        mode: session.mode,
-        activeBranchId: session.activeBranchId,
-        createdAt: new Date(session.createdAt),
-      })
-      .onConflictDoUpdate({
-        target: testLabSessions.id,
-        set: { activeBranchId: session.activeBranchId },
-      });
+    await this.db.insert(testLabSessions).values({
+      id: session.id,
+      scenarioKey: session.scenarioKey,
+      mode: session.mode,
+      activeBranchId: session.activeBranchId,
+      createdAt: new Date(session.createdAt),
+    }).onConflictDoUpdate({
+      target: testLabSessions.id,
+      set: { activeBranchId: session.activeBranchId },
+    });
   }
+
   async getSession(id: TestSessionId): Promise<TestSession | null> {
     const [row] = await this.db
       .select()
@@ -63,6 +62,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: row.createdAt.toISOString(),
     };
   }
+
   async saveBranch(branch: TestBranch): Promise<void> {
     await this.db.insert(testLabBranches).values({
       id: branch.id,
@@ -72,6 +72,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: new Date(branch.createdAt),
     });
   }
+
   async getBranch(id: TestBranchId): Promise<TestBranch | null> {
     const [row] = await this.db
       .select()
@@ -88,6 +89,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
         }
       : null;
   }
+
   async saveState(snapshot: StateSnapshot): Promise<void> {
     await this.db.insert(testLabStateSnapshots).values({
       id: snapshot.id,
@@ -99,6 +101,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: new Date(snapshot.createdAt),
     });
   }
+
   async getState(id: StateSnapshotId): Promise<StateSnapshot | null> {
     const [row] = await this.db
       .select()
@@ -117,6 +120,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
         }
       : null;
   }
+
   async saveRun(run: TestRun): Promise<void> {
     await this.db.insert(testLabRuns).values({
       id: run.id,
@@ -128,9 +132,11 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       modelSlug: run.modelSlug,
       pricingSnapshot: run.pricingSnapshot,
       usageSnapshot: run.usageSnapshot,
+      executionSnapshot: run.executionSnapshot,
       createdAt: new Date(run.createdAt),
     });
   }
+
   async getRun(id: TestRunId): Promise<TestRun | null> {
     const [row] = await this.db
       .select()
@@ -139,6 +145,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .limit(1);
     return row ? this.mapRun(row) : null;
   }
+
   async listRuns(branchId: TestBranchId): Promise<TestRun[]> {
     const rows = await this.db
       .select()
@@ -146,6 +153,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .where(eq(testLabRuns.branchId, branchId));
     return rows.map((row) => this.mapRun(row));
   }
+
   async saveCandidate(candidate: TestRunCandidate): Promise<void> {
     await this.db.insert(testLabRunCandidates).values({
       id: candidate.id,
@@ -159,6 +167,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: new Date(candidate.createdAt),
     });
   }
+
   async getCandidate(id: TestRunCandidateId): Promise<TestRunCandidate | null> {
     const [row] = await this.db
       .select()
@@ -167,6 +176,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .limit(1);
     return row ? this.mapCandidate(row) : null;
   }
+
   async listCandidates(runId: TestRunId): Promise<TestRunCandidate[]> {
     const rows = await this.db
       .select()
@@ -176,6 +186,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .map((row) => this.mapCandidate(row))
       .sort((a, b) => a.ordinal - b.ordinal);
   }
+
   async saveSelection(selection: TestSelection): Promise<void> {
     await this.db.insert(testLabSelections).values({
       id: selection.id,
@@ -190,6 +201,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: new Date(selection.createdAt),
     });
   }
+
   async getSelection(
     branchId: TestBranchId,
     phaseId: TestPhaseId,
@@ -206,6 +218,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .limit(1);
     return row ? this.mapSelection(row) : null;
   }
+
   async listSelections(branchId: TestBranchId): Promise<TestSelection[]> {
     const rows = await this.db
       .select()
@@ -213,6 +226,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .where(eq(testLabSelections.branchId, branchId));
     return rows.map((row) => this.mapSelection(row));
   }
+
   private mapRun(row: typeof testLabRuns.$inferSelect): TestRun {
     return {
       id: row.id,
@@ -224,9 +238,12 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       modelSlug: row.modelSlug,
       pricingSnapshot: row.pricingSnapshot as ModelPricingSnapshot | null,
       usageSnapshot: row.usageSnapshot as TestRunUsageSnapshot | null,
+      executionSnapshot:
+        row.executionSnapshot as TestRunExecutionSnapshot | null,
       createdAt: row.createdAt.toISOString(),
     };
   }
+
   private mapCandidate(
     row: typeof testLabRunCandidates.$inferSelect,
   ): TestRunCandidate {
@@ -242,6 +259,7 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       createdAt: row.createdAt.toISOString(),
     };
   }
+
   private mapSelection(
     row: typeof testLabSelections.$inferSelect,
   ): TestSelection {
