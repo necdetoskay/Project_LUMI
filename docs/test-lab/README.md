@@ -9,4 +9,4 @@ Rules:
 - do not start data-binding phases until UI-1 passes browser screenshot comparison at 1672×941;
 - visual acceptance is required in addition to normal CI/build checks.
 
-Tracked by #334 and UI-1 issue #335.
+Tracked by #334 and UI-1 issue #335. UI-1 implementation is PR #340.
