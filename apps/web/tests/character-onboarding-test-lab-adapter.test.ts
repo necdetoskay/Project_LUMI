@@ -29,6 +29,8 @@ const pricing = pricingSnapshot({
 });
 
 const baseRequest = {
+  testSessionId: "test-session-1",
+  branchId: "branch-1",
   scenarioKey: "character_onboarding",
   phaseId: "character_first_identity_suggestions",
   productionOperation: "generateCharacterFirstIdentitySuggestions",
