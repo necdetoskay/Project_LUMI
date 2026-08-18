@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { loadCanonicalTestLabDashboardData } from "@/lib/ai/test-lab-dashboard-data";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 
@@ -12,9 +13,11 @@ export default async function TestLabPage() {
   );
   if (!parent) redirect("/login");
 
+  const dashboardData = await loadCanonicalTestLabDashboardData(parent.id);
+
   return (
     <div className={tuningStyles.tuned}>
-      <CanonicalTestLabDashboard />
+      <CanonicalTestLabDashboard data={dashboardData} />
     </div>
   );
 }
