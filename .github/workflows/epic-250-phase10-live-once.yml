@@ -1,0 +1,119 @@
+name: Epic 250 Phase 10 Live Once
+
+# Temporary branch-only runner. Never merge to main.
+on:
+  push:
+    branches:
+      - ops/epic-250-phase10-live
+    paths:
+      - .github/workflows/epic-250-phase10-live-once.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-playwright:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
+      VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_CHILD_AGE: "6"
+      LUMI_LONG_HORIZON_RNG_SEED: "240250"
+      LUMI_LONG_HORIZON_RUN_ID: epic-250-age6-${{ github.run_id }}
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard live credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${LUMI_LONG_HORIZON_BASE_URL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_EMAIL}"
+          test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
+          test -n "${VERCEL_TOKEN}"
+          echo "Epic #250 age-6 persistent live acceptance is explicitly authorized."
+
+      - name: Create temporary Vercel automation bypass
+        id: bypass
+        shell: bash
+        env:
+          PREVIEW_URL: https://project-lumi-web.vercel.app
+        run: |
+          set -euo pipefail
+          secret="$(openssl rand -hex 16)"
+          echo "::add-mask::$secret"
+          request="$RUNNER_TEMP/vercel-automation-bypass-generate.json"
+          response="$RUNNER_TEMP/vercel-automation-bypass-response.json"
+          jq -n --arg secret "$secret" '{generate:{secret:$secret,note:"Temporary Project LUMI epic 250 acceptance"}}' > "$request"
+          curl --fail-with-body --silent --show-error --request PATCH --output "$response" --header "Authorization: Bearer $VERCEL_TOKEN" --header "Content-Type: application/json" --data-binary "@$request" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
+          result="$(curl --silent --show-error --location --max-redirs 5 --output /dev/null --write-out '%{http_code}|%{url_effective}' --header "x-vercel-protection-bypass: $secret" --header "x-vercel-set-bypass-cookie: true" "$PREVIEW_URL/login")"
+          status="${result%%|*}"
+          final_url="${result#*|}"
+          test "$status" = "200"
+          [[ "$final_url" != *"/sso-api"* ]]
+          echo "secret=$secret" >> "$GITHUB_OUTPUT"
+
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+
+      - name: Run browser-only persistent acceptance pack
+        id: acceptance
+        continue-on-error: true
+        env:
+          LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ steps.bypass.outputs.secret }}
+        run: pnpm --filter @lumi/web test:long-horizon:live
+
+      - name: Upload long-horizon evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: epic-250-age6-${{ github.run_id }}
+          path: apps/web/tests/e2e/long-horizon/evidence/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Report run to issue 250
+        if: always()
+        shell: bash
+        env:
+          ACCEPTANCE_OUTCOME: ${{ steps.acceptance.outcome }}
+        run: |
+          gh issue comment 250 --repo necdetoskay/Project_LUMI --body "Epic #250 Phase 10 age-6 live acceptance run: **${ACCEPTANCE_OUTCOME}**. Run ID: \`${GITHUB_RUN_ID}\`. Evidence artifact: \`epic-250-age6-${GITHUB_RUN_ID}\`. Run: https://github.com/necdetoskay/Project_LUMI/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Revoke temporary Vercel automation bypass
+        if: always() && steps.bypass.outputs.secret != ''
+        shell: bash
+        env:
+          AUTOMATION_SECRET: ${{ steps.bypass.outputs.secret }}
+        run: |
+          revoke="$RUNNER_TEMP/vercel-automation-bypass-revoke.json"
+          jq -n --arg secret "$AUTOMATION_SECRET" '{revoke:{secret:$secret,regenerate:false}}' > "$revoke"
+          curl --silent --show-error --request PATCH --output /dev/null --header "Authorization: Bearer $VERCEL_TOKEN" --header "Content-Type: application/json" --data-binary "@$revoke" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" || true
+
+      - name: Enforce acceptance result
+        if: steps.acceptance.outcome != 'success'
+        run: exit 1
