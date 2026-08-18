@@ -5,6 +5,7 @@ import {
   buildWorkingStoryFromSandboxState,
   readStorySandboxScope,
 } from "../src/test-lab/application/story-sandbox-context";
+import { storyPhaseId } from "../src/test-lab/domain/story-scenario";
 import type { JsonObject } from "../src/test-lab/domain/test-lab-types";
 
 function parentState(): JsonObject {
@@ -79,5 +80,43 @@ describe("story sandbox context", () => {
     const nextStoryLab = next.storyLab as JsonObject;
     expect((originalStoryLab.stories as unknown[]).length).toBe(1);
     expect((nextStoryLab.stories as unknown[]).length).toBe(2);
+  });
+
+  it("supports 12 sequential selected-story transitions without mixing lineage", () => {
+    let state: JsonObject = {
+      character: { name: "Lumi" },
+      inventory: ["silver-key"],
+      npcs: { Mira: { relationship: "trusted" } },
+      storyLab: {
+        worldId: "world-1",
+        sourceFamily: "world_event",
+        sourceTitle: "The bridge lights return",
+        characterId: "character-1",
+        stories: [],
+      },
+    };
+
+    for (let storyNumber = 1; storyNumber <= 12; storyNumber += 1) {
+      const phaseId = storyPhaseId(storyNumber);
+      const scope = readStorySandboxScope(state, phaseId);
+      expect(scope.stories).toHaveLength(storyNumber - 1);
+      state = appendSelectedStoryCandidate({
+        parentState: state,
+        phaseId,
+        story: {
+          phaseId,
+          scene: { moment: `Selected continuity moment ${storyNumber}` },
+        },
+      });
+    }
+
+    const finalScope = readStorySandboxScope(state, "story_013");
+    expect(finalScope.stories).toHaveLength(12);
+    const workingStory = buildWorkingStoryFromSandboxState(state, finalScope);
+    expect(workingStory.playerKnownFacts.join(" ")).toContain(
+      "Selected Story 12: Selected continuity moment 12",
+    );
+    expect(workingStory.playerKnownFacts.join(" ")).toContain("silver-key");
+    expect(workingStory.playerKnownFacts.join(" ")).toContain("Mira");
   });
 });
