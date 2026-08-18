@@ -83,7 +83,8 @@ export class StorySceneGenerationService {
     input: StorySceneGenerationInput,
   ): Promise<StorySceneGenerationResult> {
     const maxAttempts = input.maxAttempts ?? 3;
-    const narrativeTarget = input.narrativeTarget ?? resolveStoryNarrativeTarget();
+    const narrativeTarget =
+      input.narrativeTarget ?? resolveStoryNarrativeTarget();
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
     const relevantNpcIds = [
