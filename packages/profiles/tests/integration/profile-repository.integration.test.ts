@@ -241,10 +241,7 @@ describe("ChildProfileRepository Integration", () => {
       slug: `hard-delete-miss-${crypto.randomUUID()}`,
     });
 
-    const deleted = await cRepo().hardDelete(
-      crypto.randomUUID(),
-      household.id,
-    );
+    const deleted = await cRepo().hardDelete(crypto.randomUUID(), household.id);
     expect(deleted).toBe(false);
   });
 });

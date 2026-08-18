@@ -12,6 +12,7 @@
     "./validation": "./src/validation/index.ts",
     "./usage": "./src/usage/index.ts",
     "./evals": "./src/evals/index.ts",
+    "./test-lab": "./src/test-lab/index.ts",
     "./db": "./src/db/index.ts",
     "./db/client": "./src/db/client/index.ts",
     "./package.json": "./package.json"

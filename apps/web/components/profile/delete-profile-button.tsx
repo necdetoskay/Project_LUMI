@@ -84,7 +84,10 @@ export default function DeleteProfileButton({
         aria-label={`${profileName} sil`}
         type="button"
       >
-        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+        <span
+          className="material-symbols-outlined text-[18px]"
+          aria-hidden="true"
+        >
           close
         </span>
       </button>
@@ -108,7 +111,8 @@ export default function DeleteProfileButton({
               &ldquo;{profileName}&rdquo; silinsin mi?
             </h3>
             <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Bu işlem geri alınamaz. Profili arşivleyebilir veya kalıcı olarak silebilirsiniz.
+              Bu işlem geri alınamaz. Profili arşivleyebilir veya kalıcı olarak
+              silebilirsiniz.
             </p>
 
             {error ? (
