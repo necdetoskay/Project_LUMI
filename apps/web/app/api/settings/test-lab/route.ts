@@ -140,6 +140,10 @@ export const POST = observeHandler(async (request: Request) => {
         const parentState = await repository.getState(run.parentStateId);
         const owner = readSandboxOwner(parentState);
         assertSandboxOwner(parentState, { ...owner, parentId: parent.id });
+        const forkBranchId =
+          typeof body.forkBranchId === "string" && body.forkBranchId
+            ? body.forkBranchId
+            : null;
 
         const result = await coordinator.selectCandidate({
           selectionId: crypto.randomUUID(),
@@ -149,10 +153,7 @@ export const POST = observeHandler(async (request: Request) => {
           runId,
           candidateId: requiredString(body.candidateId, "candidateId"),
           actor: "human",
-          forkBranchId:
-            typeof body.forkBranchId === "string" && body.forkBranchId
-              ? body.forkBranchId
-              : undefined,
+          ...(forkBranchId ? { forkBranchId } : {}),
           now,
         });
         return NextResponse.json({ data: result });
