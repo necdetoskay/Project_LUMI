@@ -15,6 +15,7 @@ import {
   type GenerationContextSource,
   type GenerationContextSourceAuthority,
   type GenerationContextSourceReason,
+  type GenerationContextSourceReplayReference,
   type GenerationContextSourceResult,
 } from "./generation-context-source";
 
@@ -33,6 +34,7 @@ export interface GenerationContextSectionProvenance {
   authority: GenerationContextSourceAuthority;
   reason: GenerationContextSourceReason;
   updatedAt?: string;
+  replay?: GenerationContextSourceReplayReference;
   compaction?: GenerationContextCompactionEvidence;
 }
 
@@ -66,6 +68,8 @@ const PRIORITY_WEIGHT: Record<GenerationContextPriority, number> = {
   medium: 2,
   low: 3,
 };
+
+const SHA256_HEX = /^[0-9a-f]{64}$/;
 
 export function estimateGenerationContextTokens(value: unknown): number {
   if (value == null) return 1;
@@ -126,6 +130,17 @@ function isMissingRequiredSourceValue(value: unknown): boolean {
   return false;
 }
 
+function isValidReplayReference(
+  reference: GenerationContextSourceReplayReference,
+): boolean {
+  return (
+    reference.kind === "content_addressed_snapshot" &&
+    reference.store.trim().length > 0 &&
+    reference.snapshotVersion.trim().length > 0 &&
+    SHA256_HEX.test(reference.snapshotDigest)
+  );
+}
+
 function promptContextFromSections(
   sections: readonly AssembledGenerationContextSection[],
 ): Record<string, unknown> {
@@ -139,6 +154,17 @@ function provenanceFromSource(
   result: GenerationContextSourceResult,
   compaction?: GenerationContextCompactionEvidence,
 ): GenerationContextSectionProvenance {
+  let replay: GenerationContextSourceReplayReference | undefined;
+
+  if (result.replayReference) {
+    if (!source.replay || !isValidReplayReference(result.replayReference)) {
+      throw new Error(
+        `GENERATION_CONTEXT_REPLAY_REFERENCE_INVALID:${source.section}:${source.source}`,
+      );
+    }
+    replay = result.replayReference;
+  }
+
   return {
     source: source.source,
     sourceVersion: source.sourceVersion,
@@ -147,6 +173,7 @@ function provenanceFromSource(
     ...(result.sourceId ? { sourceId: result.sourceId } : {}),
     ...(result.revision ? { revision: result.revision } : {}),
     ...(result.updatedAt ? { updatedAt: result.updatedAt } : {}),
+    ...(replay ? { replay } : {}),
     ...(compaction ? { compaction } : {}),
   };
 }
