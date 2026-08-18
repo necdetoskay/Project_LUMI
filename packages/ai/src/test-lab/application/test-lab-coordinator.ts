@@ -53,9 +53,9 @@ export class TestLabCoordinator {
       createdAt: input.now,
     };
 
+    await this.repository.saveSession(session);
     await this.repository.saveBranch(branch);
     await this.repository.saveState(state);
-    await this.repository.saveSession(session);
 
     return { session, initialState: state };
   }
