@@ -13,9 +13,7 @@ export function createStateDiff(input: {
   const beforeKeys = new Set(Object.keys(input.before));
   const afterKeys = new Set(Object.keys(input.after));
 
-  const addedKeys = [...afterKeys]
-    .filter((key) => !beforeKeys.has(key))
-    .sort();
+  const addedKeys = [...afterKeys].filter((key) => !beforeKeys.has(key)).sort();
   const removedKeys = [...beforeKeys]
     .filter((key) => !afterKeys.has(key))
     .sort();
