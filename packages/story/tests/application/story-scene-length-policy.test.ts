@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  StorySceneGenerationService,
-} from "../../src/application/story-scene-generation.service";
-import type {
-  StorySceneLlmSettingsPort,
-} from "../../src/application/story-scene-llm-settings";
+import { StorySceneGenerationService } from "../../src/application/story-scene-generation.service";
+import type { StorySceneLlmSettingsPort } from "../../src/application/story-scene-llm-settings";
 import type { StoryHookState } from "../../src/domain/story-types";
 
 function hook(): StoryHookState {
@@ -64,18 +60,17 @@ describe("StorySceneGenerationService narrative target", () => {
       model: "test-model",
     });
 
-    const result =
-      await new StorySceneGenerationService().generateSceneFromHook({
-        hook: hook(),
-        settingsPort: settings(),
-        narrativeTarget: {
-          preset: "custom",
-          minCharacters: 1100,
-          maxCharacters: 1300,
-        },
-        callOpenRouter: caller,
-        maxAttempts: 1,
-      });
+    const result = await new StorySceneGenerationService().generateSceneFromHook({
+      hook: hook(),
+      settingsPort: settings(),
+      narrativeTarget: {
+        preset: "custom",
+        minCharacters: 1100,
+        maxCharacters: 1300,
+      },
+      callOpenRouter: caller,
+      maxAttempts: 1,
+    });
 
     expect(result.narrativeTarget).toEqual({
       preset: "custom",
