@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   patch:
+    # One-shot semantic repair; bot-authored repair commits do not recurse.
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
