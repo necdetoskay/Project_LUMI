@@ -9,11 +9,13 @@ import {
   normalizeStoryContinuityContext,
   type StoryContinuityContextPort,
 } from "./story-continuity-context";
+import {
+  resolveStoryNarrativeTarget,
+  type StoryNarrativeTarget,
+} from "./story-length-policy";
 import { buildStoryScenePrompt } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
-  STORY_NARRATIVE_TARGET_MAX,
-  STORY_NARRATIVE_TARGET_MIN,
   type GeneratedScene,
 } from "./story-scene-output";
 import {
@@ -34,9 +36,24 @@ export interface OpenRouterCallInput {
   maxTokens: number;
 }
 
+export interface StoryProviderUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+}
+
+export interface StoryProviderTelemetry {
+  usage: StoryProviderUsage | null;
+  latencyMs: number | null;
+  estimatedCostUsd: number | null;
+}
+
 export interface OpenRouterCallResult {
   content: string;
   model: string;
+  usage?: StoryProviderUsage;
+  latencyMs?: number;
+  estimatedCostUsd?: number | null;
 }
 
 export type OpenRouterCaller = (
@@ -56,6 +73,8 @@ export interface StorySceneGenerationInput {
   storySessionId?: string | undefined;
   /** Optional scene focus forwarded to context retrieval/ranking. */
   sceneFocus?: string | undefined;
+  /** Product/Test Lab narrative target. Defaults to the medium production preset. */
+  narrativeTarget?: StoryNarrativeTarget;
   callOpenRouter?: OpenRouterCaller;
   maxAttempts?: number;
 }
@@ -64,6 +83,9 @@ export interface StorySceneGenerationResult {
   scene: GeneratedScene;
   modelId: string | null;
   attempt: number;
+  narrativeTarget: StoryNarrativeTarget;
+  providerRequest: OpenRouterCallInput;
+  providerTelemetry: StoryProviderTelemetry;
   /** Exact canonical manifest consumed by the successful generation call. */
   contextManifest: ContextManifest | null;
 }
@@ -78,6 +100,8 @@ export class StorySceneGenerationService {
     input: StorySceneGenerationInput,
   ): Promise<StorySceneGenerationResult> {
     const maxAttempts = input.maxAttempts ?? 3;
+    const narrativeTarget =
+      input.narrativeTarget ?? resolveStoryNarrativeTarget();
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
     const relevantNpcIds = [
@@ -128,25 +152,31 @@ export class StorySceneGenerationService {
         ageBand: settings.ageBand,
         locale: settings.locale,
         generationNonce,
+        narrativeTarget,
         continuityContext,
         generationContext,
       });
+      const providerRequest: OpenRouterCallInput = {
+        model: settings.modelId,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Sen çocuk hikayeleri için güvenli sahne üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: settings.temperature,
+        maxTokens: settings.maxOutputTokens,
+      };
 
       let response: OpenRouterCallResult;
       try {
-        response = await this.callProvider(input, settings.apiKey, {
-          model: settings.modelId,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Sen çocuk hikayeleri için güvenli sahne üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
-            },
-            { role: "user", content: prompt },
-          ],
-          temperature: settings.temperature,
-          maxTokens: settings.maxOutputTokens,
-        });
+        response = await this.callProvider(
+          input,
+          settings.apiKey,
+          providerRequest,
+        );
       } catch (error) {
         if (error instanceof LlmConfigError) throw error;
         const message = error instanceof Error ? error.message : String(error);
@@ -168,11 +198,11 @@ export class StorySceneGenerationService {
 
         const narrativeLength = parsed.scene.narrative.length;
         if (
-          narrativeLength < STORY_NARRATIVE_TARGET_MIN ||
-          narrativeLength > STORY_NARRATIVE_TARGET_MAX
+          narrativeLength < narrativeTarget.minCharacters ||
+          narrativeLength > narrativeTarget.maxCharacters
         ) {
           lastError = new LlmGenerationError(
-            `Story scene narrative length must be ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} characters; got ${narrativeLength}`,
+            `Story scene narrative length must be ${narrativeTarget.minCharacters}-${narrativeTarget.maxCharacters} characters; got ${narrativeLength}`,
           );
           continue;
         }
@@ -181,6 +211,9 @@ export class StorySceneGenerationService {
           scene: parsed.scene,
           modelId: response.model || null,
           attempt,
+          narrativeTarget,
+          providerRequest,
+          providerTelemetry: telemetryFromResponse(response),
           contextManifest: generationContext,
         };
       }
@@ -207,4 +240,14 @@ export class StorySceneGenerationService {
     }
     return caller(apiKey, callInput);
   }
+}
+
+export function telemetryFromResponse(
+  response: OpenRouterCallResult,
+): StoryProviderTelemetry {
+  return {
+    usage: response.usage ?? null,
+    latencyMs: response.latencyMs ?? null,
+    estimatedCostUsd: response.estimatedCostUsd ?? null,
+  };
 }

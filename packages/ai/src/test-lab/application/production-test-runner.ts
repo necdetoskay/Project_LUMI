@@ -1,6 +1,12 @@
+import { createStateDiff } from "../domain/state-diff";
 import { TestLabInvariantError } from "../domain/test-lab-errors";
 import type { ModelPricingSnapshot } from "../domain/model-profile";
-import type { TestRun, TestRunCandidate } from "../domain/test-lab-types";
+import type {
+  JsonObject,
+  StateDiff,
+  TestRun,
+  TestRunCandidate,
+} from "../domain/test-lab-types";
 import type { ProductionScenarioAdapter } from "../ports/production-scenario-adapter";
 import type { TestLabRepository } from "../ports/test-lab-repository";
 import type { TestLabCoordinator } from "./test-lab-coordinator";
@@ -11,6 +17,11 @@ export interface TestLabIdFactory {
 
 const DEFAULT_ID_FACTORY: TestLabIdFactory = {
   create: () => crypto.randomUUID(),
+};
+
+export type ProductionTestRunCandidate = TestRunCandidate & {
+  candidateState: JsonObject;
+  stateDiff: StateDiff;
 };
 
 export class ProductionTestRunner {
@@ -29,6 +40,7 @@ export class ProductionTestRunner {
     parentStateId: string;
     modelSlug: string;
     promptVersionOverride?: number;
+    generationConfig?: JsonObject;
     pricingSnapshot: ModelPricingSnapshot;
     actor: {
       userId: string;
@@ -36,7 +48,7 @@ export class ProductionTestRunner {
       childProfileId: string;
     };
     now: string;
-  }): Promise<{ run: TestRun; candidates: TestRunCandidate[] }> {
+  }): Promise<{ run: TestRun; candidates: ProductionTestRunCandidate[] }> {
     const session = await this.repository.getSession(input.sessionId);
     if (!session) {
       throw new TestLabInvariantError(
@@ -51,6 +63,8 @@ export class ProductionTestRunner {
     }
 
     const result = await this.adapter.execute({
+      testSessionId: input.sessionId,
+      branchId: input.branchId,
       scenarioKey: session.scenarioKey,
       phaseId: input.phaseId,
       productionOperation: input.productionOperation,
@@ -59,6 +73,9 @@ export class ProductionTestRunner {
       ...(input.promptVersionOverride === undefined
         ? {}
         : { promptVersionOverride: input.promptVersionOverride }),
+      ...(input.generationConfig === undefined
+        ? {}
+        : { generationConfig: input.generationConfig }),
       pricingSnapshot: input.pricingSnapshot,
       actor: input.actor,
     });
@@ -91,6 +108,7 @@ export class ProductionTestRunner {
       usageSnapshot: result.provenance.usage,
       executionSnapshot: {
         productionOperation: input.productionOperation,
+        generationConfig: input.generationConfig ?? null,
         promptKey: result.provenance.promptKey,
         promptVersion: result.provenance.promptVersion,
         renderedPromptFingerprint: result.provenance.renderedPromptFingerprint,
@@ -104,7 +122,16 @@ export class ProductionTestRunner {
 
     return {
       run: recorded.run,
-      candidates: recorded.candidates.map((value) => value.candidate),
+      candidates: recorded.candidates.map(({ candidate, state }) => ({
+        ...candidate,
+        candidateState: state.value,
+        stateDiff: createStateDiff({
+          fromStateId: input.parentStateId,
+          toStateId: state.id,
+          before: parentState.value,
+          after: state.value,
+        }),
+      })),
     };
   }
 }

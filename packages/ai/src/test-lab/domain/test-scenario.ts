@@ -1,6 +1,6 @@
 import type { JsonObject } from "./test-lab-types";
 
-export type TestScenarioDirection = "character_first" | "world_first";
+export type TestScenarioDirection = "character_first" | "world_first" | "story";
 export type TestPhaseKind = "input" | "generation" | "selection" | "finalize";
 
 export interface TestPhaseDefinition {

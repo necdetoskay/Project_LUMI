@@ -46,6 +46,13 @@ export class InMemoryTestLabRepository implements TestLabRepository {
     return value ? structuredClone(value) : null;
   }
 
+  async listBranches(sessionId: TestSessionId): Promise<TestBranch[]> {
+    return [...this.branches.values()]
+      .filter((branch) => branch.sessionId === sessionId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((branch) => structuredClone(branch));
+  }
+
   async saveState(snapshot: StateSnapshot): Promise<void> {
     if (this.states.has(snapshot.id)) {
       throw new TestLabInvariantError(

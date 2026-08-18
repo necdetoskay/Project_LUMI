@@ -78,6 +78,18 @@ function validSceneJson(usedContinuityKeys: string[] = []): string {
   });
 }
 
+function sceneJsonWithNarrativeLength(length: number): string {
+  return JSON.stringify({
+    sceneId: "scene-length-1",
+    setting: "bridge",
+    characters: ["Lumi"],
+    narrative: "a".repeat(length),
+    moment: "merak",
+    nextPrompt: null,
+    usedContinuityKeys: [],
+  });
+}
+
 describe("StorySceneGenerationService", () => {
   it("generates a validated scene from a rumor hook", async () => {
     const caller = vi.fn().mockResolvedValue({
@@ -204,6 +216,59 @@ describe("StorySceneGenerationService", () => {
       });
 
     expect(result.scene.usedContinuityKeys).toEqual(["memory-b"]);
+  });
+
+  it("renders and accepts the selected narrative target", async () => {
+    const caller = vi.fn().mockResolvedValue({
+      content: sceneJsonWithNarrativeLength(1200),
+      model: "test-model",
+    });
+    const service = new StorySceneGenerationService();
+
+    const result = await service.generateSceneFromHook({
+      hook: makeHook("rumor", { claim: "custom length" }),
+      settingsPort: fakePort(),
+      narrativeTarget: {
+        preset: "custom",
+        minCharacters: 1100,
+        maxCharacters: 1300,
+      },
+      callOpenRouter: caller,
+      maxAttempts: 1,
+    });
+
+    expect(result.narrativeTarget).toEqual({
+      preset: "custom",
+      minCharacters: 1100,
+      maxCharacters: 1300,
+    });
+    const call = caller.mock.calls[0] as unknown as [
+      string,
+      { messages: { content: string }[] },
+    ];
+    expect(call[1].messages[1]?.content).toContain("1100-1300");
+  });
+
+  it("rejects output outside the selected narrative target", async () => {
+    const caller = vi.fn().mockResolvedValue({
+      content: sceneJsonWithNarrativeLength(1000),
+      model: "test-model",
+    });
+    const service = new StorySceneGenerationService();
+
+    await expect(
+      service.generateSceneFromHook({
+        hook: makeHook("rumor", { claim: "custom length" }),
+        settingsPort: fakePort(),
+        narrativeTarget: {
+          preset: "custom",
+          minCharacters: 1100,
+          maxCharacters: 1300,
+        },
+        callOpenRouter: caller,
+        maxAttempts: 1,
+      }),
+    ).rejects.toThrow(/1100-1300/);
   });
 
   it("retries with a fresh nonce when output is invalid, then fails", async () => {

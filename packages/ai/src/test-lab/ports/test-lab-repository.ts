@@ -18,6 +18,7 @@ export interface TestLabRepository {
   getSession(id: TestSessionId): Promise<TestSession | null>;
   saveBranch(branch: TestBranch): Promise<void>;
   getBranch(id: TestBranchId): Promise<TestBranch | null>;
+  listBranches(sessionId: TestSessionId): Promise<TestBranch[]>;
   saveState(snapshot: StateSnapshot): Promise<void>;
   getState(id: StateSnapshotId): Promise<StateSnapshot | null>;
   saveRun(run: TestRun): Promise<void>;

@@ -7,11 +7,13 @@ import {
   normalizeStoryContinuityContext,
   type StoryContinuityContextPort,
 } from "./story-continuity-context";
+import {
+  resolveStoryNarrativeTarget,
+  type StoryNarrativeTarget,
+} from "./story-length-policy";
 import { renderGenerationContext } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
-  STORY_NARRATIVE_TARGET_MAX,
-  STORY_NARRATIVE_TARGET_MIN,
   type GeneratedScene,
 } from "./story-scene-output";
 import {
@@ -19,10 +21,12 @@ import {
   LlmGenerationError,
   type StorySceneLlmSettingsPort,
 } from "./story-scene-llm-settings";
-import type {
-  OpenRouterCallInput,
-  OpenRouterCallResult,
-  OpenRouterCaller,
+import {
+  telemetryFromResponse,
+  type OpenRouterCallInput,
+  type OpenRouterCallResult,
+  type OpenRouterCaller,
+  type StoryProviderTelemetry,
 } from "./story-scene-generation.service";
 
 export type AdventureSourceFamily =
@@ -44,6 +48,7 @@ export interface StoryAdventureGenerationInput {
   settingsPort: StorySceneLlmSettingsPort;
   continuityPort?: StoryContinuityContextPort;
   contextComposer?: StoryGenerationContextComposer;
+  narrativeTarget?: StoryNarrativeTarget;
   callOpenRouter?: OpenRouterCaller;
   maxAttempts?: number;
 }
@@ -52,6 +57,9 @@ export interface StoryAdventureGenerationResult {
   scene: GeneratedScene;
   modelId: string | null;
   attempt: number;
+  narrativeTarget: StoryNarrativeTarget;
+  providerRequest: OpenRouterCallInput;
+  providerTelemetry: StoryProviderTelemetry;
   contextManifest: ContextManifest | null;
 }
 
@@ -66,6 +74,8 @@ export class StoryAdventureGenerationService {
     input: StoryAdventureGenerationInput,
   ): Promise<StoryAdventureGenerationResult> {
     const maxAttempts = input.maxAttempts ?? 3;
+    const narrativeTarget =
+      input.narrativeTarget ?? resolveStoryNarrativeTarget();
     const settings = await input.settingsPort.resolveSettings();
     const continuity = input.continuityPort
       ? normalizeStoryContinuityContext(
@@ -111,25 +121,31 @@ export class StoryAdventureGenerationService {
         ageBand: settings.ageBand,
         locale: settings.locale,
         generationNonce: crypto.randomUUID(),
+        narrativeTarget,
         continuity,
         generationContext,
       });
+      const providerRequest: OpenRouterCallInput = {
+        model: settings.modelId,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Sen çocuklar için güvenli, tutarlı ve yaşayan dünya bağlamına sadık kısa hikâyeler üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: settings.temperature,
+        maxTokens: settings.maxOutputTokens,
+      };
 
       let response: OpenRouterCallResult;
       try {
-        response = await this.callProvider(input, settings.apiKey, {
-          model: settings.modelId,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Sen çocuklar için güvenli, tutarlı ve yaşayan dünya bağlamına sadık kısa hikâyeler üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
-            },
-            { role: "user", content: prompt },
-          ],
-          temperature: settings.temperature,
-          maxTokens: settings.maxOutputTokens,
-        });
+        response = await this.callProvider(
+          input,
+          settings.apiKey,
+          providerRequest,
+        );
       } catch (error) {
         if (error instanceof LlmConfigError) throw error;
         const message = error instanceof Error ? error.message : String(error);
@@ -158,11 +174,11 @@ export class StoryAdventureGenerationService {
 
       const narrativeLength = parsed.scene.narrative.length;
       if (
-        narrativeLength < STORY_NARRATIVE_TARGET_MIN ||
-        narrativeLength > STORY_NARRATIVE_TARGET_MAX
+        narrativeLength < narrativeTarget.minCharacters ||
+        narrativeLength > narrativeTarget.maxCharacters
       ) {
         lastError = new LlmGenerationError(
-          `Story adventure narrative length must be ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} characters; got ${narrativeLength}`,
+          `Story adventure narrative length must be ${narrativeTarget.minCharacters}-${narrativeTarget.maxCharacters} characters; got ${narrativeLength}`,
         );
         continue;
       }
@@ -171,6 +187,9 @@ export class StoryAdventureGenerationService {
         scene: parsed.scene,
         modelId: response.model || null,
         attempt,
+        narrativeTarget,
+        providerRequest,
+        providerTelemetry: telemetryFromResponse(response),
         contextManifest: generationContext,
       };
     }
@@ -203,6 +222,7 @@ function buildAdventurePrompt(input: {
   ageBand: string;
   locale: string;
   generationNonce: string;
+  narrativeTarget: StoryNarrativeTarget;
   continuity: ReturnType<typeof normalizeStoryContinuityContext> | null;
   generationContext: ContextManifest | null;
 }): string {
@@ -225,7 +245,7 @@ Zorunlu kurallar:
 - Dil: Türkçe (${input.locale}).
 - Yaş grubu: ${input.ageBand}; ayrıca aşağıdaki kanonik Context içindeki exact yaş bilgisini varsa dikkate al.
 - İçerik sınırı: ${input.contentBoundary}.
-- Hikâye anlatımı narrative alanında ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakter arasında OLMALI.
+- Hikâye anlatımı narrative alanında ${input.narrativeTarget.minCharacters}-${input.narrativeTarget.maxCharacters} karakter arasında OLMALI.
 - Hikâye tek başına anlamlı bir başlangıç, gelişme ve yumuşak sonuç içermeli.
 - Çocuğu korkutacak şiddet, yetişkin tema veya yoğun tehdit kullanma.
 - Dünya, karakter, item ve NPC sürekliliğiyle çelişme.
@@ -238,7 +258,7 @@ JSON şeması:
   "sceneId": "kısa ve kararlı slug",
   "setting": "güvenli sahne konumu",
   "characters": ["hikâyede yer alan karakter adları"],
-  "narrative": "${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakterlik tam hikâye",
+  "narrative": "${input.narrativeTarget.minCharacters}-${input.narrativeTarget.maxCharacters} karakterlik tam hikâye",
   "moment": "hikâyenin duygusal sonucunu tek cümlede anlat",
   "nextPrompt": null,
   "usedContinuityKeys": ["yalnız gerçekten kullanılan kanonik anahtarlar"]

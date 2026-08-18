@@ -5,12 +5,15 @@ import type {
 import type { JsonObject } from "../domain/test-lab-types";
 
 export interface ProductionScenarioExecutionRequest {
+  testSessionId: string;
+  branchId: string;
   scenarioKey: string;
   phaseId: string;
   productionOperation: string;
   parentState: JsonObject;
   modelSlug: string;
   promptVersionOverride?: number;
+  generationConfig?: JsonObject;
   pricingSnapshot: ModelPricingSnapshot;
   actor: {
     userId: string;
@@ -20,7 +23,7 @@ export interface ProductionScenarioExecutionRequest {
 }
 
 export interface ProductionScenarioExecutionProvenance {
-  promptKey: string;
+  promptKey: string | null;
   promptVersion: number | null;
   promptTemplateSnapshot: {
     system: string;

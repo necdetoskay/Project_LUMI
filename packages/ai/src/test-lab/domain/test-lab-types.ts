@@ -24,6 +24,7 @@ export type JsonObject = { [key: string]: JsonValue };
 
 export interface TestRunExecutionSnapshot {
   productionOperation: string;
+  generationConfig: JsonObject | null;
   promptKey: string | null;
   promptVersion: number | null;
   promptTemplateSnapshot: {

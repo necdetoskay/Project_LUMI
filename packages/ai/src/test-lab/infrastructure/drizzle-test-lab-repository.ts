@@ -82,15 +82,17 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .from(testLabBranches)
       .where(eq(testLabBranches.id, id))
       .limit(1);
-    return row
-      ? {
-          id: row.id,
-          sessionId: row.sessionId,
-          parentBranchId: row.parentBranchId,
-          forkedFromPhaseId: row.forkedFromPhaseId,
-          createdAt: row.createdAt.toISOString(),
-        }
-      : null;
+    return row ? this.mapBranch(row) : null;
+  }
+
+  async listBranches(sessionId: TestSessionId): Promise<TestBranch[]> {
+    const rows = await this.db
+      .select()
+      .from(testLabBranches)
+      .where(eq(testLabBranches.sessionId, sessionId));
+    return rows
+      .map((row) => this.mapBranch(row))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async saveState(snapshot: StateSnapshot): Promise<void> {
@@ -228,6 +230,16 @@ export class DrizzleTestLabRepository implements TestLabRepository {
       .from(testLabSelections)
       .where(eq(testLabSelections.branchId, branchId));
     return rows.map((row) => this.mapSelection(row));
+  }
+
+  private mapBranch(row: typeof testLabBranches.$inferSelect): TestBranch {
+    return {
+      id: row.id,
+      sessionId: row.sessionId,
+      parentBranchId: row.parentBranchId,
+      forkedFromPhaseId: row.forkedFromPhaseId,
+      createdAt: row.createdAt.toISOString(),
+    };
   }
 
   private mapRun(row: typeof testLabRuns.$inferSelect): TestRun {

@@ -7,9 +7,9 @@ import {
   type StoryContinuityContext,
 } from "./story-continuity-context";
 import {
-  STORY_NARRATIVE_TARGET_MAX,
-  STORY_NARRATIVE_TARGET_MIN,
-} from "./story-scene-output";
+  resolveStoryNarrativeTarget,
+  type StoryNarrativeTarget,
+} from "./story-length-policy";
 
 export interface StoryScenePromptInput {
   brief: HookSceneBrief;
@@ -21,6 +21,8 @@ export interface StoryScenePromptInput {
   locale: string;
   /** Generation nonce: each LLM call must differ. */
   generationNonce: string;
+  /** Bounded narrative target resolved by the production story length policy. */
+  narrativeTarget?: StoryNarrativeTarget;
   /** Bounded, prompt-safe continuity facts from prior canonical state. */
   continuityContext?: StoryContinuityContext | null;
   /** Canonical context manifest assembled by @lumi/context. */
@@ -59,6 +61,8 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
     continuityContext,
     generationContext,
   } = input;
+  const narrativeTarget =
+    input.narrativeTarget ?? resolveStoryNarrativeTarget();
   const sceneType = mapHookToScene(brief.hookType);
 
   const claimLine = brief.claim ? `- Hikaye ipucu (claim): ${brief.claim}` : "";
@@ -108,7 +112,7 @@ Kısıtlamalar:
 - ${ageBand} yaş grubuna uygun.
 - İçerik sınırı: ${contentBoundary}.
 - Dil: Türkçe (${locale}).
-- narrative tam olarak ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakter aralığında olmalı.
+- narrative tam olarak ${narrativeTarget.minCharacters}-${narrativeTarget.maxCharacters} karakter aralığında olmalı.
 - Narrative başlangıç, gelişme ve yumuşak bir sonuç içermeli.
 - Sadece geçerli JSON çıktısı ver, ek metin ekleme.
 - Generation nonce (her çağrıda farklı üretim için): ${generationNonce}
@@ -123,7 +127,7 @@ JSON şeması (kesinlikle uy):
   "sceneId": "deterministik sahne kimliği (kısa, örn. hook-brief-bazlı slug)",
   "setting": "sahnenin geçtiği güvenli yer (1-300 karakter)",
   "characters": ["sahnede yer alan karakter adları"],
-  "narrative": "${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} karakterlik Türkçe, çocuk için güvenli tam hikâye",
+  "narrative": "${narrativeTarget.minCharacters}-${narrativeTarget.maxCharacters} karakterlik Türkçe, çocuk için güvenli tam hikâye",
   "moment": "hikayenin tek cümlelik duygusal sonucu",
   "nextPrompt": null,
   "usedContinuityKeys": ["yalnız sahnede gerçekten kullanılan, promptta verilmiş süreklilik anahtarları"]
