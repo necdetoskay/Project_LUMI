@@ -21,7 +21,7 @@ describe("buildCanonicalTestLabDashboardData", () => {
 
     expect(data.latestRun).toMatchObject({
       model: "openrouter/anthropic/claude-sonnet-4.5",
-      scenarioLabel: "Karakter Onboarding",
+      scenarioLabel: "Onboarding",
       phaseLabel: "Dünya Önerisi",
       score: "— / 100",
       scoreState: "UI-3",
@@ -49,7 +49,7 @@ describe("buildCanonicalTestLabDashboardData", () => {
 
     expect(data.latestRun).toMatchObject({
       phaseLabel: "Hikaye 3",
-      scenarioLabel: "Hikaye Üretimi",
+      scenarioLabel: "Hikaye",
       cost: "$0.0042",
       duration: "1 dk 1 sn",
     });
