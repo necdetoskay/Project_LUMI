@@ -5,6 +5,7 @@ import {
   createBlindCandidateSet,
   type CandidateEvaluation,
   type EvaluationExecution,
+  type EvaluationFinding,
   type EvaluationMode,
 } from "../domain/evaluation";
 import type { JsonObject, JsonValue } from "../domain/test-lab-types";
@@ -30,6 +31,17 @@ export interface RunJudgeEvaluationInput {
 export interface RunJudgeEvaluationResult {
   execution: EvaluationExecution;
   evaluations: CandidateEvaluation[];
+}
+
+export interface RecordHumanEvaluationInput {
+  rubricKey: string;
+  rubricRevision: number;
+  mode: EvaluationMode;
+  authorId: string;
+  candidate: EvaluationCandidateInput;
+  findings: EvaluationFinding[];
+  rank?: number | null;
+  note?: string | null;
 }
 
 export class EvaluationRunner {
@@ -133,6 +145,49 @@ export class EvaluationRunner {
       throw new Error("TEST_LAB_EVALUATION_INCOMPLETE_JUDGE_RESULT");
     }
     return { execution, evaluations };
+  }
+
+  async recordHumanEvaluation(
+    input: RecordHumanEvaluationInput,
+  ): Promise<RunJudgeEvaluationResult> {
+    const rubric = await this.registry.resolve(
+      input.rubricKey,
+      input.rubricRevision,
+    );
+    const createdAt = new Date().toISOString();
+    const execution: EvaluationExecution = {
+      id: randomUUID(),
+      sessionId: input.candidate.sessionId,
+      rubricKey: rubric.key,
+      rubricRevision: rubric.revision,
+      mode: input.mode,
+      authorType: "human",
+      authorId: input.authorId,
+      judgeModelSlug: null,
+      usageSnapshot: null,
+      provenance: input.note ? { note: input.note } : null,
+      createdAt,
+    };
+    const evaluation: CandidateEvaluation = {
+      id: randomUUID(),
+      evaluationExecutionId: execution.id,
+      sessionId: input.candidate.sessionId,
+      runId: input.candidate.runId,
+      candidateId: input.candidate.candidateId,
+      rubricKey: rubric.key,
+      rubricRevision: rubric.revision,
+      mode: input.mode,
+      authorType: "human",
+      authorId: input.authorId,
+      judgeModelSlug: null,
+      findings: structuredClone(input.findings),
+      overallScore: calculateOverallScore(rubric, input.findings),
+      rank: input.rank ?? null,
+      createdAt,
+    };
+    await this.repository.saveExecution(execution);
+    await this.repository.saveEvaluation(evaluation);
+    return { execution, evaluations: [evaluation] };
   }
 }
 
