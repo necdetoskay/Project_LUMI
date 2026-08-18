@@ -37,13 +37,21 @@ interface InspectorTrace {
   createdAt: string;
   context: {
     fingerprint: string | null;
-    reconstructability: "audit_only" | "unavailable";
+    reconstructability: "exact" | "partial" | "non_reconstructable";
     reconstructabilityReason:
-      | "privacy_safe_trace_evidence"
+      | "all_sources_replayable"
+      | "replay_requires_historical_compaction"
+      | "some_sources_not_replayable"
+      | "source_revisions_verifiable_but_not_replayable"
+      | "source_revision_evidence_incomplete"
       | "context_evidence_missing";
     profile: string | null;
     maxContextTokens: number | null;
     estimatedTokens: number | null;
+    observability: {
+      budgetUtilizationRatio: number | null;
+      contextToOutputTokenRatio: number | null;
+    };
     droppedSections: string[];
     sections: InspectorSection[];
   };
@@ -200,17 +208,6 @@ export function AiGenerationTracesClientPage() {
 }
 
 function TraceDetail({ trace }: { trace: InspectorTrace }) {
-  const contextUsage = trace.context.maxContextTokens
-    ? Math.min(
-        100,
-        Math.round(
-          ((trace.context.estimatedTokens ?? 0) /
-            trace.context.maxContextTokens) *
-            100,
-        ),
-      )
-    : null;
-
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -255,14 +252,14 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
               {trace.context.profile ?? "Legacy / unknown profile"}
             </h3>
           </div>
-          {contextUsage !== null ? (
-            <span className="text-sm font-semibold text-slate-700">
-              {contextUsage}% of context budget
-            </span>
-          ) : null}
+          <span className="text-sm font-semibold text-slate-700">
+            {formatPercent(
+              trace.context.observability.budgetUtilizationRatio,
+            )} of context budget
+          </span>
         </div>
 
-        <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <Metric
             label="Estimated context"
             value={formatNumber(trace.context.estimatedTokens)}
@@ -270,6 +267,18 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
           <Metric
             label="Context budget"
             value={formatNumber(trace.context.maxContextTokens)}
+          />
+          <Metric
+            label="Budget utilization"
+            value={formatPercent(
+              trace.context.observability.budgetUtilizationRatio,
+            )}
+          />
+          <Metric
+            label="Context / output"
+            value={formatRatio(
+              trace.context.observability.contextToOutputTokenRatio,
+            )}
           />
           <Metric
             label="Fingerprint"
@@ -371,6 +380,16 @@ function formatNumber(value: number | null): string {
 function formatUsdMicros(value: number | null): string {
   if (value === null) return "—";
   return `$${(value / 1_000_000).toFixed(6)}`;
+}
+
+function formatPercent(value: number | null): string {
+  if (value === null) return "—";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatRatio(value: number | null): string {
+  if (value === null) return "—";
+  return `${value.toFixed(2)}×`;
 }
 
 function shortFingerprint(value: string | null): string {
