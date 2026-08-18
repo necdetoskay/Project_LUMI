@@ -70,7 +70,8 @@ export class StoryAdventureGenerationService {
     input: StoryAdventureGenerationInput,
   ): Promise<StoryAdventureGenerationResult> {
     const maxAttempts = input.maxAttempts ?? 3;
-    const narrativeTarget = input.narrativeTarget ?? resolveStoryNarrativeTarget();
+    const narrativeTarget =
+      input.narrativeTarget ?? resolveStoryNarrativeTarget();
     const settings = await input.settingsPort.resolveSettings();
     const continuity = input.continuityPort
       ? normalizeStoryContinuityContext(
