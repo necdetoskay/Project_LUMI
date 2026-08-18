@@ -1,3 +1,7 @@
+import type {
+  ModelPricingSnapshot,
+  TestRunUsageSnapshot,
+} from "../domain/model-profile";
 import { TestLabInvariantError } from "../domain/test-lab-errors";
 import type {
   JsonObject,
@@ -70,6 +74,9 @@ export class TestLabCoordinator {
     phaseId: string;
     parentStateId: string;
     candidateState: JsonObject;
+    modelSlug?: string | null;
+    pricingSnapshot?: ModelPricingSnapshot | null;
+    usageSnapshot?: TestRunUsageSnapshot | null;
     now: string;
   }): Promise<{ run: TestRun; candidateState: StateSnapshot }> {
     const session = await this.requireSession(input.sessionId);
@@ -95,6 +102,15 @@ export class TestLabCoordinator {
       }
     }
 
+    if (
+      (input.pricingSnapshot !== undefined && input.pricingSnapshot !== null) !==
+      (input.modelSlug !== undefined && input.modelSlug !== null)
+    ) {
+      throw new TestLabInvariantError(
+        "TEST_LAB_MODEL_PRICING_SNAPSHOT_REQUIRES_MODEL_SLUG",
+      );
+    }
+
     const candidateState: StateSnapshot = {
       id: input.candidateStateId,
       sessionId: input.sessionId,
@@ -113,6 +129,9 @@ export class TestLabCoordinator {
       parentStateId: input.parentStateId,
       candidateStateId: input.candidateStateId,
       status: "candidate",
+      modelSlug: input.modelSlug ?? null,
+      pricingSnapshot: input.pricingSnapshot ?? null,
+      usageSnapshot: input.usageSnapshot ?? null,
       createdAt: input.now,
     };
 
