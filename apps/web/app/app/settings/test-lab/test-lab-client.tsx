@@ -62,11 +62,15 @@ export default function TestLabClient() {
   const [householdId, setHouseholdId] = useState("");
   const [childProfileId, setChildProfileId] = useState("");
   const [modelSlug, setModelSlug] = useState("deepseek/deepseek-chat-v3.1");
-  const [initialStateText, setInitialStateText] = useState(DEFAULT_INITIAL_STATE);
+  const [initialStateText, setInitialStateText] = useState(
+    DEFAULT_INITIAL_STATE,
+  );
   const [sessionId, setSessionId] = useState("");
   const [branchId, setBranchId] = useState("");
   const [parentStateId, setParentStateId] = useState("");
-  const [phaseId, setPhaseId] = useState("character_first_identity_suggestions");
+  const [phaseId, setPhaseId] = useState(
+    "character_first_identity_suggestions",
+  );
   const [result, setResult] = useState<RunResult | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,7 +87,8 @@ export default function TestLabClient() {
   }, []);
 
   const runnablePhases = useMemo(
-    () => phases.filter((phase) => phase.testable && supported.includes(phase.id)),
+    () =>
+      phases.filter((phase) => phase.testable && supported.includes(phase.id)),
     [phases, supported],
   );
 
@@ -93,7 +98,10 @@ export default function TestLabClient() {
     setResult(null);
     setSelectedCandidateId("");
     try {
-      const initialState = JSON.parse(initialStateText) as Record<string, unknown>;
+      const initialState = JSON.parse(initialStateText) as Record<
+        string,
+        unknown
+      >;
       const payload = await post({ action: "create-session", initialState });
       setSessionId(payload.data.session.id);
       setBranchId(payload.data.session.activeBranchId);
@@ -163,14 +171,19 @@ export default function TestLabClient() {
   }
 
   return (
-    <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 20px 64px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+    <main
+      style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 20px 64px" }}
+    >
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 16 }}
+      >
         <div>
           <p style={{ margin: 0, opacity: 0.65 }}>Settings / Developer</p>
           <h1 style={{ margin: "8px 0" }}>LUMI Test Lab</h1>
           <p style={{ maxWidth: 760, opacity: 0.8 }}>
-            Real production Character Onboarding generation path. Her run izole candidate
-            state üretir; yalnız “Sonraki aşamada kullan” seçimi sandbox zincirini ilerletir.
+            Real production Character Onboarding generation path. Her run izole
+            candidate state üretir; yalnız “Sonraki aşamada kullan” seçimi
+            sandbox zincirini ilerletir.
           </p>
         </div>
         <Link href="/app/settings">LLM Ayarlarına dön</Link>
@@ -181,15 +194,27 @@ export default function TestLabClient() {
         <div style={gridStyle}>
           <label>
             Household ID
-            <input value={householdId} onChange={(event) => setHouseholdId(event.target.value)} style={inputStyle} />
+            <input
+              value={householdId}
+              onChange={(event) => setHouseholdId(event.target.value)}
+              style={inputStyle}
+            />
           </label>
           <label>
             Child Profile ID
-            <input value={childProfileId} onChange={(event) => setChildProfileId(event.target.value)} style={inputStyle} />
+            <input
+              value={childProfileId}
+              onChange={(event) => setChildProfileId(event.target.value)}
+              style={inputStyle}
+            />
           </label>
           <label>
             OpenRouter model slug
-            <input value={modelSlug} onChange={(event) => setModelSlug(event.target.value)} style={inputStyle} />
+            <input
+              value={modelSlug}
+              onChange={(event) => setModelSlug(event.target.value)}
+              style={inputStyle}
+            />
           </label>
         </div>
         <label style={{ display: "block", marginTop: 16 }}>
@@ -198,14 +223,20 @@ export default function TestLabClient() {
             rows={9}
             value={initialStateText}
             onChange={(event) => setInitialStateText(event.target.value)}
-            style={{ ...inputStyle, fontFamily: "monospace", resize: "vertical" }}
+            style={{
+              ...inputStyle,
+              fontFamily: "monospace",
+              resize: "vertical",
+            }}
           />
         </label>
         <button disabled={busy} onClick={createSession} style={buttonStyle}>
           Yeni sandbox session oluştur
         </button>
         {sessionId ? (
-          <pre style={metaStyle}>{JSON.stringify({ sessionId, branchId, parentStateId }, null, 2)}</pre>
+          <pre style={metaStyle}>
+            {JSON.stringify({ sessionId, branchId, parentStateId }, null, 2)}
+          </pre>
         ) : null}
       </section>
 
@@ -213,20 +244,31 @@ export default function TestLabClient() {
         <h2>2. Production Phase</h2>
         <label>
           Phase
-          <select value={phaseId} onChange={(event) => setPhaseId(event.target.value)} style={inputStyle}>
+          <select
+            value={phaseId}
+            onChange={(event) => setPhaseId(event.target.value)}
+            style={inputStyle}
+          >
             {runnablePhases.map((phase) => (
               <option key={phase.id} value={phase.id}>
-                {phase.label} — requires: {phase.requiredStateKeys.join(", ") || "none"}
+                {phase.label} — requires:{" "}
+                {phase.requiredStateKeys.join(", ") || "none"}
               </option>
             ))}
           </select>
         </label>
-        <button disabled={busy || !sessionId} onClick={runPhase} style={buttonStyle}>
+        <button
+          disabled={busy || !sessionId}
+          onClick={runPhase}
+          style={buttonStyle}
+        >
           Production pipeline ile çalıştır
         </button>
       </section>
 
-      {message ? <p style={{ ...panelStyle, borderStyle: "dashed" }}>{message}</p> : null}
+      {message ? (
+        <p style={{ ...panelStyle, borderStyle: "dashed" }}>{message}</p>
+      ) : null}
 
       {result ? (
         <section style={panelStyle}>
@@ -248,17 +290,27 @@ export default function TestLabClient() {
           <div style={{ display: "grid", gap: 16 }}>
             {result.candidates.map((candidate) => (
               <article key={candidate.id} style={{ ...panelStyle, margin: 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
                   <strong>Candidate #{candidate.ordinal + 1}</strong>
                   <span>{candidate.candidateStateId}</span>
                 </div>
-                <pre style={metaStyle}>{JSON.stringify(candidate.payload, null, 2)}</pre>
+                <pre style={metaStyle}>
+                  {JSON.stringify(candidate.payload, null, 2)}
+                </pre>
                 <button
                   disabled={busy || selectedCandidateId === candidate.id}
                   onClick={() => selectCandidate(candidate)}
                   style={buttonStyle}
                 >
-                  {selectedCandidateId === candidate.id ? "Seçildi" : "Sonraki aşamada kullan"}
+                  {selectedCandidateId === candidate.id
+                    ? "Seçildi"
+                    : "Sonraki aşamada kullan"}
                 </button>
               </article>
             ))}
@@ -276,7 +328,8 @@ async function post(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.message ?? "Test Lab request failed");
+  if (!response.ok)
+    throw new Error(payload.message ?? "Test Lab request failed");
   return payload;
 }
 
