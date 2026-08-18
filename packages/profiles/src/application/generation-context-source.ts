@@ -6,63 +6,100 @@ export type GenerationContextSourceAuthority =
   | "derived"
   | "retrieved";
 
+export type GenerationContextSourceReason =
+  | "required"
+  | "personalization"
+  | "current_task"
+  | "canonical"
+  | "recent"
+  | "retrieved";
+
 export interface GenerationContextSourceResult {
   value: unknown;
+  sourceId?: string;
+  revision?: string;
+  updatedAt?: string;
 }
 
 export interface GenerationContextSource {
   readonly section: GenerationContextSection;
   readonly source: string;
+  readonly sourceVersion: string;
   readonly authority: GenerationContextSourceAuthority;
+  readonly reason: GenerationContextSourceReason;
   resolve(context: GenerationContext): GenerationContextSourceResult;
 }
 
 function source(
   section: GenerationContextSection,
   sourceName: string,
-  resolve: (context: GenerationContext) => unknown,
+  reason: GenerationContextSourceReason,
+  resolve: (context: GenerationContext) => GenerationContextSourceResult,
 ): GenerationContextSource {
   return {
     section,
     source: sourceName,
+    sourceVersion: "v1",
     authority: "canonical",
-    resolve(context) {
-      return { value: resolve(context) };
-    },
+    reason,
+    resolve,
   };
 }
 
 const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
-  source("child_identity", "profiles.child-profile", (context) => ({
-    ageBand: context.child.ageBand,
-    ageYears: context.child.ageYears,
-    locale: context.child.locale,
+  source("child_identity", "profiles.child-profile", "required", (context) => ({
+    value: {
+      ageBand: context.child.ageBand,
+      ageYears: context.child.ageYears,
+      locale: context.child.locale,
+    },
+    sourceId: context.child.id,
   })),
   source(
     "child_personalization",
     "profiles.child-personalization",
+    "personalization",
     (context) => ({
-      interests: context.child.interests,
-      customInterests: context.child.customInterests,
-      developmentGoals: context.child.developmentGoals,
+      value: {
+        interests: context.child.interests,
+        customInterests: context.child.customInterests,
+        developmentGoals: context.child.developmentGoals,
+      },
+      sourceId: context.child.id,
     }),
   ),
   source(
     "creation_direction",
     "profiles.character-creation-cycle",
+    "current_task",
     (context) => ({
-      startDirection: context.creation.startDirection,
+      value: {
+        startDirection: context.creation.startDirection,
+      },
+      sourceId: context.creation.cycleId ?? undefined,
     }),
   ),
   source(
     "creation_selections",
     "profiles.character-creation-cycle",
-    (context) => context.creation.previousSelections,
+    "current_task",
+    (context) => ({
+      value: context.creation.previousSelections,
+      sourceId: context.creation.cycleId ?? undefined,
+    }),
   ),
-  source("character_state", "profiles.character-state", () => null),
-  source("world_state", "world.current-state", () => null),
-  source("recent_story_state", "story.recent-state", () => null),
-  source("relevant_memories", "memory.relevant", () => null),
+  source("character_state", "profiles.character-state", "canonical", () => ({
+    value: null,
+  })),
+  source("world_state", "world.current-state", "canonical", () => ({
+    value: null,
+  })),
+  source("recent_story_state", "story.recent-state", "recent", () => ({
+    value: null,
+  })),
+  source("relevant_memories", "memory.relevant", "retrieved", () => ({
+    value: null,
+  })),
 ];
 
 export function createGenerationContextSourceRegistry(
