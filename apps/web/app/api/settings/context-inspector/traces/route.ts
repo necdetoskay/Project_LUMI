@@ -3,10 +3,8 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
-import {
-  getOwnedHousehold,
-  listAiGenerationContextInspectorTraces,
-} from "@lumi/profiles/application";
+import { listAiGenerationContextInspectorTraces } from "@lumi/profiles";
+import { getOwnedHousehold } from "@lumi/profiles/application";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
