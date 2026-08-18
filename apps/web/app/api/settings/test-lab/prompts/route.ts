@@ -7,6 +7,7 @@ import {
   getPromptWorkspace,
   resolvePromptVersion,
   rollbackPrompt,
+  type PromptDraftPatch,
 } from "@lumi/profiles/application";
 import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
@@ -19,7 +20,10 @@ export const GET = observeHandler((request: Request) => {
       searchParams.get("householdId"),
       "householdId",
     );
-    const promptKey = requiredString(searchParams.get("promptKey"), "promptKey");
+    const promptKey = requiredString(
+      searchParams.get("promptKey"),
+      "promptKey",
+    );
 
     try {
       await getLlmSettings(parent.id, householdId);
@@ -45,7 +49,7 @@ export const POST = observeHandler(async (request: Request) => {
           body.sourceVersion,
           "sourceVersion",
         );
-        const patch = asObject(body.patch, "patch");
+        const patch = asPromptDraftPatch(body.patch);
         const draft = await createPromptDraftFromVersion(
           promptKey,
           sourceVersion,
@@ -115,6 +119,26 @@ function requiredPositiveInteger(value: unknown, field: string): number {
     throw new Error(`PROMPT_WORKSPACE_POSITIVE_INTEGER_REQUIRED:${field}`);
   }
   return value;
+}
+
+function asPromptDraftPatch(value: unknown): PromptDraftPatch {
+  const object = asObject(value, "patch");
+  const patch: PromptDraftPatch = {};
+
+  if (object.systemTemplate !== undefined) {
+    patch.systemTemplate = requiredString(
+      object.systemTemplate,
+      "patch.systemTemplate",
+    );
+  }
+  if (object.userTemplate !== undefined) {
+    patch.userTemplate = requiredString(
+      object.userTemplate,
+      "patch.userTemplate",
+    );
+  }
+
+  return patch;
 }
 
 function asObject(value: unknown, field: string): Record<string, unknown> {
