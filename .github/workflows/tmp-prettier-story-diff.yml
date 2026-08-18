@@ -1,0 +1,25 @@
+name: Temporary Prettier Story Diff
+
+on:
+  push:
+    branches:
+      - agent/test-lab-phase-5-stateful-story
+
+jobs:
+  diff:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Show exact Prettier diff
+        run: |
+          pnpm exec prettier --write packages/story/tests/application/story-scene-length-policy.test.ts
+          git diff -- packages/story/tests/application/story-scene-length-policy.test.ts
+          test -z "$(git status --short packages/story/tests/application/story-scene-length-policy.test.ts)"
