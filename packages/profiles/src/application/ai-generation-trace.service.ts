@@ -100,7 +100,9 @@ function fingerprintSourceRevision(input: {
   revision: string;
 }): string {
   return createHash("sha256")
-    .update(`${input.source}\u0000${input.sourceVersion}\u0000${input.revision}`)
+    .update(
+      `${input.source}\u0000${input.sourceVersion}\u0000${input.revision}`,
+    )
     .digest("hex");
 }
 
