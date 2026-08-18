@@ -36,5 +36,6 @@ export * from "./llm-task-model-settings";
 export * from "./ai-prompt-versions";
 export * from "./ai-prompt-audit-log";
 export * from "./ai-generation-traces";
+export * from "./generation-context-snapshots";
 export * from "./archetype-suggestion-batches";
 export * from "./relations";
