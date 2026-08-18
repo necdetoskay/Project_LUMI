@@ -84,9 +84,8 @@ describe("characterOnboardingProductionScenarioAdapter", () => {
       },
     });
 
-    const result = await characterOnboardingProductionScenarioAdapter.execute(
-      baseRequest,
-    );
+    const result =
+      await characterOnboardingProductionScenarioAdapter.execute(baseRequest);
 
     expect(mocks.executeCharacterOnboardingTestLabPhase).toHaveBeenCalledWith({
       userId: "user-1",
