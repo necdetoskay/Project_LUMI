@@ -22,7 +22,7 @@ export interface CharacterOnboardingTestLabExecutionInput {
   phaseId: CharacterOnboardingTestLabPhase;
   parentState: Record<string, unknown>;
   modelSlug: string;
-  promptVersion?: number;
+  promptVersionOverride?: number;
 }
 
 export interface CharacterOnboardingTestLabCandidate {
@@ -36,6 +36,15 @@ export interface CharacterOnboardingTestLabExecutionResult {
   provenance: {
     promptKey: string;
     promptVersion: number;
+    promptTemplateSnapshot: {
+      system: string;
+      user: string;
+    };
+    renderedPrompt: {
+      system: string;
+      user: string;
+    };
+    finalProviderRequest: Record<string, unknown> | null;
     renderedPromptFingerprint: string;
     contextFingerprint: string;
     modelSlug: string;
@@ -67,9 +76,9 @@ export async function executeCharacterOnboardingTestLabPhase(
         previousSelections: input.parentState,
       },
       modelOverride: input.modelSlug,
-      ...(input.promptVersion === undefined
+      ...(input.promptVersionOverride === undefined
         ? {}
-        : { promptVersionOverride: input.promptVersion }),
+        : { promptVersionOverride: input.promptVersionOverride }),
       recordTrace: false,
     },
   );
@@ -230,6 +239,17 @@ function toProvenance(
   return {
     promptKey: result.promptKey,
     promptVersion: result.promptVersion,
+    promptTemplateSnapshot: {
+      system: result.systemTemplate,
+      user: result.userTemplate,
+    },
+    renderedPrompt: {
+      system: result.systemPrompt,
+      user: result.userPrompt,
+    },
+    finalProviderRequest: result.generated.requestSnapshot
+      ? structuredClone(result.generated.requestSnapshot)
+      : null,
     renderedPromptFingerprint: fingerprint({
       system: result.systemPrompt,
       user: result.userPrompt,
