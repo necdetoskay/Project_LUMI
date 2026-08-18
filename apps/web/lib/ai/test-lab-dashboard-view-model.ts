@@ -318,7 +318,8 @@ function qualityMetricsFor(
     ...execution.criteria
       .map((criterion) => criterion.key)
       .filter(
-        (key) => !QUALITY_ORDER.includes(key as (typeof QUALITY_ORDER)[number]),
+        (key) =>
+          !QUALITY_ORDER.includes(key as (typeof QUALITY_ORDER)[number]),
       ),
   ].slice(0, 6);
 
@@ -344,7 +345,7 @@ function qualityMetricsFor(
 function pendingQualityMetrics(): CanonicalTestLabQualityMetric[] {
   return QUALITY_ORDER.map((key) => ({
     key,
-    label: QUALITY_LABELS[key],
+    label: QUALITY_LABELS[key] ?? key,
     score: 0,
     pending: true,
   }));
