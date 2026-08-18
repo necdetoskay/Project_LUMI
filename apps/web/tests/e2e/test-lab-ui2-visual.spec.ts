@@ -10,7 +10,9 @@ test("captures canonical Test Lab UI2 with persisted-run-shaped data", async ({
   });
 
   await expect(page.getByTestId("canonical-test-lab-dashboard")).toBeVisible();
-  await expect(page.getByText("openrouter/anthropic/claude-sonnet-4.5").first()).toBeVisible();
+  await expect(page.getByLabel("Model")).toHaveValue(
+    "openrouter/anthropic/claude-sonnet-4.5",
+  );
   await expect(page.getByText("UI-3").first()).toBeVisible();
 
   await page.screenshot({
