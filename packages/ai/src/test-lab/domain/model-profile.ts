@@ -135,16 +135,12 @@ export function estimateRunCostUsd(input: {
   const regularCompletion = Math.max(0, input.completionTokens - reasoning);
   const price = input.pricing.perTokenUsd;
 
-  const cacheReadPrice = price.inputCacheRead || price.prompt;
-  const cacheWritePrice = price.inputCacheWrite || price.prompt;
-  const reasoningPrice = price.internalReasoning || price.completion;
-
   return roundUsd(
     regularPrompt * price.prompt +
-      cached * cacheReadPrice +
-      cacheWrite * cacheWritePrice +
+      cached * price.inputCacheRead +
+      cacheWrite * price.inputCacheWrite +
       regularCompletion * price.completion +
-      reasoning * reasoningPrice +
+      reasoning * price.internalReasoning +
       price.request,
   );
 }
