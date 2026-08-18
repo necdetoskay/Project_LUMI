@@ -1,0 +1,269 @@
+{
+  "document": {
+    "name": "LUMI Test Lab Canonical UI Contract",
+    "version": "1.0.0",
+    "status": "DESIGN_LOCKED",
+    "reference_image": "lumi_test_lab_analitik_dashboard_u.png",
+    "reference_viewport": { "width": 1672, "height": 941 },
+    "purpose": "Project LUMI gerçek Test Lab arayüzünün görsel ve yapısal tek kaynak sözleşmesi.",
+    "implementation_rule": "Bu JSON ve referans mockup birlikte canonical source-of-truth'tur. Uygulayıcı yerleşimi yeniden yorumlayamaz, kartları başka bölgelere taşıyamaz veya developer form görünümüne geri dönemez."
+  },
+  "design_lock": {
+    "visual_similarity_target": "high",
+    "layout_deviation_allowed": false,
+    "section_reordering_allowed": false,
+    "default_view_may_show_raw_json": false,
+    "default_view_may_show_internal_ids": false,
+    "default_view_may_show_raw_prompt_textareas": false,
+    "default_view_may_show_debug_panels": false,
+    "developer_features_policy": "Mevcut teknik Test Lab yetenekleri korunur fakat canonical dashboard görünümünü bozmayacak ayrı Advanced/Developer yüzeyine taşınır.",
+    "acceptance": [
+      "Desktop 1672x941 referans viewport'ta ana bölgeler mockup ile aynı hiyerarşide görünmeli.",
+      "Sol sidebar + üst KPI row + 3 kolonlu orta alan + alttaki Son Koşular tablosu korunmalı.",
+      "İlk ekran açılışında raw Household ID, Child Profile ID, JSON sandbox state veya execution snapshot görünmemeli.",
+      "Canlı Koşu Durumu ekranın ana görsel odağı olmalı.",
+      "Renk, radius, spacing ve tipografi LUMI design token'ları ile mockup'a mümkün olan en yakın hale getirilmeli.",
+      "Her UI elementi gerçek Test Lab backend verisine bağlanmalı; yalnız veri henüz yoksa açık empty-state kullanılmalı.",
+      "Mockup'ta var olmayan büyük yeni panel veya farklı navigasyon yapısı default ekrana eklenmemeli."
+    ]
+  },
+  "visual_tokens": {
+    "font_family": "Plus Jakarta Sans",
+    "page_background": "#FAFAFC",
+    "surface": "#FFFFFF",
+    "sidebar_background": "#FFFFFF",
+    "text_primary": "#17151E",
+    "text_secondary": "#606070",
+    "border": "#E5E5EC",
+    "primary": "#6D32E8",
+    "primary_dark": "#5B25D6",
+    "primary_soft": "#F0E9FF",
+    "success": "#16A15D",
+    "success_soft": "#E8F8EF",
+    "warning": "#F3A91B",
+    "danger": "#F05A4A",
+    "info": "#2085EE",
+    "card_radius_px": 10,
+    "control_radius_px": 7,
+    "sidebar_active_radius_px": 9,
+    "card_shadow": "0 1px 4px rgba(20,20,40,0.08)",
+    "page_gap_px": 16,
+    "small_gap_px": 10,
+    "main_horizontal_padding_px": 32
+  },
+  "page_shell": {
+    "id": "test_lab_dashboard",
+    "route": "/app/settings/test-lab",
+    "layout": "sidebar_plus_dashboard",
+    "regions": ["sidebar", "top_header", "kpi_row", "workspace_grid", "recent_runs"]
+  },
+  "sidebar": {
+    "position": "fixed_left",
+    "approx_width_px": 228,
+    "top_brand": { "logo": "Project LUMI", "visual": "purple starburst mark + PROJECT LUMI wordmark" },
+    "navigation": [
+      { "label": "Dashboard", "icon": "dashboard", "state": "default" },
+      { "label": "Karakter Onboarding", "icon": "person", "state": "default" },
+      { "label": "Hikayeler", "icon": "book", "state": "default" },
+      { "label": "Görsel Kütüphanesi", "icon": "image", "state": "default" },
+      { "label": "Test Lab", "icon": "science", "state": "active" }
+    ],
+    "bottom": {
+      "team_selector": { "title": "LUMI Ekibi", "subtitle": "Pro Plan", "avatar": "L", "dropdown": true },
+      "logout": { "label": "Çıkış Yap", "icon": "logout" }
+    }
+  },
+  "top_header": {
+    "position": "main_top",
+    "approx_height_px": 98,
+    "left": { "title": "Test Lab", "subtitle": "Hikaye üretim kalitesini ölç, karşılaştır ve geliştir." },
+    "right_actions": [
+      { "id": "run_all", "label": "Tüm Testleri Çalıştır", "icon": "play_arrow", "variant": "primary" },
+      { "id": "create_report", "label": "Rapor Oluştur", "icon": "description", "variant": "secondary" },
+      { "id": "notifications", "icon": "notifications", "badge": 3, "variant": "icon" }
+    ],
+    "utility": { "help_icon": "help" }
+  },
+  "kpi_row": {
+    "layout": "4_equal_cards",
+    "approx_height_px": 108,
+    "cards": [
+      { "id": "active_suite", "label": "Aktif Suite", "primary_value": "LUMI Çekirdek Suite", "secondary_value": "v2.4", "footnote": "Son güncelleme: 12 May 2025", "icon": "account_tree", "accent": "purple" },
+      { "id": "last_score", "label": "Son Koşu Skoru", "primary_value": "82 / 100", "status": "İyi", "footnote": "12 May 2025 14:35", "icon": "monitoring", "accent": "green" },
+      { "id": "successful_tests", "label": "Başarılı Test", "primary_value": "28 / 35", "footnote": "%80 başarı oranı", "icon": "check", "accent": "blue" },
+      { "id": "estimated_cost", "label": "Tahmini Maliyet", "primary_value": "$2.48", "footnote": "Bu koşu için tahmini", "icon": "attach_money", "accent": "orange" }
+    ]
+  },
+  "workspace_grid": {
+    "layout": "three_columns",
+    "approx_column_ratio": [0.25, 0.5, 0.25],
+    "left_column": {
+      "sections": [
+        {
+          "id": "test_plan",
+          "title": "Test Planı",
+          "icon": "assignment",
+          "subtitle": "Değerlendirilecek testleri seçin.",
+          "tests": [
+            { "key": "story_coherence", "label": "Hikaye Bütünlüğü", "selected": true },
+            { "key": "curiosity", "label": "Merak Uyandırma", "selected": true },
+            { "key": "age_suitability", "label": "Yaşa Uygunluk", "selected": true },
+            { "key": "prompt_consistency", "label": "Prompt Tutarlılığı", "selected": true },
+            { "key": "long_term_continuity", "label": "Uzun Dönem Süreklilik", "selected": true },
+            { "key": "provider_failover", "label": "Provider Failover", "selected": true },
+            { "key": "visual_prompt_quality", "label": "Görsel Prompt Kalitesi", "selected": true }
+          ],
+          "footer": { "left_action": "Tümünü Seç", "right_summary": "7 / 7 seçildi" }
+        },
+        {
+          "id": "model_settings",
+          "title": "Model ve Çalıştırma Ayarları",
+          "icon": "settings",
+          "controls": [
+            { "key": "model", "label": "Model", "type": "select", "example_value": "openrouter/anthropic/claude-sonnet-4.5" },
+            { "key": "temperature", "label": "Temperature", "type": "stepper", "example_value": 0.7 },
+            { "key": "max_output_tokens", "label": "Max Output Tokens", "type": "stepper", "example_value": 4096 },
+            { "key": "sample_count", "label": "Örnek (Sample) Sayısı", "type": "stepper", "example_value": 5 },
+            { "key": "auto_prompt_improve", "label": "Otomatik Prompt İyileştir", "type": "toggle", "example_value": true }
+          ]
+        }
+      ]
+    },
+    "center_column": {
+      "sections": [
+        {
+          "id": "live_run_status",
+          "title": "Canlı Koşu Durumu",
+          "status": "Running",
+          "header_meta": { "start_time": "12 May 2025 14:35", "estimated_end": "14:48", "run_id": "run_20250512_1435" },
+          "stepper": [
+            { "step": 1, "label": "Örnek üret", "state": "completed", "detail": "100%" },
+            { "step": 2, "label": "Yargılayıcı model değerlendir", "state": "active", "detail": "68%" },
+            { "step": 3, "label": "Rubrik puanla", "state": "queued", "detail": "Queued" },
+            { "step": 4, "label": "Promptu iyileştir", "state": "queued", "detail": "Queued" },
+            { "step": 5, "label": "Final raporu oluştur", "state": "queued", "detail": "Queued" }
+          ],
+          "progress_panel": {
+            "title": "İlerleme",
+            "total_tests": 35,
+            "completed_tests": 24,
+            "percent": 68,
+            "current_step": "Yargılayıcı model değerlendir",
+            "judge_model": "openrouter/anthropic/claude-sonnet-4.5-judge",
+            "evaluated_samples": "24 / 35 örnek değerlendirildi"
+          },
+          "score_trend": { "title": "Canlı Skor Trendi", "type": "line_chart", "y_range": [0, 100], "x_axis": "time", "current_score": 82, "current_status": "İyi" }
+        }
+      ]
+    },
+    "right_column": {
+      "sections": [
+        {
+          "id": "quality_dimensions",
+          "title": "Kalite Boyutları",
+          "icon": "analytics",
+          "metrics": [
+            { "key": "coherence", "label": "Bütünlük", "score": 86, "max": 100 },
+            { "key": "emotional_impact", "label": "Duygusal Etki", "score": 80, "max": 100 },
+            { "key": "creativity", "label": "Yaratıcılık", "score": 78, "max": 100 },
+            { "key": "curiosity", "label": "Merak", "score": 85, "max": 100 },
+            { "key": "character_fidelity", "label": "Karakter Tutarlılığı", "score": 82, "max": 100 },
+            { "key": "safety", "label": "Güvenlik", "score": 95, "max": 100 }
+          ],
+          "visual": "horizontal_progress_bars"
+        },
+        {
+          "id": "prompt_improvement",
+          "title": "Prompt İyileştirme Önerisi",
+          "icon": "auto_awesome",
+          "badge": "AI Önerisi",
+          "recommendation": "Hikayelerde merak unsurunu artırmak için sorularla biten kısa bölümler ekleyin. Karakter motivasyonlarını daha belirgin göstermek için iç monolog veya kısa diyaloglarla derinlik katın.",
+          "detail_control": { "label": "Örnek Prompt Değişiklikleri", "type": "collapsible" },
+          "primary_action": { "label": "Prompta Uygula", "icon": "construction", "variant": "primary_full_width" }
+        }
+      ]
+    }
+  },
+  "recent_runs": {
+    "id": "recent_runs",
+    "title": "Son Koşular",
+    "position": "full_width_bottom",
+    "columns": [
+      { "key": "name", "label": "Test Adı", "sortable": true },
+      { "key": "model", "label": "Model" },
+      { "key": "score", "label": "Skor" },
+      { "key": "cost", "label": "Maliyet" },
+      { "key": "duration", "label": "Süre" },
+      { "key": "status", "label": "Durum" },
+      { "key": "actions", "label": "" }
+    ]
+  },
+  "interaction_contract": {
+    "run_all": { "backend_intent": "Seçili testlerin tamamını seçili model ve ayarlarla sıralı/orkestre biçimde çalıştır.", "ui_states": ["idle", "queued", "running", "completed", "failed", "cancelled"] },
+    "report": { "backend_intent": "Seçili run için judge/rubric/cost/model/prompt provenance bilgilerini insan-okunur rapora dönüştür." },
+    "test_plan": { "backend_intent": "Test suite/rubric selection state." },
+    "model_settings": { "backend_intent": "OpenRouter model slug + generation config + sample count." },
+    "live_run": { "backend_intent": "Run orchestration state + per-stage progress + usage + latency." },
+    "quality_dimensions": { "backend_intent": "Evaluation engine rubric criterion scores." },
+    "prompt_improvement": { "backend_intent": "Judge sonuçlarından prompt optimization draft üret; doğrudan production active revision'ı sessizce değiştirme.", "safety_rule": "Prompta Uygula önce immutable draft revision üretmeli; activation ayrı açık eylem olmalı." },
+    "recent_runs": { "backend_intent": "Persisted TestRun geçmişi; model, score, cost, duration, status ve drill-down." }
+  },
+  "existing_test_lab_capability_mapping": {
+    "keep_and_reuse": [
+      "TestRun persistence",
+      "TestRunCandidate persistence",
+      "Sandbox session/branch/state model",
+      "Candidate selection and lineage",
+      "StateDiff",
+      "OpenRouter model profile and pricing",
+      "Usage/cost/latency snapshots",
+      "Prompt revision governance",
+      "Immutable prompt drafts",
+      "Execution snapshot/provenance",
+      "Character Onboarding production adapter",
+      "Stateful Story Generation production adapter",
+      "Evaluation rubric/judge engine work"
+    ],
+    "move_out_of_default_dashboard": [
+      "Household ID text input",
+      "Child Profile ID text input",
+      "Raw initial sandbox JSON textarea",
+      "Raw session/branch/parentState IDs",
+      "Full system prompt textarea",
+      "Full user prompt textarea",
+      "Raw provider request",
+      "Raw candidate state JSON",
+      "Raw StateDiff JSON",
+      "Execution snapshot JSON"
+    ],
+    "advanced_surface": { "recommended_route": "/app/settings/test-lab/advanced", "visibility": "developer_only", "rule": "Canonical dashboard layoutına karışamaz." }
+  },
+  "responsive_contract": {
+    "desktop": { "min_width_px": 1280, "sidebar": "fixed", "workspace": "three_columns", "recent_runs": "full_width" },
+    "tablet": { "min_width_px": 768, "sidebar": "collapsible", "workspace": "two_columns_then_stack", "center_live_run_priority": 1 },
+    "mobile": { "max_width_px": 767, "sidebar": "drawer", "workspace": "single_column", "section_order": ["top_header", "kpi_row", "live_run_status", "test_plan", "model_settings", "quality_dimensions", "prompt_improvement", "recent_runs"] }
+  },
+  "implementation_phases": [
+    { "phase": "UI-1", "name": "Canonical shell", "scope": "Sidebar, header, KPI row, three-column grid and recent-runs skeleton only.", "rule": "Backend behavior değiştirilmez." },
+    { "phase": "UI-2", "name": "Data binding", "scope": "Mevcut Test Lab run/model/cost/session verilerini yeni kartlara bağla." },
+    { "phase": "UI-3", "name": "Evaluation surfaces", "scope": "Judge progress, rubric scores, quality dimensions, score trend." },
+    { "phase": "UI-4", "name": "Prompt optimization UX", "scope": "AI suggestion + immutable draft creation + explicit apply/activate flow." },
+    { "phase": "UI-5", "name": "Advanced developer surface", "scope": "Raw IDs/JSON/prompt/provenance/debug controls ayrı developer yüzeyine taşı." },
+    { "phase": "UI-6", "name": "Visual acceptance", "scope": "Production screenshot al; canonical mockup ile side-by-side karşılaştır; belirgin farklar kalmayana kadar düzelt." }
+  ],
+  "visual_acceptance_checklist": [
+    "Sidebar genişliği ve aktif Test Lab öğesi mockup ile aynı algıda mı?",
+    "Başlık ve iki ana aksiyon mockup ile aynı bölgede mi?",
+    "Dört KPI kartı tek satırda ve eşit ağırlıkta mı?",
+    "Sol kolonda yalnız Test Planı + Model/Ayarlar mı?",
+    "Canlı Koşu Durumu orta kolonun en büyük paneli mi?",
+    "5 adımlı stepper görünür ve mockup ile aynı akışta mı?",
+    "İlerleme + mevcut judge bilgisi stepper altında mı?",
+    "Canlı Skor Trendi aynı ana panel içinde mi?",
+    "Kalite Boyutları sağ üstte mi?",
+    "Prompt İyileştirme sağ altta mı?",
+    "Son Koşular tüm ana içerik genişliğinde altta mı?",
+    "Raw developer alanlarından hiçbiri default dashboard'da görünmüyor mu?",
+    "Referans screenshot ile yeni production screenshot yan yana incelendi mi?"
+  ]
+}
