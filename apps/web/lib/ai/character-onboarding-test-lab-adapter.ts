@@ -36,6 +36,9 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         phaseId: request.phaseId,
         parentState: request.parentState,
         modelSlug: request.modelSlug,
+        ...(request.promptVersionOverride === undefined
+          ? {}
+          : { promptVersionOverride: request.promptVersionOverride }),
       });
 
       const usage =
