@@ -18,14 +18,13 @@ const testItems = [
 ];
 
 const qualityMetrics = [
-  { label: "Bütünlük", score: 86, tone: "green" },
-  { label: "Duygusal Etki", score: 80, tone: "green" },
-  { label: "Yaratıcılık", score: 78, tone: "amber" },
-  { label: "Merak", score: 85, tone: "green" },
-  { label: "Karakter Tutarlılığı", score: 82, tone: "green" },
-  { label: "Güvenlik", score: 95, tone: "green" },
+  { label: "Bütünlük", score: 0, pending: true },
+  { label: "Duygusal Etki", score: 0, pending: true },
+  { label: "Yaratıcılık", score: 0, pending: true },
+  { label: "Merak", score: 0, pending: true },
+  { label: "Karakter Tutarlılığı", score: 0, pending: true },
+  { label: "Güvenlik", score: 0, pending: true },
 ] as const;
-
 
 function Icon({
   name,
@@ -296,7 +295,9 @@ function LiveRunPanel({
         <div className={styles.currentJudge}>
           <div>
             <span>Geçerli Adım: </span>
-            <strong>{hasRun ? "Run kaydı tamamlandı" : "Koşu bekleniyor"}</strong>
+            <strong>
+              {hasRun ? "Run kaydı tamamlandı" : "Koşu bekleniyor"}
+            </strong>
           </div>
           <p>{latestRun?.model ?? "Model seçimi bekleniyor"}</p>
           <span>
@@ -329,41 +330,14 @@ function LiveRunPanel({
               <line x1="34" y1="68" x2="540" y2="68" />
               <line x1="34" y1="94" x2="540" y2="94" />
             </g>
-            <path
-              d="M42 83 L78 76 L112 65 L148 53 L185 40 L221 40 L257 34 L294 24 L330 22 L366 19 L403 15 L440 13 L477 14 L516 15 L516 102 L42 102 Z"
-              fill="url(#scoreArea)"
-            />
-            <polyline
-              className={styles.chartLine}
-              points="42,83 78,76 112,65 148,53 185,40 221,40 257,34 294,24 330,22 366,19 403,15 440,13 477,14 516,15"
-            />
-            {[
-              "42,83",
-              "78,76",
-              "112,65",
-              "148,53",
-              "185,40",
-              "221,40",
-              "257,34",
-              "294,24",
-              "330,22",
-              "366,19",
-              "403,15",
-              "440,13",
-              "477,14",
-              "516,15",
-            ].map((point) => {
-              const [cx, cy] = point.split(",");
-              return <circle key={point} cx={cx} cy={cy} r="2.4" />;
-            })}
           </svg>
           <div className={styles.chartAxis}>
-            <span>14:35</span>
-            <span>14:38</span>
-            <span>14:41</span>
-            <span>14:44</span>
-            <span>14:47</span>
-            <span>14:50 (tahmini)</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+            <span>—</span>
+            <span>UI-3</span>
           </div>
         </div>
         <div className={styles.currentScore}>
@@ -389,14 +363,11 @@ function QualityPanel() {
             <div>
               <span>{metric.label}</span>
               <b>
-                {metric.score} <small>/100</small>
+                {metric.pending ? "—" : metric.score} <small>/100</small>
               </b>
             </div>
             <div className={styles.qualityTrack}>
-              <span
-                className={metric.tone === "amber" ? styles.qualityAmber : ""}
-                style={{ width: `${metric.score}%` }}
-              />
+              <span style={{ width: `${metric.score}%` }} />
             </div>
           </div>
         ))}
@@ -409,17 +380,16 @@ function PromptSuggestion() {
   return (
     <section className={`${styles.panel} ${styles.promptPanel}`}>
       <PanelTitle icon="auto_awesome">Prompt İyileştirme Önerisi</PanelTitle>
-      <span className={styles.aiBadge}>AI Önerisi</span>
+      <span className={styles.aiBadge}>UI-4</span>
       <p>
-        Hikayelerde merak unsurunu artırmak için sorularla biten kısa bölümler
-        ekleyin. Karakter motivasyonlarını daha belirgin göstermek için iç
-        monolog veya kısa diyaloglarla derinlik katın.
+        Prompt iyileştirme önerileri, değerlendirme sonuçları UI-3 ile
+        bağlandıktan sonra immutable draft akışı üzerinden burada gösterilecek.
       </p>
-      <button className={styles.promptDetails} type="button">
+      <button className={styles.promptDetails} type="button" disabled>
         <span>Örnek Prompt Değişiklikleri</span>
         <Icon name="expand_more" />
       </button>
-      <button className={styles.applyPromptButton} type="button">
+      <button className={styles.applyPromptButton} type="button" disabled>
         <Icon name="construction" />
         Prompta Uygula
       </button>
@@ -427,11 +397,7 @@ function PromptSuggestion() {
   );
 }
 
-function RecentRuns({
-  runs,
-}: {
-  runs: CanonicalTestLabRunView[];
-}) {
+function RecentRuns({ runs }: { runs: CanonicalTestLabRunView[] }) {
   return (
     <section className={`${styles.panel} ${styles.recentPanel}`}>
       <h2>Son Koşular</h2>
@@ -455,13 +421,7 @@ function RecentRuns({
                 <td>{run.model}</td>
                 <td>
                   <strong>{run.score}</strong>
-                  <span
-                    className={
-                      styles.scoreMedium
-                    }
-                  >
-                    ● {run.scoreState}
-                  </span>
+                  <span className={styles.scoreMedium}>● {run.scoreState}</span>
                 </td>
                 <td>{run.cost}</td>
                 <td>{run.duration}</td>
@@ -473,11 +433,7 @@ function RecentRuns({
                         : styles.statusCompleted
                     }
                   >
-                    <Icon
-                      name={
-                        run.status === "Failed" ? "error" : "check"
-                      }
-                    />
+                    <Icon name={run.status === "Failed" ? "error" : "check"} />
                     {run.status}
                   </span>
                 </td>
@@ -578,7 +534,9 @@ export default function CanonicalTestLabDashboard({
             label="Tahmini Maliyet"
             footnote={<>Bu koşu için tahmini</>}
           >
-            <strong className={styles.kpiMoney}>{latestRun?.cost ?? "—"}</strong>
+            <strong className={styles.kpiMoney}>
+              {latestRun?.cost ?? "—"}
+            </strong>
           </KpiCard>
         </section>
 
