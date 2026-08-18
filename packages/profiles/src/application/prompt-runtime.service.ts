@@ -84,5 +84,8 @@ export async function resolvePromptVersion(
   version: number,
   context: PromptContext,
 ) {
-  return renderPromptRecord(await resolvePromptRecord(promptKey, version), context);
+  return renderPromptRecord(
+    await resolvePromptRecord(promptKey, version),
+    context,
+  );
 }
