@@ -78,8 +78,8 @@ describe("ProductionTestRunner", () => {
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
             promptTemplateSnapshot: {
-              systemTemplate: "System {{previousSelections}}",
-              userTemplate: "User {{locale}}",
+              system: "System {{previousSelections}}",
+              user: "User {{locale}}",
             },
             renderedPrompt: {
               system: "System rendered",
@@ -147,8 +147,8 @@ describe("ProductionTestRunner", () => {
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
       promptTemplateSnapshot: {
-        systemTemplate: "System {{previousSelections}}",
-        userTemplate: "User {{locale}}",
+        system: "System {{previousSelections}}",
+        user: "User {{locale}}",
       },
       renderedPrompt: {
         system: "System rendered",
@@ -205,10 +205,7 @@ describe("ProductionTestRunner", () => {
             promptVersion: 1,
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
-            promptTemplateSnapshot: {
-              systemTemplate: "system",
-              userTemplate: "user",
-            },
+            promptTemplateSnapshot: { system: "system", user: "user" },
             renderedPrompt: { system: "system", user: "user" },
             finalProviderRequest: null,
             modelSlug: "vendor/unexpected-model",
