@@ -37,6 +37,9 @@ describe("buildCanonicalTestLabDashboardData", () => {
       status: "Completed",
     });
     expect(data.evaluation.ready).toBe(false);
+    expect(
+      data.evaluation.qualityMetrics.every((metric) => metric.label.length > 0),
+    ).toBe(true);
   });
 
   it("binds the latest judge execution to score, progress and quality dimensions", () => {
