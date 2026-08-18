@@ -93,7 +93,8 @@ function phaseDefinition(phaseId: CharacterOnboardingTestLabPhase): {
       return {
         writesStateKey: "characterIdentity",
         spec: {
-          promptKey: "character_onboarding.character_first_identity_suggestions",
+          promptKey:
+            "character_onboarding.character_first_identity_suggestions",
           taskType: "character_identity_suggestions",
           summaryGuard(summary) {
             if (!summary.characterType)
