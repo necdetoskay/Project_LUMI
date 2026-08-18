@@ -128,8 +128,9 @@ const DEFAULT_STORY_STATE = JSON.stringify(
 );
 
 export default function TestLabClient() {
-  const [scenarioKey, setScenarioKey] =
-    useState<ScenarioKey>("character_onboarding");
+  const [scenarioKey, setScenarioKey] = useState<ScenarioKey>(
+    "character_onboarding",
+  );
   const [onboardingPhases, setOnboardingPhases] = useState<Phase[]>([]);
   const [storyPhases, setStoryPhases] = useState<Phase[]>([]);
   const [supported, setSupported] = useState<string[]>([]);
@@ -393,7 +394,9 @@ export default function TestLabClient() {
               style={inputStyle}
             >
               <option value="character_onboarding">Character Onboarding</option>
-              <option value="story_generation">Stateful Story Generation</option>
+              <option value="story_generation">
+                Stateful Story Generation
+              </option>
             </select>
           </label>
           <label>
@@ -622,7 +625,8 @@ export default function TestLabClient() {
             <section style={panelStyle}>
               <h2>6. Comparable Runs</h2>
               <p style={{ opacity: 0.75 }}>
-                Aynı phase, parent state ve model ile yapılan bağımsız run&apos;lar.
+                Aynı phase, parent state ve model ile yapılan bağımsız
+                run&apos;lar.
               </p>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
