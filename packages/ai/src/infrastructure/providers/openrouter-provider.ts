@@ -25,6 +25,17 @@ interface OpenRouterChatResponse {
     prompt_tokens?: number;
     completion_tokens?: number;
     total_tokens?: number;
+    cost?: number;
+    cost_details?: {
+      upstream_inference_cost?: number;
+    };
+    prompt_tokens_details?: {
+      cached_tokens?: number;
+      cache_write_tokens?: number;
+    };
+    completion_tokens_details?: {
+      reasoning_tokens?: number;
+    };
   };
 }
 
@@ -56,7 +67,9 @@ export class OpenRouterProvider implements GenerationProvider {
   }
 
   public supportsModel(modelId: string): boolean {
-    return modelId.startsWith("openrouter/") || modelId === this.defaultModel;
+    if (modelId === this.defaultModel || modelId === "openrouter/auto")
+      return true;
+    return modelId.includes("/") && !modelId.startsWith("test-");
   }
 
   public async complete(
@@ -76,6 +89,7 @@ export class OpenRouterProvider implements GenerationProvider {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), request.timeoutMs);
+    const startedAt = Date.now();
 
     let response: Response;
     try {
@@ -118,12 +132,25 @@ export class OpenRouterProvider implements GenerationProvider {
     }
 
     const content = data.choices?.[0]?.message?.content ?? "";
+    const actualCostUsd = nonNegativeNumber(data.usage?.cost);
+    const upstreamInferenceCostUsd = nonNegativeNumber(
+      data.usage?.cost_details?.upstream_inference_cost,
+    );
     const usage: ProviderUsage = {
       promptTokens: data.usage?.prompt_tokens ?? 0,
       completionTokens: data.usage?.completion_tokens ?? 0,
       totalTokens: data.usage?.total_tokens ?? 0,
-      latencyMs: 0,
-      costUsd: 0,
+      latencyMs: Math.max(0, Date.now() - startedAt),
+      costUsd: actualCostUsd ?? 0,
+      cachedInputTokens: data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+      cacheWriteTokens:
+        data.usage?.prompt_tokens_details?.cache_write_tokens ?? 0,
+      reasoningTokens:
+        data.usage?.completion_tokens_details?.reasoning_tokens ?? 0,
+      ...(actualCostUsd === null ? {} : { actualCostUsd }),
+      ...(upstreamInferenceCostUsd === null
+        ? {}
+        : { upstreamInferenceCostUsd }),
     };
 
     return {
@@ -133,6 +160,12 @@ export class OpenRouterProvider implements GenerationProvider {
       usage,
     };
   }
+}
+
+function nonNegativeNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
 }
 
 function isAbortError(error: unknown): boolean {

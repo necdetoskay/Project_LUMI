@@ -95,6 +95,9 @@ export const testLabRuns = aiSchema.table(
       .notNull()
       .references(() => testLabStateSnapshots.id),
     status: varchar("status", { length: 20 }).notNull().default("candidate"),
+    modelSlug: varchar("model_slug", { length: 240 }),
+    pricingSnapshot: jsonb("pricing_snapshot"),
+    usageSnapshot: jsonb("usage_snapshot"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -105,10 +108,19 @@ export const testLabRuns = aiSchema.table(
       table.branchId,
       table.phaseId,
     ),
+    index("test_lab_runs_model_slug_idx").on(table.modelSlug),
     uniqueIndex("test_lab_runs_candidate_state_uq").on(table.candidateStateId),
     check(
       "chk_test_lab_run_status",
       sql`${table.status} IN ('candidate', 'failed')`,
+    ),
+    check(
+      "chk_test_lab_run_model_pricing_pair",
+      sql`(${table.modelSlug} IS NULL AND ${table.pricingSnapshot} IS NULL) OR (${table.modelSlug} IS NOT NULL AND ${table.pricingSnapshot} IS NOT NULL)`,
+    ),
+    check(
+      "chk_test_lab_run_usage_traceable",
+      sql`${table.usageSnapshot} IS NULL OR (${table.modelSlug} IS NOT NULL AND ${table.pricingSnapshot} IS NOT NULL)`,
     ),
   ],
 );

@@ -101,6 +101,11 @@ export const providerUsageSchema = z.object({
   totalTokens: z.number().int().nonnegative().default(0),
   latencyMs: z.number().int().nonnegative().default(0),
   costUsd: z.number().nonnegative().default(0),
+  cachedInputTokens: z.number().int().nonnegative().optional(),
+  cacheWriteTokens: z.number().int().nonnegative().optional(),
+  reasoningTokens: z.number().int().nonnegative().optional(),
+  actualCostUsd: z.number().nonnegative().optional(),
+  upstreamInferenceCostUsd: z.number().nonnegative().optional(),
 });
 
 export interface ProviderUsage {
@@ -109,6 +114,11 @@ export interface ProviderUsage {
   totalTokens: number;
   latencyMs: number;
   costUsd: number;
+  cachedInputTokens?: number | undefined;
+  cacheWriteTokens?: number | undefined;
+  reasoningTokens?: number | undefined;
+  actualCostUsd?: number | undefined;
+  upstreamInferenceCostUsd?: number | undefined;
 }
 
 export const generationAttemptSchema = z.object({
