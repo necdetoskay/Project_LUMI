@@ -1,28 +1,35 @@
-:global([data-testid="canonical-test-lab-dashboard"]) > main {
+.tuned {
+  display: contents;
+}
+
+.tuned [data-testid="canonical-test-lab-dashboard"] > main {
   padding-top: 25px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"]) > main > header {
+.tuned [data-testid="canonical-test-lab-dashboard"] > main > header {
   min-height: 78px !important;
   padding-right: 0 !important;
   padding-left: 9px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > main
   > header
   > div:nth-child(2) {
   padding-top: 12px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > main
   > section:nth-of-type(1) {
   margin-right: 62px !important;
   margin-left: 3px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > main
   > section:nth-of-type(2) {
   grid-template-columns:
@@ -32,14 +39,16 @@
   margin-left: 3px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > main
   > section:nth-of-type(3) {
   margin-right: 41px !important;
   margin-left: 3px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > main
   > section:last-of-type
   table
@@ -47,12 +56,14 @@
   height: 30px !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   a[href="/app/settings/test-lab/advanced"] {
   display: none !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > aside
   > div:first-child
   > span:first-child {
@@ -64,7 +75,8 @@
   font-size: 0 !important;
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > aside
   > div:first-child
   > span:first-child::before {
@@ -90,7 +102,8 @@
   content: "";
 }
 
-:global([data-testid="canonical-test-lab-dashboard"])
+.tuned
+  [data-testid="canonical-test-lab-dashboard"]
   > aside
   > div:first-child
   > span:first-child::after {
