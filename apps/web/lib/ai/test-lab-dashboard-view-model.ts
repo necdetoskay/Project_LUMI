@@ -80,8 +80,8 @@ function phaseLabelFor(phaseId: string): string {
 }
 
 function scenarioLabelFor(scenarioKey: string): string {
-  if (scenarioKey === "character_onboarding") return "Karakter Onboarding";
-  if (scenarioKey === "story_generation") return "Hikaye Üretimi";
+  if (scenarioKey === "character_onboarding") return "Onboarding";
+  if (scenarioKey === "story_generation") return "Hikaye";
   return scenarioKey.replaceAll("_", " ");
 }
 
