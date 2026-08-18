@@ -31,7 +31,9 @@ export class InMemoryTestLabRepository implements TestLabRepository {
 
   async saveBranch(branch: TestBranch): Promise<void> {
     if (this.branches.has(branch.id)) {
-      throw new TestLabInvariantError(`TEST_LAB_BRANCH_ALREADY_EXISTS:${branch.id}`);
+      throw new TestLabInvariantError(
+        `TEST_LAB_BRANCH_ALREADY_EXISTS:${branch.id}`,
+      );
     }
     this.branches.set(branch.id, structuredClone(branch));
   }
@@ -43,7 +45,9 @@ export class InMemoryTestLabRepository implements TestLabRepository {
 
   async saveState(snapshot: StateSnapshot): Promise<void> {
     if (this.states.has(snapshot.id)) {
-      throw new TestLabInvariantError(`TEST_LAB_STATE_ALREADY_EXISTS:${snapshot.id}`);
+      throw new TestLabInvariantError(
+        `TEST_LAB_STATE_ALREADY_EXISTS:${snapshot.id}`,
+      );
     }
     this.states.set(snapshot.id, structuredClone(snapshot));
   }
@@ -55,7 +59,9 @@ export class InMemoryTestLabRepository implements TestLabRepository {
 
   async saveRun(run: TestRun): Promise<void> {
     if (this.runs.has(run.id)) {
-      throw new TestLabInvariantError(`TEST_LAB_RUN_ALREADY_EXISTS:${run.id}`);
+      throw new TestLabInvariantError(
+        `TEST_LAB_RUN_ALREADY_EXISTS:${run.id}`,
+      );
     }
     this.runs.set(run.id, structuredClone(run));
   }
