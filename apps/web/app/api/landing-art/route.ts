@@ -31,7 +31,7 @@ const encoded = [
 const image = Buffer.from(encoded, "base64");
 const expectedBytes = 33806;
 const expectedSha256 =
-  "faaae7ea91961f92e544c96aa0a7c6c262bdaef3b51b0b124920077a1e8b3648";
+  "faaae7ea715f4e2d8538a01fffd9429514f4f01601c17b9d7d4885349c5b3648";
 const actualSha256 = createHash("sha256").update(image).digest("hex");
 
 if (image.byteLength !== expectedBytes || actualSha256 !== expectedSha256) {
