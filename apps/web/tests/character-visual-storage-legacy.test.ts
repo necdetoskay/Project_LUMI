@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetObject = vi.fn();
 const mockPutObject = vi.fn();
@@ -25,8 +25,18 @@ function storageRef(bucket: string) {
   return `s3-character-visual://${encodeURIComponent(bucket)}/${KEY}`;
 }
 
+beforeEach(() => {
+  vi.stubEnv("OBJECT_STORAGE_ENDPOINT", "https://storage.test.invalid");
+  vi.stubEnv("OBJECT_STORAGE_BUCKET", "lumi-dev-assets");
+  vi.stubEnv("OBJECT_STORAGE_ACCESS_KEY_ID", "test-access-key");
+  vi.stubEnv("OBJECT_STORAGE_SECRET_ACCESS_KEY", "test-secret-key");
+  vi.stubEnv("OBJECT_STORAGE_PUBLIC_URL", "https://public.test.invalid");
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   mockGetObject.mockReset();
 });
 
@@ -113,7 +123,6 @@ describe("readCharacterVisual legacy double-bucket fallback", () => {
     expect(
       urls.some((url) => url.endsWith(`/${referencedBucket}/${KEY}`)),
     ).toBe(true);
-    vi.unstubAllGlobals();
   });
 
   it("throws OBJECT_STORAGE_GET_FAILED:404 when no layout resolves", async () => {
@@ -128,6 +137,5 @@ describe("readCharacterVisual legacy double-bucket fallback", () => {
     await expect(
       readCharacterVisual(storageRef("lumi-dev-assets")),
     ).rejects.toThrow("OBJECT_STORAGE_GET_FAILED:404");
-    vi.unstubAllGlobals();
   });
 });
