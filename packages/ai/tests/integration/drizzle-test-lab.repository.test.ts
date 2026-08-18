@@ -50,6 +50,7 @@ describe("DrizzleTestLabRepository integration", () => {
       "0002_test_lab_foundation.sql",
       "0003_test_lab_model_costs.sql",
       "0004_test_lab_run_candidates.sql",
+      "0005_test_lab_execution_provenance.sql",
     ]) {
       const migrationPath = path.resolve(
         import.meta.dirname,
@@ -125,6 +126,13 @@ describe("DrizzleTestLabRepository integration", () => {
         latencyMs: 820,
         retryCount: 0,
       },
+      executionSnapshot: {
+        productionOperation: "generateWorldSuggestions",
+        promptKey: "character_onboarding.world_suggestions",
+        promptVersion: 3,
+        renderedPromptFingerprint: "prompt-sha",
+        contextFingerprint: "context-sha",
+      },
       now,
     });
     await coordinator.recordCandidate({
@@ -145,6 +153,13 @@ describe("DrizzleTestLabRepository integration", () => {
     expect(persistedRun?.pricingSnapshot?.perMillionUsd.prompt).toBe(0.25);
     expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004725);
     expect(persistedRun?.usageSnapshot?.actualCostUsd).toBe(0.00045);
+    expect(persistedRun?.executionSnapshot).toEqual({
+      productionOperation: "generateWorldSuggestions",
+      promptKey: "character_onboarding.world_suggestions",
+      promptVersion: 3,
+      renderedPromptFingerprint: "prompt-sha",
+      contextFingerprint: "context-sha",
+    });
     expect(
       (await repository.getCandidate(ids.candidateA))?.candidateStateId,
     ).toBe(ids.stateA);
