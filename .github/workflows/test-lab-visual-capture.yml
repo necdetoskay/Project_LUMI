@@ -1,0 +1,48 @@
+name: Test Lab Visual Capture
+
+on:
+  push:
+    branches:
+      - agent/test-lab-visual-capture
+    paths:
+      - .github/workflows/test-lab-visual-capture.yml
+      - apps/web/tests/e2e/test-lab-visual-capture.spec.ts
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      LUMI_TEST_LAB_CAPTURE_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_TEST_LAB_CAPTURE_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_TEST_LAB_CAPTURE_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard credentials
+        run: |
+          test -n "${LUMI_TEST_LAB_CAPTURE_EMAIL}"
+          test -n "${LUMI_TEST_LAB_CAPTURE_PASSWORD}"
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Capture live Test Lab
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/test-lab-visual-capture.spec.ts
+      - name: Upload Test Lab screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-live-screenshots
+          path: |
+            apps/web/test-results/test-lab-real-viewport.png
+            apps/web/test-results/test-lab-real-full.png
+          if-no-files-found: warn
