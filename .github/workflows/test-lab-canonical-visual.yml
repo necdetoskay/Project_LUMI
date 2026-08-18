@@ -1,0 +1,41 @@
+name: Test Lab Canonical Visual
+
+on:
+  push:
+    branches:
+      - agent/test-lab-canonical-ui-1
+    paths:
+      - .github/workflows/test-lab-canonical-visual.yml
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      LUMI_VISUAL_TEST: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Capture canonical dashboard
+        run: |
+          pnpm --filter @lumi/web exec playwright test \
+            tests/e2e/test-lab-canonical-visual.spec.ts
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-canonical-ui1
+          path: apps/web/test-results/test-lab-canonical-ui1.png
+          if-no-files-found: warn
