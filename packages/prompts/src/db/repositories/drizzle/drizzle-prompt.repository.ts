@@ -97,6 +97,24 @@ export class DrizzlePromptRepository implements PromptRepository {
     return activation!;
   }
 
+  async getRegistryByKey(
+    tx: { select: QueryExecutor["select"] },
+    householdId: string,
+    promptKey: string,
+  ) {
+    const [row] = await tx
+      .select()
+      .from(promptRegistries)
+      .where(
+        and(
+          eq(promptRegistries.householdId, householdId),
+          eq(promptRegistries.promptKey, promptKey),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
   async getActiveVersion(
     tx: { select: QueryExecutor["select"] },
     registryId: string,
