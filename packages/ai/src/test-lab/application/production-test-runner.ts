@@ -1,9 +1,6 @@
 import { TestLabInvariantError } from "../domain/test-lab-errors";
 import type { ModelPricingSnapshot } from "../domain/model-profile";
-import type {
-  TestRun,
-  TestRunCandidate,
-} from "../domain/test-lab-types";
+import type { TestRun, TestRunCandidate } from "../domain/test-lab-types";
 import type { ProductionScenarioAdapter } from "../ports/production-scenario-adapter";
 import type { TestLabRepository } from "../ports/test-lab-repository";
 import { TestLabCoordinator } from "./test-lab-coordinator";
@@ -68,7 +65,9 @@ export class ProductionTestRunner {
       );
     }
     if (result.candidates.length === 0) {
-      throw new TestLabInvariantError("TEST_LAB_ADAPTER_RETURNED_NO_CANDIDATES");
+      throw new TestLabInvariantError(
+        "TEST_LAB_ADAPTER_RETURNED_NO_CANDIDATES",
+      );
     }
 
     const recorded = await this.coordinator.recordRunCandidates({
@@ -90,8 +89,7 @@ export class ProductionTestRunner {
         productionOperation: input.productionOperation,
         promptKey: result.provenance.promptKey,
         promptVersion: result.provenance.promptVersion,
-        renderedPromptFingerprint:
-          result.provenance.renderedPromptFingerprint,
+        renderedPromptFingerprint: result.provenance.renderedPromptFingerprint,
         contextFingerprint: result.provenance.contextFingerprint,
       },
       now: input.now,
