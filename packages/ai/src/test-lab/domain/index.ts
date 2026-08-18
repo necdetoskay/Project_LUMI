@@ -1,4 +1,5 @@
 export * from "./character-onboarding-scenario";
+export * from "./evaluation";
 export * from "./model-profile";
 export * from "./state-diff";
 export * from "./story-scenario";
