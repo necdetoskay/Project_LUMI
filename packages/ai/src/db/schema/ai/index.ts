@@ -23,3 +23,14 @@ export type {
   TestLabRunCandidateRecord,
   TestLabSelectionRecord,
 } from "./test-lab";
+
+export {
+  testLabEvaluationRubrics,
+  testLabEvaluationExecutions,
+  testLabCandidateEvaluations,
+} from "./test-lab-evaluation";
+export type {
+  TestLabEvaluationRubricRecord,
+  TestLabEvaluationExecutionRecord,
+  TestLabCandidateEvaluationRecord,
+} from "./test-lab-evaluation";
