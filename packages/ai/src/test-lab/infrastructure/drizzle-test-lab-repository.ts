@@ -35,16 +35,19 @@ export class DrizzleTestLabRepository implements TestLabRepository {
   constructor(private readonly db: Database) {}
 
   async saveSession(session: TestSession): Promise<void> {
-    await this.db.insert(testLabSessions).values({
-      id: session.id,
-      scenarioKey: session.scenarioKey,
-      mode: session.mode,
-      activeBranchId: session.activeBranchId,
-      createdAt: new Date(session.createdAt),
-    }).onConflictDoUpdate({
-      target: testLabSessions.id,
-      set: { activeBranchId: session.activeBranchId },
-    });
+    await this.db
+      .insert(testLabSessions)
+      .values({
+        id: session.id,
+        scenarioKey: session.scenarioKey,
+        mode: session.mode,
+        activeBranchId: session.activeBranchId,
+        createdAt: new Date(session.createdAt),
+      })
+      .onConflictDoUpdate({
+        target: testLabSessions.id,
+        set: { activeBranchId: session.activeBranchId },
+      });
   }
 
   async getSession(id: TestSessionId): Promise<TestSession | null> {
