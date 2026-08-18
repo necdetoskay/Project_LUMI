@@ -291,11 +291,16 @@ export {
   abandonCharacterCreationCycle,
 } from "./character-creation-cycle.service";
 export type { WorldFeelingKey } from "./character-creation-cycle.service";
-export { resolveActivePrompt } from "./prompt-runtime.service";
+export {
+  resolveActivePrompt,
+  resolvePromptVersion,
+} from "./prompt-runtime.service";
 export type { PromptContext } from "./prompt-runtime.service";
 export {
   listPromptVersions,
+  getPromptWorkspace,
   createPromptDraft,
+  createPromptDraftFromVersion,
   clonePromptVersion,
   activatePromptVersion,
   rollbackPrompt,
@@ -303,6 +308,7 @@ export {
 } from "./prompt-management.service";
 export type {
   PromptDraftInput,
+  PromptDraftPatch,
   PromptMutationContext,
 } from "./prompt-management.service";
 export { validatePromptDraft } from "./prompt-management.validation";
