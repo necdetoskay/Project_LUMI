@@ -9,6 +9,7 @@ export * from "./application/creative-genesis-pipeline.service";
 export * from "./application/saga-foundation.service";
 export * from "./application/onboarding-foundation-commit.service";
 export * from "./application/character-foundation-finalization.service";
+export * from "./application/character-onboarding-test-lab-adapter.service";
 export * from "./application/living-world-bootstrap.service";
 export * from "./application/living-world-bootstrap-manifest.store";
 export * from "./application/living-world-bootstrap-profile-materializer.service";
