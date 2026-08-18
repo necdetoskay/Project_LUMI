@@ -1,7 +1,10 @@
 import { resolveActivePrompt } from "./prompt-runtime.service";
 import { generateTextWithLlm } from "./text-llm-gateway.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
-import { recordAiGenerationTrace } from "./ai-generation-trace.service";
+import {
+  createAiGenerationContextTraceEvidence,
+  recordAiGenerationTrace,
+} from "./ai-generation-trace.service";
 import { buildGenerationContext } from "./generation-context.service";
 import {
   assembleGenerationContext,
@@ -37,6 +40,8 @@ export async function generateWorldCharacterSuggestions(
     throw new Error("WORLD_FEELING_REQUIRED");
 
   const assembledContext = assembleGenerationContext(generationContext);
+  const contextEvidence =
+    createAiGenerationContextTraceEvidence(assembledContext);
   const context = {
     ...toPromptGenerationContext(assembledContext),
     worldFeeling,
@@ -72,6 +77,7 @@ export async function generateWorldCharacterSuggestions(
       promptKey: prompt.promptKey,
       promptVersion: prompt.promptVersion,
       inputContext: context,
+      contextEvidence,
       outputPayload: { raw: generated.content },
       validationStatus: "invalid",
       generated,
@@ -87,6 +93,7 @@ export async function generateWorldCharacterSuggestions(
     promptKey: prompt.promptKey,
     promptVersion: prompt.promptVersion,
     inputContext: context,
+    contextEvidence,
     outputPayload: { suggestions },
     validationStatus: "valid",
     generated,
