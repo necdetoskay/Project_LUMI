@@ -93,6 +93,10 @@ export default function TestLabClient() {
   );
 
   async function createSession() {
+    if (!householdId.trim() || !childProfileId.trim()) {
+      setMessage("Household ID ve Child Profile ID gerekli.");
+      return;
+    }
     setBusy(true);
     setMessage("");
     setResult(null);
@@ -102,7 +106,12 @@ export default function TestLabClient() {
         string,
         unknown
       >;
-      const payload = await post({ action: "create-session", initialState });
+      const payload = await post({
+        action: "create-session",
+        initialState,
+        householdId,
+        childProfileId,
+      });
       setSessionId(payload.data.session.id);
       setBranchId(payload.data.session.activeBranchId);
       setParentStateId(payload.data.initialState.id);
@@ -230,7 +239,11 @@ export default function TestLabClient() {
             }}
           />
         </label>
-        <button disabled={busy} onClick={createSession} style={buttonStyle}>
+        <button
+          disabled={busy || !householdId.trim() || !childProfileId.trim()}
+          onClick={createSession}
+          style={buttonStyle}
+        >
           Yeni sandbox session oluştur
         </button>
         {sessionId ? (
