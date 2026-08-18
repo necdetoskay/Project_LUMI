@@ -138,7 +138,6 @@ export function EvaluationPanel(props: {
     }
     void inspect();
     // candidateKey intentionally represents the candidate-set identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidateKey]);
 
   async function inspect() {
