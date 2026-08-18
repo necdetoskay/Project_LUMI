@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getParentSessionCookie } from "@/lib/auth/http";
@@ -20,5 +21,17 @@ export default async function ContextInspectorPage() {
     redirect("/onboarding");
   }
 
-  return <ContextInspectorClientPage householdId={household.id} />;
+  return (
+    <>
+      <div className="mx-auto flex w-full max-w-7xl justify-end px-4 pt-4 sm:px-6 lg:px-8">
+        <Link
+          href="/app/settings/context-inspector/traces"
+          className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+        >
+          AI Generation Traces →
+        </Link>
+      </div>
+      <ContextInspectorClientPage householdId={household.id} />
+    </>
+  );
 }
