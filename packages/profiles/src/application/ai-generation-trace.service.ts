@@ -82,7 +82,9 @@ function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function toInspectorSection(value: unknown): AiGenerationContextInspectorSection | null {
+function toInspectorSection(
+  value: unknown,
+): AiGenerationContextInspectorSection | null {
   const section = asRecord(value);
   if (!section) return null;
   const sectionName = asString(section.section);
@@ -151,8 +153,9 @@ export function toAiGenerationContextInspectorView(
   const sections = Array.isArray(provenance?.sections)
     ? provenance.sections
         .map(toInspectorSection)
-        .filter((section): section is AiGenerationContextInspectorSection =>
-          Boolean(section),
+        .filter(
+          (section): section is AiGenerationContextInspectorSection =>
+            Boolean(section),
         )
     : [];
   const droppedSections = Array.isArray(provenance?.droppedSections)
