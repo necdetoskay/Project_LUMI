@@ -1,0 +1,39 @@
+name: Temporary Format Ops Env Contract
+
+on:
+  push:
+    branches:
+      - agent/ops-turbo-env-contract
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/ops-turbo-env-contract
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts apps/web/tests/turbo-env-contract.test.ts
+      - name: Commit formatting
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts apps/web/tests/turbo-env-contract.test.ts
+          git commit -m "style(ops): format env contract coverage"
+          git push origin HEAD:agent/ops-turbo-env-contract
