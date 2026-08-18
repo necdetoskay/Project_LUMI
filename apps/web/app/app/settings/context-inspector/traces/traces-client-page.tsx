@@ -204,7 +204,8 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
     ? Math.min(
         100,
         Math.round(
-          ((trace.context.estimatedTokens ?? 0) / trace.context.maxContextTokens) *
+          ((trace.context.estimatedTokens ?? 0) /
+            trace.context.maxContextTokens) *
             100,
         ),
       )
@@ -294,11 +295,13 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
                     {section.section}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {section.reason ?? "unknown reason"} · {section.authority ?? "unknown authority"}
+                    {section.reason ?? "unknown reason"} ·{" "}
+                    {section.authority ?? "unknown authority"}
                   </p>
                 </div>
                 <span className="text-xs font-medium text-slate-600">
-                  {formatNumber(section.estimatedTokens)} / {formatNumber(section.maxTokens)} tokens
+                  {formatNumber(section.estimatedTokens)} /{" "}
+                  {formatNumber(section.maxTokens)} tokens
                 </span>
               </div>
               <p className="mt-2 text-xs text-slate-500">
@@ -307,7 +310,10 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
               </p>
               {section.compaction ? (
                 <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Compacted with {section.compaction.strategy ?? "unknown strategy"}: {formatNumber(section.compaction.originalTokens)} → {formatNumber(section.compaction.compactedTokens)} tokens, {formatNumber(section.compaction.removedItems)} items removed.
+                  Compacted with {section.compaction.strategy ?? "unknown strategy"}:{" "}
+                  {formatNumber(section.compaction.originalTokens)} →{" "}
+                  {formatNumber(section.compaction.compactedTokens)} tokens, {" "}
+                  {formatNumber(section.compaction.removedItems)} items removed.
                 </p>
               ) : null}
             </div>
