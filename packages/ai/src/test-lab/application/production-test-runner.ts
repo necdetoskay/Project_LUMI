@@ -1,7 +1,9 @@
+import { createStateDiff } from "../domain/state-diff";
 import { TestLabInvariantError } from "../domain/test-lab-errors";
 import type { ModelPricingSnapshot } from "../domain/model-profile";
 import type {
   JsonObject,
+  StateDiff,
   TestRun,
   TestRunCandidate,
 } from "../domain/test-lab-types";
@@ -15,6 +17,11 @@ export interface TestLabIdFactory {
 
 const DEFAULT_ID_FACTORY: TestLabIdFactory = {
   create: () => crypto.randomUUID(),
+};
+
+export type ProductionTestRunCandidate = TestRunCandidate & {
+  candidateState: JsonObject;
+  stateDiff: StateDiff;
 };
 
 export class ProductionTestRunner {
@@ -41,7 +48,7 @@ export class ProductionTestRunner {
       childProfileId: string;
     };
     now: string;
-  }): Promise<{ run: TestRun; candidates: TestRunCandidate[] }> {
+  }): Promise<{ run: TestRun; candidates: ProductionTestRunCandidate[] }> {
     const session = await this.repository.getSession(input.sessionId);
     if (!session) {
       throw new TestLabInvariantError(
@@ -115,7 +122,16 @@ export class ProductionTestRunner {
 
     return {
       run: recorded.run,
-      candidates: recorded.candidates.map((value) => value.candidate),
+      candidates: recorded.candidates.map(({ candidate, state }) => ({
+        ...candidate,
+        candidateState: state.value,
+        stateDiff: createStateDiff({
+          fromStateId: input.parentStateId,
+          toStateId: state.id,
+          before: parentState.value,
+          after: state.value,
+        }),
+      })),
     };
   }
 }
