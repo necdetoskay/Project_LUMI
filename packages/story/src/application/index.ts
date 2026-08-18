@@ -168,6 +168,17 @@ export type {
   StoryContinuityContextPort,
 } from "./story-continuity-context";
 
+export {
+  resolveStoryNarrativeTarget,
+  STORY_CUSTOM_LENGTH_MAX,
+  STORY_CUSTOM_LENGTH_MIN,
+  STORY_LENGTH_PRESETS,
+} from "./story-length-policy";
+export type {
+  StoryLengthPreset,
+  StoryNarrativeTarget,
+} from "./story-length-policy";
+
 export { buildStoryScenePrompt } from "./story-scene-prompt";
 export type { StoryScenePromptInput } from "./story-scene-prompt";
 
