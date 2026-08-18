@@ -22,6 +22,9 @@ export interface TestLabRepository {
   getRun(id: TestRunId): Promise<TestRun | null>;
   listRuns(branchId: TestBranchId): Promise<TestRun[]>;
   saveSelection(selection: TestSelection): Promise<void>;
-  getSelection(branchId: TestBranchId, phaseId: TestPhaseId): Promise<TestSelection | null>;
+  getSelection(
+    branchId: TestBranchId,
+    phaseId: TestPhaseId,
+  ): Promise<TestSelection | null>;
   listSelections(branchId: TestBranchId): Promise<TestSelection[]>;
 }
