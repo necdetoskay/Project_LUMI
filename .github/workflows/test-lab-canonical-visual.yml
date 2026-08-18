@@ -35,10 +35,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Install Chromium
-        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
       - name: Capture canonical dashboard
         run: |
+          google-chrome --version
           pnpm --filter @lumi/web exec playwright test \
             tests/e2e/test-lab-canonical-visual.spec.ts
       - name: Upload screenshot
