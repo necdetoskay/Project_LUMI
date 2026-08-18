@@ -40,7 +40,7 @@ export const testLabEvaluationJudgeAdapter: EvaluationJudgeAdapter = {
 
     return {
       judgeId: `openrouter:${request.judgeModelSlug}`,
-      judgeModelSlug: response.model,
+      judgeModelSlug: request.judgeModelSlug,
       candidates: parsed.candidates,
       usageSnapshot: {
         promptTokens,
