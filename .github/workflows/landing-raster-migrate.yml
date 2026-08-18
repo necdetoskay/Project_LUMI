@@ -1,0 +1,49 @@
+name: Landing Raster Migrate
+
+on:
+  push:
+    branches:
+      - agent/landing-page-v2-raster
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/landing-page-v2-raster
+      - name: Replace vector hero with raster artwork
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page = Path('apps/web/app/page.tsx')
+          text = page.read_text()
+          text = text.replace('src="/lumi-landing-scene.svg"', 'src="/lumi-landing-hero.webp"')
+          text = text.replace('width={1200}\n              height={900}', 'width={640}\n              height={347}')
+          page.write_text(text)
+
+          css = Path('apps/web/app/landing-v2.module.css')
+          styles = css.read_text()
+          styles = styles.replace('width: min(760px, 100%);', 'width: min(860px, 100%);')
+          styles = styles.replace('border-radius: 34px;', 'border-radius: 28px;')
+          styles = styles.replace('mask-image: linear-gradient(90deg, transparent 0%, #000 9%, #000 100%);', 'mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 100%);')
+          css.write_text(styles)
+          PY
+          rm -f apps/web/public/lumi-landing-scene.svg
+      - name: Commit migration
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Raster migration already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/page.tsx apps/web/app/landing-v2.module.css apps/web/public/lumi-landing-scene.svg
+          git commit -m "feat(landing): render approved raster hero artwork"
+          git push origin HEAD:agent/landing-page-v2-raster
