@@ -44,8 +44,23 @@ export interface EvaluationUsageSnapshot {
   latencyMs: number;
 }
 
+export interface EvaluationExecution {
+  id: string;
+  sessionId: string;
+  rubricKey: string;
+  rubricRevision: number;
+  mode: EvaluationMode;
+  authorType: EvaluationAuthorType;
+  authorId: string;
+  judgeModelSlug: string | null;
+  usageSnapshot: EvaluationUsageSnapshot | null;
+  provenance: JsonObject | null;
+  createdAt: string;
+}
+
 export interface CandidateEvaluation {
   id: string;
+  evaluationExecutionId: string;
   sessionId: string;
   runId: string;
   candidateId: string;
@@ -58,8 +73,6 @@ export interface CandidateEvaluation {
   findings: EvaluationFinding[];
   overallScore: number;
   rank: number | null;
-  usageSnapshot: EvaluationUsageSnapshot | null;
-  provenance: JsonObject | null;
   createdAt: string;
 }
 
