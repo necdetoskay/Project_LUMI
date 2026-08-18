@@ -97,7 +97,9 @@ export default function HomePage() {
       <main>
         <section className={styles.hero} aria-labelledby="landing-title">
           <div className={styles.heroCopy}>
-            <span className={styles.kicker}>Çocuğuna özel yaşayan maceralar</span>
+            <span className={styles.kicker}>
+              Çocuğuna özel yaşayan maceralar
+            </span>
             <h1 id="landing-title">
               Çocuğunuz için yaşayan bir <span>hikâye evreni</span>
             </h1>
@@ -129,7 +131,10 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className={styles.trustPoints} aria-label="LUMI güven özellikleri">
+            <div
+              className={styles.trustPoints}
+              aria-label="LUMI güven özellikleri"
+            >
               <span>
                 <span className="material-symbols-outlined" aria-hidden="true">
                   child_care
@@ -151,7 +156,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className={styles.heroVisual} aria-label="LUMI hikâye evreni önizlemesi">
+          <div
+            className={styles.heroVisual}
+            aria-label="LUMI hikâye evreni önizlemesi"
+          >
             <div className={styles.heroGlow} aria-hidden="true" />
             <Image
               className={styles.heroImage}
@@ -170,11 +178,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className={styles.features} id="features" aria-label="LUMI özellikleri">
+        <section
+          className={styles.features}
+          id="features"
+          aria-label="LUMI özellikleri"
+        >
           {features.map((feature) => (
             <article className={styles.featureCard} key={feature.title}>
               <div className={styles.featureIcon} aria-hidden="true">
-                <span className="material-symbols-outlined">{feature.icon}</span>
+                <span className="material-symbols-outlined">
+                  {feature.icon}
+                </span>
               </div>
               <div>
                 <h2>{feature.title}</h2>
@@ -195,7 +209,12 @@ export default function HomePage() {
                 haritalara kadar farklı tonlarda dünyalar çocuğunu bekliyor.
               </p>
             </div>
-            <button className={styles.ghostButton} type="button" disabled title="Yakında">
+            <button
+              className={styles.ghostButton}
+              type="button"
+              disabled
+              title="Yakında"
+            >
               Tüm Hikâyeleri Gör
               <span className="material-symbols-outlined" aria-hidden="true">
                 arrow_forward
@@ -211,7 +230,9 @@ export default function HomePage() {
                 key={story.title}
               >
                 <div className={styles.storyArt} aria-hidden="true">
-                  <span className="material-symbols-outlined">{story.icon}</span>
+                  <span className="material-symbols-outlined">
+                    {story.icon}
+                  </span>
                   <i />
                 </div>
                 <div className={styles.storyCardBody}>
@@ -224,7 +245,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className={styles.trustBand} id="trust" aria-label="LUMI güven yaklaşımı">
+        <section
+          className={styles.trustBand}
+          id="trust"
+          aria-label="LUMI güven yaklaşımı"
+        >
           <div className={styles.trustShield} aria-hidden="true">
             <span className="material-symbols-outlined">shield_with_heart</span>
           </div>

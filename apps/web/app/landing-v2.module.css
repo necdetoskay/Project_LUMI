@@ -28,8 +28,16 @@
   overflow: hidden;
   color: var(--text);
   background:
-    radial-gradient(circle at 76% 13%, rgba(93, 58, 183, 0.28), transparent 24rem),
-    radial-gradient(circle at 12% 36%, rgba(24, 90, 131, 0.18), transparent 27rem),
+    radial-gradient(
+      circle at 76% 13%,
+      rgba(93, 58, 183, 0.28),
+      transparent 24rem
+    ),
+    radial-gradient(
+      circle at 12% 36%,
+      rgba(24, 90, 131, 0.18),
+      transparent 27rem
+    ),
     linear-gradient(180deg, #05081a 0%, #07112d 48%, #061027 100%);
 }
 
@@ -342,8 +350,11 @@
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background:
-    linear-gradient(145deg, rgba(28, 37, 78, 0.78), rgba(10, 17, 43, 0.88));
+  background: linear-gradient(
+    145deg,
+    rgba(28, 37, 78, 0.78),
+    rgba(10, 17, 43, 0.88)
+  );
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.24);
   backdrop-filter: blur(14px);
 }
@@ -356,7 +367,11 @@
   border: 1px solid rgba(240, 197, 107, 0.28);
   border-radius: 50%;
   color: var(--gold);
-  background: radial-gradient(circle at 40% 35%, rgba(164, 98, 255, 0.34), rgba(43, 31, 93, 0.7));
+  background: radial-gradient(
+    circle at 40% 35%,
+    rgba(164, 98, 255, 0.34),
+    rgba(43, 31, 93, 0.7)
+  );
   box-shadow: 0 0 25px rgba(124, 74, 223, 0.14);
 }
 
@@ -463,11 +478,19 @@
 }
 
 .storyTone_night .storyArt {
-  background: radial-gradient(circle at 70% 22%, #f9e2a1 0 4%, transparent 5%), linear-gradient(160deg, #17245c, #090d26 75%);
+  background:
+    radial-gradient(circle at 70% 22%, #f9e2a1 0 4%, transparent 5%),
+    linear-gradient(160deg, #17245c, #090d26 75%);
 }
 
 .storyTone_forest .storyArt {
-  background: radial-gradient(circle at 50% 55%, rgba(239, 177, 88, 0.36), transparent 18%), linear-gradient(145deg, #1d4a45, #0b1f28 72%);
+  background:
+    radial-gradient(
+      circle at 50% 55%,
+      rgba(239, 177, 88, 0.36),
+      transparent 18%
+    ),
+    linear-gradient(145deg, #1d4a45, #0b1f28 72%);
 }
 
 .storyTone_sky .storyArt {
@@ -475,7 +498,13 @@
 }
 
 .storyTone_map .storyArt {
-  background: radial-gradient(circle at 50% 50%, rgba(247, 201, 111, 0.26), transparent 30%), linear-gradient(145deg, #7b503d, #231834 76%);
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(247, 201, 111, 0.26),
+      transparent 30%
+    ),
+    linear-gradient(145deg, #7b503d, #231834 76%);
 }
 
 .storyCardBody {
@@ -521,7 +550,11 @@
   padding: 22px 24px;
   border: 1px solid rgba(240, 197, 107, 0.2);
   border-radius: 22px;
-  background: linear-gradient(135deg, rgba(20, 29, 62, 0.92), rgba(11, 17, 43, 0.92));
+  background: linear-gradient(
+    135deg,
+    rgba(20, 29, 62, 0.92),
+    rgba(11, 17, 43, 0.92)
+  );
   box-shadow: 0 22px 55px rgba(0, 3, 20, 0.3);
 }
 
@@ -532,7 +565,11 @@
   place-items: center;
   border-radius: 20px;
   color: var(--gold);
-  background: radial-gradient(circle, rgba(239, 187, 97, 0.25), rgba(101, 54, 175, 0.22));
+  background: radial-gradient(
+    circle,
+    rgba(239, 187, 97, 0.25),
+    rgba(101, 54, 175, 0.22)
+  );
 }
 
 .trustShield :global(.material-symbols-outlined) {
