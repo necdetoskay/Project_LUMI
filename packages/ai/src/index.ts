@@ -4,3 +4,4 @@ export * from "./infrastructure";
 export * from "./application";
 export * from "./validation";
 export * from "./usage";
+export * from "./test-lab";

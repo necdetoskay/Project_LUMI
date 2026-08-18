@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { TestLabCoordinator } from "../src/application/test-lab-coordinator";
-import { InMemoryTestLabRepository } from "../src/infrastructure/in-memory-test-lab-repository";
+import { TestLabCoordinator } from "../src/test-lab/application/test-lab-coordinator";
+import { InMemoryTestLabRepository } from "../src/test-lab/infrastructure/in-memory-test-lab-repository";
 
 describe("TestLabCoordinator", () => {
   it("keeps candidate states isolated and advances only the selected candidate", async () => {
