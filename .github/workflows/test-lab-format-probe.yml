@@ -1,0 +1,46 @@
+name: Test Lab Format Probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-lab-format-probe.yml"
+      - "packages/ai/**"
+
+permissions:
+  contents: read
+
+jobs:
+  format-probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format known failing files and print exact diff
+        run: |
+          pnpm exec prettier --write \
+            packages/ai/src/test-lab/application/test-lab-coordinator.ts \
+            packages/ai/src/test-lab/domain/state-diff.ts \
+            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts \
+            packages/ai/tests/integration/drizzle-test-lab.repository.test.ts \
+            packages/ai/tests/test-lab-coordinator.test.ts \
+            apps/web/app/app/profiles/profiles-client-page.tsx \
+            apps/web/components/profile/delete-profile-button.tsx \
+            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts \
+            packages/profiles/tests/integration/profile-repository.integration.test.ts
+          git diff --no-ext-diff -- \
+            packages/ai/src/test-lab/application/test-lab-coordinator.ts \
+            packages/ai/src/test-lab/domain/state-diff.ts \
+            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts \
+            packages/ai/tests/integration/drizzle-test-lab.repository.test.ts \
+            packages/ai/tests/test-lab-coordinator.test.ts \
+            apps/web/app/app/profiles/profiles-client-page.tsx \
+            apps/web/components/profile/delete-profile-button.tsx \
+            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts \
+            packages/profiles/tests/integration/profile-repository.integration.test.ts
