@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAiDb } from "@lumi/ai/db/client";
 import {
   CHARACTER_ONBOARDING_SCENARIO,
+  createStateDiff,
   createStoryGenerationPhase,
   createStoryGenerationScenario,
   DrizzleTestLabRepository,
@@ -176,6 +177,73 @@ export const POST = observeHandler(async (request: Request) => {
           now,
         });
         return NextResponse.json({ data: result });
+      }
+
+      if (action === "inspect-session") {
+        const sessionId = requiredString(body.sessionId, "sessionId");
+        const householdId = requiredString(body.householdId, "householdId");
+        const childProfileId = requiredString(
+          body.childProfileId,
+          "childProfileId",
+        );
+        const session = await repository.getSession(sessionId);
+        if (!session)
+          throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
+        const branches = await repository.listBranches(sessionId);
+        const timeline = [];
+
+        for (const branch of branches) {
+          const selections = await repository.listSelections(branch.id);
+          for (const selection of selections) {
+            const run = await repository.getRun(selection.runId);
+            if (!run)
+              throw new Error(`TEST_LAB_RUN_NOT_FOUND:${selection.runId}`);
+            const before = await repository.getState(run.parentStateId);
+            const after = await repository.getState(selection.selectedStateId);
+            if (!before || !after) {
+              throw new Error(
+                `TEST_LAB_TIMELINE_STATE_NOT_FOUND:${selection.id}`,
+              );
+            }
+            assertSandboxOwner(before, {
+              parentId: parent.id,
+              householdId,
+              childProfileId,
+            });
+            assertSandboxOwner(after, {
+              parentId: parent.id,
+              householdId,
+              childProfileId,
+            });
+            timeline.push({
+              phaseId: selection.phaseId,
+              runId: selection.runId,
+              candidateId: selection.candidateId,
+              fromStateId: before.id,
+              toStateId: after.id,
+              branchId: branch.id,
+              parentBranchId: branch.parentBranchId,
+              forkedFromPhaseId: branch.forkedFromPhaseId,
+              forked: branch.parentBranchId !== null,
+              selectedAt: selection.createdAt,
+              stateDiff: createStateDiff({
+                fromStateId: before.id,
+                toStateId: after.id,
+                before: before.value,
+                after: after.value,
+              }),
+            });
+          }
+        }
+
+        timeline.sort((a, b) => a.selectedAt.localeCompare(b.selectedAt));
+        return NextResponse.json({
+          data: {
+            session,
+            branches,
+            timeline,
+          },
+        });
       }
 
       return NextResponse.json(
