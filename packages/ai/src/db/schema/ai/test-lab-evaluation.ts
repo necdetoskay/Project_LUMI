@@ -41,10 +41,53 @@ export const testLabEvaluationRubrics = aiSchema.table(
   ],
 );
 
+export const testLabEvaluationExecutions = aiSchema.table(
+  "test_lab_evaluation_executions",
+  {
+    id: primaryId(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => testLabSessions.id, { onDelete: "cascade" }),
+    rubricKey: varchar("rubric_key", { length: 160 }).notNull(),
+    rubricRevision: integer("rubric_revision").notNull(),
+    mode: varchar("mode", { length: 30 }).notNull(),
+    authorType: varchar("author_type", { length: 20 }).notNull(),
+    authorId: varchar("author_id", { length: 240 }).notNull(),
+    judgeModelSlug: varchar("judge_model_slug", { length: 240 }),
+    usageSnapshot: jsonb("usage_snapshot"),
+    provenance: jsonb("provenance"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("test_lab_eval_execution_session_idx").on(table.sessionId),
+    index("test_lab_eval_execution_rubric_idx").on(
+      table.rubricKey,
+      table.rubricRevision,
+    ),
+    check(
+      "chk_test_lab_eval_execution_mode",
+      sql`${table.mode} IN ('absolute', 'blind_ranking')`,
+    ),
+    check(
+      "chk_test_lab_eval_execution_author_type",
+      sql`${table.authorType} IN ('judge', 'human')`,
+    ),
+    check(
+      "chk_test_lab_eval_execution_judge_model",
+      sql`(${table.authorType} = 'judge' AND ${table.judgeModelSlug} IS NOT NULL) OR (${table.authorType} = 'human' AND ${table.judgeModelSlug} IS NULL)`,
+    ),
+  ],
+);
+
 export const testLabCandidateEvaluations = aiSchema.table(
   "test_lab_candidate_evaluations",
   {
     id: primaryId(),
+    evaluationExecutionId: uuid("evaluation_execution_id")
+      .notNull()
+      .references(() => testLabEvaluationExecutions.id, { onDelete: "cascade" }),
     sessionId: uuid("session_id")
       .notNull()
       .references(() => testLabSessions.id, { onDelete: "cascade" }),
@@ -63,13 +106,14 @@ export const testLabCandidateEvaluations = aiSchema.table(
     findings: jsonb("findings").notNull(),
     overallScore: doublePrecision("overall_score").notNull(),
     rank: integer("rank"),
-    usageSnapshot: jsonb("usage_snapshot"),
-    provenance: jsonb("provenance"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
   },
   (table) => [
+    index("test_lab_candidate_eval_execution_idx").on(
+      table.evaluationExecutionId,
+    ),
     index("test_lab_candidate_eval_candidate_idx").on(table.candidateId),
     index("test_lab_candidate_eval_rubric_idx").on(
       table.rubricKey,
@@ -100,5 +144,7 @@ export const testLabCandidateEvaluations = aiSchema.table(
 
 export type TestLabEvaluationRubricRecord =
   typeof testLabEvaluationRubrics.$inferSelect;
+export type TestLabEvaluationExecutionRecord =
+  typeof testLabEvaluationExecutions.$inferSelect;
 export type TestLabCandidateEvaluationRecord =
   typeof testLabCandidateEvaluations.$inferSelect;
