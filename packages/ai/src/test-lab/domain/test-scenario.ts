@@ -13,6 +13,9 @@ export interface TestPhaseDefinition {
   promptKey: string | null;
   directions: TestScenarioDirection[];
   requiredStateKeys: string[];
+  requiredStateKeysByDirection?: Partial<
+    Record<TestScenarioDirection, string[]>
+  >;
   writesStateKey: string | null;
 }
 
@@ -27,7 +30,11 @@ export function phaseIsRunnable(
   input: { direction: TestScenarioDirection; state: JsonObject },
 ): boolean {
   if (!phase.directions.includes(input.direction)) return false;
-  return phase.requiredStateKeys.every((key) => hasPath(input.state, key));
+  const required = [
+    ...phase.requiredStateKeys,
+    ...(phase.requiredStateKeysByDirection?.[input.direction] ?? []),
+  ];
+  return required.every((key) => hasPath(input.state, key));
 }
 
 function hasPath(value: JsonObject, path: string): boolean {
