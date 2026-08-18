@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+import type {
+  CanonicalTestLabDashboardData,
+  CanonicalTestLabRunView,
+} from "@/lib/ai/test-lab-dashboard-view-model";
+
 import styles from "./canonical-dashboard.module.css";
 
 const testItems = [
@@ -21,53 +26,6 @@ const qualityMetrics = [
   { label: "Güvenlik", score: 95, tone: "green" },
 ] as const;
 
-const recentRuns = [
-  {
-    name: "LUMI Çekirdek Suite - 12 May 2025 14:35",
-    model: "openrouter/anthropic/claude-sonnet-4.5",
-    score: "82 / 100",
-    scoreState: "İyi",
-    cost: "$2.48",
-    duration: "13 dk 12 sn",
-    status: "Running",
-  },
-  {
-    name: "LUMI Çekirdek Suite - 12 May 2025 10:12",
-    model: "openai/gpt-4.1",
-    score: "76 / 100",
-    scoreState: "Orta",
-    cost: "$1.92",
-    duration: "11 dk 48 sn",
-    status: "Completed",
-  },
-  {
-    name: "LUMI Çekirdek Suite - 11 May 2025 18:40",
-    model: "openrouter/meta-llama/llama-3.1-70b-instruct",
-    score: "69 / 100",
-    scoreState: "Orta",
-    cost: "$1.35",
-    duration: "14 dk 02 sn",
-    status: "Completed",
-  },
-  {
-    name: "LUMI Çekirdek Suite - 11 May 2025 12:05",
-    model: "cohere/command-r-plus",
-    score: "72 / 100",
-    scoreState: "Orta",
-    cost: "$1.78",
-    duration: "12 dk 21 sn",
-    status: "Completed",
-  },
-  {
-    name: "LUMI Çekirdek Suite - 10 May 2025 16:22",
-    model: "openai/gpt-4o",
-    score: "64 / 100",
-    scoreState: "Zayıf",
-    cost: "$2.10",
-    duration: "10 dk 55 sn",
-    status: "Completed",
-  },
-] as const;
 
 function Icon({
   name,
@@ -220,15 +178,19 @@ function StepperControl({ value }: { value: string }) {
   );
 }
 
-function ModelSettings() {
+function ModelSettings({
+  latestRun,
+}: {
+  latestRun: CanonicalTestLabRunView | null;
+}) {
   return (
     <section className={`${styles.panel} ${styles.modelPanel}`}>
       <PanelTitle icon="settings">Model ve Çalıştırma Ayarları</PanelTitle>
       <label className={styles.fieldLabel}>
         Model
-        <select defaultValue="openrouter/anthropic/claude-sonnet-4.5">
-          <option value="openrouter/anthropic/claude-sonnet-4.5">
-            openrouter/anthropic/claude-sonnet-4.5
+        <select defaultValue={latestRun?.model ?? "no-run"}>
+          <option value={latestRun?.model ?? "no-run"}>
+            {latestRun?.model ?? "Henüz koşu yok"}
           </option>
         </select>
       </label>
@@ -255,12 +217,17 @@ function ModelSettings() {
   );
 }
 
-function LiveRunPanel() {
+function LiveRunPanel({
+  latestRun,
+}: {
+  latestRun: CanonicalTestLabRunView | null;
+}) {
+  const hasRun = latestRun !== null;
   const steps = [
-    ["Örnek üret", "100%", "done"],
-    ["Yargılayıcı model\ndeğerlendir", "68%", "active"],
-    ["Rubrik puanla", "Queued", "queued"],
-    ["Promptu iyileştir", "Queued", "queued"],
+    ["Örnek üret", hasRun ? "100%" : "Queued", hasRun ? "done" : "queued"],
+    ["Yargılayıcı model\ndeğerlendir", "UI-3", "queued"],
+    ["Rubrik puanla", "UI-3", "queued"],
+    ["Promptu iyileştir", "UI-4", "queued"],
     ["Final raporu oluştur", "Queued", "queued"],
   ] as const;
 
@@ -270,13 +237,22 @@ function LiveRunPanel() {
         <div>
           <div className={styles.liveTitleRow}>
             <h2>Canlı Koşu Durumu</h2>
-            <span className={styles.runningBadge}>●&nbsp; Running</span>
+            <span className={styles.runningBadge}>
+              ●&nbsp; {latestRun?.status ?? "Idle"}
+            </span>
           </div>
-          <p>Başlangıç: 12 May 2025 14:35&nbsp; • &nbsp;Tahmini bitiş: 14:48</p>
+          <p>
+            {latestRun
+              ? `Başlangıç: ${latestRun.createdAtLabel} • Süre: ${latestRun.duration}`
+              : "Henüz sandbox koşusu yok."}
+          </p>
         </div>
         <div className={styles.runId}>
-          <span>Koşu ID: run_20250512_1435</span>
-          <Icon name="content_copy" />
+          <span>
+            {latestRun
+              ? `${latestRun.scenarioLabel} • ${latestRun.phaseLabel}`
+              : "Sandbox hazır"}
+          </span>
         </div>
       </div>
 
@@ -304,33 +280,37 @@ function LiveRunPanel() {
         <div className={styles.progressStats}>
           <strong>İlerleme</strong>
           <div className={styles.progressLabels}>
-            <span>Toplam Test</span>
-            <b>35</b>
+            <span>Koşu Kaydı</span>
+            <b>{hasRun ? 1 : 0}</b>
           </div>
           <div className={styles.progressTrack}>
-            <span />
+            <span style={{ width: hasRun ? "100%" : "0%" }} />
           </div>
           <div className={styles.progressBottom}>
             <span>
-              <b>24</b> / 35 tamamlandı
+              <b>{hasRun ? 1 : 0}</b> / {hasRun ? 1 : 0} tamamlandı
             </span>
-            <b>%68</b>
+            <b>{hasRun ? "%100" : "%0"}</b>
           </div>
         </div>
         <div className={styles.currentJudge}>
           <div>
             <span>Geçerli Adım: </span>
-            <strong>Yargılayıcı model değerlendir</strong>
+            <strong>{hasRun ? "Run kaydı tamamlandı" : "Koşu bekleniyor"}</strong>
           </div>
-          <p>openrouter/anthropic/claude-sonnet-4.5-judge</p>
-          <span>24 / 35 örnek değerlendirildi</span>
-          <Icon name="progress_activity" />
+          <p>{latestRun?.model ?? "Model seçimi bekleniyor"}</p>
+          <span>
+            {latestRun
+              ? `${latestRun.scenarioLabel} • ${latestRun.phaseLabel}`
+              : "Advanced yüzeyinden yeni koşu başlatılabilir."}
+          </span>
+          <Icon name={hasRun ? "check_circle" : "schedule"} />
         </div>
       </div>
 
       <div className={styles.chartBox}>
         <div className={styles.chartArea}>
-          <strong>Canlı Skor Trendi</strong>
+          <strong>Canlı Skor Trendi · UI-3</strong>
           <svg
             className={styles.scoreChart}
             viewBox="0 0 560 120"
@@ -389,10 +369,10 @@ function LiveRunPanel() {
         <div className={styles.currentScore}>
           <span>Güncel Skor</span>
           <div>
-            <strong>82</strong>
+            <strong>—</strong>
             <small>/100</small>
           </div>
-          <b>●&nbsp; İyi</b>
+          <b>●&nbsp; UI-3</b>
         </div>
       </div>
     </section>
@@ -447,7 +427,11 @@ function PromptSuggestion() {
   );
 }
 
-function RecentRuns() {
+function RecentRuns({
+  runs,
+}: {
+  runs: CanonicalTestLabRunView[];
+}) {
   return (
     <section className={`${styles.panel} ${styles.recentPanel}`}>
       <h2>Son Koşular</h2>
@@ -465,7 +449,7 @@ function RecentRuns() {
             </tr>
           </thead>
           <tbody>
-            {recentRuns.map((run) => (
+            {runs.map((run) => (
               <tr key={`${run.name}:${run.model}`}>
                 <td>{run.name}</td>
                 <td>{run.model}</td>
@@ -473,11 +457,7 @@ function RecentRuns() {
                   <strong>{run.score}</strong>
                   <span
                     className={
-                      run.scoreState === "Zayıf"
-                        ? styles.scoreBad
-                        : run.scoreState === "Orta"
-                          ? styles.scoreMedium
-                          : styles.scoreGood
+                      styles.scoreMedium
                     }
                   >
                     ● {run.scoreState}
@@ -488,14 +468,14 @@ function RecentRuns() {
                 <td>
                   <span
                     className={
-                      run.status === "Running"
+                      run.status === "Failed"
                         ? styles.statusRunning
                         : styles.statusCompleted
                     }
                   >
                     <Icon
                       name={
-                        run.status === "Running" ? "progress_activity" : "check"
+                        run.status === "Failed" ? "error" : "check"
                       }
                     />
                     {run.status}
@@ -506,6 +486,11 @@ function RecentRuns() {
                 </td>
               </tr>
             ))}
+            {runs.length === 0 ? (
+              <tr>
+                <td colSpan={7}>Henüz kayıtlı Test Lab koşusu yok.</td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
@@ -513,7 +498,12 @@ function RecentRuns() {
   );
 }
 
-export default function CanonicalTestLabDashboard() {
+export default function CanonicalTestLabDashboard({
+  data,
+}: {
+  data: CanonicalTestLabDashboardData;
+}) {
+  const latestRun = data.latestRun;
   return (
     <div
       className={styles.viewportShell}
@@ -552,10 +542,12 @@ export default function CanonicalTestLabDashboard() {
             icon="account_tree"
             accent="purple"
             label="Aktif Suite"
-            footnote={<>Son güncelleme: 12 May 2025</>}
+            footnote={<>Son koşu: {latestRun?.createdAtLabel ?? "Henüz yok"}</>}
           >
             <strong className={styles.kpiTextValue}>LUMI Çekirdek Suite</strong>
-            <span className={styles.versionBadge}>v2.4</span>
+            <span className={styles.versionBadge}>
+              {latestRun?.scenarioLabel ?? "Hazır"}
+            </span>
           </KpiCard>
           <KpiCard
             icon="monitoring"
@@ -563,22 +555,22 @@ export default function CanonicalTestLabDashboard() {
             label="Son Koşu Skoru"
             footnote={
               <>
-                <span className={styles.goodDot}>● İyi</span>
-                <span>12 May 2025 14:35</span>
+                <span className={styles.goodDot}>● UI-3</span>
+                <span>{latestRun?.createdAtLabel ?? "Değerlendirme yok"}</span>
               </>
             }
           >
-            <strong className={styles.kpiScoreGood}>82</strong>
+            <strong className={styles.kpiScoreGood}>—</strong>
             <span>/ 100</span>
           </KpiCard>
           <KpiCard
             icon="check"
             accent="blue"
             label="Başarılı Test"
-            footnote={<>%80 başarı oranı</>}
+            footnote={<>Değerlendirme UI-3 kapsamında</>}
           >
-            <strong className={styles.kpiScoreBlue}>28</strong>
-            <span>/ 35</span>
+            <strong className={styles.kpiScoreBlue}>—</strong>
+            <span>/ —</span>
           </KpiCard>
           <KpiCard
             icon="attach_money"
@@ -586,23 +578,23 @@ export default function CanonicalTestLabDashboard() {
             label="Tahmini Maliyet"
             footnote={<>Bu koşu için tahmini</>}
           >
-            <strong className={styles.kpiMoney}>$2.48</strong>
+            <strong className={styles.kpiMoney}>{latestRun?.cost ?? "—"}</strong>
           </KpiCard>
         </section>
 
         <section className={styles.workspaceGrid}>
           <div className={styles.leftColumn}>
             <TestPlan />
-            <ModelSettings />
+            <ModelSettings latestRun={latestRun} />
           </div>
-          <LiveRunPanel />
+          <LiveRunPanel latestRun={latestRun} />
           <div className={styles.rightColumn}>
             <QualityPanel />
             <PromptSuggestion />
           </div>
         </section>
 
-        <RecentRuns />
+        <RecentRuns runs={data.recentRuns} />
 
         <Link
           className={styles.advancedLink}
