@@ -1,3 +1,8 @@
+import type {
+  ModelPricingSnapshot,
+  TestRunUsageSnapshot,
+} from "./model-profile";
+
 export type TestSessionId = string;
 export type TestBranchId = string;
 export type TestPhaseId = string;
@@ -50,6 +55,9 @@ export interface TestRun {
   parentStateId: StateSnapshotId;
   candidateStateId: StateSnapshotId;
   status: TestRunStatus;
+  modelSlug: string | null;
+  pricingSnapshot: ModelPricingSnapshot | null;
+  usageSnapshot: TestRunUsageSnapshot | null;
   createdAt: string;
 }
 
