@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getProfileDb } from "./db";
 import { aiPromptVersions } from "../db/schema/profile";
 
@@ -29,27 +29,39 @@ function render(
   });
 }
 
-export async function resolveActivePrompt(
-  promptKey: string,
-  context: PromptContext,
-) {
+async function resolvePromptRecord(promptKey: string, version?: number) {
   const db = getProfileDb();
+  const conditions = [eq(aiPromptVersions.promptKey, promptKey)];
+  if (version === undefined) {
+    conditions.push(eq(aiPromptVersions.status, "active"));
+  } else {
+    conditions.push(eq(aiPromptVersions.version, version));
+  }
   const [record] = await db
     .select()
     .from(aiPromptVersions)
-    .where(
-      and(
-        eq(aiPromptVersions.promptKey, promptKey),
-        eq(aiPromptVersions.status, "active"),
-      ),
-    )
+    .where(and(...conditions))
     .limit(1);
-  if (!record) throw new Error(`ACTIVE_PROMPT_NOT_FOUND:${promptKey}`);
+  if (!record) {
+    throw new Error(
+      version === undefined
+        ? `ACTIVE_PROMPT_NOT_FOUND:${promptKey}`
+        : `PROMPT_VERSION_NOT_FOUND:${promptKey}:${version}`,
+    );
+  }
+  return record;
+}
+
+function renderPromptRecord(
+  record: Awaited<ReturnType<typeof resolvePromptRecord>>,
+  context: PromptContext,
+) {
   const allowed = record.allowedVariables ?? [];
   const required = record.requiredVariables ?? [];
   return {
     promptKey: record.promptKey,
     promptVersion: record.version,
+    promptStatus: record.status,
     system: render(record.systemTemplate, allowed, required, context),
     user: render(record.userTemplate, allowed, required, context),
     outputSchema: record.outputSchema,
@@ -58,4 +70,19 @@ export async function resolveActivePrompt(
     modelOverride: record.modelOverride,
     generationConfig: record.generationConfig,
   };
+}
+
+export async function resolveActivePrompt(
+  promptKey: string,
+  context: PromptContext,
+) {
+  return renderPromptRecord(await resolvePromptRecord(promptKey), context);
+}
+
+export async function resolvePromptVersion(
+  promptKey: string,
+  version: number,
+  context: PromptContext,
+) {
+  return renderPromptRecord(await resolvePromptRecord(promptKey, version), context);
 }
