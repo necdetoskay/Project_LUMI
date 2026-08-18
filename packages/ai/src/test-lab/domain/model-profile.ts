@@ -1,3 +1,5 @@
+import type { ProviderUsage } from "../../domain/generation-types";
+
 export type PricingProvenance = "openrouter_catalog" | "manual_override";
 
 export interface ModelPricingPerTokenUsd {
@@ -48,16 +50,25 @@ export interface TestRunUsageSnapshot {
   retryCount: number;
 }
 
+export class InvalidModelPricingError extends Error {
+  constructor(field: keyof ModelPricingPerTokenUsd, value: number) {
+    super(`INVALID_MODEL_PRICING:${field}:${String(value)}`);
+    this.name = "InvalidModelPricingError";
+  }
+}
+
 export function pricingSnapshot(input: {
   source: PricingProvenance;
   capturedAt: string;
   perTokenUsd: ModelPricingPerTokenUsd;
 }): ModelPricingSnapshot {
+  assertPricing(input.perTokenUsd);
+
   return {
     source: input.source,
     currency: "USD",
     capturedAt: input.capturedAt,
-    perTokenUsd: input.perTokenUsd,
+    perTokenUsd: { ...input.perTokenUsd },
     perMillionUsd: {
       prompt: perMillion(input.perTokenUsd.prompt),
       completion: perMillion(input.perTokenUsd.completion),
@@ -65,6 +76,40 @@ export function pricingSnapshot(input: {
       inputCacheRead: perMillion(input.perTokenUsd.inputCacheRead),
       inputCacheWrite: perMillion(input.perTokenUsd.inputCacheWrite),
     },
+  };
+}
+
+export function createTestRunUsageSnapshot(input: {
+  pricing: ModelPricingSnapshot;
+  providerUsage: ProviderUsage;
+  retryCount?: number;
+}): TestRunUsageSnapshot {
+  const usage = input.providerUsage;
+  const cachedInputTokens = usage.cachedInputTokens ?? 0;
+  const cacheWriteTokens = usage.cacheWriteTokens ?? 0;
+  const reasoningTokens = usage.reasoningTokens ?? 0;
+
+  return {
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.completionTokens,
+    totalTokens: usage.totalTokens,
+    cachedInputTokens,
+    cacheWriteTokens,
+    reasoningTokens,
+    estimatedCostUsd: estimateRunCostUsd({
+      pricing: input.pricing,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      cachedInputTokens,
+      cacheWriteTokens,
+      reasoningTokens,
+    }),
+    actualCostUsd: finiteNonNegativeOrNull(usage.actualCostUsd),
+    upstreamInferenceCostUsd: finiteNonNegativeOrNull(
+      usage.upstreamInferenceCostUsd,
+    ),
+    latencyMs: Math.max(0, Math.floor(usage.latencyMs)),
+    retryCount: Math.max(0, Math.floor(input.retryCount ?? 0)),
   };
 }
 
@@ -102,6 +147,22 @@ export function estimateRunCostUsd(input: {
       reasoning * reasoningPrice +
       price.request,
   );
+}
+
+function assertPricing(pricing: ModelPricingPerTokenUsd): void {
+  for (const [field, value] of Object.entries(pricing) as Array<
+    [keyof ModelPricingPerTokenUsd, number]
+  >) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new InvalidModelPricingError(field, value);
+    }
+  }
+}
+
+function finiteNonNegativeOrNull(value: number | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
 }
 
 function perMillion(value: number): number {
