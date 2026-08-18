@@ -36,9 +36,24 @@ export interface OpenRouterCallInput {
   maxTokens: number;
 }
 
+export interface StoryProviderUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+}
+
+export interface StoryProviderTelemetry {
+  usage: StoryProviderUsage | null;
+  latencyMs: number | null;
+  estimatedCostUsd: number | null;
+}
+
 export interface OpenRouterCallResult {
   content: string;
   model: string;
+  usage?: StoryProviderUsage;
+  latencyMs?: number;
+  estimatedCostUsd?: number | null;
 }
 
 export type OpenRouterCaller = (
@@ -69,6 +84,8 @@ export interface StorySceneGenerationResult {
   modelId: string | null;
   attempt: number;
   narrativeTarget: StoryNarrativeTarget;
+  providerRequest: OpenRouterCallInput;
+  providerTelemetry: StoryProviderTelemetry;
   /** Exact canonical manifest consumed by the successful generation call. */
   contextManifest: ContextManifest | null;
 }
@@ -139,22 +156,27 @@ export class StorySceneGenerationService {
         continuityContext,
         generationContext,
       });
+      const providerRequest: OpenRouterCallInput = {
+        model: settings.modelId,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Sen çocuk hikayeleri için güvenli sahne üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: settings.temperature,
+        maxTokens: settings.maxOutputTokens,
+      };
 
       let response: OpenRouterCallResult;
       try {
-        response = await this.callProvider(input, settings.apiKey, {
-          model: settings.modelId,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Sen çocuk hikayeleri için güvenli sahne üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
-            },
-            { role: "user", content: prompt },
-          ],
-          temperature: settings.temperature,
-          maxTokens: settings.maxOutputTokens,
-        });
+        response = await this.callProvider(
+          input,
+          settings.apiKey,
+          providerRequest,
+        );
       } catch (error) {
         if (error instanceof LlmConfigError) throw error;
         const message = error instanceof Error ? error.message : String(error);
@@ -190,6 +212,8 @@ export class StorySceneGenerationService {
           modelId: response.model || null,
           attempt,
           narrativeTarget,
+          providerRequest,
+          providerTelemetry: telemetryFromResponse(response),
           contextManifest: generationContext,
         };
       }
@@ -216,4 +240,14 @@ export class StorySceneGenerationService {
     }
     return caller(apiKey, callInput);
   }
+}
+
+export function telemetryFromResponse(
+  response: OpenRouterCallResult,
+): StoryProviderTelemetry {
+  return {
+    usage: response.usage ?? null,
+    latencyMs: response.latencyMs ?? null,
+    estimatedCostUsd: response.estimatedCostUsd ?? null,
+  };
 }
