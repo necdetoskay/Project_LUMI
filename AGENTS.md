@@ -173,6 +173,13 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Compose web+worker'a `OBJECT_STORAGE_*`/`CLOUDFLARE_R2_BUCKET` env forwarding eklendi; `.env.example` object storage dokümantasyonu.
 - Prettier fix ayrıca doğrudan main'e cherry-pick edildi (`c90ff3f`); `fix/remote-context-neon-compose` ve `fix/storage-r2-read-fallback` dalları silindi. CI main'de green.
 
+### Legacy double-bucket key read fallback (2026-08-18)
+
+- Prod'da eski karakter görselleri `/api/assets/characters/[id]/content/[assetId]` 400 (Bad Request) dönüyordu; görsel kütüphanesinde kullanıcı silmediği halde resimler yüklenmiyordu.
+- Kök neden: `OBJECT_STORAGE_ENDPOINT` `.env`'te bucket path içeriyordu (`...r2.cloudflarestorage.com/lumi-dev-assets`) ve adapter bucket adını bir kez daha ekliyordu → eski objeler R2'de `<bucket>/<key>` (double-bucket) anahtarıyla yazıldı. Prod endpoint'i bucket'sız olduğu için okuma canon `<key>` üzerinden 404 veriyordu; mevcut fallback'ler (güncel bucket + public canonical key) de 404 → route 400.
+- Fix: `readCharacterVisual` (`apps/web/lib/assets/character-visual-storage.ts`) `getObjectWithLegacyBucketFallback`'e **legacy double-bucket key fallback** eklendi — canon `<key>` 404 olunca referans edilen bucket'ta `${referencedBucket}/${key}` denenir, o da 404 ise public fallback önce canon sonra legacy key ile dener. Dokunulmamıştır: store/delete yolu ve canonical signed S3/R2 okuma.
+- Test: `apps/web/tests/character-visual-storage-legacy.test.ts` (5 unit — canon, legacy, çift bucket, public legacy, tümü 404). Web lint/typecheck/test/build/mojibake/prettier green.
+
 ### Character visual modularization + sheet derivative backfill (2026-08-13, PR #153)
 
 - `@lumi/profiles` application modülleri: `character-visual-sheet-layout.ts` (7 bölgeli deterministik layout + version), `character-visual-derivative-resolver.ts` (variant→semantic rol eşlemesi: `portrait_primary→head-front`, `full_body_front→body-front` vb.), `character-visual-provenance.ts` (derivative provenance builder: derivation/layout version/semanticRole/brief refs).

@@ -84,6 +84,13 @@ async function getPublicObject(key: string) {
   };
 }
 
+function isStorageNotFound(error: unknown): boolean {
+  return (
+    (error instanceof Error ? error.message : "") ===
+    "OBJECT_STORAGE_GET_FAILED:404"
+  );
+}
+
 async function getObjectWithLegacyBucketFallback(
   config: S3CompatibleObjectStorageConfig,
   referencedBucket: string,
@@ -93,33 +100,43 @@ async function getObjectWithLegacyBucketFallback(
   // This keeps Vercel/production semantics unchanged. Public R2 access is only
   // a compatibility fallback for deployments where the custom signed client
   // cannot retrieve an object that is otherwise publicly reachable.
+  const originalError = new Error("OBJECT_STORAGE_GET_FAILED:404");
   try {
     return await getObject(
       configForReferencedBucket(config, referencedBucket),
       key,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    const isNotFound = message === "OBJECT_STORAGE_GET_FAILED:404";
-
-    if (!isNotFound) throw error;
-
-    if (referencedBucket !== config.bucket) {
-      try {
-        return await getObject(config, key);
-      } catch (currentBucketError) {
-        const currentBucketMessage =
-          currentBucketError instanceof Error ? currentBucketError.message : "";
-        if (currentBucketMessage !== "OBJECT_STORAGE_GET_FAILED:404") {
-          throw currentBucketError;
-        }
-      }
-    }
-
-    const publicObject = await getPublicObject(key);
-    if (publicObject) return publicObject;
-    throw error;
+    if (!isStorageNotFound(error)) throw error;
   }
+
+  if (referencedBucket !== config.bucket) {
+    try {
+      return await getObject(config, key);
+    } catch (error) {
+      if (!isStorageNotFound(error)) throw error;
+    }
+  }
+
+  // Legacy double-bucket key layout. Older objects were stored as
+  // `<bucket>/<key>` because OBJECT_STORAGE_ENDPOINT used to include the
+  // bucket path segment while the adapter also appended the bucket name.
+  // Recover those objects from the referenced bucket when the canonical key
+  // is missing so images created before the endpoint cleanup still load.
+  const legacyKey = `${referencedBucket}/${key}`;
+  try {
+    return await getObject(
+      configForReferencedBucket(config, referencedBucket),
+      legacyKey,
+    );
+  } catch (error) {
+    if (!isStorageNotFound(error)) throw error;
+  }
+
+  const publicObject =
+    (await getPublicObject(key)) ?? (await getPublicObject(legacyKey));
+  if (publicObject) return publicObject;
+  throw originalError;
 }
 
 export class LocalCharacterVisualStorageAdapter
