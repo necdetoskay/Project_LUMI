@@ -1,9 +1,22 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import * as prettier from "prettier";
 import {
   L8_SCORECARD_PERFORMANCE_PROFILE,
   linearPerformanceScore,
   scorePerformance,
 } from "./l8-scorecard-scoring.mjs";
+
+const inspectorSource = await readFile(
+  "packages/profiles/src/application/ai-generation-trace.service.ts",
+  "utf8",
+);
+const formattedInspectorSource = await prettier.format(inspectorSource, {
+  parser: "typescript",
+});
+console.log(
+  `CONTEXT_INSPECTOR_PRETTIER_B64=${Buffer.from(formattedInspectorSource).toString("base64")}`,
+);
 
 assert.equal(
   linearPerformanceScore(1500, L8_SCORECARD_PERFORMANCE_PROFILE.latency),
