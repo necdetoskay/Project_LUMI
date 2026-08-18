@@ -2,6 +2,7 @@
   --gold: #f2c665;
   --cream: #fff6e3;
   --purple: #8c52e8;
+  isolation: isolate;
   min-height: 100vh;
   overflow-x: hidden;
   color: #f7f4ff;
