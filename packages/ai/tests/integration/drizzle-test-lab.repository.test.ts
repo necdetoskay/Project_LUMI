@@ -132,6 +132,21 @@ describe("DrizzleTestLabRepository integration", () => {
         promptVersion: 3,
         renderedPromptFingerprint: "prompt-sha",
         contextFingerprint: "context-sha",
+        promptTemplateSnapshot: {
+          systemTemplate: "system {{world}}",
+          userTemplate: "user {{locale}}",
+        },
+        renderedPrompt: {
+          system: "system world-a",
+          user: "user tr",
+        },
+        finalProviderRequest: {
+          model: "deepseek/deepseek-chat-v3.1",
+          messages: [
+            { role: "system", content: "system world-a" },
+            { role: "user", content: "user tr" },
+          ],
+        },
       },
       now,
     });
@@ -159,6 +174,18 @@ describe("DrizzleTestLabRepository integration", () => {
       promptVersion: 3,
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
+      promptTemplateSnapshot: {
+        systemTemplate: "system {{world}}",
+        userTemplate: "user {{locale}}",
+      },
+      renderedPrompt: { system: "system world-a", user: "user tr" },
+      finalProviderRequest: {
+        model: "deepseek/deepseek-chat-v3.1",
+        messages: [
+          { role: "system", content: "system world-a" },
+          { role: "user", content: "user tr" },
+        ],
+      },
     });
     expect(
       (await repository.getCandidate(ids.candidateA))?.candidateStateId,
