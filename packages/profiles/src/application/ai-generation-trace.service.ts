@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { DrizzleAiGenerationTraceRepository } from "../db/repositories";
 import type { AiGenerationTraceRecord } from "../db/schema/profile";
 import { getProfileDb } from "./db";
@@ -30,6 +32,7 @@ export interface AiGenerationContextInspectorSection {
   estimatedTokens: number | null;
   source: string | null;
   sourceVersion: string | null;
+  revisionFingerprint: string | null;
   authority: string | null;
   reason: string | null;
   updatedAt: string | null;
@@ -40,6 +43,17 @@ export interface AiGenerationContextInspectorSection {
     removedItems: number | null;
   } | null;
 }
+
+export type AiGenerationContextReconstructability =
+  | "exact"
+  | "partial"
+  | "non_reconstructable";
+
+export type AiGenerationContextReconstructabilityReason =
+  | "all_sources_replayable"
+  | "source_revisions_verifiable_but_not_replayable"
+  | "source_revision_evidence_incomplete"
+  | "context_evidence_missing";
 
 export interface AiGenerationContextInspectorView {
   id: string;
@@ -57,10 +71,8 @@ export interface AiGenerationContextInspectorView {
   createdAt: string;
   context: {
     fingerprint: string | null;
-    reconstructability: "audit_only" | "unavailable";
-    reconstructabilityReason:
-      | "privacy_safe_trace_evidence"
-      | "context_evidence_missing";
+    reconstructability: AiGenerationContextReconstructability;
+    reconstructabilityReason: AiGenerationContextReconstructabilityReason;
     profile: string | null;
     maxContextTokens: number | null;
     estimatedTokens: number | null;
@@ -82,6 +94,18 @@ function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function fingerprintSourceRevision(input: {
+  source: string;
+  sourceVersion: string;
+  revision: string;
+}): string {
+  return createHash("sha256")
+    .update(
+      `${input.source}\u0000${input.sourceVersion}\u0000${input.revision}`,
+    )
+    .digest("hex");
+}
+
 function toInspectorSection(
   value: unknown,
 ): AiGenerationContextInspectorSection | null {
@@ -100,6 +124,7 @@ function toInspectorSection(
     estimatedTokens: asNumber(section.estimatedTokens),
     source: asString(provenance?.source),
     sourceVersion: asString(provenance?.sourceVersion),
+    revisionFingerprint: asString(provenance?.revisionFingerprint),
     authority: asString(provenance?.authority),
     reason: asString(provenance?.reason),
     updatedAt: asString(provenance?.updatedAt),
@@ -134,6 +159,15 @@ export function createAiGenerationContextTraceEvidence(
           sourceVersion: section.provenance.sourceVersion,
           authority: section.provenance.authority,
           reason: section.provenance.reason,
+          ...(section.provenance.revision
+            ? {
+                revisionFingerprint: fingerprintSourceRevision({
+                  source: section.provenance.source,
+                  sourceVersion: section.provenance.sourceVersion,
+                  revision: section.provenance.revision,
+                }),
+              }
+            : {}),
           ...(section.provenance.updatedAt
             ? { updatedAt: section.provenance.updatedAt }
             : {}),
@@ -143,6 +177,39 @@ export function createAiGenerationContextTraceEvidence(
         },
       })),
     },
+  };
+}
+
+function resolveReconstructability(input: {
+  hasAuditEvidence: boolean;
+  sections: readonly AiGenerationContextInspectorSection[];
+}): {
+  reconstructability: AiGenerationContextReconstructability;
+  reconstructabilityReason: AiGenerationContextReconstructabilityReason;
+} {
+  if (!input.hasAuditEvidence) {
+    return {
+      reconstructability: "non_reconstructable",
+      reconstructabilityReason: "context_evidence_missing",
+    };
+  }
+
+  const hasSections = input.sections.length > 0;
+  const allSectionsHaveRevisionEvidence =
+    hasSections &&
+    input.sections.every((section) => Boolean(section.revisionFingerprint));
+
+  if (allSectionsHaveRevisionEvidence) {
+    return {
+      reconstructability: "partial",
+      reconstructabilityReason:
+        "source_revisions_verifiable_but_not_replayable",
+    };
+  }
+
+  return {
+    reconstructability: "partial",
+    reconstructabilityReason: "source_revision_evidence_incomplete",
   };
 }
 
@@ -163,6 +230,10 @@ export function toAiGenerationContextInspectorView(
       )
     : [];
   const hasAuditEvidence = Boolean(record.contextFingerprint && provenance);
+  const reconstruction = resolveReconstructability({
+    hasAuditEvidence,
+    sections,
+  });
 
   return {
     id: record.id,
@@ -180,10 +251,7 @@ export function toAiGenerationContextInspectorView(
     createdAt: record.createdAt.toISOString(),
     context: {
       fingerprint: record.contextFingerprint,
-      reconstructability: hasAuditEvidence ? "audit_only" : "unavailable",
-      reconstructabilityReason: hasAuditEvidence
-        ? "privacy_safe_trace_evidence"
-        : "context_evidence_missing",
+      ...reconstruction,
       profile: asString(provenance?.profile),
       maxContextTokens: asNumber(provenance?.maxContextTokens),
       estimatedTokens: asNumber(provenance?.estimatedTokens),

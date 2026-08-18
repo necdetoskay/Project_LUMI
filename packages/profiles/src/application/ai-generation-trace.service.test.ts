@@ -7,6 +7,9 @@ import {
 } from "./ai-generation-trace.service";
 import type { AssembledGenerationContext } from "./generation-context-assembler";
 
+const REVISION_FINGERPRINT =
+  "543e13dd8adbed260aa1494058d07903928692256459d98821eb39e0cdb16bfe";
+
 function assembledContext(): AssembledGenerationContext {
   return {
     profile: "character_onboarding",
@@ -84,7 +87,7 @@ function traceRecord(
 }
 
 describe("createAiGenerationContextTraceEvidence", () => {
-  it("persists fingerprint and section-level audit metadata without context values or internal source identifiers", () => {
+  it("persists fingerprint and privacy-safe source revision evidence without context values or internal identifiers", () => {
     const evidence = createAiGenerationContextTraceEvidence(assembledContext());
     const serialized = JSON.stringify(evidence);
 
@@ -94,9 +97,17 @@ describe("createAiGenerationContextTraceEvidence", () => {
       maxContextTokens: 3_600,
       estimatedTokens: 420,
       droppedSections: ["relevant_memories"],
+      sections: [
+        {
+          provenance: {
+            revisionFingerprint: REVISION_FINGERPRINT,
+          },
+        },
+      ],
     });
     expect(serialized).toContain("canonical-child-profile");
     expect(serialized).toContain("dedupe-and-tail-prune-v1");
+    expect(serialized).toContain(REVISION_FINGERPRINT);
     expect(serialized).not.toContain("SECRET-CHILD-ID");
     expect(serialized).not.toContain("SECRET-SOURCE-ID");
     expect(serialized).not.toContain("SECRET-REVISION");
@@ -105,14 +116,15 @@ describe("createAiGenerationContextTraceEvidence", () => {
 });
 
 describe("toAiGenerationContextInspectorView", () => {
-  it("returns only privacy-safe audit evidence and generation metrics", () => {
+  it("reports partial reconstruction when every persisted section has verifiable revision evidence", () => {
     const view = toAiGenerationContextInspectorView(traceRecord());
     const serialized = JSON.stringify(view);
 
     expect(view.context).toMatchObject({
       fingerprint: "a".repeat(64),
-      reconstructability: "audit_only",
-      reconstructabilityReason: "privacy_safe_trace_evidence",
+      reconstructability: "partial",
+      reconstructabilityReason:
+        "source_revisions_verifiable_but_not_replayable",
       profile: "character_onboarding",
       maxContextTokens: 3_600,
       estimatedTokens: 420,
@@ -126,6 +138,7 @@ describe("toAiGenerationContextInspectorView", () => {
         estimatedTokens: 120,
         source: "canonical-child-profile",
         sourceVersion: "v1",
+        revisionFingerprint: REVISION_FINGERPRINT,
         authority: "canonical",
         reason: "personalization",
         updatedAt: "2026-08-18T00:00:00.000Z",
@@ -147,14 +160,30 @@ describe("toAiGenerationContextInspectorView", () => {
     expect(serialized).not.toContain("44444444-4444-4444-8444-444444444444");
   });
 
-  it("marks legacy traces without context evidence as unavailable instead of guessing", () => {
+  it("reports partial reconstruction with incomplete revision evidence for older safe provenance", () => {
+    const record = traceRecord();
+    const provenance = record.contextProvenance as {
+      sections: Array<{ provenance: Record<string, unknown> }>;
+    };
+    delete provenance.sections[0]?.provenance.revisionFingerprint;
+
+    const view = toAiGenerationContextInspectorView(record);
+
+    expect(view.context.reconstructability).toBe("partial");
+    expect(view.context.reconstructabilityReason).toBe(
+      "source_revision_evidence_incomplete",
+    );
+    expect(view.context.sections[0]?.revisionFingerprint).toBeNull();
+  });
+
+  it("marks legacy traces without context evidence as non-reconstructable instead of guessing", () => {
     const view = toAiGenerationContextInspectorView(
       traceRecord({ contextFingerprint: null, contextProvenance: null }),
     );
 
     expect(view.context).toEqual({
       fingerprint: null,
-      reconstructability: "unavailable",
+      reconstructability: "non_reconstructable",
       reconstructabilityReason: "context_evidence_missing",
       profile: null,
       maxContextTokens: null,
