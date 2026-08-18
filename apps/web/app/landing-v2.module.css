@@ -1,28 +1,11 @@
-:global(body:has(.lumi-landing-v2)) {
-  background: #05091d;
-}
-
-:global(body:has(.lumi-landing-v2) > header),
-:global(body:has(.lumi-landing-v2) > footer) {
-  display: none;
-}
-
-:global(body:has(.lumi-landing-v2) > main) {
-  min-height: 100vh;
-}
-
 .landingPage {
   --night: #060b24;
-  --night-soft: #0b1431;
   --panel: rgba(16, 25, 58, 0.78);
-  --panel-strong: rgba(12, 19, 47, 0.94);
   --line: rgba(211, 194, 255, 0.18);
   --violet: #8758f4;
-  --violet-bright: #a96cff;
   --gold: #f0c56b;
   --gold-soft: #ffe3a4;
   --text: #f8f5ff;
-  --muted: #b8b8ca;
   position: relative;
   min-height: 100vh;
   overflow: hidden;
@@ -45,7 +28,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.72;
   background-image:
     radial-gradient(circle at 12% 8%, #fff 0 1px, transparent 1.5px),
     radial-gradient(circle at 23% 14%, #f0c56b 0 1.5px, transparent 2px),
@@ -240,7 +223,6 @@
 }
 
 .secondaryCta {
-  position: relative;
   color: #eee8fa;
   border: 1px solid rgba(240, 197, 107, 0.6);
   background: rgba(7, 14, 39, 0.78);
@@ -372,7 +354,6 @@
     rgba(164, 98, 255, 0.34),
     rgba(43, 31, 93, 0.7)
   );
-  box-shadow: 0 0 25px rgba(124, 74, 223, 0.14);
 }
 
 .featureCard h2 {
@@ -407,7 +388,6 @@
   align-self: start;
   color: var(--gold);
   font-size: 1.7rem;
-  filter: drop-shadow(0 0 10px rgba(240, 197, 107, 0.3));
 }
 
 .sectionIntro h2,
@@ -631,10 +611,6 @@
     grid-template-columns: minmax(0, 0.92fr) minmax(430px, 1.08fr);
   }
 
-  .hero h1 {
-    font-size: clamp(3.2rem, 6vw, 5.2rem);
-  }
-
   .features {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -649,11 +625,6 @@
 }
 
 @media (max-width: 860px) {
-  :global(body:has(.lumi-landing-v2) > header),
-  :global(body:has(.lumi-landing-v2) > footer) {
-    display: none;
-  }
-
   .header,
   .hero,
   .features,
@@ -676,8 +647,8 @@
   }
 
   .heroCopy {
-    text-align: center;
     padding-inline: 12px;
+    text-align: center;
   }
 
   .hero h1,
@@ -718,8 +689,8 @@
   .trustQuote {
     grid-column: 1 / -1;
     padding: 14px 0 0;
-    border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
   }
 }
 
@@ -781,15 +752,8 @@
     grid-template-columns: 1fr;
   }
 
-  .featureCard {
-    min-height: auto;
-  }
-
-  .storyCard {
-    min-height: 270px;
-  }
-
-  .sectionIntro {
+  .sectionIntro,
+  .trustBand {
     grid-template-columns: 1fr;
   }
 
@@ -798,7 +762,6 @@
   }
 
   .trustBand {
-    grid-template-columns: 1fr;
     text-align: center;
   }
 
