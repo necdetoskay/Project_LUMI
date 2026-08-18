@@ -1,0 +1,39 @@
+name: Test Lab Formatter Probe
+
+on:
+  push:
+    branches:
+      - feat/test-lab-phase-3-onboarding-adapter
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format changed Test Lab files
+        run: |
+          pnpm exec prettier --write \
+            packages/ai/src/db/schema/ai/test-lab.ts \
+            packages/ai/src/test-lab/application/test-lab-coordinator.ts \
+            packages/ai/src/test-lab/infrastructure/drizzle-test-lab-repository.ts \
+            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts \
+            packages/ai/tests/test-lab-coordinator.test.ts \
+            packages/profiles/src/application/onboarding-suggestion-generation-core.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-prettier-output
+          path: |
+            packages/ai/src/db/schema/ai/test-lab.ts
+            packages/ai/src/test-lab/application/test-lab-coordinator.ts
+            packages/ai/src/test-lab/infrastructure/drizzle-test-lab-repository.ts
+            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts
+            packages/ai/tests/test-lab-coordinator.test.ts
+            packages/profiles/src/application/onboarding-suggestion-generation-core.ts
