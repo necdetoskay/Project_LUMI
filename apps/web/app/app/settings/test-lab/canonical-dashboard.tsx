@@ -71,7 +71,10 @@ const recentRuns = [
 
 function Icon({ name, className = "" }: { name: string; className?: string }) {
   return (
-    <span className={`material-symbols-outlined ${className}`} aria-hidden="true">
+    <span
+      className={`material-symbols-outlined ${className}`}
+      aria-hidden="true"
+    >
       {name}
     </span>
   );
@@ -158,7 +161,13 @@ function KpiCard({
   );
 }
 
-function PanelTitle({ icon, children }: { icon: string; children: React.ReactNode }) {
+function PanelTitle({
+  icon,
+  children,
+}: {
+  icon: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className={styles.panelTitle}>
       <span className={styles.panelTitleIcon}>
@@ -275,7 +284,11 @@ function LiveRunPanel() {
             >
               {index + 1}
             </span>
-            <strong>{label.split("\n").map((line) => <span key={line}>{line}</span>)}</strong>
+            <strong>
+              {label.split("\n").map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </strong>
             <small>{detail}</small>
           </div>
         ))}
@@ -292,7 +305,9 @@ function LiveRunPanel() {
             <span />
           </div>
           <div className={styles.progressBottom}>
-            <span><b>24</b> / 35 tamamlandı</span>
+            <span>
+              <b>24</b> / 35 tamamlandı
+            </span>
             <b>%68</b>
           </div>
         </div>
@@ -336,18 +351,41 @@ function LiveRunPanel() {
               className={styles.chartLine}
               points="42,83 78,76 112,65 148,53 185,40 221,40 257,34 294,24 330,22 366,19 403,15 440,13 477,14 516,15"
             />
-            {["42,83", "78,76", "112,65", "148,53", "185,40", "221,40", "257,34", "294,24", "330,22", "366,19", "403,15", "440,13", "477,14", "516,15"].map((point) => {
+            {[
+              "42,83",
+              "78,76",
+              "112,65",
+              "148,53",
+              "185,40",
+              "221,40",
+              "257,34",
+              "294,24",
+              "330,22",
+              "366,19",
+              "403,15",
+              "440,13",
+              "477,14",
+              "516,15",
+            ].map((point) => {
               const [cx, cy] = point.split(",");
               return <circle key={point} cx={cx} cy={cy} r="2.4" />;
             })}
           </svg>
           <div className={styles.chartAxis}>
-            <span>14:35</span><span>14:38</span><span>14:41</span><span>14:44</span><span>14:47</span><span>14:50 (tahmini)</span>
+            <span>14:35</span>
+            <span>14:38</span>
+            <span>14:41</span>
+            <span>14:44</span>
+            <span>14:47</span>
+            <span>14:50 (tahmini)</span>
           </div>
         </div>
         <div className={styles.currentScore}>
           <span>Güncel Skor</span>
-          <div><strong>82</strong><small>/100</small></div>
+          <div>
+            <strong>82</strong>
+            <small>/100</small>
+          </div>
           <b>●&nbsp; İyi</b>
         </div>
       </div>
@@ -364,7 +402,9 @@ function QualityPanel() {
           <div className={styles.qualityRow} key={metric.label}>
             <div>
               <span>{metric.label}</span>
-              <b>{metric.score} <small>/100</small></b>
+              <b>
+                {metric.score} <small>/100</small>
+              </b>
             </div>
             <div className={styles.qualityTrack}>
               <span
@@ -425,19 +465,39 @@ function RecentRuns() {
                 <td>{run.model}</td>
                 <td>
                   <strong>{run.score}</strong>
-                  <span className={run.scoreState === "Zayıf" ? styles.scoreBad : run.scoreState === "Orta" ? styles.scoreMedium : styles.scoreGood}>
+                  <span
+                    className={
+                      run.scoreState === "Zayıf"
+                        ? styles.scoreBad
+                        : run.scoreState === "Orta"
+                          ? styles.scoreMedium
+                          : styles.scoreGood
+                    }
+                  >
                     ● {run.scoreState}
                   </span>
                 </td>
                 <td>{run.cost}</td>
                 <td>{run.duration}</td>
                 <td>
-                  <span className={run.status === "Running" ? styles.statusRunning : styles.statusCompleted}>
-                    <Icon name={run.status === "Running" ? "progress_activity" : "check"} />
+                  <span
+                    className={
+                      run.status === "Running"
+                        ? styles.statusRunning
+                        : styles.statusCompleted
+                    }
+                  >
+                    <Icon
+                      name={
+                        run.status === "Running" ? "progress_activity" : "check"
+                      }
+                    />
                     {run.status}
                   </span>
                 </td>
-                <td><Icon name="more_vert" /></td>
+                <td>
+                  <Icon name="more_vert" />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -449,7 +509,10 @@ function RecentRuns() {
 
 export default function CanonicalTestLabDashboard() {
   return (
-    <div className={styles.viewportShell} data-testid="canonical-test-lab-dashboard">
+    <div
+      className={styles.viewportShell}
+      data-testid="canonical-test-lab-dashboard"
+    >
       <Sidebar />
       <main className={styles.dashboardMain}>
         <header className={styles.pageHeader}>
@@ -466,7 +529,11 @@ export default function CanonicalTestLabDashboard() {
               <Icon name="description" />
               Rapor Oluştur
             </button>
-            <button className={styles.iconButton} type="button" aria-label="Bildirimler">
+            <button
+              className={styles.iconButton}
+              type="button"
+              aria-label="Bildirimler"
+            >
               <Icon name="notifications" />
               <span className={styles.notificationBadge}>3</span>
             </button>
@@ -475,17 +542,44 @@ export default function CanonicalTestLabDashboard() {
         </header>
 
         <section className={styles.kpiGrid} aria-label="Test Lab özeti">
-          <KpiCard icon="account_tree" accent="purple" label="Aktif Suite" footnote={<>Son güncelleme: 12 May 2025</>}>
+          <KpiCard
+            icon="account_tree"
+            accent="purple"
+            label="Aktif Suite"
+            footnote={<>Son güncelleme: 12 May 2025</>}
+          >
             <strong className={styles.kpiTextValue}>LUMI Çekirdek Suite</strong>
             <span className={styles.versionBadge}>v2.4</span>
           </KpiCard>
-          <KpiCard icon="monitoring" accent="green" label="Son Koşu Skoru" footnote={<><span className={styles.goodDot}>● İyi</span><span>12 May 2025 14:35</span></>}>
-            <strong className={styles.kpiScoreGood}>82</strong><span>/ 100</span>
+          <KpiCard
+            icon="monitoring"
+            accent="green"
+            label="Son Koşu Skoru"
+            footnote={
+              <>
+                <span className={styles.goodDot}>● İyi</span>
+                <span>12 May 2025 14:35</span>
+              </>
+            }
+          >
+            <strong className={styles.kpiScoreGood}>82</strong>
+            <span>/ 100</span>
           </KpiCard>
-          <KpiCard icon="check" accent="blue" label="Başarılı Test" footnote={<>%80 başarı oranı</>}>
-            <strong className={styles.kpiScoreBlue}>28</strong><span>/ 35</span>
+          <KpiCard
+            icon="check"
+            accent="blue"
+            label="Başarılı Test"
+            footnote={<>%80 başarı oranı</>}
+          >
+            <strong className={styles.kpiScoreBlue}>28</strong>
+            <span>/ 35</span>
           </KpiCard>
-          <KpiCard icon="attach_money" accent="orange" label="Tahmini Maliyet" footnote={<>Bu koşu için tahmini</>}>
+          <KpiCard
+            icon="attach_money"
+            accent="orange"
+            label="Tahmini Maliyet"
+            footnote={<>Bu koşu için tahmini</>}
+          >
             <strong className={styles.kpiMoney}>$2.48</strong>
           </KpiCard>
         </section>
@@ -504,7 +598,10 @@ export default function CanonicalTestLabDashboard() {
 
         <RecentRuns />
 
-        <Link className={styles.advancedLink} href="/app/settings/test-lab/advanced">
+        <Link
+          className={styles.advancedLink}
+          href="/app/settings/test-lab/advanced"
+        >
           Advanced / Developer
         </Link>
       </main>

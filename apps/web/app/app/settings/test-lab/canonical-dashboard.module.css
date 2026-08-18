@@ -415,7 +415,10 @@
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(285px, 0.9fr) minmax(570px, 1.85fr) minmax(290px, 0.95fr);
+  grid-template-columns: minmax(285px, 0.9fr) minmax(570px, 1.85fr) minmax(
+      290px,
+      0.95fr
+    );
   gap: 16px;
   align-items: stretch;
 }
@@ -895,7 +898,7 @@
 .currentScore {
   display: grid;
   align-content: center;
-  border-left: 1px solid #eeeeF2;
+  border-left: 1px solid #eeeef2;
   padding: 8px 17px;
 }
 
