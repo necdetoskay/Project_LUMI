@@ -28,6 +28,7 @@ export class ProductionTestRunner {
     productionOperation: string;
     parentStateId: string;
     modelSlug: string;
+    promptVersionOverride?: number;
     pricingSnapshot: ModelPricingSnapshot;
     actor: {
       userId: string;
@@ -55,6 +56,9 @@ export class ProductionTestRunner {
       productionOperation: input.productionOperation,
       parentState: parentState.value,
       modelSlug: input.modelSlug,
+      ...(input.promptVersionOverride === undefined
+        ? {}
+        : { promptVersionOverride: input.promptVersionOverride }),
       pricingSnapshot: input.pricingSnapshot,
       actor: input.actor,
     });
@@ -91,6 +95,9 @@ export class ProductionTestRunner {
         promptVersion: result.provenance.promptVersion,
         renderedPromptFingerprint: result.provenance.renderedPromptFingerprint,
         contextFingerprint: result.provenance.contextFingerprint,
+        promptTemplateSnapshot: result.provenance.promptTemplateSnapshot,
+        renderedPrompt: result.provenance.renderedPrompt,
+        finalProviderRequest: result.provenance.finalProviderRequest,
       },
       now: input.now,
     });

@@ -10,6 +10,7 @@ export interface ProductionScenarioExecutionRequest {
   productionOperation: string;
   parentState: JsonObject;
   modelSlug: string;
+  promptVersionOverride?: number;
   pricingSnapshot: ModelPricingSnapshot;
   actor: {
     userId: string;
@@ -21,6 +22,15 @@ export interface ProductionScenarioExecutionRequest {
 export interface ProductionScenarioExecutionProvenance {
   promptKey: string;
   promptVersion: number | null;
+  promptTemplateSnapshot: {
+    system: string;
+    user: string;
+  } | null;
+  renderedPrompt: {
+    system: string;
+    user: string;
+  } | null;
+  finalProviderRequest: JsonObject | null;
   renderedPromptFingerprint: string | null;
   contextFingerprint: string | null;
   modelSlug: string;

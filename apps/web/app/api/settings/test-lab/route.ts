@@ -96,6 +96,10 @@ export const POST = observeHandler(async (request: Request) => {
           body.childProfileId,
           "childProfileId",
         );
+        const promptVersionOverride = optionalPositiveInteger(
+          body.promptVersionOverride,
+          "promptVersionOverride",
+        );
         const parentState = await repository.getState(parentStateId);
         assertSandboxOwner(parentState, {
           parentId: parent.id,
@@ -122,6 +126,9 @@ export const POST = observeHandler(async (request: Request) => {
           productionOperation: phase.productionOperation,
           parentStateId,
           modelSlug,
+          ...(promptVersionOverride === undefined
+            ? {}
+            : { promptVersionOverride }),
           pricingSnapshot: modelProfile.pricing,
           actor: {
             userId: parent.id,
@@ -179,6 +186,17 @@ function requiredString(value: unknown, field: string): string {
     throw new Error(`TEST_LAB_REQUIRED_FIELD:${field}`);
   }
   return value.trim();
+}
+
+function optionalPositiveInteger(
+  value: unknown,
+  field: string,
+): number | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    throw new Error(`TEST_LAB_POSITIVE_INTEGER_REQUIRED:${field}`);
+  }
+  return value;
 }
 
 function asJsonObject(value: unknown, field: string): JsonObject {

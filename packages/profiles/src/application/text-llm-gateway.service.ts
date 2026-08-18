@@ -16,6 +16,18 @@ export interface TextLlmGatewayInput {
   generationConfig?: Record<string, unknown> | null;
 }
 
+export interface TextLlmProviderRequestSnapshot
+  extends Record<string, unknown> {
+  provider: "openrouter";
+  model: string;
+  messages: Array<{
+    role: "system" | "user";
+    content: string;
+  }>;
+  temperature: number | null;
+  maxTokens: number | null;
+}
+
 export interface TextLlmGatewayResult {
   content: string;
   provider: "openrouter";
@@ -25,6 +37,7 @@ export interface TextLlmGatewayResult {
   totalTokens: number | null;
   latencyMs: number;
   cost: LlmCostEstimate | null;
+  requestSnapshot?: TextLlmProviderRequestSnapshot;
 }
 
 export async function generateTextWithLlm(
@@ -53,13 +66,20 @@ export async function generateTextWithLlm(
       ? cfg.maxOutputTokens
       : undefined
     : taskSetting?.maxOutputTokens;
-  const started = Date.now();
-  const result = await callOpenRouter(apiKey, {
+  const requestSnapshot: TextLlmProviderRequestSnapshot = {
+    provider: "openrouter",
     model,
     messages: [
       { role: "system", content: input.system },
       { role: "user", content: input.user },
     ],
+    temperature: temperature ?? null,
+    maxTokens: maxTokens ?? null,
+  };
+  const started = Date.now();
+  const result = await callOpenRouter(apiKey, {
+    model,
+    messages: requestSnapshot.messages,
     ...(temperature !== undefined ? { temperature } : {}),
     ...(maxTokens !== undefined ? { maxTokens } : {}),
   });
@@ -76,5 +96,6 @@ export async function generateTextWithLlm(
     totalTokens: result.usage?.totalTokens ?? null,
     latencyMs: Date.now() - started,
     cost,
+    requestSnapshot,
   };
 }

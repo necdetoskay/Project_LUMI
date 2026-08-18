@@ -1,4 +1,4 @@
-import { and, asc, eq, max } from "drizzle-orm";
+import { and, asc, desc, eq, max } from "drizzle-orm";
 import { getProfileDb } from "./db";
 import { validatePromptDraft } from "./prompt-management.validation";
 import {
@@ -14,6 +14,18 @@ export interface PromptDraftInput {
   allowedVariables: string[];
   requiredVariables: string[];
   outputSchema: Record<string, unknown>;
+  schemaVersion?: string;
+  providerOverride?: string | null;
+  modelOverride?: string | null;
+  generationConfig?: Record<string, unknown>;
+}
+
+export interface PromptDraftPatch {
+  systemTemplate?: string;
+  userTemplate?: string;
+  allowedVariables?: string[];
+  requiredVariables?: string[];
+  outputSchema?: Record<string, unknown>;
   schemaVersion?: string;
   providerOverride?: string | null;
   modelOverride?: string | null;
@@ -48,6 +60,23 @@ export async function listPromptVersions(promptKey: string) {
     .from(aiPromptVersions)
     .where(eq(aiPromptVersions.promptKey, promptKey))
     .orderBy(asc(aiPromptVersions.version));
+}
+
+export async function getPromptWorkspace(promptKey: string) {
+  const db = getProfileDb();
+  const versions = await db
+    .select()
+    .from(aiPromptVersions)
+    .where(eq(aiPromptVersions.promptKey, promptKey))
+    .orderBy(desc(aiPromptVersions.version));
+  if (versions.length === 0)
+    throw new Error(`PROMPT_KEY_NOT_FOUND:${promptKey}`);
+  return {
+    promptKey,
+    activeVersion:
+      versions.find((version) => version.status === "active") ?? null,
+    versions,
+  };
 }
 
 export async function createPromptDraft(
@@ -88,9 +117,10 @@ export async function createPromptDraft(
   });
 }
 
-export async function clonePromptVersion(
+export async function createPromptDraftFromVersion(
   promptKey: string,
-  version: number,
+  sourceVersion: number,
+  patch: PromptDraftPatch,
   context: PromptMutationContext = {},
 ) {
   const db = getProfileDb();
@@ -100,15 +130,30 @@ export async function clonePromptVersion(
     .where(
       and(
         eq(aiPromptVersions.promptKey, promptKey),
-        eq(aiPromptVersions.version, version),
+        eq(aiPromptVersions.version, sourceVersion),
       ),
     )
     .limit(1);
   if (!source) throw new Error("PROMPT_VERSION_NOT_FOUND");
-  return createPromptDraft(promptKey, toPromptDraftInput(source), {
-    ...context,
-    metadata: { ...context.metadata, clonedFromVersion: version },
-  });
+  return createPromptDraft(
+    promptKey,
+    {
+      ...toPromptDraftInput(source),
+      ...patch,
+    },
+    {
+      ...context,
+      metadata: { ...context.metadata, clonedFromVersion: sourceVersion },
+    },
+  );
+}
+
+export async function clonePromptVersion(
+  promptKey: string,
+  version: number,
+  context: PromptMutationContext = {},
+) {
+  return createPromptDraftFromVersion(promptKey, version, {}, context);
 }
 
 async function setActivePromptVersion(

@@ -48,9 +48,11 @@ describe("ProductionTestRunner", () => {
     });
 
     let receivedParentState: unknown;
+    let receivedPromptVersionOverride: number | undefined;
     const adapter: ProductionScenarioAdapter = {
       async execute(request) {
         receivedParentState = request.parentState;
+        receivedPromptVersionOverride = request.promptVersionOverride;
         return {
           output: { suggestions: [{ key: "a" }, { key: "b" }] },
           candidates: [
@@ -75,6 +77,21 @@ describe("ProductionTestRunner", () => {
             promptVersion: 7,
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
+            promptTemplateSnapshot: {
+              system: "System {{previousSelections}}",
+              user: "User {{locale}}",
+            },
+            renderedPrompt: {
+              system: "System rendered",
+              user: "User rendered",
+            },
+            finalProviderRequest: {
+              model: request.modelSlug,
+              messages: [
+                { role: "system", content: "System rendered" },
+                { role: "user", content: "User rendered" },
+              ],
+            },
             modelSlug: request.modelSlug,
             usage: {
               promptTokens: 120,
@@ -108,6 +125,7 @@ describe("ProductionTestRunner", () => {
       productionOperation: "generateCharacterFirstIdentitySuggestions",
       parentStateId: "state-0",
       modelSlug: "vendor/model-a",
+      promptVersionOverride: 9,
       pricingSnapshot: pricing,
       actor: {
         userId: "user-1",
@@ -120,6 +138,7 @@ describe("ProductionTestRunner", () => {
     expect(receivedParentState).toEqual({
       characterType: { key: "fantastic" },
     });
+    expect(receivedPromptVersionOverride).toBe(9);
     expect(result.run.id).toBe("run-1");
     expect(result.run.executionSnapshot).toEqual({
       productionOperation: "generateCharacterFirstIdentitySuggestions",
@@ -127,6 +146,21 @@ describe("ProductionTestRunner", () => {
       promptVersion: 7,
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
+      promptTemplateSnapshot: {
+        system: "System {{previousSelections}}",
+        user: "User {{locale}}",
+      },
+      renderedPrompt: {
+        system: "System rendered",
+        user: "User rendered",
+      },
+      finalProviderRequest: {
+        model: "vendor/model-a",
+        messages: [
+          { role: "system", content: "System rendered" },
+          { role: "user", content: "User rendered" },
+        ],
+      },
     });
     expect(result.run.usageSnapshot?.actualCostUsd).toBe(0.00027);
     expect(result.candidates.map((candidate) => candidate.id)).toEqual([
@@ -171,6 +205,9 @@ describe("ProductionTestRunner", () => {
             promptVersion: 1,
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
+            promptTemplateSnapshot: { system: "system", user: "user" },
+            renderedPrompt: { system: "system", user: "user" },
+            finalProviderRequest: null,
             modelSlug: "vendor/unexpected-model",
             usage: null,
           },

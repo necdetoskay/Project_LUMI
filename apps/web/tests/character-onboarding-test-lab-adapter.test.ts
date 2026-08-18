@@ -69,6 +69,24 @@ describe("characterOnboardingProductionScenarioAdapter", () => {
       provenance: {
         promptKey: "character_onboarding.character_first_identity_suggestions",
         promptVersion: 4,
+        promptTemplateSnapshot: {
+          system: "System {{previousSelections}}",
+          user: "User {{locale}}",
+        },
+        renderedPrompt: {
+          system: "System rendered",
+          user: "User rendered",
+        },
+        finalProviderRequest: {
+          provider: "openrouter",
+          model: "vendor/model-a",
+          messages: [
+            { role: "system", content: "System rendered" },
+            { role: "user", content: "User rendered" },
+          ],
+          temperature: null,
+          maxTokens: null,
+        },
         renderedPromptFingerprint: "prompt-sha",
         contextFingerprint: "context-sha",
         modelSlug: "vendor/model-a",
@@ -93,6 +111,18 @@ describe("characterOnboardingProductionScenarioAdapter", () => {
     });
     expect(result.candidates).toHaveLength(2);
     expect(result.provenance.promptVersion).toBe(4);
+    expect(result.provenance.promptTemplateSnapshot).toEqual({
+      system: "System {{previousSelections}}",
+      user: "User {{locale}}",
+    });
+    expect(result.provenance.renderedPrompt).toEqual({
+      system: "System rendered",
+      user: "User rendered",
+    });
+    expect(result.provenance.finalProviderRequest).toMatchObject({
+      provider: "openrouter",
+      model: "vendor/model-a",
+    });
     expect(result.provenance.usage).toMatchObject({
       promptTokens: 100,
       completionTokens: 50,
