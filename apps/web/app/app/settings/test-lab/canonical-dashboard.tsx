@@ -69,7 +69,13 @@ const recentRuns = [
   },
 ] as const;
 
-function Icon({ name, className = "" }: { name: string; className?: string }) {
+function Icon({
+  name,
+  className = "",
+}: {
+  name: string;
+  className?: string | undefined;
+}) {
   return (
     <span
       className={`material-symbols-outlined ${className}`}
