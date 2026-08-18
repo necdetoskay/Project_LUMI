@@ -63,6 +63,26 @@ export async function getActiveCharacterCreationCycle(
     .limit(1);
   return cycle ?? null;
 }
+export async function abandonCharacterCreationCycle(
+  userId: string,
+  householdId: string,
+  childProfileId: string,
+) {
+  await assertScope(userId, householdId, childProfileId);
+  const db = getProfileDb();
+  const cycle = await getActiveCharacterCreationCycle(
+    userId,
+    householdId,
+    childProfileId,
+  );
+  if (!cycle) throw new Error("CHARACTER_CREATION_CYCLE_REQUIRED");
+  const now = new Date();
+  await db
+    .update(characterCreationCycles)
+    .set({ status: "abandoned", abandonedAt: now, updatedAt: now })
+    .where(eq(characterCreationCycles.id, cycle.id));
+  return { cycleId: cycle.id, status: "abandoned" as const };
+}
 export async function chooseCharacterCreationDirection(
   userId: string,
   input: {

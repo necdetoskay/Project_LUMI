@@ -106,6 +106,7 @@ export default function CanonicalCharacterWizardClient({
   const [loading, setLoading] = useState(true);
   const [generationLoading, setGenerationLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const step = cycle?.currentStep ?? "character_type";
@@ -265,6 +266,22 @@ export default function CanonicalCharacterWizardClient({
     }
   }
 
+  async function abandonCycle() {
+    const confirmed = window.confirm(
+      "Karakter oluşturmayı iptal etmek istediğinize emin misiniz? Bu adıma kadar yapılan seçimler silinecek.",
+    );
+    if (!confirmed) return;
+    setCancelling(true);
+    setError(null);
+    try {
+      await request("abandon");
+      router.push(`/app/profiles/${encodeURIComponent(childProfileId)}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "İptal edilemedi.");
+      setCancelling(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f8f4ea] p-8 text-[#34281f]">
@@ -392,14 +409,25 @@ export default function CanonicalCharacterWizardClient({
           {step === "final_review" ? <Review summary={summary} /> : null}
 
           <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-[#eee5d8] pt-5">
-            <button
-              type="button"
-              data-testid="browser-back"
-              onClick={() => router.back()}
-              className="rounded-2xl border border-[#dfd2be] bg-white px-5 py-3 font-extrabold text-[#51463d]"
-            >
-              Geri
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                data-testid="browser-back"
+                onClick={() => router.back()}
+                className="rounded-2xl border border-[#dfd2be] bg-white px-5 py-3 font-extrabold text-[#51463d]"
+              >
+                Geri
+              </button>
+              <button
+                type="button"
+                data-testid="abandon-cycle"
+                disabled={cancelling || submitting}
+                onClick={() => void abandonCycle()}
+                className="rounded-2xl border border-[#e6c9c4] bg-[#fff5f3] px-5 py-3 font-extrabold text-[#b03a2e] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {cancelling ? "İptal ediliyor…" : "İptal Et"}
+              </button>
+            </div>
             {step === "final_review" ? (
               <button
                 type="button"

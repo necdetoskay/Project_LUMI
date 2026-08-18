@@ -4,6 +4,7 @@ import { withParent } from "@/lib/auth/with-parent";
 import { finalizeCharacterOnboarding } from "@/lib/character-onboarding/finalize-character-foundation.service";
 import { runLivingWorldBootstrapForCharacter } from "@/lib/character-onboarding/living-world-bootstrap.service";
 import {
+  abandonCharacterCreationCycle,
   chooseCharacterCreationDirection,
   chooseCharacterIdentity,
   ensureDefaultLlmTaskSettings,
@@ -103,6 +104,14 @@ export async function POST(request: Request) {
               ...input,
               direction: "character_first",
             }),
+          });
+        case "abandon":
+          return NextResponse.json({
+            abandoned: await abandonCharacterCreationCycle(
+              parent.id,
+              input.householdId,
+              input.childProfileId,
+            ),
           });
         case "select-character-type":
           if (!body.characterType)

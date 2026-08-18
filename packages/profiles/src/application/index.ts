@@ -288,6 +288,7 @@ export {
   chooseWorldFeeling,
   chooseWorldCharacterSuggestion,
   chooseCharacterIdentity,
+  abandonCharacterCreationCycle,
 } from "./character-creation-cycle.service";
 export type { WorldFeelingKey } from "./character-creation-cycle.service";
 export { resolveActivePrompt } from "./prompt-runtime.service";
