@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type { GenerationContext } from "./generation-context.service";
 import {
   getGenerationContextPolicy,
@@ -7,7 +9,20 @@ import {
 import {
   createGenerationContextSourceRegistry,
   type GenerationContextSource,
+  type GenerationContextSourceAuthority,
+  type GenerationContextSourceReason,
+  type GenerationContextSourceResult,
 } from "./generation-context-source";
+
+export interface GenerationContextSectionProvenance {
+  source: string;
+  sourceId?: string;
+  sourceVersion: string;
+  revision?: string;
+  authority: GenerationContextSourceAuthority;
+  reason: GenerationContextSourceReason;
+  updatedAt?: string;
+}
 
 export interface AssembledGenerationContextSection {
   section: GenerationContextSection;
@@ -15,12 +30,14 @@ export interface AssembledGenerationContextSection {
   maxTokens: number;
   estimatedTokens: number;
   value: unknown;
+  provenance: GenerationContextSectionProvenance;
 }
 
 export interface AssembledGenerationContext {
   profile: GenerationContext["profile"];
   maxContextTokens: number;
   estimatedTokens: number;
+  fingerprint: string;
   sections: readonly AssembledGenerationContextSection[];
   droppedSections: readonly GenerationContextSection[];
 }
@@ -44,6 +61,37 @@ export function estimateGenerationContextTokens(value: unknown): number {
   return Math.max(1, Math.ceil(serialized.length / 4));
 }
 
+function canonicalizeForFingerprint(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(canonicalizeForFingerprint);
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, canonicalizeForFingerprint(entry)]);
+    return Object.fromEntries(entries);
+  }
+  return value;
+}
+
+export function fingerprintGenerationContext(input: {
+  profile: GenerationContext["profile"];
+  maxContextTokens: number;
+  sections: readonly AssembledGenerationContextSection[];
+}): string {
+  const canonical = canonicalizeForFingerprint({
+    profile: input.profile,
+    maxContextTokens: input.maxContextTokens,
+    sections: input.sections.map((section) => ({
+      section: section.section,
+      value: section.value,
+      provenance: section.provenance,
+    })),
+  });
+
+  return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
 function hasMeaningfulValue(value: unknown): boolean {
   if (value == null) return false;
   if (typeof value === "string") return value.trim().length > 0;
@@ -64,6 +112,21 @@ function promptContextFromSections(
   return Object.fromEntries(
     sections.map((section) => [section.section, section.value]),
   );
+}
+
+function provenanceFromSource(
+  source: GenerationContextSource,
+  result: GenerationContextSourceResult,
+): GenerationContextSectionProvenance {
+  return {
+    source: source.source,
+    sourceVersion: source.sourceVersion,
+    authority: source.authority,
+    reason: source.reason,
+    ...(result.sourceId ? { sourceId: result.sourceId } : {}),
+    ...(result.revision ? { revision: result.revision } : {}),
+    ...(result.updatedAt ? { updatedAt: result.updatedAt } : {}),
+  };
 }
 
 function applyTotalTokenBudget(
@@ -156,9 +219,9 @@ export function assembleGenerationContext(
       continue;
     }
 
-    let value: unknown;
+    let result: GenerationContextSourceResult;
     try {
-      value = contextSource.resolve(context).value;
+      result = contextSource.resolve(context);
     } catch (error) {
       if (sectionPolicy.priority === "required") {
         const message = error instanceof Error ? error.message : String(error);
@@ -170,6 +233,7 @@ export function assembleGenerationContext(
       continue;
     }
 
+    const value = result.value;
     if (!hasMeaningfulValue(value)) {
       if (sectionPolicy.priority === "required") {
         throw new Error(
@@ -196,6 +260,7 @@ export function assembleGenerationContext(
       maxTokens: sectionPolicy.maxTokens,
       estimatedTokens,
       value,
+      provenance: provenanceFromSource(contextSource, result),
     });
   }
 
@@ -217,6 +282,11 @@ export function assembleGenerationContext(
     profile: context.profile,
     maxContextTokens,
     estimatedTokens,
+    fingerprint: fingerprintGenerationContext({
+      profile: context.profile,
+      maxContextTokens,
+      sections: budgeted.sections,
+    }),
     sections: budgeted.sections,
     droppedSections: policy.sections
       .map((section) => section.section)
