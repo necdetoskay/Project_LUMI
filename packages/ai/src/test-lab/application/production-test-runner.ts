@@ -56,6 +56,8 @@ export class ProductionTestRunner {
     }
 
     const result = await this.adapter.execute({
+      testSessionId: input.sessionId,
+      branchId: input.branchId,
       scenarioKey: session.scenarioKey,
       phaseId: input.phaseId,
       productionOperation: input.productionOperation,
