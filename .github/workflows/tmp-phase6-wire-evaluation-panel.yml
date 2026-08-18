@@ -1,0 +1,46 @@
+name: Temporary Phase 6 Wire Evaluation Panel
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.event.pull_request.head.ref == 'agent/test-lab-phase-6-evaluation-engine'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Wire EvaluationPanel into Test Lab client
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('apps/web/app/app/settings/test-lab/test-lab-client.tsx')
+          text = path.read_text()
+          old_import = 'import { PromptWorkspace } from "./prompt-workspace";'
+          new_import = 'import { EvaluationPanel } from "./evaluation-panel";\nimport { PromptWorkspace } from "./prompt-workspace";'
+          if old_import not in text:
+              raise SystemExit('import marker not found')
+          text = text.replace(old_import, new_import, 1)
+          marker = '''          </section>\n        </>\n      ) : null}\n    </main>'''
+          replacement = '''          </section>\n\n          <EvaluationPanel\n            householdId={householdId}\n            childProfileId={childProfileId}\n            sessionId={sessionId}\n            branchId={branchId}\n            candidateIds={result.candidates.map((candidate) => candidate.id)}\n            storyScenario={scenarioKey === "story_generation"}\n          />\n        </>\n      ) : null}\n    </main>'''
+          if marker not in text:
+              raise SystemExit('JSX marker not found')
+          text = text.replace(marker, replacement, 1)
+          path.write_text(text)
+          PY
+      - name: Commit wiring
+        run: |
+          if git diff --quiet -- apps/web/app/app/settings/test-lab/test-lab-client.tsx; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/settings/test-lab/test-lab-client.tsx
+          git commit -m "feat(test-lab): wire evaluation panel into results"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
