@@ -76,7 +76,10 @@ export class TestLabCoordinator {
     const branch = await this.requireBranch(input.branchId);
     const parentState = await this.requireState(input.parentStateId);
 
-    if (branch.sessionId !== session.id || parentState.sessionId !== session.id) {
+    if (
+      branch.sessionId !== session.id ||
+      parentState.sessionId !== session.id
+    ) {
       throw new TestLabInvariantError("TEST_LAB_CROSS_SESSION_REFERENCE");
     }
 
