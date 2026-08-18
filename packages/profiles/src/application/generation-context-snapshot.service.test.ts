@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { createAiGenerationContextTraceEvidence } from "./ai-generation-trace.service";
 import type { AssembledGenerationContext } from "./generation-context-assembler";
 import {
   digestGenerationContextSnapshot,
   materializeGenerationContextSnapshots,
   replayGenerationContextFromSnapshots,
+  replayGenerationContextTraceEvidence,
   type GenerationContextSnapshotEnvelope,
   type GenerationContextSnapshotStore,
 } from "./generation-context-snapshot.service";
@@ -20,7 +22,10 @@ class MemorySnapshotStore implements GenerationContextSnapshotStore {
     payload: GenerationContextSnapshotEnvelope;
   }): Promise<void> {
     const existing = this.records.get(input.digest);
-    if (existing && digestGenerationContextSnapshot(existing) !== input.digest) {
+    if (
+      existing &&
+      digestGenerationContextSnapshot(existing) !== input.digest
+    ) {
       throw new Error("snapshot collision");
     }
     this.records.set(input.digest, input.payload);
@@ -94,7 +99,7 @@ describe("generation context snapshot materialization", () => {
     expect(JSON.stringify(references)).not.toContain("private-revision");
   });
 
-  it("reconstructs the exact section values and provenance and verifies the context fingerprint", async () => {
+  it("reconstructs exact values and provenance from materialized evidence", async () => {
     const store = new MemorySnapshotStore();
     const materialized = await materializeGenerationContextSnapshots(
       context(),
@@ -107,6 +112,47 @@ describe("generation context snapshot materialization", () => {
 
     expect(replayed.fingerprintMatches).toBe(true);
     expect(replayed.assembled).toEqual(materialized);
+  });
+
+  it("reconstructs exact context from privacy-safe persisted trace evidence", async () => {
+    const store = new MemorySnapshotStore();
+    const materialized = await materializeGenerationContextSnapshots(
+      context(),
+      store,
+    );
+    const evidence = createAiGenerationContextTraceEvidence(materialized);
+    const serializedEvidence = JSON.stringify(evidence);
+
+    expect(serializedEvidence).not.toContain("private-child-id");
+    expect(serializedEvidence).not.toContain("private-cycle-id");
+    expect(serializedEvidence).not.toContain("private-revision");
+
+    const replayed = await replayGenerationContextTraceEvidence(
+      evidence,
+      store,
+    );
+
+    expect(replayed.fingerprintMatches).toBe(true);
+    expect(replayed.assembled).toEqual(materialized);
+  });
+
+  it("reports a fingerprint mismatch instead of accepting altered trace identity", async () => {
+    const store = new MemorySnapshotStore();
+    const materialized = await materializeGenerationContextSnapshots(
+      context(),
+      store,
+    );
+    const evidence = createAiGenerationContextTraceEvidence(materialized);
+    const replayed = await replayGenerationContextTraceEvidence(
+      {
+        ...evidence,
+        contextFingerprint: "c".repeat(64),
+      },
+      store,
+    );
+
+    expect(replayed.fingerprintMatches).toBe(false);
+    expect(replayed.assembled.fingerprint).toBe(materialized.fingerprint);
   });
 
   it("fails closed when an immutable snapshot is missing", async () => {
@@ -140,7 +186,26 @@ describe("generation context snapshot materialization", () => {
 
     await expect(
       replayGenerationContextFromSnapshots(materialized, store),
-    ).rejects.toThrow("GENERATION_CONTEXT_SNAPSHOT_DIGEST_MISMATCH:child_identity");
+    ).rejects.toThrow(
+      "GENERATION_CONTEXT_SNAPSHOT_DIGEST_MISMATCH:child_identity",
+    );
+  });
+
+  it("rejects persisted trace sections without valid replay references", async () => {
+    const store = new MemorySnapshotStore();
+    const materialized = await materializeGenerationContextSnapshots(
+      context(),
+      store,
+    );
+    const evidence = createAiGenerationContextTraceEvidence(materialized);
+    const provenance = evidence.contextProvenance as {
+      sections: Array<{ provenance: Record<string, unknown> }>;
+    };
+    delete provenance.sections[0]?.provenance.replay;
+
+    await expect(
+      replayGenerationContextTraceEvidence(evidence, store),
+    ).rejects.toThrow("GENERATION_CONTEXT_TRACE_SECTION_EVIDENCE_INVALID");
   });
 
   it("does not advertise exact replay for compacted sections", async () => {
