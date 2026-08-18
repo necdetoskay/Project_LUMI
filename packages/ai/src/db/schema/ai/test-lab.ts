@@ -96,6 +96,7 @@ export const testLabRuns = aiSchema.table(
     modelSlug: varchar("model_slug", { length: 240 }),
     pricingSnapshot: jsonb("pricing_snapshot"),
     usageSnapshot: jsonb("usage_snapshot"),
+    executionSnapshot: jsonb("execution_snapshot"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
