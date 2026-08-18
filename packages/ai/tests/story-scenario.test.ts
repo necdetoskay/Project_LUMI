@@ -54,8 +54,6 @@ describe("story Test Lab scenario", () => {
 
   it("rejects invalid story numbers", () => {
     expect(() => storyPhaseId(0)).toThrow("TEST_LAB_INVALID_STORY_NUMBER");
-    expect(() => storyPhaseId(1000)).toThrow(
-      "TEST_LAB_INVALID_STORY_NUMBER",
-    );
+    expect(() => storyPhaseId(1000)).toThrow("TEST_LAB_INVALID_STORY_NUMBER");
   });
 });
