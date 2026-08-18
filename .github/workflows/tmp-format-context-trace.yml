@@ -7,7 +7,6 @@ on:
       - "packages/profiles/src/application/ai-generation-trace.service.ts"
       - "packages/profiles/src/application/ai-generation-trace.service.test.ts"
       - "packages/profiles/src/application/world-character-suggestion.service.ts"
-      - "packages/profiles/migrations/0076_ai_generation_context_trace.sql"
       - ".github/workflows/tmp-format-context-trace.yml"
 
 jobs:
@@ -26,6 +25,6 @@ jobs:
       - name: Show exact Prettier diff
         shell: bash
         run: |
-          pnpm exec prettier --write packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
-          git diff -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql
-          test -z "$(git status --short -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts packages/profiles/migrations/0076_ai_generation_context_trace.sql)"
+          pnpm exec prettier --write packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts
+          git diff -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts
+          test -z "$(git status --short -- packages/profiles/src/db/schema/profile/ai-generation-traces.ts packages/profiles/src/application/ai-generation-trace.service.ts packages/profiles/src/application/ai-generation-trace.service.test.ts packages/profiles/src/application/world-character-suggestion.service.ts)"
