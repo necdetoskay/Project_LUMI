@@ -9,7 +9,10 @@ import {
   type GenerationCreationOverride,
 } from "./generation-context.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
-import { resolveActivePrompt } from "./prompt-runtime.service";
+import {
+  resolveActivePrompt,
+  resolvePromptVersion,
+} from "./prompt-runtime.service";
 import {
   generateTextWithLlm,
   type TextLlmGatewayResult,
@@ -30,6 +33,7 @@ export interface OnboardingSuggestionGenerationSpec<T> {
 export interface OnboardingSuggestionGenerationOptions {
   creationOverride?: GenerationCreationOverride;
   modelOverride?: string | null;
+  promptVersionOverride?: number;
   recordTrace?: boolean;
 }
 
@@ -70,7 +74,14 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
     locale: generationContext.child.locale,
     ...(spec.contextExtras?.(summary) ?? {}),
   };
-  const prompt = await resolveActivePrompt(spec.promptKey, context);
+  const prompt =
+    options.promptVersionOverride === undefined
+      ? await resolveActivePrompt(spec.promptKey, context)
+      : await resolvePromptVersion(
+          spec.promptKey,
+          options.promptVersionOverride,
+          context,
+        );
   const maxAttempts = Math.max(1, Math.min(spec.maxAttempts ?? 3, 3));
   let lastError: unknown;
 
