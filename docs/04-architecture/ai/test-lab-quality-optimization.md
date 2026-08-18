@@ -1,6 +1,6 @@
 # LUMI Test Lab — Stateful Quality & Prompt Optimization Architecture
 
-Status: active implementation — Phase 1 merged, Phase 2 in validation
+Status: active implementation — Phases 1–3 merged, Phase 4 in final validation
 Date: 2026-08-18
 
 ## Purpose
@@ -102,12 +102,18 @@ One generation attempt with immutable provenance:
 - parent state snapshot;
 - model profile and exact OpenRouter slug;
 - model pricing snapshot;
-- prompt key/revision + rendered prompt snapshot/fingerprint;
+- prompt key/revision;
+- raw prompt template snapshot;
+- compiled/rendered system and user prompt snapshot;
+- privacy-safe final provider request snapshot without API keys or transport headers;
+- rendered prompt and context fingerprints;
 - context policy/version + context package fingerprint/provenance;
 - generation parameters;
 - output/schema result;
 - usage/cost/latency;
-- resulting candidate state snapshot + state diff.
+- resulting candidate state snapshots and state diffs.
+
+A single TestRun represents one provider call. If that call returns multiple selectable suggestions, each suggestion is persisted as a separate `TestRunCandidate`; provider usage and cost are counted once at run level.
 
 ### TestSelection
 Explicit mapping from `session + branch + phase` to one selected candidate run/result. Enforce at DB/service/UI layers that only one active selection exists for that branch/phase.
@@ -213,16 +219,18 @@ If an earlier selected story/world/onboarding result is changed, previous downst
 For each phase Test Lab exposes:
 - current active production prompt/version;
 - editable draft copy;
-- allowed template variables;
-- prompt template;
-- compiled/rendered prompt preview;
-- final provider request preview subject to privacy/authorization;
+- allowed and required template variables;
+- raw prompt template;
+- compiled/rendered prompt;
+- privacy-safe final provider request actually used for the call;
 - output schema and generation config;
 - revision history;
-- active vs draft comparison;
+- active vs draft/revision comparison using the same phase, parent state and model;
 - explicit draft save and explicit production activation/rollback.
 
-Every TestRun snapshots the exact effective prompt even when the registry version later changes.
+Every TestRun snapshots the exact effective prompt even when the registry version later changes. Running a draft revision never activates it. Activation and rollback continue through the canonical Profiles prompt-management governance and audit path; Test Lab does not own a parallel prompt store.
+
+The final provider request snapshot contains the model, rendered messages and generation parameters required for reproducibility. Provider credentials, authorization headers and transport secrets are never persisted in this snapshot.
 
 ## Evaluation workflow
 
@@ -302,7 +310,11 @@ Results expose:
 - output preview;
 - token/cost/latency;
 - schema/validation status;
-- human + judge score summary;
+- raw prompt template;
+- rendered prompt;
+- privacy-safe final provider request;
+- active-vs-draft revision comparison for otherwise equivalent runs;
+- human + judge score summary when Evaluation Engine is available;
 - Compare;
 - `Use for next phase`.
 
@@ -333,10 +345,12 @@ Results expose:
 
 ### Phase 4 — Prompt Workspace
 - inspect active prompt;
-- draft revisions;
-- template/compiled/final request inspection;
-- history/compare;
-- safe activation/rollback integration with #199.
+- immutable draft revisions through canonical prompt governance;
+- exact active/draft revision reruns through the same production pipeline;
+- template/compiled/final provider request inspection;
+- immutable TestRun prompt provenance;
+- history and same-state/model revision comparison;
+- explicit activation/rollback integration with #199 governance.
 
 ### Phase 5 — Stateful Story Lab
 - story length controls;
