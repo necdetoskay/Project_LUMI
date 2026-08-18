@@ -69,10 +69,7 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
           renderedPromptFingerprint:
             result.provenance.renderedPromptFingerprint,
           contextFingerprint: result.provenance.contextFingerprint,
-          promptTemplateSnapshot: {
-            systemTemplate: result.provenance.promptTemplateSnapshot.system,
-            userTemplate: result.provenance.promptTemplateSnapshot.user,
-          },
+          promptTemplateSnapshot: result.provenance.promptTemplateSnapshot,
           renderedPrompt: result.provenance.renderedPrompt,
           finalProviderRequest:
             result.provenance.finalProviderRequest === null
