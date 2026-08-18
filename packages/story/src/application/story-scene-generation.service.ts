@@ -9,11 +9,13 @@ import {
   normalizeStoryContinuityContext,
   type StoryContinuityContextPort,
 } from "./story-continuity-context";
+import {
+  resolveStoryNarrativeTarget,
+  type StoryNarrativeTarget,
+} from "./story-length-policy";
 import { buildStoryScenePrompt } from "./story-scene-prompt";
 import {
   parseAndValidateSceneOutput,
-  STORY_NARRATIVE_TARGET_MAX,
-  STORY_NARRATIVE_TARGET_MIN,
   type GeneratedScene,
 } from "./story-scene-output";
 import {
@@ -56,6 +58,8 @@ export interface StorySceneGenerationInput {
   storySessionId?: string | undefined;
   /** Optional scene focus forwarded to context retrieval/ranking. */
   sceneFocus?: string | undefined;
+  /** Product/Test Lab narrative target. Defaults to the medium production preset. */
+  narrativeTarget?: StoryNarrativeTarget;
   callOpenRouter?: OpenRouterCaller;
   maxAttempts?: number;
 }
@@ -64,6 +68,7 @@ export interface StorySceneGenerationResult {
   scene: GeneratedScene;
   modelId: string | null;
   attempt: number;
+  narrativeTarget: StoryNarrativeTarget;
   /** Exact canonical manifest consumed by the successful generation call. */
   contextManifest: ContextManifest | null;
 }
@@ -78,6 +83,7 @@ export class StorySceneGenerationService {
     input: StorySceneGenerationInput,
   ): Promise<StorySceneGenerationResult> {
     const maxAttempts = input.maxAttempts ?? 3;
+    const narrativeTarget = input.narrativeTarget ?? resolveStoryNarrativeTarget();
     const brief = buildHookSceneBrief(input.hook);
     const settings = await input.settingsPort.resolveSettings();
     const relevantNpcIds = [
@@ -128,6 +134,7 @@ export class StorySceneGenerationService {
         ageBand: settings.ageBand,
         locale: settings.locale,
         generationNonce,
+        narrativeTarget,
         continuityContext,
         generationContext,
       });
@@ -168,11 +175,11 @@ export class StorySceneGenerationService {
 
         const narrativeLength = parsed.scene.narrative.length;
         if (
-          narrativeLength < STORY_NARRATIVE_TARGET_MIN ||
-          narrativeLength > STORY_NARRATIVE_TARGET_MAX
+          narrativeLength < narrativeTarget.minCharacters ||
+          narrativeLength > narrativeTarget.maxCharacters
         ) {
           lastError = new LlmGenerationError(
-            `Story scene narrative length must be ${STORY_NARRATIVE_TARGET_MIN}-${STORY_NARRATIVE_TARGET_MAX} characters; got ${narrativeLength}`,
+            `Story scene narrative length must be ${narrativeTarget.minCharacters}-${narrativeTarget.maxCharacters} characters; got ${narrativeLength}`,
           );
           continue;
         }
@@ -181,6 +188,7 @@ export class StorySceneGenerationService {
           scene: parsed.scene,
           modelId: response.model || null,
           attempt,
+          narrativeTarget,
           contextManifest: generationContext,
         };
       }
