@@ -1,4 +1,5 @@
 import { DrizzleAiGenerationTraceRepository } from "../db/repositories";
+import type { AiGenerationTraceRecord } from "../db/schema/profile";
 import { getProfileDb } from "./db";
 import type { AssembledGenerationContext } from "./generation-context-assembler";
 import type { TextLlmGatewayResult } from "./text-llm-gateway.service";
@@ -20,6 +21,97 @@ export interface RecordAiGenerationTraceInput {
   outputPayload: Record<string, unknown>;
   validationStatus: "valid" | "invalid";
   generated: TextLlmGatewayResult;
+}
+
+export interface AiGenerationContextInspectorSection {
+  section: string;
+  priority: string | null;
+  maxTokens: number | null;
+  estimatedTokens: number | null;
+  source: string | null;
+  sourceVersion: string | null;
+  authority: string | null;
+  reason: string | null;
+  updatedAt: string | null;
+  compaction: {
+    strategy: string | null;
+    originalTokens: number | null;
+    compactedTokens: number | null;
+    removedItems: number | null;
+  } | null;
+}
+
+export interface AiGenerationContextInspectorView {
+  id: string;
+  taskType: string;
+  promptKey: string;
+  promptVersion: number;
+  provider: string;
+  modelId: string;
+  validationStatus: "valid" | "invalid";
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  estimatedCostUsdMicros: number | null;
+  latencyMs: number;
+  createdAt: string;
+  context: {
+    fingerprint: string | null;
+    reconstructability: "audit_only" | "unavailable";
+    reconstructabilityReason:
+      | "privacy_safe_trace_evidence"
+      | "context_evidence_missing";
+    profile: string | null;
+    maxContextTokens: number | null;
+    estimatedTokens: number | null;
+    droppedSections: string[];
+    sections: AiGenerationContextInspectorSection[];
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function toInspectorSection(
+  value: unknown,
+): AiGenerationContextInspectorSection | null {
+  const section = asRecord(value);
+  if (!section) return null;
+  const sectionName = asString(section.section);
+  if (!sectionName) return null;
+
+  const provenance = asRecord(section.provenance);
+  const compaction = asRecord(provenance?.compaction);
+
+  return {
+    section: sectionName,
+    priority: asString(section.priority),
+    maxTokens: asNumber(section.maxTokens),
+    estimatedTokens: asNumber(section.estimatedTokens),
+    source: asString(provenance?.source),
+    sourceVersion: asString(provenance?.sourceVersion),
+    authority: asString(provenance?.authority),
+    reason: asString(provenance?.reason),
+    updatedAt: asString(provenance?.updatedAt),
+    compaction: compaction
+      ? {
+          strategy: asString(compaction.strategy),
+          originalTokens: asNumber(compaction.originalTokens),
+          compactedTokens: asNumber(compaction.compactedTokens),
+          removedItems: asNumber(compaction.removedItems),
+        }
+      : null,
+  };
 }
 
 export function createAiGenerationContextTraceEvidence(
@@ -52,6 +144,71 @@ export function createAiGenerationContextTraceEvidence(
       })),
     },
   };
+}
+
+export function toAiGenerationContextInspectorView(
+  record: AiGenerationTraceRecord,
+): AiGenerationContextInspectorView {
+  const provenance = asRecord(record.contextProvenance);
+  const sections = Array.isArray(provenance?.sections)
+    ? provenance.sections
+        .map(toInspectorSection)
+        .filter((section): section is AiGenerationContextInspectorSection =>
+          Boolean(section),
+        )
+    : [];
+  const droppedSections = Array.isArray(provenance?.droppedSections)
+    ? provenance.droppedSections.filter(
+        (section): section is string => typeof section === "string",
+      )
+    : [];
+  const hasAuditEvidence = Boolean(record.contextFingerprint && provenance);
+
+  return {
+    id: record.id,
+    taskType: record.taskType,
+    promptKey: record.promptKey,
+    promptVersion: record.promptVersion,
+    provider: record.provider,
+    modelId: record.modelId,
+    validationStatus: record.validationStatus,
+    promptTokens: record.promptTokens,
+    completionTokens: record.completionTokens,
+    totalTokens: record.totalTokens,
+    estimatedCostUsdMicros: record.estimatedCostUsdMicros,
+    latencyMs: record.latencyMs,
+    createdAt: record.createdAt.toISOString(),
+    context: {
+      fingerprint: record.contextFingerprint,
+      reconstructability: hasAuditEvidence ? "audit_only" : "unavailable",
+      reconstructabilityReason: hasAuditEvidence
+        ? "privacy_safe_trace_evidence"
+        : "context_evidence_missing",
+      profile: asString(provenance?.profile),
+      maxContextTokens: asNumber(provenance?.maxContextTokens),
+      estimatedTokens: asNumber(provenance?.estimatedTokens),
+      droppedSections,
+      sections,
+    },
+  };
+}
+
+export async function getAiGenerationContextInspectorTrace(
+  householdId: string,
+  traceId: string,
+): Promise<AiGenerationContextInspectorView | null> {
+  const repository = new DrizzleAiGenerationTraceRepository(getProfileDb());
+  const record = await repository.findByIdForHousehold(traceId, householdId);
+  return record ? toAiGenerationContextInspectorView(record) : null;
+}
+
+export async function listAiGenerationContextInspectorTraces(
+  householdId: string,
+  limit = 50,
+): Promise<AiGenerationContextInspectorView[]> {
+  const repository = new DrizzleAiGenerationTraceRepository(getProfileDb());
+  const records = await repository.listByHousehold(householdId, limit);
+  return records.map(toAiGenerationContextInspectorView);
 }
 
 export async function recordAiGenerationTrace(
