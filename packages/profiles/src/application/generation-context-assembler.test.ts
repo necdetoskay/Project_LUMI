@@ -50,6 +50,22 @@ describe("generation context assembler", () => {
     ).toThrow("GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:character_state");
   });
 
+  it("keeps a required structured personalization source when its collections are empty", () => {
+    const source = context("character_onboarding");
+    source.child.interests = [];
+    source.child.customInterests = [];
+    source.child.developmentGoals = [];
+
+    const assembled = assembleGenerationContext(source);
+    const promptContext = toPromptGenerationContext(assembled);
+
+    expect(promptContext.child_personalization).toEqual({
+      interests: [],
+      customInterests: [],
+      developmentGoals: [],
+    });
+  });
+
   it("removes internal child and creation-cycle ids from provider-visible context", () => {
     const promptContext = toPromptGenerationContext(
       assembleGenerationContext(context("character_onboarding")),
