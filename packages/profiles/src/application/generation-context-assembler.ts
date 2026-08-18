@@ -42,7 +42,6 @@ function resolveSectionValue(
   switch (section) {
     case "child_identity":
       return {
-        id: context.child.id,
         ageBand: context.child.ageBand,
         ageYears: context.child.ageYears,
         locale: context.child.locale,
@@ -55,7 +54,6 @@ function resolveSectionValue(
       };
     case "creation_direction":
       return {
-        cycleId: context.creation.cycleId,
         startDirection: context.creation.startDirection,
       };
     case "creation_selections":
@@ -70,33 +68,43 @@ function resolveSectionValue(
 
 function hasMeaningfulValue(value: unknown): boolean {
   if (value == null) return false;
-  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  if (Array.isArray(value)) return value.some(hasMeaningfulValue);
   if (typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).some((entry) => {
-      if (entry == null) return false;
-      if (Array.isArray(entry)) return entry.length > 0;
-      if (typeof entry === "string") return entry.length > 0;
-      if (typeof entry === "object") return Object.keys(entry).length > 0;
-      return true;
-    });
+    return Object.values(value as Record<string, unknown>).some(
+      hasMeaningfulValue,
+    );
   }
-  return true;
+  return false;
 }
 
-function applyTokenBudget(
+function promptContextFromSections(
+  sections: readonly AssembledGenerationContextSection[],
+): Record<string, unknown> {
+  return Object.fromEntries(
+    sections.map((section) => [section.section, section.value]),
+  );
+}
+
+function applyTotalTokenBudget(
   sections: readonly AssembledGenerationContextSection[],
   maxContextTokens: number,
 ): {
   sections: AssembledGenerationContextSection[];
   droppedSections: GenerationContextSection[];
 } {
-  const requiredTokens = sections
-    .filter((section) => section.priority === "required")
-    .reduce((total, section) => total + section.estimatedTokens, 0);
+  const required = sections.filter(
+    (section) => section.priority === "required",
+  );
+  const requiredPromptTokens = estimateGenerationContextTokens(
+    promptContextFromSections(required),
+  );
 
-  if (requiredTokens > maxContextTokens) {
+  if (requiredPromptTokens > maxContextTokens) {
     throw new Error(
-      `GENERATION_CONTEXT_REQUIRED_BUDGET_EXCEEDED:${requiredTokens}:${maxContextTokens}`,
+      `GENERATION_CONTEXT_REQUIRED_BUDGET_EXCEEDED:${requiredPromptTokens}:${maxContextTokens}`,
     );
   }
 
@@ -108,21 +116,40 @@ function applyTokenBudget(
           PRIORITY_WEIGHT[right.section.priority] || left.index - right.index,
     );
 
-  let usedTokens = 0;
-  const included = new Set<GenerationContextSection>();
+  const included: AssembledGenerationContextSection[] = [];
   const dropped = new Set<GenerationContextSection>();
 
   for (const { section } of ranked) {
-    if (usedTokens + section.estimatedTokens <= maxContextTokens) {
-      included.add(section.section);
-      usedTokens += section.estimatedTokens;
-    } else if (section.priority !== "required") {
+    const candidate = [...included, section].sort(
+      (left, right) =>
+        sections.findIndex((entry) => entry.section === left.section) -
+        sections.findIndex((entry) => entry.section === right.section),
+    );
+    const candidateTokens = estimateGenerationContextTokens(
+      promptContextFromSections(candidate),
+    );
+
+    if (candidateTokens <= maxContextTokens) {
+      included.push(section);
+    } else if (section.priority === "required") {
+      throw new Error(
+        `GENERATION_CONTEXT_REQUIRED_BUDGET_EXCEEDED:${candidateTokens}:${maxContextTokens}`,
+      );
+    } else {
       dropped.add(section.section);
     }
   }
 
+  const originalOrder = new Map(
+    sections.map((section, index) => [section.section, index]),
+  );
+
   return {
-    sections: sections.filter((section) => included.has(section.section)),
+    sections: included.sort(
+      (left, right) =>
+        (originalOrder.get(left.section) ?? 0) -
+        (originalOrder.get(right.section) ?? 0),
+    ),
     droppedSections: sections
       .filter((section) => dropped.has(section.section))
       .map((section) => section.section),
@@ -135,43 +162,77 @@ export function assembleGenerationContext(
 ): AssembledGenerationContext {
   const policy = getGenerationContextPolicy(context.profile);
   const maxContextTokens = options.maxContextTokens ?? policy.maxContextTokens;
-  const candidateSections = policy.sections.flatMap((sectionPolicy) => {
+  const candidateSections: AssembledGenerationContextSection[] = [];
+  const sectionBudgetDropped: GenerationContextSection[] = [];
+
+  for (const sectionPolicy of policy.sections) {
     const value = resolveSectionValue(context, sectionPolicy.section);
-    if (!hasMeaningfulValue(value) && sectionPolicy.priority !== "required") {
-      return [];
+
+    if (!hasMeaningfulValue(value)) {
+      if (sectionPolicy.priority === "required") {
+        throw new Error(
+          `GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:${sectionPolicy.section}`,
+        );
+      }
+      continue;
     }
 
-    return [
-      {
-        section: sectionPolicy.section,
-        priority: sectionPolicy.priority,
-        maxTokens: sectionPolicy.maxTokens,
-        estimatedTokens: Math.min(
-          sectionPolicy.maxTokens,
-          estimateGenerationContextTokens(value),
-        ),
-        value,
-      } satisfies AssembledGenerationContextSection,
-    ];
-  });
-  const budgeted = applyTokenBudget(candidateSections, maxContextTokens);
+    const estimatedTokens = estimateGenerationContextTokens(value);
+    if (estimatedTokens > sectionPolicy.maxTokens) {
+      if (sectionPolicy.priority === "required") {
+        throw new Error(
+          `GENERATION_CONTEXT_REQUIRED_SECTION_BUDGET_EXCEEDED:${sectionPolicy.section}:${estimatedTokens}:${sectionPolicy.maxTokens}`,
+        );
+      }
+      sectionBudgetDropped.push(sectionPolicy.section);
+      continue;
+    }
+
+    candidateSections.push({
+      section: sectionPolicy.section,
+      priority: sectionPolicy.priority,
+      maxTokens: sectionPolicy.maxTokens,
+      estimatedTokens,
+      value,
+    });
+  }
+
+  const budgeted = applyTotalTokenBudget(candidateSections, maxContextTokens);
+  const droppedSections = [
+    ...sectionBudgetDropped,
+    ...budgeted.droppedSections.filter(
+      (section) => !sectionBudgetDropped.includes(section),
+    ),
+  ];
+  const promptContext = promptContextFromSections(budgeted.sections);
+  const estimatedTokens = estimateGenerationContextTokens(promptContext);
+
+  if (estimatedTokens > maxContextTokens) {
+    throw new Error(
+      `GENERATION_CONTEXT_FINAL_BUDGET_EXCEEDED:${estimatedTokens}:${maxContextTokens}`,
+    );
+  }
 
   return {
     profile: context.profile,
     maxContextTokens,
-    estimatedTokens: budgeted.sections.reduce(
-      (total, section) => total + section.estimatedTokens,
-      0,
-    ),
+    estimatedTokens,
     sections: budgeted.sections,
-    droppedSections: budgeted.droppedSections,
+    droppedSections,
   };
 }
 
 export function toPromptGenerationContext(
   assembled: AssembledGenerationContext,
 ): Record<string, unknown> {
-  return Object.fromEntries(
-    assembled.sections.map((section) => [section.section, section.value]),
-  );
+  const promptContext = promptContextFromSections(assembled.sections);
+  const estimatedTokens = estimateGenerationContextTokens(promptContext);
+
+  if (estimatedTokens > assembled.maxContextTokens) {
+    throw new Error(
+      `GENERATION_CONTEXT_FINAL_BUDGET_EXCEEDED:${estimatedTokens}:${assembled.maxContextTokens}`,
+    );
+  }
+
+  return promptContext;
 }

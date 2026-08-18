@@ -44,28 +44,19 @@ describe("generation context assembler", () => {
     expect(assembled.estimatedTokens).toBeLessThanOrEqual(1800);
   });
 
-  it("keeps required future sections visible while optional empty sections are omitted", () => {
-    const assembled = assembleGenerationContext(context("story_generation"));
-
-    expect(assembled.sections.map((entry) => entry.section)).toEqual([
-      "child_identity",
-      "child_personalization",
-      "character_state",
-    ]);
-    expect(
-      assembled.sections.find((entry) => entry.section === "character_state")
-        ?.value,
-    ).toBeNull();
+  it("rejects a required section when its canonical value is missing", () => {
+    expect(() =>
+      assembleGenerationContext(context("story_generation")),
+    ).toThrow("GENERATION_CONTEXT_REQUIRED_SOURCE_MISSING:character_state");
   });
 
-  it("converts assembled sections into stable prompt context keys", () => {
+  it("removes internal child and creation-cycle ids from provider-visible context", () => {
     const promptContext = toPromptGenerationContext(
       assembleGenerationContext(context("character_onboarding")),
     );
 
     expect(promptContext).toEqual({
       child_identity: {
-        id: "child-1",
         ageBand: "6-8",
         ageYears: 7,
         locale: "tr-TR",
@@ -76,11 +67,12 @@ describe("generation context assembler", () => {
         developmentGoals: ["curiosity"],
       },
       creation_direction: {
-        cycleId: "cycle-1",
         startDirection: "world_first",
       },
       creation_selections: { worldFeeling: "crystal_caves" },
     });
+    expect(JSON.stringify(promptContext)).not.toContain("child-1");
+    expect(JSON.stringify(promptContext)).not.toContain("cycle-1");
   });
 
   it("estimates tokens deterministically", () => {
@@ -92,26 +84,52 @@ describe("generation context assembler", () => {
     expect(estimateGenerationContextTokens(value)).toBeGreaterThan(0);
   });
 
-  it("drops lower priority sections before required sections when budget is tight", () => {
+  it("drops an oversized optional section instead of undercounting its payload", () => {
     const source = context("character_onboarding");
     source.creation.previousSelections = {
       worldFeeling: "crystal_caves",
-      flavor: "x".repeat(1200),
+      flavor: "x".repeat(4_000),
     };
 
+    const assembled = assembleGenerationContext(source);
+    const promptContext = toPromptGenerationContext(assembled);
+
+    expect(assembled.droppedSections).toContain("creation_selections");
+    expect(promptContext).not.toHaveProperty("creation_selections");
+    expect(assembled.estimatedTokens).toBeLessThanOrEqual(
+      assembled.maxContextTokens,
+    );
+  });
+
+  it("rejects an oversized required section instead of clipping accounting only", () => {
+    const source = context("character_onboarding");
+    source.child.interests = ["x".repeat(4_000)];
+
+    expect(() => assembleGenerationContext(source)).toThrow(
+      /GENERATION_CONTEXT_REQUIRED_SECTION_BUDGET_EXCEEDED:child_personalization/,
+    );
+  });
+
+  it("drops lower priority sections before required sections when total budget is tight", () => {
+    const source = context("character_onboarding");
     const baseline = assembleGenerationContext(source);
-    const requiredTokens = baseline.sections
-      .filter((section) => section.priority === "required")
-      .reduce((total, section) => total + section.estimatedTokens, 0);
+    const requiredOnly = baseline.sections.filter(
+      (section) => section.priority === "required",
+    );
+    const requiredPromptTokens = estimateGenerationContextTokens(
+      Object.fromEntries(
+        requiredOnly.map((section) => [section.section, section.value]),
+      ),
+    );
     const assembled = assembleGenerationContext(source, {
-      maxContextTokens: requiredTokens,
+      maxContextTokens: requiredPromptTokens,
     });
 
     expect(
       assembled.sections.every((section) => section.priority === "required"),
     ).toBe(true);
     expect(assembled.droppedSections).toContain("creation_selections");
-    expect(assembled.estimatedTokens).toBeLessThanOrEqual(requiredTokens);
+    expect(assembled.estimatedTokens).toBeLessThanOrEqual(requiredPromptTokens);
   });
 
   it("fails safely instead of silently dropping required context", () => {
@@ -122,12 +140,26 @@ describe("generation context assembler", () => {
     ).toThrow(/GENERATION_CONTEXT_REQUIRED_BUDGET_EXCEEDED/);
   });
 
+  it("verifies the final provider-bound payload against the total budget", () => {
+    const assembled = assembleGenerationContext(
+      context("character_onboarding"),
+    );
+    const promptContext = toPromptGenerationContext(assembled);
+
+    expect(estimateGenerationContextTokens(promptContext)).toBe(
+      assembled.estimatedTokens,
+    );
+    expect(assembled.estimatedTokens).toBeLessThanOrEqual(
+      assembled.maxContextTokens,
+    );
+  });
+
   it("produces the same budget decision for the same input", () => {
     const first = assembleGenerationContext(context("character_onboarding"), {
-      maxContextTokens: 80,
+      maxContextTokens: 160,
     });
     const second = assembleGenerationContext(context("character_onboarding"), {
-      maxContextTokens: 80,
+      maxContextTokens: 160,
     });
 
     expect(second).toEqual(first);
