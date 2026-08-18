@@ -156,7 +156,9 @@ export function replayGenerationContextSource(
   reference: GenerationContextSourceReplayReference,
 ): unknown {
   if (!source.replay) {
-    throw new Error(`GENERATION_CONTEXT_SOURCE_NOT_REPLAYABLE:${source.section}`);
+    throw new Error(
+      `GENERATION_CONTEXT_SOURCE_NOT_REPLAYABLE:${source.section}`,
+    );
   }
   return source.replay(reference);
 }
