@@ -7,9 +7,7 @@ import type { JsonObject, JsonValue } from "./test-lab-types";
 export type ConsistencySeverity = "warning" | "error";
 
 export interface NarrativeStateConsistencyIssue {
-  code:
-    | "ITEM_RETAINED_AFTER_LOSS"
-    | "ITEM_MISSING_AFTER_GAIN";
+  code: "ITEM_RETAINED_AFTER_LOSS";
   severity: ConsistencySeverity;
   itemKey: string;
   message: string;
@@ -60,18 +58,6 @@ const LOSS_VERBS = [
   "tüketti",
 ];
 
-const GAIN_VERBS = [
-  "found",
-  "received",
-  "got",
-  "picked up",
-  "earned",
-  "buldu",
-  "aldı",
-  "kazandı",
-  "eline aldı",
-];
-
 export function checkNarrativeStateConsistency(input: {
   narrative: string;
   beforeState: JsonObject;
@@ -89,18 +75,6 @@ export function checkNarrativeStateConsistency(input: {
         severity: "error",
         itemKey: key,
         message: `${label} narrative içinde kaybedilmiş/elden çıkarılmış görünüyor ancak resulting state inventory içinde korunmuş.`,
-        evidence: label,
-      });
-    }
-  }
-
-  for (const [key, label] of mentionedInventoryCandidates(input.afterState)) {
-    if (!after.has(key) && mentionsAction(narrative, label, GAIN_VERBS)) {
-      issues.push({
-        code: "ITEM_MISSING_AFTER_GAIN",
-        severity: "error",
-        itemKey: key,
-        message: `${label} narrative içinde kazanılmış/bulunmuş görünüyor ancak resulting state inventory içinde yok.`,
         evidence: label,
       });
     }
@@ -180,7 +154,9 @@ export function createStoryArcEvaluationPayload(
       characterStateChanges: transitionCount(characterFingerprints),
       worldStateChanges: transitionCount(worldFingerprints),
       npcStateChanges: transitionCount(npcFingerprints),
-      repeatedNarrativePairs: repeatedNarrativePairs(entries.map((entry) => entry.narrative)),
+      repeatedNarrativePairs: repeatedNarrativePairs(
+        entries.map((entry) => entry.narrative),
+      ),
     },
   };
 }
@@ -194,10 +170,6 @@ function inventoryIndex(state: JsonObject): Map<string, string> {
       return label ? [[normalizeKey(label), label] as const] : [];
     }),
   );
-}
-
-function mentionedInventoryCandidates(state: JsonObject): Map<string, string> {
-  return inventoryIndex(state);
 }
 
 function inventoryLabel(value: JsonValue): string | null {
