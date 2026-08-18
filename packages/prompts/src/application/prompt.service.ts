@@ -44,6 +44,15 @@ export interface CreatePromptVersionServiceInput {
   outputSchema?: Record<string, unknown> | undefined;
 }
 
+export interface CreatePromptDraftServiceInput {
+  householdId: string;
+  promptKey: string;
+  templateBody?: string | undefined;
+  variableSchema?: PromptVariableDefinition[] | undefined;
+  modelPreferences?: Record<string, unknown> | undefined;
+  outputSchema?: Record<string, unknown> | undefined;
+}
+
 export async function createPromptRegistry(
   input: CreatePromptRegistryServiceInput,
 ) {
@@ -81,6 +90,54 @@ export async function createPromptVersion(
     updatedAt: state.updatedAt,
     publishedAt: state.publishedAt,
     archivedAt: state.archivedAt,
+  });
+}
+
+export async function getPromptWorkspace(
+  householdId: string,
+  promptKey: string,
+) {
+  const db = getDb();
+  const repo = getRepo();
+  const registry = await repo.getRegistryByKey(db, householdId, promptKey);
+  if (!registry) {
+    throw new NotFoundError("PromptRegistry", `${householdId}:${promptKey}`);
+  }
+
+  const [activeVersion, versions] = await Promise.all([
+    repo.getActiveVersion(db, registry.id),
+    repo.listVersionsByRegistry(db, registry.id),
+  ]);
+
+  return { registry, activeVersion: activeVersion ?? null, versions };
+}
+
+export async function createPromptDraft(
+  input: CreatePromptDraftServiceInput,
+) {
+  const db = getDb();
+  const repo = getRepo();
+  const workspace = await getPromptWorkspace(input.householdId, input.promptKey);
+  const source = workspace.activeVersion ?? workspace.versions.at(-1);
+  if (!source) {
+    throw new NotFoundError("PromptVersion", workspace.registry.id);
+  }
+
+  const nextVersionNumber =
+    workspace.versions.reduce(
+      (max, version) => Math.max(max, version.versionNumber),
+      0,
+    ) + 1;
+
+  return createPromptVersion({
+    registryId: workspace.registry.id,
+    versionNumber: nextVersionNumber,
+    templateBody: input.templateBody ?? source.templateBody,
+    variableSchema:
+      input.variableSchema ?? asVariableDefinitions(source.variableSchema),
+    modelPreferences:
+      input.modelPreferences ?? asObject(source.modelPreferences),
+    outputSchema: input.outputSchema ?? asObject(source.outputSchema),
   });
 }
 
@@ -151,16 +208,15 @@ export async function getActivePromptVersion(registryId: string) {
   return repo.getActiveVersion(db, registryId);
 }
 
-export async function renderActivePrompt(
-  registryId: string,
+export async function renderPromptVersion(
+  versionId: string,
   values: Record<string, unknown>,
 ): Promise<RenderedPrompt> {
   const db = getDb();
   const repo = getRepo();
-
-  const record = await repo.getActiveVersion(db, registryId);
+  const record = await repo.getVersionById(db, versionId);
   if (!record) {
-    throw new NotFoundError("ActivePromptVersion", registryId);
+    throw new NotFoundError("PromptVersion", versionId);
   }
 
   assertKnownPromptVersionStatus(record.status);
@@ -174,14 +230,27 @@ export async function renderActivePrompt(
     archivedAt: record.archivedAt ?? null,
   });
 
-  version.assertRenderable();
-
   return renderPrompt(
     version.templateBody,
     version.id,
     version.variableSchema,
     values,
   );
+}
+
+export async function renderActivePrompt(
+  registryId: string,
+  values: Record<string, unknown>,
+): Promise<RenderedPrompt> {
+  const db = getDb();
+  const repo = getRepo();
+
+  const record = await repo.getActiveVersion(db, registryId);
+  if (!record) {
+    throw new NotFoundError("ActivePromptVersion", registryId);
+  }
+
+  return renderPromptVersion(record.id, values);
 }
 
 function asVariableDefinitions(value: unknown): PromptVariableDefinition[] {
