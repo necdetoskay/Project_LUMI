@@ -40,10 +40,7 @@ test("production Stories route renders the child-first Adventure Hub", async ({
     .first();
   await expect(newAdventure).toBeVisible({ timeout: 60_000 });
 
-  const stories = page
-    .locator("section")
-    .filter({ has: newAdventure })
-    .first();
+  const stories = page.locator("section").filter({ has: newAdventure }).first();
   await expect(stories).toBeVisible({ timeout: 60_000 });
   await expect(
     stories.locator("text=/Macera|Adventure/i").first(),
