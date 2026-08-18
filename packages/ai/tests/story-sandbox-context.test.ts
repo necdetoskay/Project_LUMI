@@ -38,7 +38,9 @@ function parentState(): JsonObject {
 
 describe("story sandbox context", () => {
   it("requires Story N to consume exactly N-1 selected stories", () => {
-    expect(() => readStorySandboxScope(parentState(), "story_002")).not.toThrow();
+    expect(() =>
+      readStorySandboxScope(parentState(), "story_002"),
+    ).not.toThrow();
     expect(() => readStorySandboxScope(parentState(), "story_003")).toThrow(
       "TEST_LAB_STORY_LINEAGE_MISMATCH",
     );
@@ -54,9 +56,9 @@ describe("story sandbox context", () => {
     );
     expect(workingStory.playerKnownFacts.join(" ")).toContain("silver-key");
     expect(workingStory.playerKnownFacts.join(" ")).toContain("Mira");
-    expect(workingStory.activeCharacterContexts[0]?.relevantMemories.join(" ")).toContain(
-      "found a lantern",
-    );
+    expect(
+      workingStory.activeCharacterContexts[0]?.relevantMemories.join(" "),
+    ).toContain("found a lantern");
     expect(
       workingStory.activeCharacterContexts[0]?.relationshipNotes.join(" "),
     ).toContain("trusted-friend");
