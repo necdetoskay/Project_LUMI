@@ -78,8 +78,14 @@ export class TestLabCoordinator {
       throw new TestLabInvariantError("TEST_LAB_CROSS_SESSION_REFERENCE");
     }
 
-    if (parentState.branchId !== branch.id && session.activeBranchId === branch.id) {
-      throw new TestLabInvariantError("TEST_LAB_PARENT_STATE_NOT_ON_BRANCH");
+    if (parentState.branchId !== branch.id) {
+      const branchSelections = await this.repository.listSelections(branch.id);
+      const selectedOnBranch = branchSelections.some(
+        (selection) => selection.selectedStateId === parentState.id,
+      );
+      if (!selectedOnBranch) {
+        throw new TestLabInvariantError("TEST_LAB_PARENT_STATE_NOT_SELECTED_ON_BRANCH");
+      }
     }
 
     const candidateState: StateSnapshot = {
