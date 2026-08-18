@@ -22,6 +22,7 @@ export interface CharacterOnboardingTestLabExecutionInput {
   phaseId: CharacterOnboardingTestLabPhase;
   parentState: Record<string, unknown>;
   modelSlug: string;
+  promptVersion?: number;
 }
 
 export interface CharacterOnboardingTestLabCandidate {
@@ -66,6 +67,9 @@ export async function executeCharacterOnboardingTestLabPhase(
         previousSelections: input.parentState,
       },
       modelOverride: input.modelSlug,
+      ...(input.promptVersion === undefined
+        ? {}
+        : { promptVersionOverride: input.promptVersion }),
       recordTrace: false,
     },
   );
