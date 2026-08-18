@@ -9,6 +9,9 @@ test("captures the canonical Test Lab dashboard", async ({ page }) => {
 
   await expect(page.getByTestId("canonical-test-lab-dashboard")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Test Lab" })).toBeVisible();
+  await page.locator("nextjs-portal").evaluateAll((nodes) => {
+    nodes.forEach((node) => node.remove());
+  });
 
   await page.screenshot({
     path: "test-results/test-lab-canonical-ui1.png",
