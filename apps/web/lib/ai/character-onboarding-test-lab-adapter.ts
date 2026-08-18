@@ -38,7 +38,7 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         modelSlug: request.modelSlug,
         ...(request.promptVersionOverride === undefined
           ? {}
-          : { promptVersion: request.promptVersionOverride }),
+          : { promptVersionOverride: request.promptVersionOverride }),
       });
 
       const usage =
@@ -69,9 +69,15 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
           renderedPromptFingerprint:
             result.provenance.renderedPromptFingerprint,
           contextFingerprint: result.provenance.contextFingerprint,
-          promptTemplateSnapshot: result.provenance.promptTemplateSnapshot,
+          promptTemplateSnapshot: {
+            systemTemplate: result.provenance.promptTemplateSnapshot.system,
+            userTemplate: result.provenance.promptTemplateSnapshot.user,
+          },
           renderedPrompt: result.provenance.renderedPrompt,
-          finalProviderRequest: result.provenance.finalProviderRequest,
+          finalProviderRequest:
+            result.provenance.finalProviderRequest === null
+              ? null
+              : toJsonObject(result.provenance.finalProviderRequest),
           modelSlug: result.provenance.modelSlug,
           usage,
         },
