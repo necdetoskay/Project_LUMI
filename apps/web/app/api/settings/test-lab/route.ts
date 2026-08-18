@@ -3,14 +3,19 @@ import { NextResponse } from "next/server";
 import { getAiDb } from "@lumi/ai/db/client";
 import {
   CHARACTER_ONBOARDING_SCENARIO,
+  createStoryGenerationPhase,
+  createStoryGenerationScenario,
   DrizzleTestLabRepository,
   OpenRouterModelCatalog,
   ProductionTestRunner,
+  storyNumberFromPhaseId,
+  STORY_GENERATION_SCENARIO_KEY,
   TestLabCoordinator,
   type JsonObject,
+  type TestPhaseDefinition,
 } from "@lumi/ai/test-lab";
 import { withParent } from "@/lib/auth/with-parent";
-import { characterOnboardingProductionScenarioAdapter } from "@/lib/ai/character-onboarding-test-lab-adapter";
+import { testLabProductionScenarioAdapter } from "@/lib/ai/test-lab-production-adapter";
 import {
   assertSandboxOwner,
   bindSandboxOwner,
@@ -25,7 +30,7 @@ function services() {
   const runner = new ProductionTestRunner(
     repository,
     coordinator,
-    characterOnboardingProductionScenarioAdapter,
+    testLabProductionScenarioAdapter,
   );
   return { repository, coordinator, runner };
 }
@@ -35,6 +40,10 @@ export const GET = observeHandler(() => {
     NextResponse.json({
       data: {
         scenario: CHARACTER_ONBOARDING_SCENARIO,
+        scenarios: {
+          characterOnboarding: CHARACTER_ONBOARDING_SCENARIO,
+          storyGeneration: createStoryGenerationScenario(10),
+        },
         productionBackedPhaseIds: [
           "character_first_identity_suggestions",
           "world_suggestions",
@@ -63,6 +72,7 @@ export const POST = observeHandler(async (request: Request) => {
           body.childProfileId,
           "childProfileId",
         );
+        const scenarioKey = scenarioKeyFromBody(body.scenarioKey);
         const initialState = bindSandboxOwner(suppliedState, {
           parentId: parent.id,
           householdId,
@@ -74,7 +84,7 @@ export const POST = observeHandler(async (request: Request) => {
         const created = await coordinator.createSession({
           sessionId,
           branchId,
-          scenarioKey: CHARACTER_ONBOARDING_SCENARIO.key,
+          scenarioKey,
           initialStateId,
           initialState,
           now,
@@ -100,19 +110,19 @@ export const POST = observeHandler(async (request: Request) => {
           body.promptVersionOverride,
           "promptVersionOverride",
         );
+        const generationConfig = optionalJsonObject(
+          body.generationConfig,
+          "generationConfig",
+        );
         const parentState = await repository.getState(parentStateId);
         assertSandboxOwner(parentState, {
           parentId: parent.id,
           householdId,
           childProfileId,
         });
-
-        const phase = CHARACTER_ONBOARDING_SCENARIO.phases.find(
-          (candidate) => candidate.id === phaseId,
-        );
-        if (!phase?.testable || !phase.productionOperation) {
-          throw new Error(`TEST_LAB_PHASE_NOT_RUNNABLE:${phaseId}`);
-        }
+        const session = await repository.getSession(sessionId);
+        if (!session) throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
+        const phase = phaseForSession(session.scenarioKey, phaseId);
 
         const modelProfile =
           await new OpenRouterModelCatalog().resolveModelProfile({
@@ -129,6 +139,7 @@ export const POST = observeHandler(async (request: Request) => {
           ...(promptVersionOverride === undefined
             ? {}
             : { promptVersionOverride }),
+          ...(generationConfig === undefined ? {} : { generationConfig }),
           pricingSnapshot: modelProfile.pricing,
           actor: {
             userId: parent.id,
@@ -181,6 +192,36 @@ export const POST = observeHandler(async (request: Request) => {
   });
 }, "/api/settings/test-lab");
 
+function phaseForSession(
+  scenarioKey: string,
+  phaseId: string,
+): TestPhaseDefinition {
+  if (scenarioKey === CHARACTER_ONBOARDING_SCENARIO.key) {
+    const phase = CHARACTER_ONBOARDING_SCENARIO.phases.find(
+      (candidate) => candidate.id === phaseId,
+    );
+    if (phase?.testable && phase.productionOperation) return phase;
+  }
+  if (scenarioKey === STORY_GENERATION_SCENARIO_KEY) {
+    const storyNumber = storyNumberFromPhaseId(phaseId);
+    if (storyNumber) return createStoryGenerationPhase(storyNumber);
+  }
+  throw new Error(`TEST_LAB_PHASE_NOT_RUNNABLE:${scenarioKey}:${phaseId}`);
+}
+
+function scenarioKeyFromBody(value: unknown): string {
+  if (value === undefined || value === null || value === "") {
+    return CHARACTER_ONBOARDING_SCENARIO.key;
+  }
+  if (
+    value === CHARACTER_ONBOARDING_SCENARIO.key ||
+    value === STORY_GENERATION_SCENARIO_KEY
+  ) {
+    return value;
+  }
+  throw new Error(`TEST_LAB_UNSUPPORTED_SCENARIO:${String(value)}`);
+}
+
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`TEST_LAB_REQUIRED_FIELD:${field}`);
@@ -197,6 +238,14 @@ function optionalPositiveInteger(
     throw new Error(`TEST_LAB_POSITIVE_INTEGER_REQUIRED:${field}`);
   }
   return value;
+}
+
+function optionalJsonObject(
+  value: unknown,
+  field: string,
+): JsonObject | undefined {
+  if (value === undefined || value === null) return undefined;
+  return asJsonObject(value, field);
 }
 
 function asJsonObject(value: unknown, field: string): JsonObject {
