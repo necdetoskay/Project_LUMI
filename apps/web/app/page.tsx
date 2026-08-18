@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import styles from "./landing-v2.module.css";
 
+// Keep the approved first mockup as the landing page's single visual source of truth.
 export default function HomePage() {
   return (
     <div className={`lumi-landing-v2 ${styles.page}`}>
