@@ -102,12 +102,17 @@ export class TestLabCoordinator {
       }
     }
 
-    if (
-      (input.pricingSnapshot !== undefined && input.pricingSnapshot !== null) !==
-      (input.modelSlug !== undefined && input.modelSlug !== null)
-    ) {
+    const hasModel = input.modelSlug !== undefined && input.modelSlug !== null;
+    const hasPricing =
+      input.pricingSnapshot !== undefined && input.pricingSnapshot !== null;
+    if (hasModel !== hasPricing) {
       throw new TestLabInvariantError(
         "TEST_LAB_MODEL_PRICING_SNAPSHOT_REQUIRES_MODEL_SLUG",
+      );
+    }
+    if (input.usageSnapshot && (!hasModel || !hasPricing)) {
+      throw new TestLabInvariantError(
+        "TEST_LAB_USAGE_REQUIRES_MODEL_PRICING_SNAPSHOT",
       );
     }
 
