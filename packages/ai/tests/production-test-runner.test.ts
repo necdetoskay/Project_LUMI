@@ -77,6 +77,21 @@ describe("ProductionTestRunner", () => {
             promptVersion: 7,
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
+            promptTemplateSnapshot: {
+              systemTemplate: "System {{previousSelections}}",
+              userTemplate: "User {{locale}}",
+            },
+            renderedPrompt: {
+              system: "System rendered",
+              user: "User rendered",
+            },
+            finalProviderRequest: {
+              model: request.modelSlug,
+              messages: [
+                { role: "system", content: "System rendered" },
+                { role: "user", content: "User rendered" },
+              ],
+            },
             modelSlug: request.modelSlug,
             usage: {
               promptTokens: 120,
@@ -131,6 +146,21 @@ describe("ProductionTestRunner", () => {
       promptVersion: 7,
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
+      promptTemplateSnapshot: {
+        systemTemplate: "System {{previousSelections}}",
+        userTemplate: "User {{locale}}",
+      },
+      renderedPrompt: {
+        system: "System rendered",
+        user: "User rendered",
+      },
+      finalProviderRequest: {
+        model: "vendor/model-a",
+        messages: [
+          { role: "system", content: "System rendered" },
+          { role: "user", content: "User rendered" },
+        ],
+      },
     });
     expect(result.run.usageSnapshot?.actualCostUsd).toBe(0.00027);
     expect(result.candidates.map((candidate) => candidate.id)).toEqual([
@@ -175,6 +205,12 @@ describe("ProductionTestRunner", () => {
             promptVersion: 1,
             renderedPromptFingerprint: "prompt-sha",
             contextFingerprint: "context-sha",
+            promptTemplateSnapshot: {
+              systemTemplate: "system",
+              userTemplate: "user",
+            },
+            renderedPrompt: { system: "system", user: "user" },
+            finalProviderRequest: null,
             modelSlug: "vendor/unexpected-model",
             usage: null,
           },
