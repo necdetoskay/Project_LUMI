@@ -61,7 +61,8 @@ export function buildStoryScenePrompt(input: StoryScenePromptInput): string {
     continuityContext,
     generationContext,
   } = input;
-  const narrativeTarget = input.narrativeTarget ?? resolveStoryNarrativeTarget();
+  const narrativeTarget =
+    input.narrativeTarget ?? resolveStoryNarrativeTarget();
   const sceneType = mapHookToScene(brief.hookType);
 
   const claimLine = brief.claim ? `- Hikaye ipucu (claim): ${brief.claim}` : "";
