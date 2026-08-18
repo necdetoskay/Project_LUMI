@@ -111,7 +111,10 @@ export class DrizzleChildProfileRepository implements ChildProfileRepository {
     const deleted = await this.db
       .delete(childProfiles)
       .where(
-        and(eq(childProfiles.id, id), eq(childProfiles.householdId, householdId)),
+        and(
+          eq(childProfiles.id, id),
+          eq(childProfiles.householdId, householdId),
+        ),
       )
       .returning({ id: childProfiles.id });
     return deleted.length > 0;
