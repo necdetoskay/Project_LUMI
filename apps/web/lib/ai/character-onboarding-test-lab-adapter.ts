@@ -72,7 +72,7 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
           promptTemplateSnapshot: result.provenance.promptTemplateSnapshot,
           renderedPrompt: result.provenance.renderedPrompt,
           finalProviderRequest:
-            result.provenance.finalProviderRequest === null
+            result.provenance.finalProviderRequest == null
               ? null
               : toJsonObject(result.provenance.finalProviderRequest),
           modelSlug: result.provenance.modelSlug,
