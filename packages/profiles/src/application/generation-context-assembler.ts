@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 
+import {
+  createGenerationContextCompactorRegistry,
+  type GenerationContextCompactor,
+} from "./generation-context-compaction";
 import type { GenerationContext } from "./generation-context.service";
 import {
   getGenerationContextPolicy,
@@ -14,6 +18,13 @@ import {
   type GenerationContextSourceResult,
 } from "./generation-context-source";
 
+export interface GenerationContextCompactionEvidence {
+  strategy: string;
+  originalTokens: number;
+  compactedTokens: number;
+  removedItems: number;
+}
+
 export interface GenerationContextSectionProvenance {
   source: string;
   sourceId?: string;
@@ -22,6 +33,7 @@ export interface GenerationContextSectionProvenance {
   authority: GenerationContextSourceAuthority;
   reason: GenerationContextSourceReason;
   updatedAt?: string;
+  compaction?: GenerationContextCompactionEvidence;
 }
 
 export interface AssembledGenerationContextSection {
@@ -45,6 +57,7 @@ export interface AssembledGenerationContext {
 export interface AssembleGenerationContextOptions {
   maxContextTokens?: number;
   sources?: readonly GenerationContextSource[];
+  compactors?: readonly GenerationContextCompactor[];
 }
 
 const PRIORITY_WEIGHT: Record<GenerationContextPriority, number> = {
@@ -117,6 +130,7 @@ function promptContextFromSections(
 function provenanceFromSource(
   source: GenerationContextSource,
   result: GenerationContextSourceResult,
+  compaction?: GenerationContextCompactionEvidence,
 ): GenerationContextSectionProvenance {
   return {
     source: source.source,
@@ -126,6 +140,7 @@ function provenanceFromSource(
     ...(result.sourceId ? { sourceId: result.sourceId } : {}),
     ...(result.revision ? { revision: result.revision } : {}),
     ...(result.updatedAt ? { updatedAt: result.updatedAt } : {}),
+    ...(compaction ? { compaction } : {}),
   };
 }
 
@@ -204,6 +219,9 @@ export function assembleGenerationContext(
   const policy = getGenerationContextPolicy(context.profile);
   const maxContextTokens = options.maxContextTokens ?? policy.maxContextTokens;
   const sourceRegistry = createGenerationContextSourceRegistry(options.sources);
+  const compactorRegistry = createGenerationContextCompactorRegistry(
+    options.compactors,
+  );
   const candidateSections: AssembledGenerationContextSection[] = [];
   const droppedSections = new Set<GenerationContextSection>();
 
@@ -233,7 +251,7 @@ export function assembleGenerationContext(
       continue;
     }
 
-    const value = result.value;
+    let value = result.value;
     if (!hasMeaningfulValue(value)) {
       if (sectionPolicy.priority === "required") {
         throw new Error(
@@ -243,7 +261,39 @@ export function assembleGenerationContext(
       continue;
     }
 
-    const estimatedTokens = estimateGenerationContextTokens(value);
+    let estimatedTokens = estimateGenerationContextTokens(value);
+    let compactionEvidence: GenerationContextCompactionEvidence | undefined;
+
+    if (estimatedTokens > sectionPolicy.maxTokens) {
+      const compactor = compactorRegistry.get(sectionPolicy.section);
+      if (compactor) {
+        try {
+          const compacted = compactor.compact({
+            value,
+            maxTokens: sectionPolicy.maxTokens,
+            estimateTokens: estimateGenerationContextTokens,
+          });
+          if (compacted && hasMeaningfulValue(compacted.value)) {
+            const remeasuredTokens = estimateGenerationContextTokens(
+              compacted.value,
+            );
+            if (remeasuredTokens <= sectionPolicy.maxTokens) {
+              compactionEvidence = {
+                strategy: compacted.strategy,
+                originalTokens: estimatedTokens,
+                compactedTokens: remeasuredTokens,
+                removedItems: compacted.removedItems,
+              };
+              value = compacted.value;
+              estimatedTokens = remeasuredTokens;
+            }
+          }
+        } catch {
+          // Safe fallback below preserves existing required-fail/optional-drop semantics.
+        }
+      }
+    }
+
     if (estimatedTokens > sectionPolicy.maxTokens) {
       if (sectionPolicy.priority === "required") {
         throw new Error(
@@ -260,7 +310,11 @@ export function assembleGenerationContext(
       maxTokens: sectionPolicy.maxTokens,
       estimatedTokens,
       value,
-      provenance: provenanceFromSource(contextSource, result),
+      provenance: provenanceFromSource(
+        contextSource,
+        result,
+        compactionEvidence,
+      ),
     });
   }
 
