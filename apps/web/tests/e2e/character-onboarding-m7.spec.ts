@@ -40,18 +40,6 @@ async function createParentFixture(context: BrowserContext) {
   });
   expect(child.status()).toBe(201);
   const childProfileId = (await child.json()).profile.id as string;
-  const personalization = await request.put(
-    `/api/child-profiles/${encodeURIComponent(childProfileId)}/personalization`,
-    {
-      data: {
-        householdId,
-        interests: [],
-        customInterests: ["stars", "music"],
-        developmentGoals: [],
-      },
-    },
-  );
-  expect(personalization.status()).toBe(200);
   const key = await request.put("/api/settings/llm", {
     data: {
       action: "upsert-key",
