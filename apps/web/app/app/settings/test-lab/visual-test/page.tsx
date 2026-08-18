@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import "../canonical-dashboard-tuning.module.css";
 import CanonicalTestLabDashboard from "../canonical-dashboard";
 
 export const dynamic = "force-dynamic";
