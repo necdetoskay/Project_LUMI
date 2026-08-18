@@ -1,8 +1,14 @@
-import { recordAiGenerationTrace } from "./ai-generation-trace.service";
+import { DrizzleGenerationContextSnapshotStore } from "../db/repositories";
+import {
+  createAiGenerationContextTraceEvidence,
+  recordAiGenerationTrace,
+} from "./ai-generation-trace.service";
+import { getProfileDb } from "./db";
 import {
   assembleGenerationContext,
   toPromptGenerationContext,
 } from "./generation-context-assembler";
+import { materializeGenerationContextSnapshots } from "./generation-context-snapshot.service";
 import {
   buildGenerationContext,
   type GenerationContext,
@@ -69,7 +75,11 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
   const summary = generationContext.creation.previousSelections;
   spec.summaryGuard(summary);
 
-  const assembled = assembleGenerationContext(generationContext);
+  const assembled = await materializeGenerationContextSnapshots(
+    assembleGenerationContext(generationContext),
+    new DrizzleGenerationContextSnapshotStore(getProfileDb()),
+  );
+  const contextEvidence = createAiGenerationContextTraceEvidence(assembled);
   const context = {
     ...toPromptGenerationContext(assembled),
     previousSelections: summary,
@@ -119,6 +129,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           promptKey: prompt.promptKey,
           promptVersion: prompt.promptVersion,
           inputContext: { ...context, generationAttempt: attempt },
+          contextEvidence,
           outputPayload: { suggestions },
           validationStatus: "valid",
           generated,
@@ -148,6 +159,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           promptKey: prompt.promptKey,
           promptVersion: prompt.promptVersion,
           inputContext: { ...context, generationAttempt: attempt },
+          contextEvidence,
           outputPayload: { raw: generated.content },
           validationStatus: "invalid",
           generated,
