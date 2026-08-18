@@ -5,6 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { PromptWorkspace } from "./prompt-workspace";
 
+type ScenarioKey = "character_onboarding" | "story_generation";
+type StoryLengthPreset = "short" | "medium" | "long" | "custom";
+
 type Phase = {
   id: string;
   label: string;
@@ -13,16 +16,27 @@ type Phase = {
   requiredStateKeys: string[];
 };
 
+type StateDiff = {
+  fromStateId: string;
+  toStateId: string;
+  addedKeys: string[];
+  removedKeys: string[];
+  changedKeys: string[];
+};
+
 type Candidate = {
   id: string;
   runId: string;
   ordinal: number;
   payload: Record<string, unknown>;
   candidateStateId: string;
+  candidateState: Record<string, unknown>;
+  stateDiff: StateDiff;
 };
 
 type ExecutionSnapshot = {
   productionOperation: string;
+  generationConfig: Record<string, unknown> | null;
   promptKey: string | null;
   promptVersion: number | null;
   renderedPromptFingerprint: string | null;
@@ -58,6 +72,17 @@ type RunResult = {
   };
 };
 
+type TimelineEntry = {
+  phaseId: string;
+  runId: string;
+  candidateId: string;
+  fromStateId: string;
+  toStateId: string;
+  branchId: string;
+  forked: boolean;
+  stateDiff: StateDiff;
+};
+
 const PHASE_PROMPT_KEYS: Record<string, string> = {
   character_first_identity_suggestions:
     "character_onboarding.character_first_identity_suggestions",
@@ -68,7 +93,7 @@ const PHASE_PROMPT_KEYS: Record<string, string> = {
   core_saga: "character_onboarding.core_saga",
 };
 
-const DEFAULT_INITIAL_STATE = JSON.stringify(
+const DEFAULT_ONBOARDING_STATE = JSON.stringify(
   {
     characterType: { key: "fantastic" },
     universe: { key: "new_world" },
@@ -77,14 +102,42 @@ const DEFAULT_INITIAL_STATE = JSON.stringify(
   2,
 );
 
+const DEFAULT_STORY_STATE = JSON.stringify(
+  {
+    character: { name: "Lumi", mood: "curious" },
+    world: { region: "Crystal Caves" },
+    inventory: [],
+    relationships: {},
+    memories: [],
+    npcs: {},
+    storyLab: {
+      worldId: "replace-with-world-id",
+      sourceFamily: "world_event",
+      sourceTitle: "A new mystery appears",
+      sourceTeaser: "A gentle change in the world invites exploration.",
+      characterId: "replace-with-character-id",
+      sourceNpcIds: [],
+      stories: [],
+      ageGuidance: [],
+      playerKnownFacts: [],
+      worldFacts: [],
+    },
+  },
+  null,
+  2,
+);
+
 export default function TestLabClient() {
-  const [phases, setPhases] = useState<Phase[]>([]);
+  const [scenarioKey, setScenarioKey] =
+    useState<ScenarioKey>("character_onboarding");
+  const [onboardingPhases, setOnboardingPhases] = useState<Phase[]>([]);
+  const [storyPhases, setStoryPhases] = useState<Phase[]>([]);
   const [supported, setSupported] = useState<string[]>([]);
   const [householdId, setHouseholdId] = useState("");
   const [childProfileId, setChildProfileId] = useState("");
   const [modelSlug, setModelSlug] = useState("deepseek/deepseek-chat-v3.1");
   const [initialStateText, setInitialStateText] = useState(
-    DEFAULT_INITIAL_STATE,
+    DEFAULT_ONBOARDING_STATE,
   );
   const [sessionId, setSessionId] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -95,8 +148,13 @@ export default function TestLabClient() {
   const [promptVersionOverride, setPromptVersionOverride] = useState<
     number | undefined
   >(undefined);
+  const [storyLengthPreset, setStoryLengthPreset] =
+    useState<StoryLengthPreset>("medium");
+  const [customMinCharacters, setCustomMinCharacters] = useState(1500);
+  const [customMaxCharacters, setCustomMaxCharacters] = useState(2000);
   const [result, setResult] = useState<RunResult | null>(null);
   const [runHistory, setRunHistory] = useState<RunResult[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -105,18 +163,30 @@ export default function TestLabClient() {
     fetch("/api/settings/test-lab")
       .then((response) => response.json())
       .then((payload) => {
-        setPhases(payload.data?.scenario?.phases ?? []);
+        setOnboardingPhases(
+          payload.data?.scenarios?.characterOnboarding?.phases ??
+            payload.data?.scenario?.phases ??
+            [],
+        );
+        setStoryPhases(payload.data?.scenarios?.storyGeneration?.phases ?? []);
         setSupported(payload.data?.productionBackedPhaseIds ?? []);
       })
       .catch(() => setMessage("Test Lab metadata yüklenemedi."));
   }, []);
 
-  const runnablePhases = useMemo(
-    () =>
-      phases.filter((phase) => phase.testable && supported.includes(phase.id)),
-    [phases, supported],
-  );
-  const promptKey = PHASE_PROMPT_KEYS[phaseId] ?? null;
+  const runnablePhases = useMemo(() => {
+    if (scenarioKey === "story_generation") {
+      return storyPhases.filter((phase) => phase.testable);
+    }
+    return onboardingPhases.filter(
+      (phase) => phase.testable && supported.includes(phase.id),
+    );
+  }, [onboardingPhases, scenarioKey, storyPhases, supported]);
+
+  const promptKey =
+    scenarioKey === "character_onboarding"
+      ? (PHASE_PROMPT_KEYS[phaseId] ?? null)
+      : null;
   const comparableRuns = useMemo(
     () =>
       result
@@ -130,6 +200,29 @@ export default function TestLabClient() {
     [result, runHistory],
   );
 
+  function changeScenario(nextScenario: ScenarioKey) {
+    setScenarioKey(nextScenario);
+    setInitialStateText(
+      nextScenario === "story_generation"
+        ? DEFAULT_STORY_STATE
+        : DEFAULT_ONBOARDING_STATE,
+    );
+    setPhaseId(
+      nextScenario === "story_generation"
+        ? "story_001"
+        : "character_first_identity_suggestions",
+    );
+    setPromptVersionOverride(undefined);
+    setSessionId("");
+    setBranchId("");
+    setParentStateId("");
+    setResult(null);
+    setRunHistory([]);
+    setTimeline([]);
+    setSelectedCandidateId("");
+    setMessage("");
+  }
+
   async function createSession() {
     if (!householdId.trim() || !childProfileId.trim()) {
       setMessage("Household ID ve Child Profile ID gerekli.");
@@ -139,6 +232,7 @@ export default function TestLabClient() {
     setMessage("");
     setResult(null);
     setRunHistory([]);
+    setTimeline([]);
     setSelectedCandidateId("");
     try {
       const initialState = JSON.parse(initialStateText) as Record<
@@ -147,6 +241,7 @@ export default function TestLabClient() {
       >;
       const payload = await post({
         action: "create-session",
+        scenarioKey,
         initialState,
         householdId,
         childProfileId,
@@ -171,6 +266,20 @@ export default function TestLabClient() {
     setMessage("");
     setSelectedCandidateId("");
     try {
+      const generationConfig =
+        scenarioKey === "story_generation"
+          ? {
+              narrativeTarget: {
+                preset: storyLengthPreset,
+                ...(storyLengthPreset === "custom"
+                  ? {
+                      minCharacters: customMinCharacters,
+                      maxCharacters: customMaxCharacters,
+                    }
+                  : {}),
+              },
+            }
+          : undefined;
       const payload = await post({
         action: "run-phase",
         sessionId,
@@ -183,6 +292,7 @@ export default function TestLabClient() {
         ...(promptVersionOverride === undefined
           ? {}
           : { promptVersionOverride }),
+        ...(generationConfig ? { generationConfig } : {}),
       });
       const nextResult = payload.data as RunResult;
       setResult(nextResult);
@@ -203,6 +313,9 @@ export default function TestLabClient() {
     setBusy(true);
     setMessage("");
     try {
+      const alreadySelected = timeline.some(
+        (entry) => entry.branchId === branchId && entry.phaseId === phaseId,
+      );
       const payload = await post({
         action: "select-candidate",
         sessionId,
@@ -210,12 +323,36 @@ export default function TestLabClient() {
         phaseId,
         runId: result.run.id,
         candidateId: candidate.id,
+        ...(alreadySelected ? { forkBranchId: crypto.randomUUID() } : {}),
       });
+      const nextBranchId = payload.data.activeBranchId as string;
       setSelectedCandidateId(candidate.id);
-      setBranchId(payload.data.activeBranchId);
+      setBranchId(nextBranchId);
       setParentStateId(payload.data.selection.selectedStateId);
+      setTimeline((previous) => [
+        ...previous,
+        {
+          phaseId,
+          runId: result.run.id,
+          candidateId: candidate.id,
+          fromStateId: result.run.parentStateId,
+          toStateId: payload.data.selection.selectedStateId,
+          branchId: nextBranchId,
+          forked: Boolean(payload.data.forked),
+          stateDiff: candidate.stateDiff,
+        },
+      ]);
+      if (scenarioKey === "story_generation") {
+        const currentIndex = runnablePhases.findIndex(
+          (phase) => phase.id === phaseId,
+        );
+        const nextPhase = runnablePhases[currentIndex + 1];
+        if (nextPhase) setPhaseId(nextPhase.id);
+      }
       setMessage(
-        "Candidate canonical sandbox state olarak seçildi. Sonraki phase yalnız bu state'i kullanacak.",
+        payload.data.forked
+          ? "Yeni branch oluşturuldu. Eski downstream geçmiş korundu; sonraki story yalnız yeni seçimi kullanacak."
+          : "Candidate sandbox state olarak seçildi. Sonraki phase yalnız bu state'i kullanacak.",
       );
     } catch (error) {
       setMessage(errorMessage(error));
@@ -235,9 +372,9 @@ export default function TestLabClient() {
           <p style={{ margin: 0, opacity: 0.65 }}>Settings / Developer</p>
           <h1 style={{ margin: "8px 0" }}>LUMI Test Lab</h1>
           <p style={{ maxWidth: 760, opacity: 0.8 }}>
-            Real production Character Onboarding generation path. Her run izole
-            candidate state üretir; yalnız “Sonraki aşamada kullan” seçimi
-            sandbox zincirini ilerletir.
+            Production generation yollarını sandbox state üzerinde çalıştırır.
+            Candidate&apos;lar izoledir; yalnız açıkça seçilen candidate sonraki
+            aşamanın parent state&apos;i olur.
           </p>
         </div>
         <Link href="/app/settings">LLM Ayarlarına dön</Link>
@@ -246,6 +383,19 @@ export default function TestLabClient() {
       <section style={panelStyle}>
         <h2>1. Sandbox Session</h2>
         <div style={gridStyle}>
+          <label>
+            Scenario
+            <select
+              value={scenarioKey}
+              onChange={(event) =>
+                changeScenario(event.target.value as ScenarioKey)
+              }
+              style={inputStyle}
+            >
+              <option value="character_onboarding">Character Onboarding</option>
+              <option value="story_generation">Stateful Story Generation</option>
+            </select>
+          </label>
           <label>
             Household ID
             <input
@@ -274,7 +424,7 @@ export default function TestLabClient() {
         <label style={{ display: "block", marginTop: 16 }}>
           Initial sandbox state
           <textarea
-            rows={9}
+            rows={12}
             value={initialStateText}
             onChange={(event) => setInitialStateText(event.target.value)}
             style={{
@@ -293,7 +443,11 @@ export default function TestLabClient() {
         </button>
         {sessionId ? (
           <pre style={metaStyle}>
-            {JSON.stringify({ sessionId, branchId, parentStateId }, null, 2)}
+            {JSON.stringify(
+              { scenarioKey, sessionId, branchId, parentStateId },
+              null,
+              2,
+            )}
           </pre>
         ) : null}
       </section>
@@ -319,21 +473,73 @@ export default function TestLabClient() {
             ))}
           </select>
         </label>
+
+        {scenarioKey === "story_generation" ? (
+          <div style={{ ...gridStyle, marginTop: 16 }}>
+            <label>
+              Story length
+              <select
+                value={storyLengthPreset}
+                onChange={(event) =>
+                  setStoryLengthPreset(event.target.value as StoryLengthPreset)
+                }
+                style={inputStyle}
+              >
+                <option value="short">Short · 900–1300</option>
+                <option value="medium">Medium · 1500–2000</option>
+                <option value="long">Long · 2500–3500</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            {storyLengthPreset === "custom" ? (
+              <>
+                <label>
+                  Minimum characters
+                  <input
+                    type="number"
+                    min={600}
+                    value={customMinCharacters}
+                    onChange={(event) =>
+                      setCustomMinCharacters(Number(event.target.value))
+                    }
+                    style={inputStyle}
+                  />
+                </label>
+                <label>
+                  Maximum characters
+                  <input
+                    type="number"
+                    min={600}
+                    value={customMaxCharacters}
+                    onChange={(event) =>
+                      setCustomMaxCharacters(Number(event.target.value))
+                    }
+                    style={inputStyle}
+                  />
+                </label>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
-      <PromptWorkspace
-        householdId={householdId}
-        promptKey={promptKey}
-        promptVersionOverride={promptVersionOverride}
-        onPromptVersionOverrideChange={setPromptVersionOverride}
-      />
+      {scenarioKey === "character_onboarding" ? (
+        <PromptWorkspace
+          householdId={householdId}
+          promptKey={promptKey}
+          promptVersionOverride={promptVersionOverride}
+          onPromptVersionOverrideChange={setPromptVersionOverride}
+        />
+      ) : null}
 
       <section style={panelStyle}>
-        <h2>4. Run</h2>
+        <h2>3. Run</h2>
         <p style={{ opacity: 0.75 }}>
-          {promptVersionOverride === undefined
-            ? "Production active prompt revision kullanılacak."
-            : `Exact draft/revision v${promptVersionOverride} kullanılacak; production active prompt değişmeyecek.`}
+          {scenarioKey === "story_generation"
+            ? `Production Story + Context Assembly kullanılacak. Length: ${storyLengthPreset}. Canonical story DB mutate edilmez.`
+            : promptVersionOverride === undefined
+              ? "Production active prompt revision kullanılacak."
+              : `Exact draft/revision v${promptVersionOverride} kullanılacak; production active prompt değişmeyecek.`}
         </p>
         <button
           disabled={busy || !sessionId}
@@ -348,6 +554,39 @@ export default function TestLabClient() {
         <p style={{ ...panelStyle, borderStyle: "dashed" }}>{message}</p>
       ) : null}
 
+      {timeline.length > 0 ? (
+        <section style={panelStyle}>
+          <h2>4. Selected-State Timeline</h2>
+          <p style={{ opacity: 0.75 }}>
+            Yalnız seçilmiş state geçişleri aktif lineage&apos;ı ilerletir. Fork
+            yapılan geçmiş silinmez.
+          </p>
+          <div style={{ display: "grid", gap: 12 }}>
+            {timeline.map((entry, index) => (
+              <article key={`${entry.branchId}:${entry.runId}:${index}`}>
+                <strong>
+                  {entry.phaseId} · {entry.forked ? "fork" : "selected"}
+                </strong>
+                <pre style={metaStyle}>
+                  {JSON.stringify(
+                    {
+                      branchId: entry.branchId,
+                      runId: entry.runId,
+                      candidateId: entry.candidateId,
+                      fromStateId: entry.fromStateId,
+                      toStateId: entry.toStateId,
+                      diff: entry.stateDiff,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {result ? (
         <>
           <section style={panelStyle}>
@@ -356,8 +595,11 @@ export default function TestLabClient() {
               {JSON.stringify(
                 {
                   runId: result.run.id,
+                  phaseId: result.run.phaseId,
                   parentStateId: result.run.parentStateId,
                   model: result.run.modelSlug,
+                  generationConfig:
+                    result.run.executionSnapshot?.generationConfig,
                   usage: result.run.usageSnapshot,
                   fingerprints: {
                     renderedPrompt:
@@ -378,10 +620,9 @@ export default function TestLabClient() {
 
           {comparableRuns.length > 1 ? (
             <section style={panelStyle}>
-              <h2>6. Active vs Draft / Revision Comparison</h2>
+              <h2>6. Comparable Runs</h2>
               <p style={{ opacity: 0.75 }}>
-                Aynı phase, parent state ve model ile yapılan run&apos;lar.
-                Böylece yalnız prompt revision etkisi karşılaştırılabilir.
+                Aynı phase, parent state ve model ile yapılan bağımsız run&apos;lar.
               </p>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -389,6 +630,7 @@ export default function TestLabClient() {
                     <tr>
                       <th style={cellStyle}>Run</th>
                       <th style={cellStyle}>Prompt</th>
+                      <th style={cellStyle}>Length</th>
                       <th style={cellStyle}>Input</th>
                       <th style={cellStyle}>Output</th>
                       <th style={cellStyle}>Cost</th>
@@ -400,7 +642,14 @@ export default function TestLabClient() {
                       <tr key={entry.run.id}>
                         <td style={cellStyle}>{entry.run.id}</td>
                         <td style={cellStyle}>
-                          v{entry.run.executionSnapshot?.promptVersion ?? "?"}
+                          {entry.run.executionSnapshot?.promptVersion
+                            ? `v${entry.run.executionSnapshot.promptVersion}`
+                            : "production story"}
+                        </td>
+                        <td style={cellStyle}>
+                          {JSON.stringify(
+                            entry.run.executionSnapshot?.generationConfig ?? {},
+                          )}
                         </td>
                         <td style={cellStyle}>
                           {entry.run.usageSnapshot?.promptTokens ?? "—"}
@@ -445,6 +694,18 @@ export default function TestLabClient() {
                   <pre style={metaStyle}>
                     {JSON.stringify(candidate.payload, null, 2)}
                   </pre>
+                  <details>
+                    <summary>Before / After State Diff</summary>
+                    <pre style={metaStyle}>
+                      {JSON.stringify(candidate.stateDiff, null, 2)}
+                    </pre>
+                  </details>
+                  <details>
+                    <summary>Candidate State Snapshot</summary>
+                    <pre style={metaStyle}>
+                      {JSON.stringify(candidate.candidateState, null, 2)}
+                    </pre>
+                  </details>
                   <button
                     disabled={busy || selectedCandidateId === candidate.id}
                     onClick={() => selectCandidate(candidate)}
