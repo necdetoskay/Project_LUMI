@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import prettier from "prettier";
 import {
   L8_SCORECARD_PERFORMANCE_PROFILE,
   linearPerformanceScore,
@@ -43,5 +45,13 @@ assert.notEqual(
   openAiObserved.latencyPoints + openAiObserved.tokenEfficiencyPoints,
   geminiObserved.latencyPoints + geminiObserved.tokenEfficiencyPoints,
 );
+
+const traceViewPath =
+  "apps/web/app/app/settings/context-inspector/traces/traces-client-page.tsx";
+const traceViewSource = await readFile(traceViewPath, "utf8");
+const traceViewFormatted = await prettier.format(traceViewSource, {
+  filepath: traceViewPath,
+});
+console.log("TRACE_VIEW_PRETTIER_JSON=" + JSON.stringify(traceViewFormatted));
 
 console.log("L8 scorecard performance scoring selftest: PASS");
