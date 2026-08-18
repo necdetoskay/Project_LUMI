@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import prettier from "prettier";
 import {
   L8_SCORECARD_PERFORMANCE_PROFILE,
   linearPerformanceScore,
@@ -46,11 +44,4 @@ assert.notEqual(
   geminiObserved.latencyPoints + geminiObserved.tokenEfficiencyPoints,
 );
 
-const target =
-  "packages/profiles/src/application/ai-generation-trace.service.ts";
-const source = fs.readFileSync(target, "utf8");
-const formatted = await prettier.format(source, {
-  filepath: target,
-});
-console.log(`TRACE_SERVICE_PRETTIER_JSON=${JSON.stringify(formatted)}`);
 console.log("L8 scorecard performance scoring selftest: PASS");
