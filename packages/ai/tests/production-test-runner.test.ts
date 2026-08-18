@@ -48,9 +48,11 @@ describe("ProductionTestRunner", () => {
     });
 
     let receivedParentState: unknown;
+    let receivedPromptVersionOverride: number | undefined;
     const adapter: ProductionScenarioAdapter = {
       async execute(request) {
         receivedParentState = request.parentState;
+        receivedPromptVersionOverride = request.promptVersionOverride;
         return {
           output: { suggestions: [{ key: "a" }, { key: "b" }] },
           candidates: [
@@ -108,6 +110,7 @@ describe("ProductionTestRunner", () => {
       productionOperation: "generateCharacterFirstIdentitySuggestions",
       parentStateId: "state-0",
       modelSlug: "vendor/model-a",
+      promptVersionOverride: 9,
       pricingSnapshot: pricing,
       actor: {
         userId: "user-1",
@@ -120,6 +123,7 @@ describe("ProductionTestRunner", () => {
     expect(receivedParentState).toEqual({
       characterType: { key: "fantastic" },
     });
+    expect(receivedPromptVersionOverride).toBe(9);
     expect(result.run.id).toBe("run-1");
     expect(result.run.executionSnapshot).toEqual({
       productionOperation: "generateCharacterFirstIdentitySuggestions",
