@@ -233,7 +233,10 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Validation" value={trace.validationStatus} />
-          <Metric label="Total tokens" value={formatNumber(trace.totalTokens)} />
+          <Metric
+            label="Total tokens"
+            value={formatNumber(trace.totalTokens)}
+          />
           <Metric label="Latency" value={`${trace.latencyMs} ms`} />
           <Metric
             label="Approx. cost"
@@ -282,7 +285,9 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-950">Included sections</h3>
+        <h3 className="text-lg font-bold text-slate-950">
+          Included sections
+        </h3>
         <div className="mt-4 space-y-3">
           {trace.context.sections.map((section) => (
             <div
@@ -310,9 +315,10 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
               </p>
               {section.compaction ? (
                 <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Compacted with {section.compaction.strategy ?? "unknown strategy"}:{" "}
+                  Compacted with{" "}
+                  {section.compaction.strategy ?? "unknown strategy"}:{" "}
                   {formatNumber(section.compaction.originalTokens)} →{" "}
-                  {formatNumber(section.compaction.compactedTokens)} tokens, {" "}
+                  {formatNumber(section.compaction.compactedTokens)} tokens,{" "}
                   {formatNumber(section.compaction.removedItems)} items removed.
                 </p>
               ) : null}
