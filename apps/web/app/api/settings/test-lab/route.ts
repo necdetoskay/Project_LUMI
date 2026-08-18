@@ -71,7 +71,10 @@ export const POST = observeHandler(async (request: Request) => {
         const sessionId = requiredString(body.sessionId, "sessionId");
         const branchId = requiredString(body.branchId, "branchId");
         const phaseId = requiredString(body.phaseId, "phaseId");
-        const parentStateId = requiredString(body.parentStateId, "parentStateId");
+        const parentStateId = requiredString(
+          body.parentStateId,
+          "parentStateId",
+        );
         const modelSlug = requiredString(body.modelSlug, "modelSlug");
         const householdId = requiredString(body.householdId, "householdId");
         const childProfileId = requiredString(
@@ -85,10 +88,11 @@ export const POST = observeHandler(async (request: Request) => {
           throw new Error(`TEST_LAB_PHASE_NOT_RUNNABLE:${phaseId}`);
         }
 
-        const modelProfile = await new OpenRouterModelCatalog().resolveModelProfile({
-          modelSlug,
-          capturedAt: now,
-        });
+        const modelProfile =
+          await new OpenRouterModelCatalog().resolveModelProfile({
+            modelSlug,
+            capturedAt: now,
+          });
         const result = await runner.execute({
           sessionId,
           branchId,
