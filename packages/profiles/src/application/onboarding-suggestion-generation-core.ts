@@ -75,10 +75,14 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
   const summary = generationContext.creation.previousSelections;
   spec.summaryGuard(summary);
 
-  const assembled = await materializeGenerationContextSnapshots(
-    assembleGenerationContext(generationContext),
-    new DrizzleGenerationContextSnapshotStore(getProfileDb()),
-  );
+  const rawAssembled = assembleGenerationContext(generationContext);
+  const assembled =
+    options.recordTrace === false
+      ? rawAssembled
+      : await materializeGenerationContextSnapshots(
+          rawAssembled,
+          new DrizzleGenerationContextSnapshotStore(getProfileDb()),
+        );
   const contextEvidence = createAiGenerationContextTraceEvidence(assembled);
   const context = {
     ...toPromptGenerationContext(assembled),
