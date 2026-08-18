@@ -6,8 +6,8 @@
 
 .stage {
   position: relative;
-  width: min(1316px, 100vw);
-  aspect-ratio: 1316 / 1003;
+  width: min(1448px, 100vw);
+  aspect-ratio: 4 / 3;
   margin: 0 auto;
   background-image: url("/api/landing-art");
   background-position: top center;
