@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { PromptWorkspace } from "./prompt-workspace";
+
 type Phase = {
   id: string;
   label: string;
@@ -47,6 +49,16 @@ type RunResult = {
   };
 };
 
+const PHASE_PROMPT_KEYS: Record<string, string> = {
+  character_first_identity_suggestions:
+    "character_onboarding.character_first_identity_suggestions",
+  world_suggestions: "character_onboarding.world_suggestions",
+  compatibility: "character_onboarding.compatibility",
+  region_suggestions: "character_onboarding.region_suggestions",
+  origin_suggestions: "character_onboarding.character_origin_suggestions",
+  core_saga: "character_onboarding.core_saga",
+};
+
 const DEFAULT_INITIAL_STATE = JSON.stringify(
   {
     characterType: { key: "fantastic" },
@@ -71,6 +83,9 @@ export default function TestLabClient() {
   const [phaseId, setPhaseId] = useState(
     "character_first_identity_suggestions",
   );
+  const [promptVersionOverride, setPromptVersionOverride] = useState<
+    number | undefined
+  >(undefined);
   const [result, setResult] = useState<RunResult | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,6 +106,7 @@ export default function TestLabClient() {
       phases.filter((phase) => phase.testable && supported.includes(phase.id)),
     [phases, supported],
   );
+  const promptKey = PHASE_PROMPT_KEYS[phaseId] ?? null;
 
   async function createSession() {
     if (!householdId.trim() || !childProfileId.trim()) {
@@ -141,10 +157,14 @@ export default function TestLabClient() {
         modelSlug,
         householdId,
         childProfileId,
+        ...(promptVersionOverride === undefined
+          ? {}
+          : { promptVersionOverride }),
       });
       setResult(payload.data);
+      const usedVersion = payload.data.run.executionSnapshot?.promptVersion;
       setMessage(
-        `${payload.data.candidates.length} candidate üretildi. Henüz hiçbiri sonraki state değil.`,
+        `${payload.data.candidates.length} candidate üretildi${usedVersion ? ` (prompt v${usedVersion})` : ""}. Henüz hiçbiri sonraki state değil.`,
       );
     } catch (error) {
       setMessage(errorMessage(error));
@@ -259,7 +279,11 @@ export default function TestLabClient() {
           Phase
           <select
             value={phaseId}
-            onChange={(event) => setPhaseId(event.target.value)}
+            onChange={(event) => {
+              setPhaseId(event.target.value);
+              setPromptVersionOverride(undefined);
+              setResult(null);
+            }}
             style={inputStyle}
           >
             {runnablePhases.map((phase) => (
@@ -270,6 +294,22 @@ export default function TestLabClient() {
             ))}
           </select>
         </label>
+      </section>
+
+      <PromptWorkspace
+        householdId={householdId}
+        promptKey={promptKey}
+        promptVersionOverride={promptVersionOverride}
+        onPromptVersionOverrideChange={setPromptVersionOverride}
+      />
+
+      <section style={panelStyle}>
+        <h2>4. Run</h2>
+        <p style={{ opacity: 0.75 }}>
+          {promptVersionOverride === undefined
+            ? "Production active prompt revision kullanılacak."
+            : `Exact draft/revision v${promptVersionOverride} kullanılacak; production active prompt değişmeyecek.`}
+        </p>
         <button
           disabled={busy || !sessionId}
           onClick={runPhase}
@@ -285,7 +325,7 @@ export default function TestLabClient() {
 
       {result ? (
         <section style={panelStyle}>
-          <h2>3. Candidates — Generate Many → Select One</h2>
+          <h2>5. Candidates — Generate Many → Select One</h2>
           <pre style={metaStyle}>
             {JSON.stringify(
               {
@@ -341,8 +381,9 @@ async function post(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   const payload = await response.json();
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(payload.message ?? "Test Lab request failed");
+  }
   return payload;
 }
 
