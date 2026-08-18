@@ -107,6 +107,16 @@ export class DrizzleChildProfileRepository implements ChildProfileRepository {
       );
   }
 
+  async hardDelete(id: string, householdId: string): Promise<boolean> {
+    const deleted = await this.db
+      .delete(childProfiles)
+      .where(
+        and(eq(childProfiles.id, id), eq(childProfiles.householdId, householdId)),
+      )
+      .returning({ id: childProfiles.id });
+    return deleted.length > 0;
+  }
+
   async findPreferences(
     childProfileId: string,
     householdId: string,

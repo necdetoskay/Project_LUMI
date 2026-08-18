@@ -170,6 +170,20 @@ export async function archiveChildProfile(
   await childRepo.softDelete(profileId, householdId);
 }
 
+export async function deleteChildProfile(
+  userId: string,
+  profileId: string,
+  householdId: string,
+): Promise<void> {
+  await assertMembership(householdId, userId);
+
+  const { childRepo } = getRepos();
+  const deleted = await childRepo.hardDelete(profileId, householdId);
+  if (!deleted) {
+    throw new Error("Child profile not found");
+  }
+}
+
 export async function findChildProfileForUser(
   profileId: string,
   userId: string,

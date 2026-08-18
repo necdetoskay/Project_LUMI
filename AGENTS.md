@@ -193,3 +193,12 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Testler: guarded `apps/web/tests/ultef-visual-variant-delete.integration.test.ts` (`ULTEF_S53_VISUAL_ENABLE=true` ile çalışır; source silinemez + soft delete + presentation null + diğer varyant görünür). `@lumi/profiles` 249 unit green; lint/typecheck/build/mojibake/format green.
 - Kapsam dışı: storage binary silme (S3/local) ve Issue #153 "source sheet retention cleanup" ayrı faz olarak backlog'ta.
 - Branch: `feat/character-visual-variant-soft-delete` (PR #155'ten ayrı).
+
+### Child profile delete (hard) + archive (soft) UI (2026-08-18)
+
+- Kullanıcı isteği: uygulamada oluşturulmuş çocuk profil kayıtları silinebilmeli (test profilleri birikmiş). Kart sağ üst köşede silme ikonu; silme sırasında "arşivle" veya "kalıcı sil" seçeneği sorulur; arşivlenen kayıt sayfada görünmez.
+- `@lumi/profiles`: `ChildProfileRepository.hardDelete(id, householdId)` (`DrizzleChildProfileRepository`, `.returning()` ile boolean) + `deleteChildProfile(userId, profileId, householdId)` service (membership assert, bulunamazsa "Child profile not found"), `application/index.ts` export.
+- Web: `DELETE /api/child-profiles/[id]` handler (400/403/404/500) + `profiles-client-page.tsx` delete ikonu ve arşiv/kalıcı-sil/Vazgeç dialogu. Mevcut arşiv endpoint'i (`POST /api/child-profiles/archive/[id]` → `archiveChildProfile` soft delete, `deletedAt`) değişmedi.
+- Migration'lar (forward-only): story `0008_child_profile_cascade_delete.sql` (story bağımlılık zinciri ~30 FK `ON DELETE CASCADE` — constraint adları orijinal migration'larla birebir doğrulandı), world `0010_child_profile_cascade_delete.sql` (`fk_worlds_child_profile` → CASCADE). Kalıcı silme DB cascade ile story/world kayıtlarını temizler.
+- Testler: web `child-profile-detail-api.test.ts` DELETE 4 yeni test (8 toplam), profiles guarded integration `hardDelete` (cascade + false). `@lumi/profiles` + `@lumi/web` unit green; lint/typecheck/build/mojibake green. (Web suite'teki 6 flaky timeout tek başına çalıştırınca geçer — paralel yük kaynaklı, değişiklikle ilgisiz.)
+- Not: Migration'lar henüz DB'ye uygulanmadı — `pnpm --filter @lumi/story story:migrate` + `pnpm --filter @lumi/world world:migrate` (veya mevcut migrate runner) gerekiyor.

@@ -13,6 +13,7 @@ export {
   listChildProfiles,
   updateChildProfile,
   archiveChildProfile,
+  deleteChildProfile,
   findChildProfileForUser,
   getChildProfilePreferences,
 } from "./child-profile.service";

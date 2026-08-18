@@ -25,6 +25,8 @@ export interface ChildProfileRepository {
 
   softDelete(id: string, householdId: string): Promise<void>;
 
+  hardDelete(id: string, householdId: string): Promise<boolean>;
+
   findPreferences(
     childProfileId: string,
     householdId: string,

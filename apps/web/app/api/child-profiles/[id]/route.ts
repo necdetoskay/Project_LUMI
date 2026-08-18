@@ -5,6 +5,7 @@ import { readRequestBody } from "@/lib/http/request-body";
 import {
   updateChildProfile,
   findChildProfileForUser,
+  deleteChildProfile,
 } from "@lumi/profiles/application";
 import type { UpdateChildProfileInput } from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
@@ -129,6 +130,48 @@ export const PATCH = observeHandler(
         }
         return NextResponse.json(
           { error: "INTERNAL_ERROR", message: "Failed to update profile" },
+          { status: 500 },
+        );
+      }
+    });
+  },
+  "/api/child-profiles/{id}",
+);
+
+export const DELETE = observeHandler(
+  (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    return withParent(async (parent) => {
+      const profileId = (await params).id;
+      const body = await readRequestBody(request);
+      const parsed = body as Record<string, unknown>;
+
+      if (!parsed || typeof parsed.householdId !== "string") {
+        return NextResponse.json(
+          { error: "VALIDATION_ERROR", message: "householdId is required" },
+          { status: 400 },
+        );
+      }
+
+      try {
+        await deleteChildProfile(parent.id, profileId, parsed.householdId);
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        if (message.includes("not a member")) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
+        }
+        if (message.includes("not found")) {
+          return NextResponse.json(
+            { error: "NOT_FOUND", message },
+            { status: 404 },
+          );
+        }
+        return NextResponse.json(
+          { error: "INTERNAL_ERROR", message: "Failed to delete profile" },
           { status: 500 },
         );
       }

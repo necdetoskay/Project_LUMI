@@ -13,10 +13,17 @@ type Profile = {
   createdAt: string;
 };
 
+type DeleteMode = "archive" | "permanent";
+
 export default function ProfilesClientPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null);
+  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/onboarding")
@@ -33,6 +40,7 @@ export default function ProfilesClientPage() {
           return undefined;
         }
 
+        setHouseholdId(onboarding.householdId);
         return fetch(
           `/api/child-profiles?householdId=${encodeURIComponent(onboarding.householdId)}`,
         );
@@ -49,6 +57,61 @@ export default function ProfilesClientPage() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDeleteTarget(null);
+        setDeleteError(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [deleteTarget]);
+
+  async function handleDelete(mode: DeleteMode) {
+    if (!deleteTarget || !householdId) return;
+
+    setDeletingMode(mode);
+    setDeleteError(null);
+
+    const url =
+      mode === "archive"
+        ? `/api/child-profiles/archive/${encodeURIComponent(deleteTarget.id)}`
+        : `/api/child-profiles/${encodeURIComponent(deleteTarget.id)}`;
+
+    try {
+      const response = await fetch(url, {
+        method: mode === "archive" ? "POST" : "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ householdId }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setDeleteError(
+          data.message ??
+            "İşlem başarısız oldu. Biraz sonra tekrar deneyin.",
+        );
+        return;
+      }
+
+      setProfiles((current) =>
+        current.filter((profile) => profile.id !== deleteTarget.id),
+      );
+      setDeleteTarget(null);
+      setDeleteError(null);
+    } catch {
+      setDeleteError("İşlem başarısız oldu. Biraz sonra tekrar deneyin.");
+    } finally {
+      setDeletingMode(null);
+    }
+  }
 
   if (loading) return <LoadingDisplay />;
   if (error) return <ErrorDisplay message={error} />;
@@ -145,6 +208,23 @@ export default function ProfilesClientPage() {
                   >
                     <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/55" />
                     <div className="absolute bottom-0 left-0 right-0 h-16 rounded-t-[50%] bg-white/25" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteTarget(profile);
+                        setDeleteError(null);
+                      }}
+                      aria-label={`${profile.displayName} profilini sil veya arşivle`}
+                      title="Sil veya arşivle"
+                      className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full border border-outline-variant/60 bg-white/85 text-on-surface-variant shadow-sm transition-colors hover:bg-error-container hover:text-error focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[20px]"
+                        aria-hidden="true"
+                      >
+                        delete
+                      </span>
+                    </button>
                     <div className="relative z-10 flex min-h-[142px] flex-col justify-between">
                       <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
                         <span
@@ -237,6 +317,99 @@ export default function ProfilesClientPage() {
           </section>
         )}
       </div>
+
+      {deleteTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-[1.75rem] border border-outline-variant/70 bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-error-container text-error">
+                <span
+                  className="material-symbols-outlined text-[26px]"
+                  aria-hidden="true"
+                >
+                  delete
+                </span>
+              </div>
+              <div>
+                <h2
+                  id="delete-dialog-title"
+                  className="text-xl font-extrabold text-on-surface"
+                >
+                  Profili sil veya arşivle
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                  <span className="font-bold text-on-surface">
+                    {deleteTarget.displayName}
+                  </span>{" "}
+                  profiline ne yapmak istiyorsunuz?
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={deletingMode !== null}
+                onClick={() => handleDelete("archive")}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                  archive
+                </span>
+                {deletingMode === "archive" ? "Arşivleniyor…" : "Arşivle"}
+              </button>
+              <button
+                type="button"
+                disabled={deletingMode !== null}
+                onClick={() => handleDelete("permanent")}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-error bg-error-container/60 px-5 text-sm font-extrabold text-error transition-colors hover:bg-error-container disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                  delete_forever
+                </span>
+                {deletingMode === "permanent"
+                  ? "Kalıcı olarak siliniyor…"
+                  : "Kalıcı olarak sil"}
+              </button>
+              <button
+                type="button"
+                disabled={deletingMode !== null}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteError(null);
+                }}
+                className="mt-1 inline-flex h-11 items-center justify-center rounded-full text-sm font-bold text-on-surface-variant transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Vazgeç
+              </button>
+            </div>
+
+            {deleteError && (
+              <p className="mt-4 rounded-xl bg-error-container/60 px-4 py-3 text-sm font-semibold leading-6 text-error">
+                {deleteError}
+              </p>
+            )}
+
+            <p className="mt-4 text-xs leading-5 text-on-surface-variant">
+              Arşivleme profili bu sayfadan gizler ve geri alınabilir. Kalıcı
+              silme, bu profille bağlantılı hikâyeleri ve dünyaları da
+              kaldırır ve geri alınamaz.
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

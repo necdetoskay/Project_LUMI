@@ -199,6 +199,54 @@ describe("ChildProfileRepository Integration", () => {
       cRepo().findPreferences(profile.id, household.id),
     ).resolves.not.toBeNull();
   });
+
+  itIfDb("hard deletes the profile and cascades its preferences", async () => {
+    const household = await hRepo().create({
+      id: crypto.randomUUID(),
+      name: "Hard Delete",
+      slug: `hard-delete-${crypto.randomUUID()}`,
+    });
+
+    const profile = await cRepo().create({
+      id: crypto.randomUUID(),
+      householdId: household.id,
+      displayName: "To Purge",
+      ageBand: "6-8",
+    });
+
+    await cRepo().upsertPreferences(household.id, {
+      childProfileId: profile.id,
+      storyLength: "short",
+      interactionLevel: 2,
+      imageEnabled: true,
+      audioEnabled: false,
+    });
+
+    const deleted = await cRepo().hardDelete(profile.id, household.id);
+    expect(deleted).toBe(true);
+
+    await expect(
+      cRepo().findByIdIncludingDeleted(profile.id, household.id),
+    ).resolves.toBeNull();
+
+    await expect(
+      cRepo().findPreferences(profile.id, household.id),
+    ).resolves.toBeNull();
+  });
+
+  itIfDb("hard delete reports false for a non-existent profile", async () => {
+    const household = await hRepo().create({
+      id: crypto.randomUUID(),
+      name: "Hard Delete Miss",
+      slug: `hard-delete-miss-${crypto.randomUUID()}`,
+    });
+
+    const deleted = await cRepo().hardDelete(
+      crypto.randomUUID(),
+      household.id,
+    );
+    expect(deleted).toBe(false);
+  });
 });
 
 describe("ParentPolicyRepository Integration", () => {

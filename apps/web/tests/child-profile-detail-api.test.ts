@@ -1,12 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockFindChildProfileForUser = vi.fn();
 const mockUpdateChildProfile = vi.fn();
+const mockDeleteChildProfile = vi.fn();
 
 vi.mock("@lumi/profiles/application", () => ({
   findChildProfileForUser: (...args: unknown[]) =>
     mockFindChildProfileForUser(...args),
   updateChildProfile: (...args: unknown[]) => mockUpdateChildProfile(...args),
+  deleteChildProfile: (...args: unknown[]) => mockDeleteChildProfile(...args),
 }));
 
 vi.mock("@/lib/auth/with-parent", () => ({
@@ -22,6 +24,10 @@ type RouteModule = {
     ctx: { params: Promise<{ id: string }> },
   ) => Promise<Response>;
   PATCH?: (
+    request: Request,
+    ctx: { params: Promise<{ id: string }> },
+  ) => Promise<Response>;
+  DELETE?: (
     request: Request,
     ctx: { params: Promise<{ id: string }> },
   ) => Promise<Response>;
@@ -110,6 +116,96 @@ describe("S07 - Child Profile Detail API", () => {
       expect(body.profile.id).toBe(PROFILE_ID);
       expect(body.profile.displayName).toBe("Test Child");
       expect(body.profile.ageBand).toBe("6-8");
+    });
+  });
+
+  describe("DELETE /api/child-profiles/[id]", () => {
+    beforeEach(() => {
+      mockDeleteChildProfile.mockReset();
+    });
+
+    it("returns 400 when householdId is missing", async () => {
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}`,
+        { method: "DELETE", body: JSON.stringify({}) },
+      );
+      const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
+      const res = await route.DELETE!(req, ctx);
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe("VALIDATION_ERROR");
+    });
+
+    it("returns 403 for cross-family access", async () => {
+      mockDeleteChildProfile.mockRejectedValueOnce(
+        new AuthorizationError("User is not a member of this household"),
+      );
+
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ householdId: "other-family" }),
+        },
+      );
+      const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
+      const res = await route.DELETE!(req, ctx);
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("FORBIDDEN");
+    });
+
+    it("returns 404 when profile does not exist", async () => {
+      mockDeleteChildProfile.mockRejectedValueOnce(
+        new Error("Child profile not found"),
+      );
+
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ householdId: "h1" }),
+        },
+      );
+      const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
+      const res = await route.DELETE!(req, ctx);
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.error).toBe("NOT_FOUND");
+    });
+
+    it("permanently deletes the profile for a valid household member", async () => {
+      mockDeleteChildProfile.mockResolvedValueOnce(undefined);
+
+      const route = (await import(
+        "@/app/api/child-profiles/[id]/route"
+      )) as RouteModule;
+      const req = makeRequest(
+        `http://localhost/api/child-profiles/${PROFILE_ID}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ householdId: "h1" }),
+        },
+      );
+      const ctx = { params: Promise.resolve({ id: PROFILE_ID }) };
+      const res = await route.DELETE!(req, ctx);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(mockDeleteChildProfile).toHaveBeenCalledWith(
+        "parent-user-id",
+        PROFILE_ID,
+        "h1",
+      );
     });
   });
 });
