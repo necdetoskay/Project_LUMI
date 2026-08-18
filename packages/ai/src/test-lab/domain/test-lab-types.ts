@@ -68,5 +68,7 @@ export interface TestSelection {
 export interface StateDiff {
   fromStateId: StateSnapshotId;
   toStateId: StateSnapshotId;
-  changedTopLevelKeys: string[];
+  addedKeys: string[];
+  removedKeys: string[];
+  changedKeys: string[];
 }
