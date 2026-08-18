@@ -45,5 +45,12 @@ export const callStoryOpenRouter: OpenRouterCaller = async (
   return {
     content: result.output,
     model: result.model,
+    usage: {
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
+      totalTokens: result.usage.totalTokens,
+    },
+    latencyMs: result.latencyMs,
+    estimatedCostUsd: result.estimatedCostUsd,
   };
 };
