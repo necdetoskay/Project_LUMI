@@ -31,6 +31,8 @@ export type CanonicalTestLabDashboardData = {
   recentRuns: CanonicalTestLabRunView[];
 };
 
+const MAX_RECENT_RUNS = 5;
+
 const PHASE_LABELS: Record<string, string> = {
   character_first_identity_suggestions: "Karakter Kimliği",
   world_suggestions: "Dünya Önerisi",
@@ -43,7 +45,7 @@ const PHASE_LABELS: Record<string, string> = {
 export function buildCanonicalTestLabDashboardData(
   runs: TestLabDashboardRunSource[],
 ): CanonicalTestLabDashboardData {
-  const recentRuns = runs.slice(0, 5).map(mapRun);
+  const recentRuns = runs.slice(0, MAX_RECENT_RUNS).map(mapRun);
   return {
     latestRun: recentRuns[0] ?? null,
     recentRuns,
