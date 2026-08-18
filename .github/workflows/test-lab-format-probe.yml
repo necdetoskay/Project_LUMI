@@ -22,25 +22,18 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Format known failing files and print exact diff
+      - name: Emit exact Prettier output
         run: |
-          pnpm exec prettier --write \
-            packages/ai/src/test-lab/application/test-lab-coordinator.ts \
-            packages/ai/src/test-lab/domain/state-diff.ts \
-            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts \
-            packages/ai/tests/integration/drizzle-test-lab.repository.test.ts \
-            packages/ai/tests/test-lab-coordinator.test.ts \
-            apps/web/app/app/profiles/profiles-client-page.tsx \
-            apps/web/components/profile/delete-profile-button.tsx \
-            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts \
+          files=(
+            apps/web/app/app/profiles/profiles-client-page.tsx
+            apps/web/components/profile/delete-profile-button.tsx
+            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts
             packages/profiles/tests/integration/profile-repository.integration.test.ts
-          git diff --no-ext-diff -- \
-            packages/ai/src/test-lab/application/test-lab-coordinator.ts \
-            packages/ai/src/test-lab/domain/state-diff.ts \
-            packages/ai/src/test-lab/infrastructure/in-memory-test-lab-repository.ts \
-            packages/ai/tests/integration/drizzle-test-lab.repository.test.ts \
-            packages/ai/tests/test-lab-coordinator.test.ts \
-            apps/web/app/app/profiles/profiles-client-page.tsx \
-            apps/web/components/profile/delete-profile-button.tsx \
-            packages/profiles/src/db/repositories/drizzle/drizzle-child-profile.repository.ts \
-            packages/profiles/tests/integration/profile-repository.integration.test.ts
+          )
+          pnpm exec prettier --write "${files[@]}"
+          for file in "${files[@]}"; do
+            echo "__FORMAT_FILE_BEGIN__${file}"
+            base64 -w0 "$file"
+            echo
+            echo "__FORMAT_FILE_END__${file}"
+          done
