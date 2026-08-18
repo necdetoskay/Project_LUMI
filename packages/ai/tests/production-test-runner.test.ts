@@ -49,10 +49,12 @@ describe("ProductionTestRunner", () => {
 
     let receivedParentState: unknown;
     let receivedPromptVersionOverride: number | undefined;
+    let receivedGenerationConfig: unknown;
     const adapter: ProductionScenarioAdapter = {
       async execute(request) {
         receivedParentState = request.parentState;
         receivedPromptVersionOverride = request.promptVersionOverride;
+        receivedGenerationConfig = request.generationConfig;
         return {
           output: { suggestions: [{ key: "a" }, { key: "b" }] },
           candidates: [
@@ -126,6 +128,13 @@ describe("ProductionTestRunner", () => {
       parentStateId: "state-0",
       modelSlug: "vendor/model-a",
       promptVersionOverride: 9,
+      generationConfig: {
+        narrativeTarget: {
+          preset: "custom",
+          minCharacters: 1100,
+          maxCharacters: 1300,
+        },
+      },
       pricingSnapshot: pricing,
       actor: {
         userId: "user-1",
@@ -139,9 +148,23 @@ describe("ProductionTestRunner", () => {
       characterType: { key: "fantastic" },
     });
     expect(receivedPromptVersionOverride).toBe(9);
+    expect(receivedGenerationConfig).toEqual({
+      narrativeTarget: {
+        preset: "custom",
+        minCharacters: 1100,
+        maxCharacters: 1300,
+      },
+    });
     expect(result.run.id).toBe("run-1");
     expect(result.run.executionSnapshot).toEqual({
       productionOperation: "generateCharacterFirstIdentitySuggestions",
+      generationConfig: {
+        narrativeTarget: {
+          preset: "custom",
+          minCharacters: 1100,
+          maxCharacters: 1300,
+        },
+      },
       promptKey: "character_onboarding.character_first_identity_suggestions",
       promptVersion: 7,
       renderedPromptFingerprint: "prompt-sha",
