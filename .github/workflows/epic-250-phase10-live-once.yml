@@ -1,6 +1,7 @@
 name: Epic 250 Phase 10 Live Once
 
 # Temporary branch-only runner. Never merge to main.
+# Trigger marker: approved Phase 10 reference run.
 on:
   push:
     branches:
