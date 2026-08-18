@@ -25,6 +25,7 @@ function judge(
 ): CandidateEvaluation {
   return {
     id: `evaluation-${id}`,
+    evaluationExecutionId: `execution-${id}`,
     sessionId: "session-1",
     runId: "run-1",
     candidateId,
@@ -37,8 +38,6 @@ function judge(
     findings: findings(score),
     overallScore: score,
     rank: null,
-    usageSnapshot: null,
-    provenance: null,
     createdAt: "2026-08-18T13:45:00.000Z",
   };
 }
