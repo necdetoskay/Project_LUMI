@@ -153,9 +153,8 @@ export function toAiGenerationContextInspectorView(
   const sections = Array.isArray(provenance?.sections)
     ? provenance.sections
         .map(toInspectorSection)
-        .filter(
-          (section): section is AiGenerationContextInspectorSection =>
-            Boolean(section),
+        .filter((section): section is AiGenerationContextInspectorSection =>
+          Boolean(section),
         )
     : [];
   const droppedSections = Array.isArray(provenance?.droppedSections)
