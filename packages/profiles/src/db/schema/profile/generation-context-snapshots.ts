@@ -9,7 +9,9 @@ export const generationContextSnapshots = profileSchema.table(
     digest: varchar("digest", { length: 64 }).primaryKey(),
     store: varchar("store", { length: 120 }).notNull(),
     snapshotVersion: varchar("snapshot_version", { length: 40 }).notNull(),
-    payload: jsonb("payload").$type<GenerationContextSnapshotEnvelope>().notNull(),
+    payload: jsonb("payload")
+      .$type<GenerationContextSnapshotEnvelope>()
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
