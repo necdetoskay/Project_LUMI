@@ -145,9 +145,9 @@ describe("DrizzleTestLabRepository integration", () => {
     expect(persistedRun?.pricingSnapshot?.perMillionUsd.prompt).toBe(0.25);
     expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004725);
     expect(persistedRun?.usageSnapshot?.actualCostUsd).toBe(0.00045);
-    expect((await repository.getCandidate(ids.candidateA))?.candidateStateId).toBe(
-      ids.stateA,
-    );
+    expect(
+      (await repository.getCandidate(ids.candidateA))?.candidateStateId,
+    ).toBe(ids.stateA);
 
     await coordinator.selectCandidate({
       selectionId: ids.selectionA,
