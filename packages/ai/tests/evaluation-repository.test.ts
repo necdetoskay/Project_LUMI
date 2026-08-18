@@ -17,9 +17,9 @@ describe("evaluation repository", () => {
       createdAt: "2026-08-18T01:00:00.000Z",
     });
 
-    await expect(repository.saveRubric(STORY_QUALITY_RUBRIC_V1)).rejects.toThrow(
-      "TEST_LAB_EVALUATION_RUBRIC_EXISTS:story_quality@1",
-    );
+    await expect(
+      repository.saveRubric(STORY_QUALITY_RUBRIC_V1),
+    ).rejects.toThrow("TEST_LAB_EVALUATION_RUBRIC_EXISTS:story_quality@1");
     expect(
       (await repository.listRubricRevisions("story_quality")).map(
         (rubric) => rubric.revision,
@@ -49,10 +49,12 @@ describe("evaluation repository", () => {
 
     const stored = await repository.listCandidateEvaluations("candidate-1");
     expect(stored).toHaveLength(2);
-    expect(stored.find((item) => item.authorType === "judge")?.judgeModelSlug).toBe(
-      "openai/gpt-4.1-mini",
-    );
-    expect(stored.find((item) => item.authorType === "human")?.judgeModelSlug).toBeNull();
+    expect(
+      stored.find((item) => item.authorType === "judge")?.judgeModelSlug,
+    ).toBe("openai/gpt-4.1-mini");
+    expect(
+      stored.find((item) => item.authorType === "human")?.judgeModelSlug,
+    ).toBeNull();
   });
 });
 

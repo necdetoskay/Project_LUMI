@@ -17,7 +17,9 @@ export class EvaluationRegistry {
   async resolve(key: string, revision: number): Promise<EvaluationRubric> {
     const rubric = await this.repository.getRubric(key, revision);
     if (!rubric) {
-      throw new Error(`TEST_LAB_EVALUATION_RUBRIC_NOT_FOUND:${key}@${revision}`);
+      throw new Error(
+        `TEST_LAB_EVALUATION_RUBRIC_NOT_FOUND:${key}@${revision}`,
+      );
     }
     return rubric;
   }

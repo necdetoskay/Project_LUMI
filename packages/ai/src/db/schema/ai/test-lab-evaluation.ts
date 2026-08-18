@@ -13,11 +13,7 @@ import {
 
 import { primaryId } from "./common";
 import { aiSchema } from "./schemas";
-import {
-  testLabRunCandidates,
-  testLabRuns,
-  testLabSessions,
-} from "./test-lab";
+import { testLabRunCandidates, testLabRuns, testLabSessions } from "./test-lab";
 
 export const testLabEvaluationRubrics = aiSchema.table(
   "test_lab_evaluation_rubrics",
