@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 import {
-  createPromptDraft,
+  activatePromptVersion,
+  createPromptDraftFromVersion,
+  getLlmSettings,
   getPromptWorkspace,
-  renderPromptVersion,
-} from "@lumi/prompts";
-import { getLlmSettings } from "@lumi/profiles/application";
+  resolvePromptVersion,
+  rollbackPrompt,
+} from "@lumi/profiles/application";
 import { withParent } from "@/lib/auth/with-parent";
 import { readRequestBody } from "@/lib/http/request-body";
 import { observeHandler } from "@/lib/observability/observed-api-route";
@@ -21,8 +23,7 @@ export const GET = observeHandler((request: Request) => {
 
     try {
       await getLlmSettings(parent.id, householdId);
-      const workspace = await getPromptWorkspace(householdId, promptKey);
-      return NextResponse.json({ data: workspace });
+      return NextResponse.json({ data: await getPromptWorkspace(promptKey) });
     } catch (error) {
       return handleError(error);
     }
@@ -37,24 +38,59 @@ export const POST = observeHandler(async (request: Request) => {
 
     try {
       await getLlmSettings(parent.id, householdId);
+      const promptKey = requiredString(body.promptKey, "promptKey");
 
       if (action === "create-draft") {
-        const promptKey = requiredString(body.promptKey, "promptKey");
-        const templateBody = requiredString(body.templateBody, "templateBody");
-        const draft = await createPromptDraft({
-          householdId,
+        const sourceVersion = requiredPositiveInteger(
+          body.sourceVersion,
+          "sourceVersion",
+        );
+        const patch = asObject(body.patch, "patch");
+        const draft = await createPromptDraftFromVersion(
           promptKey,
-          templateBody,
+          sourceVersion,
+          patch,
+          {
+            actorUserId: parent.id,
+            reason: "test_lab_draft",
+            metadata: { source: "test_lab" },
+          },
+        );
+        return NextResponse.json({
+          data: { draft, workspace: await getPromptWorkspace(promptKey) },
         });
-        const workspace = await getPromptWorkspace(householdId, promptKey);
-        return NextResponse.json({ data: { draft, workspace } });
       }
 
       if (action === "render-version") {
-        const versionId = requiredString(body.versionId, "versionId");
-        const values = asObject(body.values, "values");
-        const rendered = await renderPromptVersion(versionId, values);
-        return NextResponse.json({ data: rendered });
+        const version = requiredPositiveInteger(body.version, "version");
+        const context = asObject(body.context, "context");
+        return NextResponse.json({
+          data: await resolvePromptVersion(promptKey, version, context),
+        });
+      }
+
+      if (action === "activate-version") {
+        const version = requiredPositiveInteger(body.version, "version");
+        const activated = await activatePromptVersion(promptKey, version, {
+          actorUserId: parent.id,
+          reason: "test_lab_explicit_activation",
+          metadata: { source: "test_lab" },
+        });
+        return NextResponse.json({
+          data: { activated, workspace: await getPromptWorkspace(promptKey) },
+        });
+      }
+
+      if (action === "rollback") {
+        const version = requiredPositiveInteger(body.version, "version");
+        const activated = await rollbackPrompt(promptKey, version, {
+          actorUserId: parent.id,
+          reason: "test_lab_explicit_rollback",
+          metadata: { source: "test_lab" },
+        });
+        return NextResponse.json({
+          data: { activated, workspace: await getPromptWorkspace(promptKey) },
+        });
       }
 
       return NextResponse.json(
@@ -72,6 +108,13 @@ function requiredString(value: unknown, field: string): string {
     throw new Error(`PROMPT_WORKSPACE_REQUIRED_FIELD:${field}`);
   }
   return value.trim();
+}
+
+function requiredPositiveInteger(value: unknown, field: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) {
+    throw new Error(`PROMPT_WORKSPACE_POSITIVE_INTEGER_REQUIRED:${field}`);
+  }
+  return value;
 }
 
 function asObject(value: unknown, field: string): Record<string, unknown> {
