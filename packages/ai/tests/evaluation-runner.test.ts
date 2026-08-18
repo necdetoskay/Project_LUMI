@@ -14,10 +14,10 @@ describe("EvaluationRunner", () => {
   it("sends blind candidates to one judge execution and persists call cost once", async () => {
     const repository = new InMemoryEvaluationRepository();
     await repository.saveRubric(STORY_QUALITY_RUBRIC_V1);
-    let captured: EvaluationJudgeRequest | null = null;
+    const capturedRequests: EvaluationJudgeRequest[] = [];
     const adapter: EvaluationJudgeAdapter = {
       async evaluate(request) {
-        captured = request;
+        capturedRequests.push(request);
         return {
           judgeId: "judge-1",
           judgeModelSlug: request.judgeModelSlug,
@@ -66,6 +66,8 @@ describe("EvaluationRunner", () => {
       ],
     });
 
+    const [captured] = capturedRequests;
+    expect(captured).toBeDefined();
     expect(captured?.candidates.map((candidate) => candidate.label)).toEqual([
       "Candidate A",
       "Candidate B",
