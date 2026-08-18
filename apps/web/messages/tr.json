@@ -17,7 +17,8 @@
     "children": "Çocuklarım",
     "assets": "Görsel Kütüphanesi",
     "safety": "Güvenlik",
-    "returnToStory": "Hikâyeme dön"
+    "returnToStory": "Hikâyeme dön",
+    "logout": "Çıkış yap"
   },
   "footer": {
     "tagline": "Hatırlayan, büyüyen ve hikâyeyle yaşayan dünyalar.",

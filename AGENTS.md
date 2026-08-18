@@ -225,3 +225,11 @@ This repository contains Project LUMI, an AI-native interactive story platform f
 - Web: canonical route `POST /api/character-creation/canonical` → `{action:"abandon"}`; wizard footer'da "İptal Et" butonu (`window.confirm` onaylı, `data-testid="abandon-cycle"`) → başarılı iptalde çocuk sayfasına döner.
 - Davranış: `getActiveCharacterCreationCycle` yalnızca `draft` çektiği için abandoned cycle bir daha yakalanmaz; sonraki "Yeni Karakter Oluştur" temiz yeni cycle açar (partial unique index sorunsuz). Audit trail korunur.
 - Testler: web route contract `character-creation-abandon-api.test.ts` (400/200/500/403 — `withParent` + `@lumi/profiles/application` mock'lu), guarded integration `character-creation-abandon.integration.test.ts` (abandon → resume null; abandon → fresh cycle; no-draft hatası; `LUMI_CHARACTER_ABANDON_E2E=1` + `STORY_TEST_ENABLE_DESTRUCTIVE=true` ile çalışır, default skip). `@lumi/web` lint/typecheck/unit + `@lumi/profiles` lint/typecheck/unit + build + mojibake green.
+
+### Header logout button (2026-08-18)
+
+- Kullanıcı isteği: dashboard'da (login'li tüm sayfalar) çıkış yapılabilecek bir yer yoktu; çıkış işlemi eklendi.
+- Mevcut `POST /api/auth/logout` route'u (`revokeParentSession` + cookie clear + form isteklerinde `/login?success=signed_out` redirect) hiçbir UI'dan tetiklenmiyordu.
+- `AppHeader` (root layout'da, login'li görünümde ayarlar dişlisinin yanı) artık `action="/api/auth/logout" method="post"` formu ile çıkış butonu içerir — icon button (`logout` material icon), `common.logout` aria-label/title. JS gerektirmez; route form isteğinde redirect verir.
+- İ18n: `header.logout` eklendi (en: "Sign out", tr: "Çıkış yap"); `i18n-message-parity` testi green.
+- Web lint/typecheck/unit + prettier green; paralel-yük flaky timeout'ları (world-map-api, mojibake) tek başına green.

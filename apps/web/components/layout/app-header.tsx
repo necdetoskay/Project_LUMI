@@ -57,15 +57,29 @@ export async function AppHeader() {
         <div className="flex items-center gap-2">
           <LocaleSwitcher />
           {parent ? (
-            <Link
-              className="grid h-10 w-10 place-items-center rounded-full border border-outline-variant/70 bg-white/65 text-on-surface-variant transition-colors hover:bg-white hover:text-on-surface"
-              href="/app/settings"
-              aria-label={common("settings")}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                settings
-              </span>
-            </Link>
+            <>
+              <Link
+                className="grid h-10 w-10 place-items-center rounded-full border border-outline-variant/70 bg-white/65 text-on-surface-variant transition-colors hover:bg-white hover:text-on-surface"
+                href="/app/settings"
+                aria-label={common("settings")}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  settings
+                </span>
+              </Link>
+              <form action="/api/auth/logout" method="post">
+                <button
+                  className="grid h-10 w-10 place-items-center rounded-full border border-outline-variant/70 bg-white/65 text-on-surface-variant transition-colors hover:bg-white hover:text-on-surface"
+                  type="submit"
+                  aria-label={common("logout")}
+                  title={common("logout")}
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    logout
+                  </span>
+                </button>
+              </form>
+            </>
           ) : (
             <Link
               className="hidden rounded-full border border-outline-variant/70 bg-white/65 px-4 py-2 text-sm font-bold text-on-surface transition-colors hover:bg-white sm:inline-flex"

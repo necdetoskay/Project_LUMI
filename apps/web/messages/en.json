@@ -17,7 +17,8 @@
     "children": "My Children",
     "assets": "Visual Library",
     "safety": "Safety",
-    "returnToStory": "Return to my story"
+    "returnToStory": "Return to my story",
+    "logout": "Sign out"
   },
   "footer": {
     "tagline": "Worlds that remember, grow, and live through stories.",
