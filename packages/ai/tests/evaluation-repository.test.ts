@@ -4,10 +4,7 @@ import {
   InMemoryEvaluationRepository,
   STORY_QUALITY_RUBRIC_V1,
 } from "../src/test-lab";
-import type {
-  CandidateEvaluation,
-  EvaluationExecution,
-} from "../src/test-lab";
+import type { CandidateEvaluation, EvaluationExecution } from "../src/test-lab";
 
 describe("evaluation repository", () => {
   it("stores immutable rubric revisions independently", async () => {
@@ -77,9 +74,9 @@ describe("evaluation repository", () => {
       }),
     );
 
-    expect((await repository.getExecution("exec-judge"))?.usageSnapshot).toEqual(
-      judgeExecution.usageSnapshot,
-    );
+    expect(
+      (await repository.getExecution("exec-judge"))?.usageSnapshot,
+    ).toEqual(judgeExecution.usageSnapshot);
     const stored = await repository.listCandidateEvaluations("candidate-1");
     expect(stored).toHaveLength(2);
     expect(

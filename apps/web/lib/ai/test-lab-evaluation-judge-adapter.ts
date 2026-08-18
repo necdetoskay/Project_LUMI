@@ -31,7 +31,8 @@ export const testLabEvaluationJudgeAdapter: EvaluationJudgeAdapter = {
     const parsed = asJudgePayload(response.parsedJson);
     const promptTokens = response.usage.inputTokens ?? 0;
     const completionTokens = response.usage.outputTokens ?? 0;
-    const totalTokens = response.usage.totalTokens ?? promptTokens + completionTokens;
+    const totalTokens =
+      response.usage.totalTokens ?? promptTokens + completionTokens;
     const estimatedCostUsd = estimateRunCostUsd({
       pricing: catalog.pricing,
       promptTokens,

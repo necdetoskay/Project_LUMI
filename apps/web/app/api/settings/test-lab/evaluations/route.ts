@@ -43,7 +43,10 @@ export const POST = observeHandler(async (request: Request) => {
     const body = (await readRequestBody(request)) as Record<string, unknown>;
     const action = requiredString(body.action, "action");
     const householdId = requiredString(body.householdId, "householdId");
-    const childProfileId = requiredString(body.childProfileId, "childProfileId");
+    const childProfileId = requiredString(
+      body.childProfileId,
+      "childProfileId",
+    );
     const { testLabRepository, evaluationRepository, runner } = services();
 
     try {
@@ -76,7 +79,8 @@ export const POST = observeHandler(async (request: Request) => {
           childProfileId,
           testLabRepository,
         });
-        if (!candidate) throw new Error("TEST_LAB_EVALUATION_CANDIDATE_NOT_FOUND");
+        if (!candidate)
+          throw new Error("TEST_LAB_EVALUATION_CANDIDATE_NOT_FOUND");
         const result = await runner.recordHumanEvaluation({
           rubricKey: optionalString(body.rubricKey) ?? "story_quality",
           rubricRevision: positiveInteger(body.rubricRevision ?? 1),
@@ -104,9 +108,11 @@ export const POST = observeHandler(async (request: Request) => {
             const evaluations =
               await evaluationRepository.listCandidateEvaluations(candidateId);
             const executions = await Promise.all(
-              [...new Set(evaluations.map((item) => item.evaluationExecutionId))].map(
-                (id) => evaluationRepository.getExecution(id),
-              ),
+              [
+                ...new Set(
+                  evaluations.map((item) => item.evaluationExecutionId),
+                ),
+              ].map((id) => evaluationRepository.getExecution(id)),
             );
             return {
               candidateId,
@@ -141,7 +147,8 @@ async function ensureStoryRubric(
   try {
     await repository.saveRubric(STORY_QUALITY_RUBRIC_V1);
   } catch {
-    if (!(await repository.getRubric("story_quality", 1))) throw new Error("TEST_LAB_EVALUATION_RUBRIC_SEED_FAILED");
+    if (!(await repository.getRubric("story_quality", 1)))
+      throw new Error("TEST_LAB_EVALUATION_RUBRIC_SEED_FAILED");
   }
 }
 
@@ -160,7 +167,9 @@ async function loadOwnedCandidates(input: {
       }
       const run = await input.testLabRepository.getRun(candidate.runId);
       if (!run) throw new Error(`TEST_LAB_RUN_NOT_FOUND:${candidate.runId}`);
-      const parentState = await input.testLabRepository.getState(run.parentStateId);
+      const parentState = await input.testLabRepository.getState(
+        run.parentStateId,
+      );
       assertSandboxOwner(parentState, {
         parentId: input.parentId,
         householdId: input.householdId,

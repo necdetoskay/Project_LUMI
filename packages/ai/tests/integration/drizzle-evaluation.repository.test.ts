@@ -86,7 +86,9 @@ describe("DrizzleEvaluationRepository integration", () => {
 
   afterAll(async () => {
     if (pool) {
-      await pool.query("DROP SCHEMA IF EXISTS ai CASCADE").catch(() => undefined);
+      await pool
+        .query("DROP SCHEMA IF EXISTS ai CASCADE")
+        .catch(() => undefined);
       await pool.end();
     }
   });
@@ -95,7 +97,9 @@ describe("DrizzleEvaluationRepository integration", () => {
     if (!enabled || !connected) return;
 
     await repository.saveRubric(STORY_QUALITY_RUBRIC_V1);
-    await expect(repository.saveRubric(STORY_QUALITY_RUBRIC_V1)).rejects.toThrow();
+    await expect(
+      repository.saveRubric(STORY_QUALITY_RUBRIC_V1),
+    ).rejects.toThrow();
 
     await repository.saveExecution({
       id: ids.execution,
@@ -142,7 +146,9 @@ describe("DrizzleEvaluationRepository integration", () => {
       createdAt: "2026-08-18T14:00:02.000Z",
     });
 
-    expect((await repository.getExecution(ids.execution))?.usageSnapshot).toEqual({
+    expect(
+      (await repository.getExecution(ids.execution))?.usageSnapshot,
+    ).toEqual({
       promptTokens: 1000,
       completionTokens: 300,
       totalTokens: 1300,

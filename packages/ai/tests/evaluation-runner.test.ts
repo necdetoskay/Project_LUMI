@@ -76,12 +76,13 @@ describe("EvaluationRunner", () => {
     expect(result.evaluations).toHaveLength(2);
     expect(
       new Set(
-        result.evaluations.map((evaluation) => evaluation.evaluationExecutionId),
+        result.evaluations.map(
+          (evaluation) => evaluation.evaluationExecutionId,
+        ),
       ),
     ).toEqual(new Set([result.execution.id]));
-    expect(result.evaluations.map((evaluation) => evaluation.overallScore)).toEqual([
-      8,
-      6,
-    ]);
+    expect(
+      result.evaluations.map((evaluation) => evaluation.overallScore),
+    ).toEqual([8, 6]);
   });
 });

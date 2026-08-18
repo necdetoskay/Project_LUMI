@@ -87,7 +87,9 @@ export const testLabCandidateEvaluations = aiSchema.table(
     id: primaryId(),
     evaluationExecutionId: uuid("evaluation_execution_id")
       .notNull()
-      .references(() => testLabEvaluationExecutions.id, { onDelete: "cascade" }),
+      .references(() => testLabEvaluationExecutions.id, {
+        onDelete: "cascade",
+      }),
     sessionId: uuid("session_id")
       .notNull()
       .references(() => testLabSessions.id, { onDelete: "cascade" }),

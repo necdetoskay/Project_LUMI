@@ -58,7 +58,9 @@ export class EvaluationRunner {
       throw new Error("TEST_LAB_EVALUATION_NO_CANDIDATES");
     }
     const sessionId = input.candidates[0]!.sessionId;
-    if (input.candidates.some((candidate) => candidate.sessionId !== sessionId)) {
+    if (
+      input.candidates.some((candidate) => candidate.sessionId !== sessionId)
+    ) {
       throw new Error("TEST_LAB_EVALUATION_CROSS_SESSION_CANDIDATES");
     }
 
