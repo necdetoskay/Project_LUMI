@@ -36,6 +36,14 @@ export interface ModelProfile {
   pricing: ModelPricingSnapshot;
 }
 
+export interface ModelPreset {
+  id: string;
+  label: string;
+  providerId: string;
+  modelId: string;
+  favorite: boolean;
+}
+
 export interface TestRunUsageSnapshot {
   promptTokens: number;
   completionTokens: number;
