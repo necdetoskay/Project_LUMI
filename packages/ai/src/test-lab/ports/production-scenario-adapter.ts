@@ -11,6 +11,7 @@ export interface ProductionScenarioExecutionRequest {
   parentState: JsonObject;
   modelSlug: string;
   promptVersionOverride?: number;
+  generationConfig?: JsonObject;
   pricingSnapshot: ModelPricingSnapshot;
   actor: {
     userId: string;
