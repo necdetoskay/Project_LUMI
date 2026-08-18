@@ -19,12 +19,14 @@ CREATE INDEX test_lab_candidates_run_idx
   ON ai.test_lab_run_candidates(run_id);
 
 -- Phase 1/2 represented one selectable candidate directly on each run.
+-- Candidate and run IDs live in different tables, so reusing the run UUID keeps
+-- this migration deterministic and avoids requiring a UUID extension.
 INSERT INTO ai.test_lab_run_candidates (
   id, run_id, session_id, branch_id, phase_id, ordinal, payload,
   candidate_state_id, created_at
 )
 SELECT
-  gen_random_uuid(), r.id, r.session_id, r.branch_id, r.phase_id, 0, '{}'::jsonb,
+  r.id, r.id, r.session_id, r.branch_id, r.phase_id, 0, '{}'::jsonb,
   r.candidate_state_id, r.created_at
 FROM ai.test_lab_runs r;
 
