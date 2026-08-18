@@ -120,12 +120,12 @@ function provenanceFromSource(
 ): GenerationContextSectionProvenance {
   return {
     source: source.source,
-    sourceId: result.sourceId,
     sourceVersion: source.sourceVersion,
-    revision: result.revision,
     authority: source.authority,
     reason: source.reason,
-    updatedAt: result.updatedAt,
+    ...(result.sourceId ? { sourceId: result.sourceId } : {}),
+    ...(result.revision ? { revision: result.revision } : {}),
+    ...(result.updatedAt ? { updatedAt: result.updatedAt } : {}),
   };
 }
 
