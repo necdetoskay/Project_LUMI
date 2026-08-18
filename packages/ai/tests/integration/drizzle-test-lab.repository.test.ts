@@ -130,6 +130,7 @@ describe("DrizzleTestLabRepository integration", () => {
         productionOperation: "generateWorldSuggestions",
         promptKey: "character_onboarding.world_suggestions",
         promptVersion: 3,
+        generationConfig: null,
         renderedPromptFingerprint: "prompt-sha",
         contextFingerprint: "context-sha",
         promptTemplateSnapshot: {
@@ -172,6 +173,7 @@ describe("DrizzleTestLabRepository integration", () => {
       productionOperation: "generateWorldSuggestions",
       promptKey: "character_onboarding.world_suggestions",
       promptVersion: 3,
+      generationConfig: null,
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
       promptTemplateSnapshot: {
