@@ -124,6 +124,10 @@ export const CHARACTER_ONBOARDING_SCENARIO: TestScenarioDefinition = {
       promptKey: "character_onboarding.character_origin_suggestions",
       directions: [...BOTH],
       requiredStateKeys: ["characterIdentity"],
+      requiredStateKeysByDirection: {
+        character_first: ["world", "region"],
+        world_first: ["worldFeeling", "characterArchetype"],
+      },
       writesStateKey: "origin",
     },
     {
