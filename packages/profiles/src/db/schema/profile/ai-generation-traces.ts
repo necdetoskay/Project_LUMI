@@ -43,7 +43,8 @@ export const aiGenerationTraces = profileSchema.table("ai_generation_traces", {
     .notNull()
     .default({}),
   contextFingerprint: varchar("context_fingerprint", { length: 64 }),
-  contextProvenance: jsonb("context_provenance").$type<Record<string, unknown>>(),
+  contextProvenance:
+    jsonb("context_provenance").$type<Record<string, unknown>>(),
   outputPayload: jsonb("output_payload").$type<Record<string, unknown>>(),
   validationStatus: varchar("validation_status", { length: 20 })
     .$type<"valid" | "invalid">()
