@@ -172,7 +172,7 @@ describe("createAiGenerationContextTraceEvidence", () => {
 });
 
 describe("toAiGenerationContextInspectorView", () => {
-  it("reports partial reconstruction when every persisted section has verifiable revision evidence", () => {
+  it("reports partial reconstruction and derived observability metrics for privacy-safe trace evidence", () => {
     const view = toAiGenerationContextInspectorView(traceRecord());
     const serialized = JSON.stringify(view);
 
@@ -184,6 +184,10 @@ describe("toAiGenerationContextInspectorView", () => {
       profile: "character_onboarding",
       maxContextTokens: 3_600,
       estimatedTokens: 420,
+      observability: {
+        budgetUtilizationRatio: 420 / 3_600,
+        contextToOutputTokenRatio: 4.2,
+      },
       droppedSections: ["relevant_memories"],
     });
     expect(view.context.sections).toEqual([
@@ -215,6 +219,20 @@ describe("toAiGenerationContextInspectorView", () => {
     expect(serialized).not.toContain("SECRET-OUTPUT-PAYLOAD");
     expect(serialized).not.toContain("33333333-3333-4333-8333-333333333333");
     expect(serialized).not.toContain("44444444-4444-4444-8444-444444444444");
+  });
+
+  it("does not invent a context-to-output ratio when completion usage is unavailable or zero", () => {
+    const missingUsage = toAiGenerationContextInspectorView(
+      traceRecord({ completionTokens: null }),
+    );
+    const zeroUsage = toAiGenerationContextInspectorView(
+      traceRecord({ completionTokens: 0 }),
+    );
+
+    expect(
+      missingUsage.context.observability.contextToOutputTokenRatio,
+    ).toBeNull();
+    expect(zeroUsage.context.observability.contextToOutputTokenRatio).toBeNull();
   });
 
   it("reports exact reconstruction only when every section has immutable replay evidence and no historical transform is required", () => {
@@ -273,6 +291,10 @@ describe("toAiGenerationContextInspectorView", () => {
       profile: null,
       maxContextTokens: null,
       estimatedTokens: null,
+      observability: {
+        budgetUtilizationRatio: null,
+        contextToOutputTokenRatio: null,
+      },
       droppedSections: [],
       sections: [],
     });
