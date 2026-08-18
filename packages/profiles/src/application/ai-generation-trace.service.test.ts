@@ -232,7 +232,9 @@ describe("toAiGenerationContextInspectorView", () => {
     expect(
       missingUsage.context.observability.contextToOutputTokenRatio,
     ).toBeNull();
-    expect(zeroUsage.context.observability.contextToOutputTokenRatio).toBeNull();
+    expect(
+      zeroUsage.context.observability.contextToOutputTokenRatio,
+    ).toBeNull();
   });
 
   it("reports exact reconstruction only when every section has immutable replay evidence and no historical transform is required", () => {
