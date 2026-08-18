@@ -16,3 +16,14 @@ ALTER TABLE ai.test_lab_runs
     OR
     (model_slug IS NOT NULL AND pricing_snapshot IS NOT NULL)
   );
+
+ALTER TABLE ai.test_lab_runs
+  DROP CONSTRAINT IF EXISTS chk_test_lab_run_usage_traceable;
+
+ALTER TABLE ai.test_lab_runs
+  ADD CONSTRAINT chk_test_lab_run_usage_traceable
+  CHECK (
+    usage_snapshot IS NULL
+    OR
+    (model_slug IS NOT NULL AND pricing_snapshot IS NOT NULL)
+  );
