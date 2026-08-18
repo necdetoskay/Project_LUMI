@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import { getOnboardingState } from "@lumi/profiles/application";
+import DeleteProfileButton from "@/components/profile/delete-profile-button";
 
 export default async function ProtectedAppPage() {
   const t = await getTranslations("parentHome");
@@ -160,6 +161,11 @@ export default async function ProtectedAppPage() {
                     }}
                   >
                     <div className="absolute -right-5 -top-6 h-24 w-24 rounded-full bg-white/50" />
+                    <DeleteProfileButton
+                      profileId={profile.id}
+                      householdId={state.householdId!}
+                      profileName={profile.displayName}
+                    />
                     <div className="relative z-10 flex h-full flex-col justify-between gap-8">
                       <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
                         <span
