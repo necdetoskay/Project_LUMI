@@ -9,6 +9,7 @@ import type { AssembledGenerationContext } from "./generation-context-assembler"
 
 const REVISION_FINGERPRINT =
   "543e13dd8adbed260aa1494058d07903928692256459d98821eb39e0cdb16bfe";
+const SNAPSHOT_DIGEST = "b".repeat(64);
 
 function assembledContext(): AssembledGenerationContext {
   return {
@@ -47,10 +48,40 @@ function assembledContext(): AssembledGenerationContext {
   };
 }
 
+function replayableAssembledContext(
+  options: { compacted?: boolean } = {},
+): AssembledGenerationContext {
+  const assembled = assembledContext();
+  const section = assembled.sections[0]!;
+  return {
+    ...assembled,
+    sections: [
+      {
+        ...section,
+        provenance: {
+          ...section.provenance,
+          replay: {
+            kind: "content_addressed_snapshot",
+            store: "context.snapshots",
+            snapshotDigest: SNAPSHOT_DIGEST,
+            snapshotVersion: "v1",
+          },
+          ...(options.compacted
+            ? {}
+            : {
+                compaction: undefined,
+              }),
+        },
+      },
+    ],
+  };
+}
+
 function traceRecord(
   overrides: Partial<AiGenerationTraceRecord> = {},
+  assembled: AssembledGenerationContext = assembledContext(),
 ): AiGenerationTraceRecord {
-  const evidence = createAiGenerationContextTraceEvidence(assembledContext());
+  const evidence = createAiGenerationContextTraceEvidence(assembled);
   return {
     id: "11111111-1111-4111-8111-111111111111",
     householdId: "22222222-2222-4222-8222-222222222222",
@@ -113,6 +144,31 @@ describe("createAiGenerationContextTraceEvidence", () => {
     expect(serialized).not.toContain("SECRET-REVISION");
     expect(serialized).not.toContain("interests");
   });
+
+  it("persists only the content-addressed replay locator, not internal source identifiers or values", () => {
+    const evidence = createAiGenerationContextTraceEvidence(
+      replayableAssembledContext(),
+    );
+    const serialized = JSON.stringify(evidence);
+
+    expect(evidence.contextProvenance).toMatchObject({
+      sections: [
+        {
+          provenance: {
+            replay: {
+              kind: "content_addressed_snapshot",
+              store: "context.snapshots",
+              snapshotDigest: SNAPSHOT_DIGEST,
+              snapshotVersion: "v1",
+            },
+          },
+        },
+      ],
+    });
+    expect(serialized).toContain(SNAPSHOT_DIGEST);
+    expect(serialized).not.toContain("SECRET-CHILD-ID");
+    expect(serialized).not.toContain("SECRET-SOURCE-ID");
+  });
 });
 
 describe("toAiGenerationContextInspectorView", () => {
@@ -139,6 +195,7 @@ describe("toAiGenerationContextInspectorView", () => {
         source: "canonical-child-profile",
         sourceVersion: "v1",
         revisionFingerprint: REVISION_FINGERPRINT,
+        replay: null,
         authority: "canonical",
         reason: "personalization",
         updatedAt: "2026-08-18T00:00:00.000Z",
@@ -158,6 +215,34 @@ describe("toAiGenerationContextInspectorView", () => {
     expect(serialized).not.toContain("SECRET-OUTPUT-PAYLOAD");
     expect(serialized).not.toContain("33333333-3333-4333-8333-333333333333");
     expect(serialized).not.toContain("44444444-4444-4444-8444-444444444444");
+  });
+
+  it("reports exact reconstruction only when every section has immutable replay evidence and no historical transform is required", () => {
+    const view = toAiGenerationContextInspectorView(
+      traceRecord({}, replayableAssembledContext()),
+    );
+
+    expect(view.context.reconstructability).toBe("exact");
+    expect(view.context.reconstructabilityReason).toBe(
+      "all_sources_replayable",
+    );
+    expect(view.context.sections[0]?.replay).toEqual({
+      kind: "content_addressed_snapshot",
+      store: "context.snapshots",
+      snapshotDigest: SNAPSHOT_DIGEST,
+      snapshotVersion: "v1",
+    });
+  });
+
+  it("keeps replayable but compacted context partial until historical compactor replay is versioned", () => {
+    const view = toAiGenerationContextInspectorView(
+      traceRecord({}, replayableAssembledContext({ compacted: true })),
+    );
+
+    expect(view.context.reconstructability).toBe("partial");
+    expect(view.context.reconstructabilityReason).toBe(
+      "replay_requires_historical_compaction",
+    );
   });
 
   it("reports partial reconstruction with incomplete revision evidence for older safe provenance", () => {
