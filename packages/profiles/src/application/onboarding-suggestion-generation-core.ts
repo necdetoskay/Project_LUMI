@@ -5,6 +5,7 @@ import {
 } from "./generation-context-assembler";
 import {
   buildGenerationContext,
+  type GenerationContext,
   type GenerationCreationOverride,
 } from "./generation-context.service";
 import { parseAndValidatePromptOutput } from "./prompt-output-validator";
@@ -17,6 +18,7 @@ import {
 export interface OnboardingSuggestionGenerationSpec<T> {
   promptKey: string;
   taskType: string;
+  generationGuard?: (context: GenerationContext) => void;
   summaryGuard: (summary: Record<string, unknown>) => void;
   contextExtras?: (
     summary: Record<string, unknown>,
@@ -60,6 +62,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
     },
     options.creationOverride,
   );
+  spec.generationGuard?.(generationContext);
   const summary = generationContext.creation.previousSelections;
   spec.summaryGuard(summary);
 
