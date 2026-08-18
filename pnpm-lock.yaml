@@ -48,6 +48,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lumi/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@lumi/context':
         specifier: workspace:*
         version: link:../../packages/context

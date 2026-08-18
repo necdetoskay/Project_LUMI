@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   index,
+  integer,
   jsonb,
   timestamp,
   uniqueIndex,
@@ -91,13 +92,11 @@ export const testLabRuns = aiSchema.table(
     parentStateId: uuid("parent_state_id")
       .notNull()
       .references(() => testLabStateSnapshots.id),
-    candidateStateId: uuid("candidate_state_id")
-      .notNull()
-      .references(() => testLabStateSnapshots.id),
     status: varchar("status", { length: 20 }).notNull().default("candidate"),
     modelSlug: varchar("model_slug", { length: 240 }),
     pricingSnapshot: jsonb("pricing_snapshot"),
     usageSnapshot: jsonb("usage_snapshot"),
+    executionSnapshot: jsonb("execution_snapshot"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -109,7 +108,6 @@ export const testLabRuns = aiSchema.table(
       table.phaseId,
     ),
     index("test_lab_runs_model_slug_idx").on(table.modelSlug),
-    uniqueIndex("test_lab_runs_candidate_state_uq").on(table.candidateStateId),
     check(
       "chk_test_lab_run_status",
       sql`${table.status} IN ('candidate', 'failed')`,
@@ -122,6 +120,40 @@ export const testLabRuns = aiSchema.table(
       "chk_test_lab_run_usage_traceable",
       sql`${table.usageSnapshot} IS NULL OR (${table.modelSlug} IS NOT NULL AND ${table.pricingSnapshot} IS NOT NULL)`,
     ),
+  ],
+);
+
+export const testLabRunCandidates = aiSchema.table(
+  "test_lab_run_candidates",
+  {
+    id: primaryId(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => testLabRuns.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => testLabSessions.id, { onDelete: "cascade" }),
+    branchId: uuid("branch_id")
+      .notNull()
+      .references(() => testLabBranches.id, { onDelete: "cascade" }),
+    phaseId: varchar("phase_id", { length: 160 }).notNull(),
+    ordinal: integer("ordinal").notNull(),
+    payload: jsonb("payload").notNull(),
+    candidateStateId: uuid("candidate_state_id")
+      .notNull()
+      .references(() => testLabStateSnapshots.id),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("test_lab_candidate_state_uq").on(table.candidateStateId),
+    uniqueIndex("test_lab_candidate_run_ordinal_uq").on(
+      table.runId,
+      table.ordinal,
+    ),
+    index("test_lab_candidates_run_idx").on(table.runId),
+    check("chk_test_lab_candidate_ordinal", sql`${table.ordinal} >= 0`),
   ],
 );
 
@@ -139,6 +171,9 @@ export const testLabSelections = aiSchema.table(
     runId: uuid("run_id")
       .notNull()
       .references(() => testLabRuns.id),
+    candidateId: uuid("candidate_id")
+      .notNull()
+      .references(() => testLabRunCandidates.id),
     selectedStateId: uuid("selected_state_id")
       .notNull()
       .references(() => testLabStateSnapshots.id),
@@ -155,6 +190,7 @@ export const testLabSelections = aiSchema.table(
       table.phaseId,
     ),
     index("test_lab_selections_run_idx").on(table.runId),
+    index("test_lab_selections_candidate_idx").on(table.candidateId),
     check(
       "chk_test_lab_selection_actor",
       sql`${table.actor} IN ('human', 'automation')`,
@@ -167,4 +203,6 @@ export type TestLabBranchRecord = typeof testLabBranches.$inferSelect;
 export type TestLabStateSnapshotRecord =
   typeof testLabStateSnapshots.$inferSelect;
 export type TestLabRunRecord = typeof testLabRuns.$inferSelect;
+export type TestLabRunCandidateRecord =
+  typeof testLabRunCandidates.$inferSelect;
 export type TestLabSelectionRecord = typeof testLabSelections.$inferSelect;

@@ -5,6 +5,8 @@ import type {
   TestBranchId,
   TestPhaseId,
   TestRun,
+  TestRunCandidate,
+  TestRunCandidateId,
   TestRunId,
   TestSelection,
   TestSession,
@@ -21,6 +23,9 @@ export interface TestLabRepository {
   saveRun(run: TestRun): Promise<void>;
   getRun(id: TestRunId): Promise<TestRun | null>;
   listRuns(branchId: TestBranchId): Promise<TestRun[]>;
+  saveCandidate(candidate: TestRunCandidate): Promise<void>;
+  getCandidate(id: TestRunCandidateId): Promise<TestRunCandidate | null>;
+  listCandidates(runId: TestRunId): Promise<TestRunCandidate[]>;
   saveSelection(selection: TestSelection): Promise<void>;
   getSelection(
     branchId: TestBranchId,

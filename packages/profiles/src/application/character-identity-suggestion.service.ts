@@ -1,12 +1,8 @@
-import { resolveActivePrompt } from "./prompt-runtime.service";
-import { generateTextWithLlm } from "./text-llm-gateway.service";
-import { parseAndValidatePromptOutput } from "./prompt-output-validator";
-import { recordAiGenerationTrace } from "./ai-generation-trace.service";
-import { buildGenerationContext } from "./generation-context.service";
 import {
-  assembleGenerationContext,
-  toPromptGenerationContext,
-} from "./generation-context-assembler";
+  generateOnboardingSuggestionsWithProductionPipeline,
+  pickSuggestionArray,
+  type OnboardingSuggestionGenerationOptions,
+} from "./onboarding-suggestion-generation-core";
 
 export interface CharacterIdentitySuggestion {
   key: string;
@@ -23,69 +19,30 @@ export interface CharacterIdentitySuggestionResult {
 export async function generateCharacterIdentitySuggestions(
   userId: string,
   input: { householdId: string; childProfileId: string },
+  options: OnboardingSuggestionGenerationOptions = {},
 ): Promise<CharacterIdentitySuggestionResult> {
-  const generationContext = await buildGenerationContext(userId, {
-    householdId: input.householdId,
-    childProfileId: input.childProfileId,
-    profile: "character_onboarding",
-  });
-  const summary = generationContext.creation.previousSelections;
-  if (typeof summary.worldFeeling !== "string" || !summary.characterArchetype)
-    throw new Error("CHARACTER_IDENTITY_CONTEXT_REQUIRED");
-
-  const assembledContext = assembleGenerationContext(generationContext);
-  const context = {
-    ...toPromptGenerationContext(assembledContext),
-    worldFeeling: summary.worldFeeling,
-    characterArchetype: summary.characterArchetype,
-    locale: generationContext.child.locale,
-  };
-  const prompt = await resolveActivePrompt(
-    "character_onboarding.character_identity_suggestions",
-    context,
-  );
-  const generated = await generateTextWithLlm({
+  const result = await generateOnboardingSuggestionsWithProductionPipeline(
     userId,
-    householdId: input.householdId,
-    taskType: "character_identity_suggestions",
-    system: prompt.system,
-    user: prompt.user,
-    modelOverride: prompt.modelOverride,
-    generationConfig: prompt.generationConfig,
-  });
-  let suggestions: CharacterIdentitySuggestion[];
-  try {
-    const value = parseAndValidatePromptOutput(
-      generated.content,
-      prompt.outputSchema,
-    ) as { suggestions: CharacterIdentitySuggestion[] };
-    suggestions = value.suggestions;
-  } catch (error) {
-    await recordAiGenerationTrace({
-      householdId: input.householdId,
-      childProfileId: input.childProfileId,
-      creationCycleId: generationContext.creation.cycleId,
+    input,
+    {
+      promptKey: "character_onboarding.character_identity_suggestions",
       taskType: "character_identity_suggestions",
-      promptKey: prompt.promptKey,
-      promptVersion: prompt.promptVersion,
-      inputContext: context,
-      outputPayload: { raw: generated.content },
-      validationStatus: "invalid",
-      generated,
-    });
-    throw error;
-  }
-  await recordAiGenerationTrace({
-    householdId: input.householdId,
-    childProfileId: input.childProfileId,
-    creationCycleId: generationContext.creation.cycleId,
-    taskType: "character_identity_suggestions",
-    promptKey: prompt.promptKey,
-    promptVersion: prompt.promptVersion,
-    inputContext: context,
-    outputPayload: { suggestions },
-    validationStatus: "valid",
-    generated,
-  });
-  return { suggestions };
+      summaryGuard(summary) {
+        if (
+          typeof summary.worldFeeling !== "string" ||
+          !summary.characterArchetype
+        )
+          throw new Error("CHARACTER_IDENTITY_CONTEXT_REQUIRED");
+      },
+      contextExtras: (summary) => ({
+        worldFeeling: summary.worldFeeling as string,
+        characterArchetype: summary.characterArchetype as object,
+      }),
+      pick: pickSuggestionArray<CharacterIdentitySuggestion>,
+      maxAttempts: 1,
+    },
+    options,
+  );
+
+  return { suggestions: result.suggestions };
 }

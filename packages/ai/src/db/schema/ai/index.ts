@@ -12,6 +12,7 @@ export {
   testLabBranches,
   testLabStateSnapshots,
   testLabRuns,
+  testLabRunCandidates,
   testLabSelections,
 } from "./test-lab";
 export type {
@@ -19,5 +20,6 @@ export type {
   TestLabBranchRecord,
   TestLabStateSnapshotRecord,
   TestLabRunRecord,
+  TestLabRunCandidateRecord,
   TestLabSelectionRecord,
 } from "./test-lab";

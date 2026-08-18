@@ -27,6 +27,7 @@
     "clean": "rimraf .next coverage"
   },
   "dependencies": {
+    "@lumi/ai": "workspace:*",
     "@lumi/context": "workspace:*",
     "@lumi/logger": "workspace:*",
     "@lumi/media": "workspace:*",

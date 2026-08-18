@@ -9,6 +9,8 @@ import type {
   TestBranch,
   TestExecutionMode,
   TestRun,
+  TestRunCandidate,
+  TestRunExecutionSnapshot,
   TestSelection,
   TestSelectionActor,
   TestSession,
@@ -32,7 +34,6 @@ export class TestLabCoordinator {
         `TEST_LAB_SESSION_ALREADY_EXISTS:${input.sessionId}`,
       );
     }
-
     const branch: TestBranch = {
       id: input.branchId,
       sessionId: input.sessionId,
@@ -40,7 +41,6 @@ export class TestLabCoordinator {
       forkedFromPhaseId: null,
       createdAt: input.now,
     };
-
     const state: StateSnapshot = {
       id: input.initialStateId,
       sessionId: input.sessionId,
@@ -50,7 +50,6 @@ export class TestLabCoordinator {
       value: structuredClone(input.initialState),
       createdAt: input.now,
     };
-
     const session: TestSession = {
       id: input.sessionId,
       scenarioKey: input.scenarioKey,
@@ -58,73 +57,47 @@ export class TestLabCoordinator {
       activeBranchId: input.branchId,
       createdAt: input.now,
     };
-
     await this.repository.saveSession(session);
     await this.repository.saveBranch(branch);
     await this.repository.saveState(state);
-
     return { session, initialState: state };
   }
 
-  async recordCandidate(input: {
+  async recordRunCandidates(input: {
     runId: string;
-    candidateStateId: string;
     sessionId: string;
     branchId: string;
     phaseId: string;
     parentStateId: string;
-    candidateState: JsonObject;
+    candidates: Array<{
+      candidateId: string;
+      candidateStateId: string;
+      payload: JsonObject;
+      candidateState: JsonObject;
+    }>;
     modelSlug?: string | null;
     pricingSnapshot?: ModelPricingSnapshot | null;
     usageSnapshot?: TestRunUsageSnapshot | null;
+    executionSnapshot?: TestRunExecutionSnapshot | null;
     now: string;
-  }): Promise<{ run: TestRun; candidateState: StateSnapshot }> {
+  }): Promise<{
+    run: TestRun;
+    candidates: Array<{ candidate: TestRunCandidate; state: StateSnapshot }>;
+  }> {
     const session = await this.requireSession(input.sessionId);
     const branch = await this.requireBranch(input.branchId);
     const parentState = await this.requireState(input.parentStateId);
-
     if (
       branch.sessionId !== session.id ||
       parentState.sessionId !== session.id
     ) {
       throw new TestLabInvariantError("TEST_LAB_CROSS_SESSION_REFERENCE");
     }
-
-    if (parentState.branchId !== branch.id) {
-      const branchSelections = await this.repository.listSelections(branch.id);
-      const selectedOnBranch = branchSelections.some(
-        (selection) => selection.selectedStateId === parentState.id,
-      );
-      if (!selectedOnBranch) {
-        throw new TestLabInvariantError(
-          "TEST_LAB_PARENT_STATE_NOT_SELECTED_ON_BRANCH",
-        );
-      }
+    await this.assertParentStateUsable(branch.id, parentState);
+    this.assertUsageTraceability(input);
+    if (input.candidates.length === 0) {
+      throw new TestLabInvariantError("TEST_LAB_RUN_REQUIRES_CANDIDATE");
     }
-
-    const hasModel = input.modelSlug !== undefined && input.modelSlug !== null;
-    const hasPricing =
-      input.pricingSnapshot !== undefined && input.pricingSnapshot !== null;
-    if (hasModel !== hasPricing) {
-      throw new TestLabInvariantError(
-        "TEST_LAB_MODEL_PRICING_SNAPSHOT_REQUIRES_MODEL_SLUG",
-      );
-    }
-    if (input.usageSnapshot && (!hasModel || !hasPricing)) {
-      throw new TestLabInvariantError(
-        "TEST_LAB_USAGE_REQUIRES_MODEL_PRICING_SNAPSHOT",
-      );
-    }
-
-    const candidateState: StateSnapshot = {
-      id: input.candidateStateId,
-      sessionId: input.sessionId,
-      branchId: input.branchId,
-      parentStateId: input.parentStateId,
-      createdByRunId: input.runId,
-      value: structuredClone(input.candidateState),
-      createdAt: input.now,
-    };
 
     const run: TestRun = {
       id: input.runId,
@@ -132,18 +105,75 @@ export class TestLabCoordinator {
       branchId: input.branchId,
       phaseId: input.phaseId,
       parentStateId: input.parentStateId,
-      candidateStateId: input.candidateStateId,
       status: "candidate",
       modelSlug: input.modelSlug ?? null,
       pricingSnapshot: input.pricingSnapshot ?? null,
       usageSnapshot: input.usageSnapshot ?? null,
+      executionSnapshot: input.executionSnapshot ?? null,
       createdAt: input.now,
     };
-
-    await this.repository.saveState(candidateState);
     await this.repository.saveRun(run);
 
-    return { run, candidateState };
+    const results: Array<{
+      candidate: TestRunCandidate;
+      state: StateSnapshot;
+    }> = [];
+    for (const [ordinal, item] of input.candidates.entries()) {
+      const state: StateSnapshot = {
+        id: item.candidateStateId,
+        sessionId: input.sessionId,
+        branchId: input.branchId,
+        parentStateId: input.parentStateId,
+        createdByRunId: input.runId,
+        value: structuredClone(item.candidateState),
+        createdAt: input.now,
+      };
+      const candidate: TestRunCandidate = {
+        id: item.candidateId,
+        runId: input.runId,
+        sessionId: input.sessionId,
+        branchId: input.branchId,
+        phaseId: input.phaseId,
+        ordinal,
+        payload: structuredClone(item.payload),
+        candidateStateId: item.candidateStateId,
+        createdAt: input.now,
+      };
+      await this.repository.saveState(state);
+      await this.repository.saveCandidate(candidate);
+      results.push({ candidate, state });
+    }
+    return { run, candidates: results };
+  }
+
+  async recordCandidate(input: {
+    runId: string;
+    candidateId?: string;
+    candidateStateId: string;
+    sessionId: string;
+    branchId: string;
+    phaseId: string;
+    parentStateId: string;
+    candidateState: JsonObject;
+    candidatePayload?: JsonObject;
+    modelSlug?: string | null;
+    pricingSnapshot?: ModelPricingSnapshot | null;
+    usageSnapshot?: TestRunUsageSnapshot | null;
+    executionSnapshot?: TestRunExecutionSnapshot | null;
+    now: string;
+  }): Promise<{ run: TestRun; candidateState: StateSnapshot }> {
+    const result = await this.recordRunCandidates({
+      ...input,
+      candidates: [
+        {
+          candidateId: input.candidateId ?? crypto.randomUUID(),
+          candidateStateId: input.candidateStateId,
+          payload: input.candidatePayload ?? {},
+          candidateState: input.candidateState,
+        },
+      ],
+    });
+    return { run: result.run, candidateState: result.candidates[0]!.state };
   }
 
   async selectCandidate(input: {
@@ -152,6 +182,7 @@ export class TestLabCoordinator {
     branchId: string;
     phaseId: string;
     runId: string;
+    candidateId?: string;
     actor: TestSelectionActor;
     strategy?: string | null;
     forkBranchId?: string;
@@ -164,12 +195,19 @@ export class TestLabCoordinator {
     const session = await this.requireSession(input.sessionId);
     const branch = await this.requireBranch(input.branchId);
     const run = await this.requireRun(input.runId);
-
     if (branch.sessionId !== session.id || run.sessionId !== session.id) {
       throw new TestLabInvariantError("TEST_LAB_CROSS_SESSION_REFERENCE");
     }
     if (run.phaseId !== input.phaseId) {
       throw new TestLabInvariantError("TEST_LAB_RUN_PHASE_MISMATCH");
+    }
+    const candidate = await this.resolveCandidate(run.id, input.candidateId);
+    if (
+      candidate.runId !== run.id ||
+      candidate.phaseId !== input.phaseId ||
+      candidate.sessionId !== session.id
+    ) {
+      throw new TestLabInvariantError("TEST_LAB_CANDIDATE_RUN_MISMATCH");
     }
 
     const existing = await this.repository.getSelection(
@@ -177,13 +215,13 @@ export class TestLabCoordinator {
       input.phaseId,
     );
     if (!existing) {
-      if (run.branchId !== input.branchId) {
+      if (
+        run.branchId !== input.branchId ||
+        candidate.branchId !== input.branchId
+      ) {
         throw new TestLabInvariantError("TEST_LAB_RUN_BRANCH_MISMATCH");
       }
-      const selection = this.buildSelection({
-        ...input,
-        selectedStateId: run.candidateStateId,
-      });
+      const selection = this.buildSelection(input, candidate);
       await this.repository.saveSelection(selection);
       await this.repository.saveSession({
         ...session,
@@ -192,20 +230,18 @@ export class TestLabCoordinator {
       return { selection, activeBranchId: input.branchId, forked: false };
     }
 
-    if (existing.runId === run.id) {
+    if (existing.candidateId === candidate.id) {
       return {
         selection: existing,
         activeBranchId: input.branchId,
         forked: false,
       };
     }
-
     if (!input.forkBranchId) {
       throw new TestLabInvariantError(
         "TEST_LAB_RESELECTION_REQUIRES_FORK_BRANCH",
       );
     }
-
     const fork: TestBranch = {
       id: input.forkBranchId,
       sessionId: session.id,
@@ -214,71 +250,118 @@ export class TestLabCoordinator {
       createdAt: input.now,
     };
     await this.repository.saveBranch(fork);
-
-    const selection = this.buildSelection({
-      ...input,
-      branchId: fork.id,
-      selectedStateId: run.candidateStateId,
-    });
+    const selection = this.buildSelection(
+      { ...input, branchId: fork.id },
+      candidate,
+    );
     await this.repository.saveSelection(selection);
     await this.repository.saveSession({ ...session, activeBranchId: fork.id });
-
     return { selection, activeBranchId: fork.id, forked: true };
   }
 
-  private buildSelection(input: {
-    selectionId: string;
-    sessionId: string;
-    branchId: string;
-    phaseId: string;
-    runId: string;
-    selectedStateId: string;
-    actor: TestSelectionActor;
-    strategy?: string | null;
-    now: string;
-  }): TestSelection {
+  private buildSelection(
+    input: {
+      selectionId: string;
+      sessionId: string;
+      branchId: string;
+      phaseId: string;
+      runId: string;
+      actor: TestSelectionActor;
+      strategy?: string | null;
+      now: string;
+    },
+    candidate: TestRunCandidate,
+  ): TestSelection {
     return {
       id: input.selectionId,
       sessionId: input.sessionId,
       branchId: input.branchId,
       phaseId: input.phaseId,
       runId: input.runId,
-      selectedStateId: input.selectedStateId,
+      candidateId: candidate.id,
+      selectedStateId: candidate.candidateStateId,
       actor: input.actor,
       strategy: input.strategy ?? null,
       createdAt: input.now,
     };
   }
 
+  private async resolveCandidate(runId: string, candidateId?: string) {
+    if (candidateId) {
+      const candidate = await this.repository.getCandidate(candidateId);
+      if (!candidate)
+        throw new TestLabInvariantError(
+          `TEST_LAB_CANDIDATE_NOT_FOUND:${candidateId}`,
+        );
+      return candidate;
+    }
+    const candidates = await this.repository.listCandidates(runId);
+    if (candidates.length !== 1) {
+      throw new TestLabInvariantError("TEST_LAB_CANDIDATE_ID_REQUIRED");
+    }
+    return candidates[0]!;
+  }
+
+  private async assertParentStateUsable(
+    branchId: string,
+    parentState: StateSnapshot,
+  ) {
+    if (parentState.branchId === branchId) return;
+    const selections = await this.repository.listSelections(branchId);
+    if (
+      !selections.some(
+        (selection) => selection.selectedStateId === parentState.id,
+      )
+    ) {
+      throw new TestLabInvariantError(
+        "TEST_LAB_PARENT_STATE_NOT_SELECTED_ON_BRANCH",
+      );
+    }
+  }
+
+  private assertUsageTraceability(input: {
+    modelSlug?: string | null;
+    pricingSnapshot?: ModelPricingSnapshot | null;
+    usageSnapshot?: TestRunUsageSnapshot | null;
+  }) {
+    const hasModel = input.modelSlug != null;
+    const hasPricing = input.pricingSnapshot != null;
+    if (hasModel !== hasPricing) {
+      throw new TestLabInvariantError(
+        "TEST_LAB_MODEL_PRICING_SNAPSHOT_REQUIRES_MODEL_SLUG",
+      );
+    }
+    if (input.usageSnapshot && (!hasModel || !hasPricing)) {
+      throw new TestLabInvariantError(
+        "TEST_LAB_USAGE_REQUIRES_MODEL_PRICING_SNAPSHOT",
+      );
+    }
+  }
+
   private async requireSession(id: string): Promise<TestSession> {
     const value = await this.repository.getSession(id);
-    if (!value) {
+    if (!value)
       throw new TestLabInvariantError(`TEST_LAB_SESSION_NOT_FOUND:${id}`);
-    }
     return value;
   }
 
   private async requireBranch(id: string): Promise<TestBranch> {
     const value = await this.repository.getBranch(id);
-    if (!value) {
+    if (!value)
       throw new TestLabInvariantError(`TEST_LAB_BRANCH_NOT_FOUND:${id}`);
-    }
     return value;
   }
 
   private async requireState(id: string): Promise<StateSnapshot> {
     const value = await this.repository.getState(id);
-    if (!value) {
+    if (!value)
       throw new TestLabInvariantError(`TEST_LAB_STATE_NOT_FOUND:${id}`);
-    }
     return value;
   }
 
   private async requireRun(id: string): Promise<TestRun> {
     const value = await this.repository.getRun(id);
-    if (!value) {
-      throw new TestLabInvariantError(`TEST_LAB_RUN_NOT_FOUND:${id}`);
-    }
+    if (!value) throw new TestLabInvariantError(`TEST_LAB_RUN_NOT_FOUND:${id}`);
     return value;
   }
 }

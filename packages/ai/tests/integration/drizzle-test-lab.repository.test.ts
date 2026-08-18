@@ -19,8 +19,10 @@ const ids = {
   state0: "30000000-0000-4000-8000-000000000001",
   runA: "40000000-0000-4000-8000-000000000001",
   stateA: "50000000-0000-4000-8000-000000000001",
+  candidateA: "70000000-0000-4000-8000-000000000001",
   runB: "40000000-0000-4000-8000-000000000002",
   stateB: "50000000-0000-4000-8000-000000000002",
+  candidateB: "70000000-0000-4000-8000-000000000002",
   selectionA: "60000000-0000-4000-8000-000000000001",
   selectionB: "60000000-0000-4000-8000-000000000002",
 } as const;
@@ -47,6 +49,8 @@ describe("DrizzleTestLabRepository integration", () => {
       "0001_ai_usage_schema.sql",
       "0002_test_lab_foundation.sql",
       "0003_test_lab_model_costs.sql",
+      "0004_test_lab_run_candidates.sql",
+      "0005_test_lab_execution_provenance.sql",
     ]) {
       const migrationPath = path.resolve(
         import.meta.dirname,
@@ -100,6 +104,7 @@ describe("DrizzleTestLabRepository integration", () => {
 
     await coordinator.recordCandidate({
       runId: ids.runA,
+      candidateId: ids.candidateA,
       candidateStateId: ids.stateA,
       sessionId: ids.session,
       branchId: ids.branch,
@@ -121,10 +126,18 @@ describe("DrizzleTestLabRepository integration", () => {
         latencyMs: 820,
         retryCount: 0,
       },
+      executionSnapshot: {
+        productionOperation: "generateWorldSuggestions",
+        promptKey: "character_onboarding.world_suggestions",
+        promptVersion: 3,
+        renderedPromptFingerprint: "prompt-sha",
+        contextFingerprint: "context-sha",
+      },
       now,
     });
     await coordinator.recordCandidate({
       runId: ids.runB,
+      candidateId: ids.candidateB,
       candidateStateId: ids.stateB,
       sessionId: ids.session,
       branchId: ids.branch,
@@ -140,6 +153,16 @@ describe("DrizzleTestLabRepository integration", () => {
     expect(persistedRun?.pricingSnapshot?.perMillionUsd.prompt).toBe(0.25);
     expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004725);
     expect(persistedRun?.usageSnapshot?.actualCostUsd).toBe(0.00045);
+    expect(persistedRun?.executionSnapshot).toEqual({
+      productionOperation: "generateWorldSuggestions",
+      promptKey: "character_onboarding.world_suggestions",
+      promptVersion: 3,
+      renderedPromptFingerprint: "prompt-sha",
+      contextFingerprint: "context-sha",
+    });
+    expect(
+      (await repository.getCandidate(ids.candidateA))?.candidateStateId,
+    ).toBe(ids.stateA);
 
     await coordinator.selectCandidate({
       selectionId: ids.selectionA,
@@ -147,6 +170,7 @@ describe("DrizzleTestLabRepository integration", () => {
       branchId: ids.branch,
       phaseId: "world",
       runId: ids.runA,
+      candidateId: ids.candidateA,
       actor: "human",
       now,
     });
@@ -169,6 +193,7 @@ describe("DrizzleTestLabRepository integration", () => {
         branchId: ids.branch,
         phaseId: "world",
         runId: ids.runB,
+        candidateId: ids.candidateB,
         selectedStateId: ids.stateB,
         actor: "automation",
         strategy: "first_valid",
