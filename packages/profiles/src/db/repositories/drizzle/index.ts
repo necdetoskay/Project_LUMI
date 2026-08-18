@@ -11,3 +11,4 @@ export { DrizzleLlmProviderSettingsRepository } from "./drizzle-llm-provider-set
 export { DrizzleLlmTaskModelSettingsRepository } from "./drizzle-llm-task-model-settings.repository";
 export { DrizzleArchetypeSuggestionBatchRepository } from "./drizzle-archetype-suggestion-batch.repository";
 export { DrizzleAiGenerationTraceRepository } from "./drizzle-ai-generation-trace.repository";
+export { DrizzleGenerationContextSnapshotStore } from "./drizzle-generation-context-snapshot.store";

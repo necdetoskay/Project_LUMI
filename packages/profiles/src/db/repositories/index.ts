@@ -28,4 +28,5 @@ export {
   DrizzleLlmTaskModelSettingsRepository,
   DrizzleArchetypeSuggestionBatchRepository,
   DrizzleAiGenerationTraceRepository,
+  DrizzleGenerationContextSnapshotStore,
 } from "./drizzle";
