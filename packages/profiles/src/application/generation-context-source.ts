@@ -38,14 +38,22 @@ const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
     ageYears: context.child.ageYears,
     locale: context.child.locale,
   })),
-  source("child_personalization", "profiles.child-personalization", (context) => ({
-    interests: context.child.interests,
-    customInterests: context.child.customInterests,
-    developmentGoals: context.child.developmentGoals,
-  })),
-  source("creation_direction", "profiles.character-creation-cycle", (context) => ({
-    startDirection: context.creation.startDirection,
-  })),
+  source(
+    "child_personalization",
+    "profiles.child-personalization",
+    (context) => ({
+      interests: context.child.interests,
+      customInterests: context.child.customInterests,
+      developmentGoals: context.child.developmentGoals,
+    }),
+  ),
+  source(
+    "creation_direction",
+    "profiles.character-creation-cycle",
+    (context) => ({
+      startDirection: context.creation.startDirection,
+    }),
+  ),
   source(
     "creation_selections",
     "profiles.character-creation-cycle",
