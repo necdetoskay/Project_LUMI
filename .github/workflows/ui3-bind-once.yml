@@ -1,0 +1,39 @@
+name: UI3 Bind Once
+
+on:
+  push:
+    branches:
+      - agent/test-lab-canonical-ui-3-v2
+    paths:
+      - .github/workflows/ui3-bind-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/test-lab-canonical-ui-3-v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node tooling/bind-test-lab-ui3.mjs
+      - name: Format UI3 files
+        run: pnpm exec prettier --write apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/lib/ai/test-lab-dashboard-data.ts apps/web/lib/ai/test-lab-dashboard-view-model.ts apps/web/lib/ai/test-lab-dashboard-view-model.test.ts
+      - name: Remove one-shot files
+        run: rm tooling/bind-test-lab-ui3.mjs .github/workflows/ui3-bind-once.yml
+      - name: Commit UI3 binding
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(test-lab): bind canonical dashboard to evaluation data"
+          git push origin HEAD:agent/test-lab-canonical-ui-3-v2
