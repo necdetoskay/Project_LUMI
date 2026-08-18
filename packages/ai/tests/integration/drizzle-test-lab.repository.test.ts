@@ -5,6 +5,7 @@ import pg from "pg";
 
 import { createDatabase } from "../../src/db/client";
 import { TestLabCoordinator } from "../../src/test-lab/application/test-lab-coordinator";
+import { pricingSnapshot } from "../../src/test-lab/domain/model-profile";
 import { DrizzleTestLabRepository } from "../../src/test-lab/infrastructure/drizzle-test-lab-repository";
 
 const enabled = process.env.AI_TEST_ENABLE_DESTRUCTIVE === "true";
@@ -45,6 +46,7 @@ describe("DrizzleTestLabRepository integration", () => {
     for (const migration of [
       "0001_ai_usage_schema.sql",
       "0002_test_lab_foundation.sql",
+      "0003_test_lab_model_costs.sql",
     ]) {
       const migrationPath = path.resolve(
         import.meta.dirname,
@@ -69,9 +71,23 @@ describe("DrizzleTestLabRepository integration", () => {
     }
   });
 
-  it("persists isolated candidates and advances only the selected state", async () => {
+  it("persists isolated candidates, model pricing provenance and selected state", async () => {
     if (!enabled || !connected) return;
     const now = "2026-08-18T08:00:00.000Z";
+    const pricing = pricingSnapshot({
+      source: "openrouter_catalog",
+      capturedAt: now,
+      perTokenUsd: {
+        prompt: 0.00000025,
+        completion: 0.00000125,
+        request: 0,
+        image: 0,
+        webSearch: 0,
+        internalReasoning: 0,
+        inputCacheRead: 0.000000025,
+        inputCacheWrite: 0.00000025,
+      },
+    });
 
     await coordinator.createSession({
       sessionId: ids.session,
@@ -90,6 +106,21 @@ describe("DrizzleTestLabRepository integration", () => {
       phaseId: "world",
       parentStateId: ids.state0,
       candidateState: { world: "A" },
+      modelSlug: "deepseek/deepseek-chat-v3.1",
+      pricingSnapshot: pricing,
+      usageSnapshot: {
+        promptTokens: 1000,
+        completionTokens: 250,
+        totalTokens: 1250,
+        cachedInputTokens: 400,
+        cacheWriteTokens: 0,
+        reasoningTokens: 0,
+        estimatedCostUsd: 0.0004625,
+        actualCostUsd: 0.00045,
+        upstreamInferenceCostUsd: 0.00041,
+        latencyMs: 820,
+        retryCount: 0,
+      },
       now,
     });
     await coordinator.recordCandidate({
@@ -102,6 +133,13 @@ describe("DrizzleTestLabRepository integration", () => {
       candidateState: { world: "B" },
       now,
     });
+
+    const persistedRun = await repository.getRun(ids.runA);
+    expect(persistedRun?.modelSlug).toBe("deepseek/deepseek-chat-v3.1");
+    expect(persistedRun?.pricingSnapshot?.source).toBe("openrouter_catalog");
+    expect(persistedRun?.pricingSnapshot?.perMillionUsd.prompt).toBe(0.25);
+    expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004625);
+    expect(persistedRun?.usageSnapshot?.actualCostUsd).toBe(0.00045);
 
     await coordinator.selectCandidate({
       selectionId: ids.selectionA,
