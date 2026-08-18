@@ -60,6 +60,18 @@ const stories = [
 export default function HomePage() {
   return (
     <div className={`lumi-landing-v2 ${styles.landingPage}`}>
+      <style>{`
+        body:has(.lumi-landing-v2) {
+          background: #05091d;
+        }
+        body:has(.lumi-landing-v2) > header,
+        body:has(.lumi-landing-v2) > footer {
+          display: none;
+        }
+        body:has(.lumi-landing-v2) > main {
+          min-height: 100vh;
+        }
+      `}</style>
       <div className={styles.stars} aria-hidden="true" />
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="LUMI ana sayfa">
