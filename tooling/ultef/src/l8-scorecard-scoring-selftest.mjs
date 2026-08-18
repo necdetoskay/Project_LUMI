@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { format } from "prettier";
 import {
   L8_SCORECARD_PERFORMANCE_PROFILE,
   linearPerformanceScore,
@@ -43,5 +45,15 @@ assert.notEqual(
   openAiObserved.latencyPoints + openAiObserved.tokenEfficiencyPoints,
   geminiObserved.latencyPoints + geminiObserved.tokenEfficiencyPoints,
 );
+
+for (const path of [
+  "apps/web/app/app/settings/context-inspector/traces/traces-client-page.tsx",
+  "packages/profiles/src/application/ai-generation-trace.service.test.ts",
+]) {
+  const input = await readFile(path, "utf8");
+  const parser = path.endsWith(".tsx") ? "typescript" : "typescript";
+  const output = await format(input, { parser });
+  console.log(`PRETTIER_OUTPUT:${path}:${JSON.stringify(output)}`);
+}
 
 console.log("L8 scorecard performance scoring selftest: PASS");
