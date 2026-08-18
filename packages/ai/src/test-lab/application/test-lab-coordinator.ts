@@ -10,6 +10,7 @@ import type {
   TestExecutionMode,
   TestRun,
   TestRunCandidate,
+  TestRunExecutionSnapshot,
   TestSelection,
   TestSelectionActor,
   TestSession,
@@ -77,6 +78,7 @@ export class TestLabCoordinator {
     modelSlug?: string | null;
     pricingSnapshot?: ModelPricingSnapshot | null;
     usageSnapshot?: TestRunUsageSnapshot | null;
+    executionSnapshot?: TestRunExecutionSnapshot | null;
     now: string;
   }): Promise<{
     run: TestRun;
@@ -107,6 +109,7 @@ export class TestLabCoordinator {
       modelSlug: input.modelSlug ?? null,
       pricingSnapshot: input.pricingSnapshot ?? null,
       usageSnapshot: input.usageSnapshot ?? null,
+      executionSnapshot: input.executionSnapshot ?? null,
       createdAt: input.now,
     };
     await this.repository.saveRun(run);
@@ -156,13 +159,14 @@ export class TestLabCoordinator {
     modelSlug?: string | null;
     pricingSnapshot?: ModelPricingSnapshot | null;
     usageSnapshot?: TestRunUsageSnapshot | null;
+    executionSnapshot?: TestRunExecutionSnapshot | null;
     now: string;
   }): Promise<{ run: TestRun; candidateState: StateSnapshot }> {
     const result = await this.recordRunCandidates({
       ...input,
       candidates: [
         {
-          candidateId: input.candidateId ?? `${input.runId}:candidate:0`,
+          candidateId: input.candidateId ?? crypto.randomUUID(),
           candidateStateId: input.candidateStateId,
           payload: input.candidatePayload ?? {},
           candidateState: input.candidateState,
@@ -340,18 +344,21 @@ export class TestLabCoordinator {
       throw new TestLabInvariantError(`TEST_LAB_SESSION_NOT_FOUND:${id}`);
     return value;
   }
+
   private async requireBranch(id: string): Promise<TestBranch> {
     const value = await this.repository.getBranch(id);
     if (!value)
       throw new TestLabInvariantError(`TEST_LAB_BRANCH_NOT_FOUND:${id}`);
     return value;
   }
+
   private async requireState(id: string): Promise<StateSnapshot> {
     const value = await this.repository.getState(id);
     if (!value)
       throw new TestLabInvariantError(`TEST_LAB_STATE_NOT_FOUND:${id}`);
     return value;
   }
+
   private async requireRun(id: string): Promise<TestRun> {
     const value = await this.repository.getRun(id);
     if (!value) throw new TestLabInvariantError(`TEST_LAB_RUN_NOT_FOUND:${id}`);
