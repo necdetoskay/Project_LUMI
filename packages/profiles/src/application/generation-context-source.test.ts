@@ -35,7 +35,9 @@ function source(
   return {
     section,
     source: `test.${section}`,
+    sourceVersion: "v1",
     authority: "derived",
+    reason: "current_task",
     resolve: () => ({ value }),
   };
 }
@@ -107,7 +109,9 @@ describe("generation context sources", () => {
     const failingSource: GenerationContextSource = {
       section: "child_identity",
       source: "test.failing-child",
+      sourceVersion: "v1",
       authority: "canonical",
+      reason: "required",
       resolve() {
         throw new Error("reader unavailable");
       },
@@ -131,7 +135,9 @@ describe("generation context sources", () => {
     const failingOptional: GenerationContextSource = {
       section: "creation_selections",
       source: "test.failing-selections",
+      sourceVersion: "v1",
       authority: "derived",
+      reason: "current_task",
       resolve() {
         throw new Error("optional unavailable");
       },
