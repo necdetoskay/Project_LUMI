@@ -1,6 +1,7 @@
 name: Prettier Diagnostic
 
 on:
+  pull_request:
   push:
     branches:
       - agent/test-lab-phase-4-prompt-workspace
