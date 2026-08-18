@@ -1,6 +1,6 @@
 # LUMI Test Lab Phase 3 — Production Onboarding Adapter
 
-Status: implementation / validation
+Status: implemented / validated
 Date: 2026-08-18
 Parent: #294
 
@@ -23,7 +23,7 @@ The Test Lab supplies its selected sandbox parent state through the creation-sta
 
 ## Supported character-first phases
 
-The Phase 3 adapter currently supports these production generation operations:
+The Phase 3 adapter supports these production generation operations:
 
 - `character_first_identity_suggestions`
 - `world_suggestions`
@@ -54,7 +54,7 @@ Only an explicit `TestSelection` can make one candidate the downstream parent. N
 
 ## Immutable execution provenance
 
-Each production-backed `TestRun` can persist an `executionSnapshot` containing:
+Each production-backed `TestRun` persists an `executionSnapshot` containing:
 
 - production operation name
 - prompt key
@@ -74,19 +74,59 @@ The generic `ProductionTestRunner` rejects a production adapter response when th
 
 `@lumi/web` is the composition layer that adapts the production onboarding service to the generic Test Lab `ProductionScenarioAdapter` contract. This avoids introducing a circular package dependency between the AI experiment domain and Profiles production domain.
 
+## Thin Settings shell
+
+Phase 3 includes the first operational Settings shell at `/app/settings/test-lab`.
+
+The shell is deliberately small but exercises the real architecture:
+
+1. enter the household and child-profile context;
+2. enter an exact OpenRouter model slug;
+3. create an isolated sandbox session from an editable initial JSON state;
+4. choose a production-backed Character Onboarding phase;
+5. run the production pipeline;
+6. inspect run usage, pricing and execution provenance;
+7. compare every candidate returned by the single provider call;
+8. explicitly choose `Sonraki aşamada kullan` for exactly one candidate;
+9. use only that candidate's state as the parent for the next phase.
+
+The shell never promotes data to the production LUMI state. Promotion remains a later explicit feature.
+
+## Sandbox ownership isolation
+
+Every shell-created sandbox state carries reserved ownership metadata bound by the authenticated server route:
+
+- parent ID
+- household ID
+- child profile ID
+
+User-supplied ownership metadata is overwritten during session creation. The production adapter preserves parent sandbox state when creating candidate states, so ownership follows every branch automatically.
+
+Before a production-backed run, the route verifies that the requested parent state belongs to the authenticated parent and the same household/profile context. Before a candidate selection, it verifies the run's parent sandbox belongs to the authenticated parent. A leaked or guessed Test Lab UUID therefore cannot be used by another authenticated parent to advance or select that sandbox.
+
+Ownership guard regression tests cover owner overwrite, valid owner access, cross-parent rejection and household/profile-context rejection.
+
 ## Cost behavior
 
-The web composition normalizes available production token counts through the Test Lab pricing snapshot. Provider-reported actual cost is stored only when the underlying production gateway exposes it. The current Profiles gateway exposes estimated cost but not a provider-reported actual cost, so Test Lab must keep actual cost `null` rather than inventing a value.
+The web composition normalizes available production token counts through the Test Lab pricing snapshot. Provider-reported actual cost is stored only when the underlying production gateway exposes it. The current Profiles gateway exposes estimated cost but not a provider-reported actual cost, so Test Lab keeps actual cost `null` rather than inventing a value.
 
-## Validation required before Phase 3 completion
+## Validation evidence
 
-- format
-- lint
-- typecheck
-- unit tests for multi-candidate production runs and model mismatch rejection
-- repository persistence test including migration `0005_test_lab_execution_provenance.sql`
+The Phase 3 branch passed the repository gates after the operational shell and ownership guard were added:
+
+- frozen lockfile install
+- ULTEF L8/L9 self-tests
+- Prettier format check
+- ESLint
+- TypeScript typecheck
 - full workspace test suite
-- build
-- existing onboarding/browser/security/ULTEF gates
+- load smoke and load gate
+- production build
+- Security Scan
+- ULTEF PR Gates
+- Character Onboarding M7 Browser E2E
+- Stories UX v2 Browser E2E
 
-Phase 3 does not include Prompt Workspace UI or prompt draft/promotion UX; those belong to the following Test Lab phase.
+The Test Lab-specific suite includes multi-candidate lineage, model mismatch rejection, immutable provenance persistence, production composition mapping and sandbox ownership isolation.
+
+Phase 3 does not include Prompt Workspace draft/promotion UX; that belongs to #295. Stateful multi-story Test Lab sessions belong to #296.
