@@ -77,7 +77,9 @@ describe("TestLabCoordinator", () => {
       now,
     });
 
-    expect((await repository.getRun("run-next"))?.parentStateId).toBe("state-b");
+    expect((await repository.getRun("run-next"))?.parentStateId).toBe(
+      "state-b",
+    );
     expect((await repository.getState("state-a"))?.value).toEqual({
       world: "A",
       marker: "candidate-a",
@@ -145,9 +147,15 @@ describe("TestLabCoordinator", () => {
 
     expect(reselection.forked).toBe(true);
     expect(reselection.activeBranchId).toBe("branch-a");
-    expect((await repository.getSelection("branch-main", "world"))?.runId).toBe("run-b");
-    expect((await repository.getSelection("branch-a", "world"))?.runId).toBe("run-a");
-    expect((await repository.getRun("run-region-b"))?.branchId).toBe("branch-main");
+    expect(
+      (await repository.getSelection("branch-main", "world"))?.runId,
+    ).toBe("run-b");
+    expect(
+      (await repository.getSelection("branch-a", "world"))?.runId,
+    ).toBe("run-a");
+    expect((await repository.getRun("run-region-b"))?.branchId).toBe(
+      "branch-main",
+    );
 
     await coordinator.recordCandidate({
       runId: "run-region-a",
@@ -160,8 +168,14 @@ describe("TestLabCoordinator", () => {
       now,
     });
 
-    expect((await repository.getRun("run-region-a"))?.parentStateId).toBe("state-a");
-    expect((await repository.getRun("run-region-b"))?.parentStateId).toBe("state-b");
-    expect((await repository.getSession("session-2"))?.activeBranchId).toBe("branch-a");
+    expect((await repository.getRun("run-region-a"))?.parentStateId).toBe(
+      "state-a",
+    );
+    expect((await repository.getRun("run-region-b"))?.parentStateId).toBe(
+      "state-b",
+    );
+    expect((await repository.getSession("session-2"))?.activeBranchId).toBe(
+      "branch-a",
+    );
   });
 });
