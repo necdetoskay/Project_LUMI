@@ -3,10 +3,8 @@ import { z } from "zod";
 
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
-import {
-  getAiGenerationContextInspectorTrace,
-  getOwnedHousehold,
-} from "@lumi/profiles/application";
+import { getAiGenerationContextInspectorTrace } from "@lumi/profiles";
+import { getOwnedHousehold } from "@lumi/profiles/application";
 
 const paramsSchema = z.object({
   traceId: z.string().uuid(),
