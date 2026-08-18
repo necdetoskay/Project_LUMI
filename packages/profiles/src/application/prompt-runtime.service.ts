@@ -62,6 +62,8 @@ function renderPromptRecord(
     promptKey: record.promptKey,
     promptVersion: record.version,
     promptStatus: record.status,
+    systemTemplate: record.systemTemplate,
+    userTemplate: record.userTemplate,
     system: render(record.systemTemplate, allowed, required, context),
     user: render(record.userTemplate, allowed, required, context),
     outputSchema: record.outputSchema,
