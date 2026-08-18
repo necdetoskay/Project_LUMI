@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { pricingSnapshot } from "@lumi/ai/test-lab";
 
+type ProfilesModule = typeof import("@lumi/profiles");
+
 const mocks = vi.hoisted(() => ({
   executeCharacterOnboardingTestLabPhase: vi.fn(),
 }));
 
 vi.mock("@lumi/profiles", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@lumi/profiles")>();
+  const actual = await importOriginal<ProfilesModule>();
   return {
     ...actual,
     executeCharacterOnboardingTestLabPhase:
