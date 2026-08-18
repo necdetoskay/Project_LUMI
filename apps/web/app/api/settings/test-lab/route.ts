@@ -121,7 +121,8 @@ export const POST = observeHandler(async (request: Request) => {
           childProfileId,
         });
         const session = await repository.getSession(sessionId);
-        if (!session) throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
+        if (!session)
+          throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
         const phase = phaseForSession(session.scenarioKey, phaseId);
 
         const modelProfile =
