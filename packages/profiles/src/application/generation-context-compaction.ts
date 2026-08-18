@@ -150,21 +150,26 @@ function deterministicListCompactor(
   };
 }
 
-const DEFAULT_GENERATION_CONTEXT_COMPACTORS: readonly GenerationContextCompactor[] = [
-  deterministicListCompactor("world_state"),
-  deterministicListCompactor("recent_story_state"),
-  deterministicListCompactor("relevant_memories"),
-];
+const DEFAULT_GENERATION_CONTEXT_COMPACTORS: readonly GenerationContextCompactor[] =
+  [
+    deterministicListCompactor("world_state"),
+    deterministicListCompactor("recent_story_state"),
+    deterministicListCompactor("relevant_memories"),
+  ];
 
 export function createGenerationContextCompactorRegistry(
-  compactors: readonly GenerationContextCompactor[] =
-    DEFAULT_GENERATION_CONTEXT_COMPACTORS,
+  compactors: readonly GenerationContextCompactor[] = DEFAULT_GENERATION_CONTEXT_COMPACTORS,
 ): ReadonlyMap<GenerationContextSection, GenerationContextCompactor> {
-  const registry = new Map<GenerationContextSection, GenerationContextCompactor>();
+  const registry = new Map<
+    GenerationContextSection,
+    GenerationContextCompactor
+  >();
 
   for (const compactor of compactors) {
     if (registry.has(compactor.section)) {
-      throw new Error(`GENERATION_CONTEXT_COMPACTOR_DUPLICATE:${compactor.section}`);
+      throw new Error(
+        `GENERATION_CONTEXT_COMPACTOR_DUPLICATE:${compactor.section}`,
+      );
     }
     registry.set(compactor.section, compactor);
   }

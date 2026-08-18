@@ -173,7 +173,9 @@ describe("generation context compaction", () => {
           source("world_state", { canon: "z".repeat(8_000) }),
         ],
       }),
-    ).toThrow(/GENERATION_CONTEXT_REQUIRED_SECTION_BUDGET_EXCEEDED:world_state/);
+    ).toThrow(
+      /GENERATION_CONTEXT_REQUIRED_SECTION_BUDGET_EXCEEDED:world_state/,
+    );
   });
 
   it("rejects duplicate compactor ownership", () => {
