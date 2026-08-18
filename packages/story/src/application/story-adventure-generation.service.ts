@@ -21,10 +21,12 @@ import {
   LlmGenerationError,
   type StorySceneLlmSettingsPort,
 } from "./story-scene-llm-settings";
-import type {
-  OpenRouterCallInput,
-  OpenRouterCallResult,
-  OpenRouterCaller,
+import {
+  telemetryFromResponse,
+  type OpenRouterCallInput,
+  type OpenRouterCallResult,
+  type OpenRouterCaller,
+  type StoryProviderTelemetry,
 } from "./story-scene-generation.service";
 
 export type AdventureSourceFamily =
@@ -56,6 +58,8 @@ export interface StoryAdventureGenerationResult {
   modelId: string | null;
   attempt: number;
   narrativeTarget: StoryNarrativeTarget;
+  providerRequest: OpenRouterCallInput;
+  providerTelemetry: StoryProviderTelemetry;
   contextManifest: ContextManifest | null;
 }
 
@@ -121,22 +125,27 @@ export class StoryAdventureGenerationService {
         continuity,
         generationContext,
       });
+      const providerRequest: OpenRouterCallInput = {
+        model: settings.modelId,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Sen çocuklar için güvenli, tutarlı ve yaşayan dünya bağlamına sadık kısa hikâyeler üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: settings.temperature,
+        maxTokens: settings.maxOutputTokens,
+      };
 
       let response: OpenRouterCallResult;
       try {
-        response = await this.callProvider(input, settings.apiKey, {
-          model: settings.modelId,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Sen çocuklar için güvenli, tutarlı ve yaşayan dünya bağlamına sadık kısa hikâyeler üreten yaratıcı bir asistansın. Sadece geçerli JSON döndür.",
-            },
-            { role: "user", content: prompt },
-          ],
-          temperature: settings.temperature,
-          maxTokens: settings.maxOutputTokens,
-        });
+        response = await this.callProvider(
+          input,
+          settings.apiKey,
+          providerRequest,
+        );
       } catch (error) {
         if (error instanceof LlmConfigError) throw error;
         const message = error instanceof Error ? error.message : String(error);
@@ -179,6 +188,8 @@ export class StoryAdventureGenerationService {
         modelId: response.model || null,
         attempt,
         narrativeTarget,
+        providerRequest,
+        providerTelemetry: telemetryFromResponse(response),
         contextManifest: generationContext,
       };
     }
