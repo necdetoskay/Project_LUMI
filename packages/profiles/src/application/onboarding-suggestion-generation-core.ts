@@ -40,10 +40,7 @@ export interface OnboardingSuggestionGenerationResult<T> {
   promptVersion: number;
   systemPrompt: string;
   userPrompt: string;
-  inputContext: Record<
-    string,
-    string | number | boolean | null | object
-  >;
+  inputContext: Record<string, string | number | boolean | null | object>;
   generated: TextLlmGatewayResult;
 }
 
@@ -149,6 +146,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
 
 export function pickSuggestionArray<T>(validated: unknown): T[] {
   const suggestions = (validated as { suggestions?: unknown })?.suggestions;
-  if (!Array.isArray(suggestions)) throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
+  if (!Array.isArray(suggestions))
+    throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
   return suggestions as T[];
 }
