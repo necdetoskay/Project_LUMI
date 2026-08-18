@@ -133,8 +133,8 @@ describe("DrizzleTestLabRepository integration", () => {
         renderedPromptFingerprint: "prompt-sha",
         contextFingerprint: "context-sha",
         promptTemplateSnapshot: {
-          systemTemplate: "system {{world}}",
-          userTemplate: "user {{locale}}",
+          system: "system {{world}}",
+          user: "user {{locale}}",
         },
         renderedPrompt: {
           system: "system world-a",
@@ -175,8 +175,8 @@ describe("DrizzleTestLabRepository integration", () => {
       renderedPromptFingerprint: "prompt-sha",
       contextFingerprint: "context-sha",
       promptTemplateSnapshot: {
-        systemTemplate: "system {{world}}",
-        userTemplate: "user {{locale}}",
+        system: "system {{world}}",
+        user: "user {{locale}}",
       },
       renderedPrompt: { system: "system world-a", user: "user tr" },
       finalProviderRequest: {
