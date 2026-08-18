@@ -1,0 +1,31 @@
+name: Test Lab Shell Formatter Probe
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format Test Lab shell
+        run: |
+          pnpm exec prettier --write \
+            apps/web/app/api/settings/test-lab/route.ts \
+            apps/web/app/app/settings/test-lab/test-lab-client.tsx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-shell-prettier
+          path: |
+            apps/web/app/api/settings/test-lab/route.ts
+            apps/web/app/app/settings/test-lab/test-lab-client.tsx
