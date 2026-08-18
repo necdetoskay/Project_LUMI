@@ -25,7 +25,10 @@ export const testLabSessions = aiSchema.table(
   },
   (table) => [
     index("test_lab_sessions_scenario_idx").on(table.scenarioKey),
-    check("chk_test_lab_session_mode", sql`${table.mode} IN ('manual', 'automated')`),
+    check(
+      "chk_test_lab_session_mode",
+      sql`${table.mode} IN ('manual', 'automated')`,
+    ),
   ],
 );
 
@@ -66,7 +69,10 @@ export const testLabStateSnapshots = aiSchema.table(
       .defaultNow(),
   },
   (table) => [
-    index("test_lab_states_session_branch_idx").on(table.sessionId, table.branchId),
+    index("test_lab_states_session_branch_idx").on(
+      table.sessionId,
+      table.branchId,
+    ),
     index("test_lab_states_parent_idx").on(table.parentStateId),
   ],
 );
@@ -94,9 +100,16 @@ export const testLabRuns = aiSchema.table(
       .defaultNow(),
   },
   (table) => [
-    index("test_lab_runs_phase_idx").on(table.sessionId, table.branchId, table.phaseId),
+    index("test_lab_runs_phase_idx").on(
+      table.sessionId,
+      table.branchId,
+      table.phaseId,
+    ),
     uniqueIndex("test_lab_runs_candidate_state_uq").on(table.candidateStateId),
-    check("chk_test_lab_run_status", sql`${table.status} IN ('candidate', 'failed')`),
+    check(
+      "chk_test_lab_run_status",
+      sql`${table.status} IN ('candidate', 'failed')`,
+    ),
   ],
 );
 
@@ -130,12 +143,16 @@ export const testLabSelections = aiSchema.table(
       table.phaseId,
     ),
     index("test_lab_selections_run_idx").on(table.runId),
-    check("chk_test_lab_selection_actor", sql`${table.actor} IN ('human', 'automation')`),
+    check(
+      "chk_test_lab_selection_actor",
+      sql`${table.actor} IN ('human', 'automation')`,
+    ),
   ],
 );
 
 export type TestLabSessionRecord = typeof testLabSessions.$inferSelect;
 export type TestLabBranchRecord = typeof testLabBranches.$inferSelect;
-export type TestLabStateSnapshotRecord = typeof testLabStateSnapshots.$inferSelect;
+export type TestLabStateSnapshotRecord =
+  typeof testLabStateSnapshots.$inferSelect;
 export type TestLabRunRecord = typeof testLabRuns.$inferSelect;
 export type TestLabSelectionRecord = typeof testLabSelections.$inferSelect;
