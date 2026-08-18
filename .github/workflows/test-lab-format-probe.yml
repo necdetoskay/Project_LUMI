@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feat/test-lab-phase-3-onboarding-adapter
+  pull_request:
+    branches:
+      - main
 
 jobs:
   format:
