@@ -67,7 +67,7 @@ export const POST = observeHandler(async (request: Request) => {
 
       if (action === "render-version") {
         const version = requiredPositiveInteger(body.version, "version");
-        const context = asObject(body.context, "context");
+        const context = asPromptContext(body.context);
         return NextResponse.json({
           data: await resolvePromptVersion(promptKey, version, context),
         });
@@ -139,6 +139,27 @@ function asPromptDraftPatch(value: unknown): PromptDraftPatch {
   }
 
   return patch;
+}
+
+function asPromptContext(
+  value: unknown,
+): Record<string, string | number | boolean | null | object> {
+  const object = asObject(value, "context");
+  const context: Record<string, string | number | boolean | null | object> = {};
+  for (const [key, entry] of Object.entries(object)) {
+    if (
+      entry === null ||
+      typeof entry === "string" ||
+      typeof entry === "number" ||
+      typeof entry === "boolean" ||
+      (typeof entry === "object" && entry !== null)
+    ) {
+      context[key] = entry;
+      continue;
+    }
+    throw new Error(`PROMPT_WORKSPACE_CONTEXT_VALUE_INVALID:${key}`);
+  }
+  return context;
 }
 
 function asObject(value: unknown, field: string): Record<string, unknown> {
