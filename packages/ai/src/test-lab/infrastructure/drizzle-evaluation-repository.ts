@@ -3,11 +3,13 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import {
   testLabCandidateEvaluations,
+  testLabEvaluationExecutions,
   testLabEvaluationRubrics,
 } from "../../db/schema/ai";
 import type {
   CandidateEvaluation,
   EvaluationCriterion,
+  EvaluationExecution,
   EvaluationFinding,
   EvaluationRubric,
   EvaluationUsageSnapshot,
@@ -56,9 +58,35 @@ export class DrizzleEvaluationRepository implements EvaluationRepository {
       .sort((a, b) => a.revision - b.revision);
   }
 
+  async saveExecution(execution: EvaluationExecution): Promise<void> {
+    await this.db.insert(testLabEvaluationExecutions).values({
+      id: execution.id,
+      sessionId: execution.sessionId,
+      rubricKey: execution.rubricKey,
+      rubricRevision: execution.rubricRevision,
+      mode: execution.mode,
+      authorType: execution.authorType,
+      authorId: execution.authorId,
+      judgeModelSlug: execution.judgeModelSlug,
+      usageSnapshot: execution.usageSnapshot,
+      provenance: execution.provenance,
+      createdAt: new Date(execution.createdAt),
+    });
+  }
+
+  async getExecution(id: string): Promise<EvaluationExecution | null> {
+    const [row] = await this.db
+      .select()
+      .from(testLabEvaluationExecutions)
+      .where(eq(testLabEvaluationExecutions.id, id))
+      .limit(1);
+    return row ? this.mapExecution(row) : null;
+  }
+
   async saveEvaluation(evaluation: CandidateEvaluation): Promise<void> {
     await this.db.insert(testLabCandidateEvaluations).values({
       id: evaluation.id,
+      evaluationExecutionId: evaluation.evaluationExecutionId,
       sessionId: evaluation.sessionId,
       runId: evaluation.runId,
       candidateId: evaluation.candidateId,
@@ -71,8 +99,6 @@ export class DrizzleEvaluationRepository implements EvaluationRepository {
       findings: evaluation.findings,
       overallScore: evaluation.overallScore,
       rank: evaluation.rank,
-      usageSnapshot: evaluation.usageSnapshot,
-      provenance: evaluation.provenance,
       createdAt: new Date(evaluation.createdAt),
     });
   }
@@ -102,11 +128,30 @@ export class DrizzleEvaluationRepository implements EvaluationRepository {
     };
   }
 
+  private mapExecution(
+    row: typeof testLabEvaluationExecutions.$inferSelect,
+  ): EvaluationExecution {
+    return {
+      id: row.id,
+      sessionId: row.sessionId,
+      rubricKey: row.rubricKey,
+      rubricRevision: row.rubricRevision,
+      mode: row.mode as EvaluationExecution["mode"],
+      authorType: row.authorType as EvaluationExecution["authorType"],
+      authorId: row.authorId,
+      judgeModelSlug: row.judgeModelSlug,
+      usageSnapshot: row.usageSnapshot as EvaluationUsageSnapshot | null,
+      provenance: row.provenance as JsonObject | null,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
   private mapEvaluation(
     row: typeof testLabCandidateEvaluations.$inferSelect,
   ): CandidateEvaluation {
     return {
       id: row.id,
+      evaluationExecutionId: row.evaluationExecutionId,
       sessionId: row.sessionId,
       runId: row.runId,
       candidateId: row.candidateId,
@@ -119,8 +164,6 @@ export class DrizzleEvaluationRepository implements EvaluationRepository {
       findings: row.findings as EvaluationFinding[],
       overallScore: row.overallScore,
       rank: row.rank,
-      usageSnapshot: row.usageSnapshot as EvaluationUsageSnapshot | null,
-      provenance: row.provenance as JsonObject | null,
       createdAt: row.createdAt.toISOString(),
     };
   }
