@@ -101,13 +101,16 @@ function parsePricing(
     request: parseNonNegative(pricing.request) ?? 0,
     image: parseNonNegative(pricing.image) ?? 0,
     webSearch: parseNonNegative(pricing.web_search) ?? 0,
-    internalReasoning: parseNonNegative(pricing.internal_reasoning) ?? 0,
-    inputCacheRead: parseNonNegative(pricing.input_cache_read) ?? 0,
-    inputCacheWrite: parseNonNegative(pricing.input_cache_write) ?? 0,
+    internalReasoning:
+      parseNonNegative(pricing.internal_reasoning) ?? completion,
+    inputCacheRead: parseNonNegative(pricing.input_cache_read) ?? prompt,
+    inputCacheWrite: parseNonNegative(pricing.input_cache_write) ?? prompt,
   };
 }
 
-function parseNonNegative(value: string | number | null | undefined): number | null {
+function parseNonNegative(
+  value: string | number | null | undefined,
+): number | null {
   if (value === null || value === undefined || value === "") return null;
   const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) return null;
