@@ -35,9 +35,16 @@ export interface BuildGenerationContextInput {
   profile: GenerationContextProfile;
 }
 
+export interface GenerationCreationOverride {
+  cycleId?: string | null;
+  startDirection?: string | null;
+  previousSelections?: Record<string, unknown>;
+}
+
 export async function buildGenerationContext(
   userId: string,
   input: BuildGenerationContextInput,
+  creationOverride?: GenerationCreationOverride,
 ): Promise<GenerationContext> {
   const [child, personalization, cycle] = await Promise.all([
     findChildProfileForUser(input.childProfileId, userId, input.householdId),
@@ -63,12 +70,17 @@ export async function buildGenerationContext(
       developmentGoals: personalization.developmentGoals,
     },
     creation: {
-      cycleId: cycle?.id ?? null,
-      startDirection: cycle?.startDirection ?? null,
-      previousSelections: (cycle?.latestSummary ?? {}) as Record<
-        string,
-        unknown
-      >,
+      cycleId:
+        creationOverride && "cycleId" in creationOverride
+          ? (creationOverride.cycleId ?? null)
+          : (cycle?.id ?? null),
+      startDirection:
+        creationOverride && "startDirection" in creationOverride
+          ? (creationOverride.startDirection ?? null)
+          : (cycle?.startDirection ?? null),
+      previousSelections:
+        creationOverride?.previousSelections ??
+        ((cycle?.latestSummary ?? {}) as Record<string, unknown>),
     },
   };
 }
