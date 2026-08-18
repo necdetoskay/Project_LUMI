@@ -253,9 +253,8 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
             </h3>
           </div>
           <span className="text-sm font-semibold text-slate-700">
-            {formatPercent(
-              trace.context.observability.budgetUtilizationRatio,
-            )} of context budget
+            {formatPercent(trace.context.observability.budgetUtilizationRatio)}{" "}
+            of context budget
           </span>
         </div>
 
