@@ -53,24 +53,24 @@ function replayableAssembledContext(
 ): AssembledGenerationContext {
   const assembled = assembledContext();
   const section = assembled.sections[0]!;
+  const provenance = { ...section.provenance };
+  if (!options.compacted) {
+    delete provenance.compaction;
+  }
+
   return {
     ...assembled,
     sections: [
       {
         ...section,
         provenance: {
-          ...section.provenance,
+          ...provenance,
           replay: {
             kind: "content_addressed_snapshot",
             store: "context.snapshots",
             snapshotDigest: SNAPSHOT_DIGEST,
             snapshotVersion: "v1",
           },
-          ...(options.compacted
-            ? {}
-            : {
-                compaction: undefined,
-              }),
         },
       },
     ],
