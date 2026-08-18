@@ -46,6 +46,13 @@ function source(
   };
 }
 
+function withOptionalSourceId(
+  value: unknown,
+  sourceId: string | null | undefined,
+): GenerationContextSourceResult {
+  return sourceId ? { value, sourceId } : { value };
+}
+
 const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
   source("child_identity", "profiles.child-profile", "required", (context) => ({
     value: {
@@ -72,21 +79,23 @@ const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
     "creation_direction",
     "profiles.character-creation-cycle",
     "current_task",
-    (context) => ({
-      value: {
-        startDirection: context.creation.startDirection,
-      },
-      sourceId: context.creation.cycleId ?? undefined,
-    }),
+    (context) =>
+      withOptionalSourceId(
+        {
+          startDirection: context.creation.startDirection,
+        },
+        context.creation.cycleId,
+      ),
   ),
   source(
     "creation_selections",
     "profiles.character-creation-cycle",
     "current_task",
-    (context) => ({
-      value: context.creation.previousSelections,
-      sourceId: context.creation.cycleId ?? undefined,
-    }),
+    (context) =>
+      withOptionalSourceId(
+        context.creation.previousSelections,
+        context.creation.cycleId,
+      ),
   ),
   source("character_state", "profiles.character-state", "canonical", () => ({
     value: null,
