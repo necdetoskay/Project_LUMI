@@ -7,7 +7,7 @@ import {
   type EvaluationExecution,
   type EvaluationMode,
 } from "../domain/evaluation";
-import type { JsonObject } from "../domain/test-lab-types";
+import type { JsonObject, JsonValue } from "../domain/test-lab-types";
 import type { EvaluationJudgeAdapter } from "../ports/evaluation-judge-adapter";
 import type { EvaluationRepository } from "../ports/evaluation-repository";
 import { EvaluationRegistry } from "./evaluation-registry";
@@ -54,7 +54,12 @@ export class EvaluationRunner {
       input.rubricKey,
       input.rubricRevision,
     );
-    const blindCandidates = createBlindCandidateSet(input.candidates);
+    const blindCandidates = createBlindCandidateSet(
+      input.candidates.map((candidate) => ({
+        candidateId: candidate.candidateId,
+        payload: sanitizeBlindPayload(candidate.payload),
+      })),
+    );
     const judgeResult = await this.judgeAdapter.evaluate({
       rubric,
       mode: input.mode,
@@ -129,4 +134,30 @@ export class EvaluationRunner {
     }
     return { execution, evaluations };
   }
+}
+
+const BLIND_METADATA_KEYS = new Set([
+  "modelslug",
+  "generatormodelslug",
+  "judgemodelslug",
+  "provider",
+  "providerid",
+  "pricingsnapshot",
+  "usagesnapshot",
+  "executionsnapshot",
+]);
+
+function sanitizeBlindPayload(payload: JsonObject): JsonObject {
+  return sanitizeJsonValue(payload) as JsonObject;
+}
+
+function sanitizeJsonValue(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) return value.map(sanitizeJsonValue);
+  if (value === null || typeof value !== "object") return value;
+  const output: JsonObject = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (BLIND_METADATA_KEYS.has(key.toLowerCase())) continue;
+    output[key] = sanitizeJsonValue(item);
+  }
+  return output;
 }
