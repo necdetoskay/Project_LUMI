@@ -17,7 +17,7 @@ const fixture: CanonicalTestLabDashboardData = {
     duration: "13.1 sn",
     status: "Completed",
     createdAtLabel: "18 Ağu 2026 21:35",
-    scenarioLabel: "Karakter Onboarding",
+    scenarioLabel: "Onboarding",
     phaseLabel: "Dünya Önerisi",
   },
   recentRuns: [
@@ -30,7 +30,7 @@ const fixture: CanonicalTestLabDashboardData = {
       duration: "13.1 sn",
       status: "Completed",
       createdAtLabel: "18 Ağu 2026 21:35",
-      scenarioLabel: "Karakter Onboarding",
+      scenarioLabel: "Onboarding",
       phaseLabel: "Dünya Önerisi",
     },
     {
@@ -42,7 +42,7 @@ const fixture: CanonicalTestLabDashboardData = {
       duration: "8.4 sn",
       status: "Completed",
       createdAtLabel: "18 Ağu 2026 21:31",
-      scenarioLabel: "Karakter Onboarding",
+      scenarioLabel: "Onboarding",
       phaseLabel: "Karakter Kimliği",
     },
     {
@@ -54,7 +54,7 @@ const fixture: CanonicalTestLabDashboardData = {
       duration: "1 dk 1 sn",
       status: "Completed",
       createdAtLabel: "18 Ağu 2026 21:22",
-      scenarioLabel: "Hikaye Üretimi",
+      scenarioLabel: "Hikaye",
       phaseLabel: "Hikaye 3",
     },
     {
@@ -66,7 +66,7 @@ const fixture: CanonicalTestLabDashboardData = {
       duration: "6.8 sn",
       status: "Failed",
       createdAtLabel: "18 Ağu 2026 21:18",
-      scenarioLabel: "Karakter Onboarding",
+      scenarioLabel: "Onboarding",
       phaseLabel: "Uyumluluk",
     },
     {
@@ -78,7 +78,7 @@ const fixture: CanonicalTestLabDashboardData = {
       duration: "5.2 sn",
       status: "Completed",
       createdAtLabel: "18 Ağu 2026 21:12",
-      scenarioLabel: "Karakter Onboarding",
+      scenarioLabel: "Onboarding",
       phaseLabel: "Bölge Önerisi",
     },
   ],
