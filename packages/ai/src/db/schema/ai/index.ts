@@ -26,9 +26,11 @@ export type {
 
 export {
   testLabEvaluationRubrics,
+  testLabEvaluationExecutions,
   testLabCandidateEvaluations,
 } from "./test-lab-evaluation";
 export type {
   TestLabEvaluationRubricRecord,
+  TestLabEvaluationExecutionRecord,
   TestLabCandidateEvaluationRecord,
 } from "./test-lab-evaluation";
