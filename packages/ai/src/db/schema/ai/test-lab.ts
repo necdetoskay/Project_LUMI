@@ -118,6 +118,10 @@ export const testLabRuns = aiSchema.table(
       "chk_test_lab_run_model_pricing_pair",
       sql`(${table.modelSlug} IS NULL AND ${table.pricingSnapshot} IS NULL) OR (${table.modelSlug} IS NOT NULL AND ${table.pricingSnapshot} IS NOT NULL)`,
     ),
+    check(
+      "chk_test_lab_run_usage_traceable",
+      sql`${table.usageSnapshot} IS NULL OR (${table.modelSlug} IS NOT NULL AND ${table.pricingSnapshot} IS NOT NULL)`,
+    ),
   ],
 );
 
