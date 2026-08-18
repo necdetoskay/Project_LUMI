@@ -163,10 +163,10 @@ export default function HomePage() {
             <div className={styles.heroGlow} aria-hidden="true" />
             <Image
               className={styles.heroImage}
-              src="/lumi-landing-scene.svg"
+              src="/lumi-landing-hero.webp"
               alt="Harita, gemi, ejderha ve büyülü diyarlardan oluşan LUMI hikâye evreni"
-              width={1200}
-              height={900}
+              width={640}
+              height={347}
               priority
             />
             <div className={styles.heroBadge}>
