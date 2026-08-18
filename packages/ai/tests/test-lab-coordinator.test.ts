@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TestLabCoordinator } from "../src/test-lab/application/test-lab-coordinator";
+import { pricingSnapshot } from "../src/test-lab/domain/model-profile";
 import { InMemoryTestLabRepository } from "../src/test-lab/infrastructure/in-memory-test-lab-repository";
 
 describe("TestLabCoordinator", () => {
@@ -177,5 +178,81 @@ describe("TestLabCoordinator", () => {
     expect((await repository.getSession("session-2"))?.activeBranchId).toBe(
       "branch-a",
     );
+  });
+
+  it("rejects usage snapshots without a traceable model and pricing snapshot", async () => {
+    const repository = new InMemoryTestLabRepository();
+    const coordinator = new TestLabCoordinator(repository);
+    const now = "2026-08-18T08:45:00.000Z";
+
+    await coordinator.createSession({
+      sessionId: "session-usage",
+      branchId: "branch-main",
+      scenarioKey: "character_onboarding",
+      initialStateId: "state-0",
+      initialState: { world: null },
+      now,
+    });
+
+    const usageSnapshot = {
+      promptTokens: 100,
+      completionTokens: 50,
+      totalTokens: 150,
+      cachedInputTokens: 0,
+      cacheWriteTokens: 0,
+      reasoningTokens: 0,
+      estimatedCostUsd: 0.0002,
+      actualCostUsd: 0.00023,
+      upstreamInferenceCostUsd: null,
+      latencyMs: 500,
+      retryCount: 0,
+    };
+
+    await expect(
+      coordinator.recordCandidate({
+        runId: "run-untraceable",
+        candidateStateId: "state-untraceable",
+        sessionId: "session-usage",
+        branchId: "branch-main",
+        phaseId: "world",
+        parentStateId: "state-0",
+        candidateState: { world: "A" },
+        usageSnapshot,
+        now,
+      }),
+    ).rejects.toThrow("TEST_LAB_USAGE_REQUIRES_MODEL_PRICING_SNAPSHOT");
+
+    const pricing = pricingSnapshot({
+      source: "openrouter_catalog",
+      capturedAt: now,
+      perTokenUsd: {
+        prompt: 0.000001,
+        completion: 0.000002,
+        request: 0,
+        image: 0,
+        webSearch: 0,
+        internalReasoning: 0.000002,
+        inputCacheRead: 0.000001,
+        inputCacheWrite: 0.000001,
+      },
+    });
+
+    const { run } = await coordinator.recordCandidate({
+      runId: "run-traceable",
+      candidateStateId: "state-traceable",
+      sessionId: "session-usage",
+      branchId: "branch-main",
+      phaseId: "world",
+      parentStateId: "state-0",
+      candidateState: { world: "B" },
+      modelSlug: "vendor/model-b",
+      pricingSnapshot: pricing,
+      usageSnapshot,
+      now,
+    });
+
+    expect(run.modelSlug).toBe("vendor/model-b");
+    expect(run.pricingSnapshot).toEqual(pricing);
+    expect(run.usageSnapshot).toEqual(usageSnapshot);
   });
 });
