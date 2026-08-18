@@ -19,7 +19,6 @@ export interface GenerationContextSourceResult {
   sourceId?: string;
   revision?: string;
   updatedAt?: string;
-  replayable?: boolean;
 }
 
 export interface GenerationContextSource {
