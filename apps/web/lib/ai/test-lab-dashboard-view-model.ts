@@ -318,8 +318,7 @@ function qualityMetricsFor(
     ...execution.criteria
       .map((criterion) => criterion.key)
       .filter(
-        (key) =>
-          !QUALITY_ORDER.includes(key as (typeof QUALITY_ORDER)[number]),
+        (key) => !QUALITY_ORDER.includes(key as (typeof QUALITY_ORDER)[number]),
       ),
   ].slice(0, 6);
 
