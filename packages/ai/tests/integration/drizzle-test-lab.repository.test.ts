@@ -138,8 +138,8 @@ describe("DrizzleTestLabRepository integration", () => {
       }),
     ).rejects.toThrow();
 
-    expect(
-      (await repository.getSelection(ids.branch, "world"))?.runId,
-    ).toBe(ids.runA);
+    expect((await repository.getSelection(ids.branch, "world"))?.runId).toBe(
+      ids.runA,
+    );
   });
 });
