@@ -115,7 +115,7 @@ describe("DrizzleTestLabRepository integration", () => {
         cachedInputTokens: 400,
         cacheWriteTokens: 0,
         reasoningTokens: 0,
-        estimatedCostUsd: 0.0004625,
+        estimatedCostUsd: 0.0004725,
         actualCostUsd: 0.00045,
         upstreamInferenceCostUsd: 0.00041,
         latencyMs: 820,
@@ -138,7 +138,7 @@ describe("DrizzleTestLabRepository integration", () => {
     expect(persistedRun?.modelSlug).toBe("deepseek/deepseek-chat-v3.1");
     expect(persistedRun?.pricingSnapshot?.source).toBe("openrouter_catalog");
     expect(persistedRun?.pricingSnapshot?.perMillionUsd.prompt).toBe(0.25);
-    expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004625);
+    expect(persistedRun?.usageSnapshot?.estimatedCostUsd).toBe(0.0004725);
     expect(persistedRun?.usageSnapshot?.actualCostUsd).toBe(0.00045);
 
     await coordinator.selectCandidate({
