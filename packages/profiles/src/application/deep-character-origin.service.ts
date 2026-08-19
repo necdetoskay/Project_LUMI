@@ -1,7 +1,9 @@
 import {
   generateOnboardingSuggestionsWithProductionPipeline,
   pickSuggestionArray,
+  prepareOnboardingSuggestionPrompt,
   type OnboardingPromptOverride,
+  type OnboardingSuggestionGenerationSpec,
 } from "./onboarding-suggestion-generation-core";
 import {
   DEEP_CHARACTER_ORIGIN_PROMPT_KEY,
@@ -20,27 +22,35 @@ export const DEEP_ORIGIN_QUALITY_RUBRIC = [
 export type DeepOriginQualityDimension =
   (typeof DEEP_ORIGIN_QUALITY_RUBRIC)[number];
 
-export type DeepOriginVisibility =
-  | "user_visible"
-  | "known_to_character"
-  | "known_to_family"
-  | "known_to_npc"
-  | "unknown_to_character"
-  | "system_only";
+export const DEEP_ORIGIN_VISIBILITIES = [
+  "user_visible",
+  "known_to_character",
+  "known_to_family",
+  "known_to_npc",
+  "unknown_to_character",
+  "system_only",
+] as const;
+
+export type DeepOriginVisibility = (typeof DEEP_ORIGIN_VISIBILITIES)[number];
+
+export const DEEP_ORIGIN_FACT_KINDS = [
+  "person",
+  "place",
+  "event",
+  "skill",
+  "preference",
+  "possession",
+  "relationship",
+  "secret",
+  "belief",
+  "habit",
+] as const;
+
+export type DeepOriginFactKind = (typeof DEEP_ORIGIN_FACT_KINDS)[number];
 
 export interface DeepOriginFact {
   id: string;
-  kind:
-    | "person"
-    | "place"
-    | "event"
-    | "skill"
-    | "preference"
-    | "possession"
-    | "relationship"
-    | "secret"
-    | "belief"
-    | "habit";
+  kind: DeepOriginFactKind;
   summary: string;
   visibility: DeepOriginVisibility;
   sourceRef?: string;
@@ -102,6 +112,14 @@ export interface GenerateDeepCharacterOriginsOptions {
   recordTrace?: boolean;
 }
 
+export interface DeepCharacterOriginPromptPreview {
+  promptKey: string;
+  promptVersion: number;
+  renderedPrompt: { system: string; user: string };
+  inputContext: Record<string, string | number | boolean | null | object>;
+  modelOverride: string | null;
+}
+
 export interface DeepCharacterOriginGenerationResult {
   suggestions: DeepCharacterOriginSuggestion[];
   validation: DeepOriginValidationEvidence[];
@@ -121,6 +139,30 @@ export interface DeepCharacterOriginGenerationResult {
   };
 }
 
+export async function previewDeepCharacterOriginPrompt(
+  userId: string,
+  input: { householdId: string; childProfileId: string },
+  options: GenerateDeepCharacterOriginsOptions = {},
+): Promise<DeepCharacterOriginPromptPreview> {
+  await ensureDeepCharacterOriginPrompt();
+  const prepared = await prepareOnboardingSuggestionPrompt(
+    userId,
+    input,
+    deepOriginSpec(),
+    options,
+  );
+  return {
+    promptKey: prepared.promptKey,
+    promptVersion: prepared.promptVersion,
+    renderedPrompt: {
+      system: prepared.systemPrompt,
+      user: prepared.userPrompt,
+    },
+    inputContext: prepared.inputContext,
+    modelOverride: prepared.modelOverride,
+  };
+}
+
 export async function generateDeepCharacterOrigins(
   userId: string,
   input: { householdId: string; childProfileId: string },
@@ -131,23 +173,7 @@ export async function generateDeepCharacterOrigins(
   const result = await generateOnboardingSuggestionsWithProductionPipeline(
     userId,
     input,
-    {
-      promptKey: DEEP_CHARACTER_ORIGIN_PROMPT_KEY,
-      taskType: "character_genesis_deep_origin",
-      summaryGuard(summary) {
-        if (!summary.characterIdentity || !summary.world || !summary.region) {
-          throw new Error("DEEP_CHARACTER_ORIGIN_CONTEXT_REQUIRED");
-        }
-      },
-      contextExtras: (summary) => ({
-        characterType: (summary.characterType ?? {}) as object,
-        characterIdentity: summary.characterIdentity as object,
-        world: summary.world as object,
-        region: summary.region as object,
-      }),
-      pick: pickSuggestionArray<DeepCharacterOriginSuggestion>,
-      maxAttempts: 3,
-    },
+    deepOriginSpec(),
     options,
   );
 
@@ -184,6 +210,41 @@ export async function generateDeepCharacterOrigins(
   };
 }
 
+function deepOriginSpec(): OnboardingSuggestionGenerationSpec<DeepCharacterOriginSuggestion> {
+  return {
+    promptKey: DEEP_CHARACTER_ORIGIN_PROMPT_KEY,
+    taskType: "character_genesis_deep_origin",
+    summaryGuard(summary) {
+      if (!summary.characterIdentity || !summary.world || !summary.region) {
+        throw new Error("DEEP_CHARACTER_ORIGIN_CONTEXT_REQUIRED");
+      }
+    },
+    contextExtras: (summary) => ({
+      characterType: (summary.characterType ?? {}) as object,
+      characterIdentity: summary.characterIdentity as object,
+      world: summary.world as object,
+      region: summary.region as object,
+    }),
+    pick: pickValidatedDeepOrigins,
+    maxAttempts: 3,
+  };
+}
+
+function pickValidatedDeepOrigins(validated: unknown): DeepCharacterOriginSuggestion[] {
+  const suggestions = pickSuggestionArray<DeepCharacterOriginSuggestion>(validated);
+  for (const suggestion of suggestions) {
+    const evidence = validateDeepCharacterOrigin(suggestion);
+    if (!evidence.valid) {
+      const codes = evidence.issues
+        .filter((issue) => issue.severity === "error")
+        .map((issue) => issue.code)
+        .join(",");
+      throw new Error(`DEEP_ORIGIN_SEMANTIC_VALIDATION_FAILED:${codes}`);
+    }
+  }
+  return suggestions;
+}
+
 export function validateDeepCharacterOrigin(
   suggestion: DeepCharacterOriginSuggestion,
 ): DeepOriginValidationEvidence {
@@ -196,6 +257,22 @@ export function validateDeepCharacterOrigin(
       issues.push({
         code: "DEEP_ORIGIN_DUPLICATE_FACT_ID",
         message: `Fact id ${fact.id} is duplicated`,
+        path: "facts",
+        severity: "error",
+      });
+    }
+    if (!DEEP_ORIGIN_FACT_KINDS.includes(fact.kind)) {
+      issues.push({
+        code: "DEEP_ORIGIN_FACT_KIND_INVALID",
+        message: `Fact ${fact.id} uses unsupported kind ${String(fact.kind)}`,
+        path: "facts",
+        severity: "error",
+      });
+    }
+    if (!DEEP_ORIGIN_VISIBILITIES.includes(fact.visibility)) {
+      issues.push({
+        code: "DEEP_ORIGIN_FACT_VISIBILITY_INVALID",
+        message: `Fact ${fact.id} uses unsupported visibility ${String(fact.visibility)}`,
         path: "facts",
         severity: "error",
       });
@@ -243,6 +320,17 @@ export function validateDeepCharacterOrigin(
         code: "DEEP_ORIGIN_SUMMARY_HIDDEN_FACT",
         message: `Summary cannot derive from hidden fact ${factId}`,
         path: "summaryFactIds",
+        severity: "error",
+      });
+    }
+  }
+
+  for (const question of suggestion.unresolvedQuestions) {
+    if (!DEEP_ORIGIN_VISIBILITIES.includes(question.visibility)) {
+      issues.push({
+        code: "DEEP_ORIGIN_QUESTION_VISIBILITY_INVALID",
+        message: `Question ${question.id} uses unsupported visibility ${String(question.visibility)}`,
+        path: "unresolvedQuestions",
         severity: "error",
       });
     }
