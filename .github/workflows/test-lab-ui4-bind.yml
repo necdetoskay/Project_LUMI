@@ -1,0 +1,45 @@
+name: Test Lab UI4 Binder
+
+on:
+  push:
+    branches:
+      - agent/test-lab-canonical-ui-4
+    paths:
+      - scripts/apply-test-lab-ui4.mjs
+      - apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx
+      - apps/web/app/api/settings/test-lab/prompt-optimization/route.ts
+      - apps/web/lib/ai/test-lab-prompt-improvement.ts
+      - .github/workflows/test-lab-ui4-bind.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bind:
+    if: ${{ !contains(github.event.head_commit.message, '[ui4-bind]') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/test-lab-canonical-ui-4
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: node scripts/apply-test-lab-ui4.mjs
+      - run: pnpm exec prettier --write apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts
+      - name: Commit generated binding
+        run: |
+          if git diff --quiet; then
+            echo "No binder changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts
+          git commit -m "feat(test-lab): bind canonical prompt improvement card [ui4-bind]"
+          git push origin HEAD:agent/test-lab-canonical-ui-4
