@@ -6,7 +6,9 @@ import {
   type CharacterGenesisCanonicalCommitPort,
   type CharacterGenesisRepositoryPort,
 } from "../../src/application/character-genesis.service";
-import type { CharacterGenesisPackage } from "../../src/domain/character-genesis";
+import type {
+  CharacterGenesisPackage,
+} from "../../src/domain/character-genesis";
 
 type Stored = Map<string, CharacterGenesisPackage>;
 
@@ -21,7 +23,9 @@ class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
     return structuredClone(this.stored.get(candidateId) ?? null);
   }
 
-  async listByCharacter(characterId: string): Promise<CharacterGenesisPackage[]> {
+  async listByCharacter(
+    characterId: string,
+  ): Promise<CharacterGenesisPackage[]> {
     return [...this.stored.values()]
       .filter((candidate) => candidate.characterId === characterId)
       .map((candidate) => structuredClone(candidate));
@@ -138,9 +142,9 @@ describe("CharacterGenesisCoordinator", () => {
     const selectedSecond = await coordinator.select(second.id);
 
     const candidates = await repository.listByCharacter("character-1");
-    expect(candidates.filter((candidate) => candidate.status === "selected")).toEqual([
-      selectedSecond,
-    ]);
+    expect(
+      candidates.filter((candidate) => candidate.status === "selected"),
+    ).toEqual([selectedSecond]);
     expect(candidates.find((candidate) => candidate.id === first.id)?.status).toBe(
       "staged",
     );
