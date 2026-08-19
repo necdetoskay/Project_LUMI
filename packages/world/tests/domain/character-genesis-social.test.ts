@@ -131,4 +131,48 @@ describe("Character Genesis social graph", () => {
       "GENESIS_SOCIAL_EVIDENCE_FACT_MISSING",
     );
   });
+
+  it("exposes strong contradictory evidence without invalidating the graph", () => {
+    const social = createGenesisSocialState({
+      characterId: "character-mira",
+      characterIdentityKey: "mira",
+      candidates,
+      evidence: [
+        {
+          fromIdentityKey: "mira",
+          toIdentityKey: "toma-usta",
+          dimension: "trust",
+          direction: "low",
+          strength: "strong",
+          sourceFactIds: ["fact-bakery"],
+          rationale: "A recent promise was broken.",
+        },
+        {
+          fromIdentityKey: "mira",
+          toIdentityKey: "toma-usta",
+          dimension: "trust",
+          direction: "high",
+          strength: "strong",
+          sourceFactIds: ["fact-bakery"],
+          rationale: "A long history still supports trust.",
+        },
+      ],
+      seed: "seed-4",
+    });
+
+    const issues = validateGenesisSocialState({
+      characterId: "character-mira",
+      social,
+      originFactIds: ["fact-bakery"],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "GENESIS_SOCIAL_CONTRADICTORY_EVIDENCE",
+          severity: "warning",
+        }),
+      ]),
+    );
+  });
 });
