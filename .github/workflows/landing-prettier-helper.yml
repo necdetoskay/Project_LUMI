@@ -9,13 +9,16 @@ on:
       - ".github/workflows/landing-prettier-helper.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  format-preview:
+  format-and-commit:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 11.7.0
@@ -26,16 +29,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Format landing files
         run: pnpm exec prettier --write apps/web/app/page.tsx apps/web/app/landing-v2.module.css apps/web/tests/landing-premium-real-ui.contract.test.ts
-      - name: Emit formatted files
+      - name: Commit formatted files when needed
         shell: bash
         run: |
-          echo '===PAGE_TSX_BASE64==='
-          base64 -w0 apps/web/app/page.tsx
-          echo
-          echo '===CSS_BASE64==='
-          base64 -w0 apps/web/app/landing-v2.module.css
-          echo
-          echo '===TEST_BASE64==='
-          base64 -w0 apps/web/tests/landing-premium-real-ui.contract.test.ts
-          echo
-          echo '===END_FORMATTED_FILES==='
+          if git diff --quiet -- apps/web/app/page.tsx apps/web/app/landing-v2.module.css apps/web/tests/landing-premium-real-ui.contract.test.ts; then
+            echo "Landing files already formatted"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/page.tsx apps/web/app/landing-v2.module.css apps/web/tests/landing-premium-real-ui.contract.test.ts
+          git commit -m "style(landing): apply prettier formatting"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
