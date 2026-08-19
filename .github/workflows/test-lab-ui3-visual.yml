@@ -1,0 +1,44 @@
+name: Test Lab UI3 Visual
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/test-lab-ui3-visual.yml
+      - apps/web/app/app/settings/test-lab/visual-test/page.tsx
+      - apps/web/app/app/settings/test-lab/canonical-dashboard.tsx
+      - apps/web/app/app/settings/test-lab/canonical-dashboard.module.css
+      - apps/web/app/app/settings/test-lab/canonical-dashboard-tuning.module.css
+      - apps/web/tests/e2e/test-lab-ui3-visual.spec.ts
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      LUMI_VISUAL_TEST: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture UI3 dashboard
+        run: |
+          google-chrome --version
+          pnpm --filter @lumi/web exec playwright test tests/e2e/test-lab-ui3-visual.spec.ts
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-lab-ui3-visual
+          path: apps/web/test-results/test-lab-ui3.png
+          if-no-files-found: warn
