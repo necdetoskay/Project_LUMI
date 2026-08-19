@@ -6,10 +6,7 @@ import {
   DrizzleTestLabRepository,
   TestLabCoordinator,
 } from "@lumi/ai/test-lab";
-import type {
-  CharacterGenesisSections,
-  GenesisProvenance,
-} from "@lumi/world";
+import type { CharacterGenesisSections, GenesisProvenance } from "@lumi/world";
 import { withParent } from "@/lib/auth/with-parent";
 import {
   CHARACTER_GENESIS_TEST_LAB_PHASE_ID,
@@ -112,7 +109,8 @@ function readProvenance(
 ): GenesisProvenance {
   const record = optionalRecord(value, "provenance");
   return {
-    schemaRevision: optionalString(record.schemaRevision) ?? "character-genesis.v1",
+    schemaRevision:
+      optionalString(record.schemaRevision) ?? "character-genesis.v1",
     seed: optionalString(record.seed) ?? candidateSeed,
     generatedAt: optionalString(record.generatedAt) ?? now,
     ...(optionalString(record.modelProvider)
