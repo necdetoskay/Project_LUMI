@@ -105,8 +105,6 @@ describe("appendPromptImprovementBlock", () => {
     expect(second).toContain("Base prompt");
     expect(second).not.toContain("first");
     expect(second).toContain("second");
-    expect(
-      second.match(/\[LUMI_TEST_LAB_OPTIMIZATION_V1\]/g)?.length,
-    ).toBe(1);
+    expect(second.match(/\[LUMI_TEST_LAB_OPTIMIZATION_V1\]/g)?.length).toBe(1);
   });
 });
