@@ -56,7 +56,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -113,7 +115,9 @@ export default function SocialGenesisTestPanel() {
   async function previewPrompt() {
     const context = sandboxContext();
     if (!context.sessionId || !context.branchId || !context.parentStateId) {
-      setMessage("Önce Character DNA dahil önceki sandbox aşamalarını tamamlayın.");
+      setMessage(
+        "Önce Character DNA dahil önceki sandbox aşamalarını tamamlayın.",
+      );
       return;
     }
     setBusy(true);
@@ -133,7 +137,9 @@ export default function SocialGenesisTestPanel() {
       });
       setMessage("Social Genesis production promptu hazırlandı.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt hazırlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Prompt hazırlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -141,7 +147,12 @@ export default function SocialGenesisTestPanel() {
 
   async function runSocialGenesis() {
     const context = sandboxContext();
-    if (!prompt || !context.sessionId || !context.branchId || !context.parentStateId) {
+    if (
+      !prompt ||
+      !context.sessionId ||
+      !context.branchId ||
+      !context.parentStateId
+    ) {
       setMessage("Önce production promptunu yükleyin.");
       return;
     }
@@ -160,7 +171,11 @@ export default function SocialGenesisTestPanel() {
         `${payload.data.candidates.length} Social Genesis adayı üretildi; NPC dedup ve directional graph kaydedildi.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Social Genesis çalıştırılamadı.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Social Genesis çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -179,7 +194,10 @@ export default function SocialGenesisTestPanel() {
         runId: entry.run.id,
         candidateId: candidate.id,
       });
-      window.localStorage.setItem(LAST_BRANCH_KEY, payload.data.activeBranchId as string);
+      window.localStorage.setItem(
+        LAST_BRANCH_KEY,
+        payload.data.activeBranchId as string,
+      );
       window.localStorage.setItem(
         LAST_STATE_KEY,
         payload.data.selection.selectedStateId as string,
@@ -199,9 +217,10 @@ export default function SocialGenesisTestPanel() {
         <p className={styles.eyebrow}>Character Genesis</p>
         <h2>Social Genesis</h2>
         <p className={styles.muted}>
-          Origin ve Character DNA bağlamından 0-6 anlamlı NPC üretir; origin/derived
-          kimlikleri deduplicate eder ve A→B ile B→A için ayrı relationship vector
-          türetir. Model numeric relationship değeri üretmez.
+          Origin ve Character DNA bağlamından 0-6 anlamlı NPC üretir;
+          origin/derived kimlikleri deduplicate eder ve A→B ile B→A için ayrı
+          relationship vector türetir. Model numeric relationship değeri
+          üretmez.
         </p>
         <div className={styles.settingsGrid}>
           <label className={styles.field}>
@@ -244,7 +263,9 @@ export default function SocialGenesisTestPanel() {
                 rows={6}
                 className={styles.promptTextarea}
                 value={prompt.system}
-                onChange={(event) => setPrompt({ ...prompt, system: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, system: event.target.value })
+                }
               />
             </label>
             <label className={styles.field}>
@@ -253,7 +274,9 @@ export default function SocialGenesisTestPanel() {
                 rows={16}
                 className={styles.promptTextarea}
                 value={prompt.user}
-                onChange={(event) => setPrompt({ ...prompt, user: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, user: event.target.value })
+                }
               />
             </label>
             <button
@@ -282,7 +305,9 @@ export default function SocialGenesisTestPanel() {
             </button>
           </div>
           {runs.length === 0 ? (
-            <div className={styles.emptyState}>Henüz Social Genesis runı yok.</div>
+            <div className={styles.emptyState}>
+              Henüz Social Genesis runı yok.
+            </div>
           ) : (
             <div className={styles.runList}>
               {[...runs].reverse().map((entry, index) => {
@@ -292,7 +317,9 @@ export default function SocialGenesisTestPanel() {
                   <article key={entry.run.id} className={styles.runCard}>
                     <div className={styles.runHeader}>
                       <strong>Social Genesis Run {runs.length - index}</strong>
-                      <span className={styles.runMeta}>{entry.run.modelSlug ?? "model bilinmiyor"}</span>
+                      <span className={styles.runMeta}>
+                        {entry.run.modelSlug ?? "model bilinmiyor"}
+                      </span>
                     </div>
                     {usage ? (
                       <div className={styles.metrics}>
@@ -300,7 +327,11 @@ export default function SocialGenesisTestPanel() {
                         <span>Output {usage.completionTokens} token</span>
                         <span>Toplam {usage.totalTokens} token</span>
                         <span>{usage.latencyMs} ms</span>
-                        <span>{formatCost(usage.actualCostUsd ?? usage.estimatedCostUsd)}</span>
+                        <span>
+                          {formatCost(
+                            usage.actualCostUsd ?? usage.estimatedCostUsd,
+                          )}
+                        </span>
                       </div>
                     ) : null}
                     <details className={styles.runPrompt}>
@@ -314,11 +345,16 @@ export default function SocialGenesisTestPanel() {
                     </details>
                     <details className={styles.runPrompt}>
                       <summary>Raw provider output</summary>
-                      <pre className={styles.payload}>{execution?.rawProviderOutput ?? "Raw output yok"}</pre>
+                      <pre className={styles.payload}>
+                        {execution?.rawProviderOutput ?? "Raw output yok"}
+                      </pre>
                     </details>
                     <div className={styles.candidateList}>
                       {entry.candidates.map((candidate, candidateIndex) => (
-                        <article key={candidate.id} className={styles.candidate}>
+                        <article
+                          key={candidate.id}
+                          className={styles.candidate}
+                        >
                           <strong>Social aday {candidateIndex + 1}</strong>
                           <pre className={styles.payload}>
                             {JSON.stringify(candidate.payload, null, 2)}
@@ -326,7 +362,9 @@ export default function SocialGenesisTestPanel() {
                           <button
                             type="button"
                             className={styles.primaryButton}
-                            disabled={busy || entry.selectedCandidateId === candidate.id}
+                            disabled={
+                              busy || entry.selectedCandidateId === candidate.id
+                            }
                             onClick={() => selectCandidate(entry, candidate)}
                           >
                             {entry.selectedCandidateId === candidate.id
