@@ -21,7 +21,7 @@ import { assertSandboxOwner } from "@/lib/ai/test-lab-sandbox-owner";
 import { readRequestBody } from "@/lib/http/request-body";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
-export const CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID =
+const CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID =
   "character_genesis_deep_origin";
 
 export const POST = observeHandler(async (request: Request) => {
