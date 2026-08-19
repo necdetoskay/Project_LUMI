@@ -159,7 +159,8 @@ describe("Character Genesis traits", () => {
       sections: {
         origin: {
           summary: "Miro often visits the library.",
-          narrative: "Miro grew up visiting the library and preparing for storms.",
+          narrative:
+            "Miro grew up visiting the library and preparing for storms.",
           facts: [
             {
               id: "fact-library",
