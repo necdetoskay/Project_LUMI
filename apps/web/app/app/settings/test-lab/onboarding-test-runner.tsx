@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import styles from "./test-lab-runner.module.css";
+
 type Phase = {
   id: string;
   label: string;
@@ -36,45 +38,6 @@ const DEFAULT_STATE = JSON.stringify(
   null,
   2,
 );
-
-const shell: React.CSSProperties = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: "28px 20px 72px",
-  color: "#e9eaf3",
-};
-
-const panel: React.CSSProperties = {
-  background: "#111526",
-  border: "1px solid #252b46",
-  borderRadius: 16,
-  padding: 20,
-};
-
-const input: React.CSSProperties = {
-  width: "100%",
-  marginTop: 6,
-  padding: "11px 12px",
-  borderRadius: 10,
-  border: "1px solid #303858",
-  background: "#0b0f1d",
-  color: "#f7f7fb",
-};
-
-const primaryButton: React.CSSProperties = {
-  padding: "11px 16px",
-  borderRadius: 10,
-  border: 0,
-  background: "#6f4cff",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const secondaryButton: React.CSSProperties = {
-  ...primaryButton,
-  background: "#202842",
-};
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -244,67 +207,59 @@ export default function OnboardingTestRunner() {
   }
 
   return (
-    <main style={shell}>
-      <header style={{ marginBottom: 22 }}>
-        <p style={{ opacity: 0.65, margin: 0 }}>Settings / Test Lab</p>
-        <h1 style={{ margin: "8px 0", fontSize: 34 }}>
-          Karakter Onboarding Test Lab
-        </h1>
-        <p style={{ maxWidth: 820, opacity: 0.8, lineHeight: 1.6 }}>
+    <main className={styles.shell}>
+      <header className={styles.header}>
+        <p className={styles.breadcrumb}>Settings / Test Lab</p>
+        <h1 className={styles.title}>Karakter Onboarding Test Lab</h1>
+        <p className={styles.intro}>
           Amaç: onboarding üretim aşamalarını gerçek production LLM yoluyla
           sırayla test etmek, her aşamada çıkan adaylardan birini seçmek ve
           seçilen state ile bir sonraki aşamaya geçmek.
         </p>
       </header>
 
-      <section style={{ ...panel, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>1. Test ayarları</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
-            gap: 14,
-          }}
-        >
-          <label>
+      <section className={styles.panel}>
+        <h2>1. Test ayarları</h2>
+        <div className={styles.settingsGrid}>
+          <label className={styles.field}>
             OpenRouter model slug
             <input
-              style={input}
+              className={styles.input}
               value={modelSlug}
               onChange={(event) => setModelSlug(event.target.value)}
             />
           </label>
-          <label>
+          <label className={styles.field}>
             Household ID
             <input
-              style={input}
+              className={styles.input}
               value={householdId}
               onChange={(event) => setHouseholdId(event.target.value)}
             />
           </label>
-          <label>
+          <label className={styles.field}>
             Child Profile ID
             <input
-              style={input}
+              className={styles.input}
               value={childProfileId}
               onChange={(event) => setChildProfileId(event.target.value)}
             />
           </label>
         </div>
-        <details style={{ marginTop: 14 }}>
-          <summary style={{ cursor: "pointer", opacity: 0.8 }}>
+        <details className={styles.details}>
+          <summary className={styles.summary}>
             Gelişmiş: başlangıç sandbox state
           </summary>
           <textarea
             rows={9}
-            style={{ ...input, fontFamily: "monospace", resize: "vertical" }}
+            className={styles.textarea}
             value={initialStateText}
             onChange={(event) => setInitialStateText(event.target.value)}
           />
         </details>
         <button
           type="button"
-          style={{ ...primaryButton, marginTop: 16, opacity: busy ? 0.6 : 1 }}
+          className={styles.primaryButton}
           disabled={busy}
           onClick={createSession}
         >
@@ -312,18 +267,26 @@ export default function OnboardingTestRunner() {
         </button>
       </section>
 
-      <section style={{ ...panel, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>2. Onboarding aşamaları</h2>
-        <p style={{ opacity: 0.7 }}>
+      <section className={styles.panel}>
+        <h2>2. Onboarding aşamaları</h2>
+        <p className={styles.muted}>
           API şu anda {runnablePhases.length} production-backed üretim aşamasını
           doğrudan çalıştırabiliyor. Desteklenmeyen aşamalar açıkça pasif
           gösterilir; sahte test olarak sayılmaz.
         </p>
-        <div style={{ display: "grid", gap: 9 }}>
+        <div className={styles.phaseList}>
           {phases.map((phase, index) => {
             const supported = phase.testable && supportedIds.includes(phase.id);
             const completed = completedIds.includes(phase.id);
             const active = phase.id === phaseId;
+            const phaseClassName = [
+              styles.phaseButton,
+              active ? styles.phaseActive : "",
+              !supported ? styles.phaseDisabled : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             return (
               <button
                 key={phase.id}
@@ -334,20 +297,12 @@ export default function OnboardingTestRunner() {
                   setResult(null);
                   setMessage("");
                 }}
-                style={{
-                  textAlign: "left",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  border: active ? "1px solid #765cff" : "1px solid #2a3150",
-                  background: active ? "#1a1834" : "#0c1120",
-                  color: supported ? "#f2f2f7" : "#777f98",
-                  cursor: supported ? "pointer" : "not-allowed",
-                }}
+                className={phaseClassName}
               >
                 <strong>
                   {index + 1}. {phase.label}
                 </strong>
-                <span style={{ float: "right", fontSize: 13, opacity: 0.75 }}>
+                <span className={styles.phaseStatus}>
                   {completed
                     ? "✓ tamamlandı"
                     : supported
@@ -362,16 +317,16 @@ export default function OnboardingTestRunner() {
         </div>
       </section>
 
-      <section style={panel}>
-        <h2 style={{ marginTop: 0 }}>3. Aşamayı çalıştır</h2>
-        <p style={{ fontSize: 18 }}>
+      <section className={styles.panel}>
+        <h2>3. Aşamayı çalıştır</h2>
+        <p className={styles.currentPhase}>
           {currentPhase ? (
             <>
               <strong>
                 {currentIndex + 1}. {currentPhase.label}
               </strong>
               <br />
-              <span style={{ opacity: 0.7 }}>
+              <span className={styles.operation}>
                 {currentPhase.productionOperation}
               </span>
             </>
@@ -381,7 +336,7 @@ export default function OnboardingTestRunner() {
         </p>
         <button
           type="button"
-          style={{ ...primaryButton, opacity: !sessionId || busy ? 0.6 : 1 }}
+          className={styles.primaryButton}
           disabled={!sessionId || !currentPhase || busy}
           onClick={runCurrentPhase}
         >
@@ -391,34 +346,18 @@ export default function OnboardingTestRunner() {
         </button>
 
         {result ? (
-          <div style={{ marginTop: 22 }}>
+          <div className={styles.results}>
             <h3>Üretilen adaylar</h3>
-            <div style={{ display: "grid", gap: 12 }}>
+            <div className={styles.candidateList}>
               {result.candidates.map((candidate, index) => (
-                <article
-                  key={candidate.id}
-                  style={{
-                    border: "1px solid #2d3555",
-                    borderRadius: 12,
-                    padding: 14,
-                    background: "#0b1020",
-                  }}
-                >
+                <article key={candidate.id} className={styles.candidate}>
                   <strong>Aday {index + 1}</strong>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      overflowWrap: "anywhere",
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                      opacity: 0.9,
-                    }}
-                  >
+                  <pre className={styles.payload}>
                     {JSON.stringify(candidate.payload, null, 2)}
                   </pre>
                   <button
                     type="button"
-                    style={secondaryButton}
+                    className={styles.secondaryButton}
                     disabled={busy}
                     onClick={() => selectCandidate(candidate)}
                   >
@@ -432,16 +371,7 @@ export default function OnboardingTestRunner() {
       </section>
 
       {message ? (
-        <div
-          role="status"
-          style={{
-            marginTop: 16,
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "#151c31",
-            border: "1px solid #30395c",
-          }}
-        >
+        <div role="status" className={styles.status}>
           {message}
         </div>
       ) : null}
