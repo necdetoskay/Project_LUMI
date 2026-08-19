@@ -39,6 +39,38 @@ export {
 } from "./errors";
 
 export {
+  CHARACTER_GENESIS_STATUSES,
+  GENESIS_VISIBILITIES,
+  createCharacterGenesisPackage,
+  selectCharacterGenesisPackage,
+  markCharacterGenesisCommitted,
+  validateCharacterGenesisStructure,
+} from "./character-genesis";
+export type {
+  CharacterGenesisStatus,
+  GenesisVisibility,
+  GenesisProvenance,
+  GenesisOriginFact,
+  GenesisOriginState,
+  GenesisTraitState,
+  GenesisNpcState,
+  GenesisRelationshipState,
+  GenesisSocialState,
+  GenesisInventoryItemState,
+  GenesisInventoryState,
+  GenesisMemoryState,
+  GenesisThreadStatus,
+  GenesisThreadState,
+  GenesisMemoryAndThreadState,
+  GenesisEnvironmentState,
+  CharacterGenesisSections,
+  CharacterGenesisPackage,
+  CreateCharacterGenesisPackageInput,
+  GenesisValidationIssue,
+  GenesisValidationResult,
+} from "./character-genesis";
+
+export {
   WORLD_LIFECYCLE_STATUSES,
   REGION_ACCESSIBILITY_STATUSES,
   DISCOVERY_STATUSES,
