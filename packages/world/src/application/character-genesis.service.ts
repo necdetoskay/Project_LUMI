@@ -72,7 +72,9 @@ export class CharacterGenesisCoordinator {
     }
 
     const siblings = await this.repository.listByCharacter(candidate.characterId);
-    const selectedSiblings = siblings.filter((entry) => entry.status === "selected");
+    const selectedSiblings = siblings.filter(
+      (entry) => entry.status === "selected",
+    );
     if (
       selectedSiblings.length !== 1 ||
       selectedSiblings[0]?.id !== candidate.id
