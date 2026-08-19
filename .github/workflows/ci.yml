@@ -37,11 +37,7 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
-      - name: Print Social Genesis route prettier diff
-        run: |
-          pnpm exec prettier --write apps/web/app/api/settings/test-lab/genesis/social/route.ts
-          git diff -- apps/web/app/api/settings/test-lab/genesis/social/route.ts
-          exit 1
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
