@@ -1,3 +1,9 @@
+import { validateCharacterTraitEvidenceReferences } from "./character-genesis-trait-evidence";
+import {
+  validateCharacterTraitState,
+  type CharacterTraitDerivationState,
+} from "./character-genesis-traits";
+
 export const CHARACTER_GENESIS_STATUSES = [
   "staged",
   "selected",
@@ -67,13 +73,7 @@ export interface CharacterVisibleGenesisOriginContext {
   facts: GenesisOriginFact[];
 }
 
-export interface GenesisTraitState {
-  dna: Record<string, number>;
-  dynamic: Record<string, number>;
-  contextual: Record<string, Record<string, number>>;
-  learnedModifiers: Record<string, number>;
-  evidenceFactIds: string[];
-}
+export type GenesisTraitState = CharacterTraitDerivationState;
 
 export interface GenesisNpcState {
   candidateId: string;
@@ -313,6 +313,7 @@ export function validateCharacterGenesisStructure(
   const social = candidate.sections.social;
   const inventory = candidate.sections.inventory;
   const origin = candidate.sections.origin;
+  const traits = candidate.sections.traits;
 
   const originFactIds = new Set(origin?.facts.map((fact) => fact.id) ?? []);
   if (originFactIds.size !== (origin?.facts.length ?? 0)) {
@@ -418,6 +419,32 @@ export function validateCharacterGenesisStructure(
       path: "sections.origin.storyHooks",
       severity: "warning",
     });
+  }
+
+  if (traits) {
+    const traitValidation = validateCharacterTraitState(traits);
+    for (const issue of traitValidation.issues) {
+      issues.push({
+        code: issue.code,
+        message: issue.message,
+        path: "sections.traits",
+        severity: issue.severity,
+      });
+    }
+
+    const referenceIssues = validateCharacterTraitEvidenceReferences({
+      originFactIds,
+      evidence: traits.evidence,
+      contextual: traits.contextual,
+    });
+    for (const issue of referenceIssues) {
+      issues.push({
+        code: issue.code,
+        message: issue.message,
+        path: "sections.traits",
+        severity: issue.severity,
+      });
+    }
   }
 
   const npcIds = new Set(social?.npcs.map((npc) => npc.candidateId) ?? []);
