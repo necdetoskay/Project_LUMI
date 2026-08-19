@@ -30,6 +30,23 @@ type RunResult = {
   candidates: Candidate[];
 };
 
+type HouseholdOption = {
+  id: string;
+  label: string;
+};
+
+type ChildProfileOption = {
+  id: string;
+  householdId: string;
+  displayName: string;
+  ageBand?: string | null;
+};
+
+type OnboardingTestRunnerProps = {
+  households: HouseholdOption[];
+  childProfiles: ChildProfileOption[];
+};
+
 const DEFAULT_STATE = JSON.stringify(
   {
     characterType: { key: "fantastic" },
@@ -38,6 +55,10 @@ const DEFAULT_STATE = JSON.stringify(
   null,
   2,
 );
+
+const LAST_HOUSEHOLD_KEY = "lumi.testLab.householdId";
+const LAST_CHILD_PROFILE_KEY = "lumi.testLab.childProfileId";
+const LAST_MODEL_KEY = "lumi.testLab.modelSlug";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -58,11 +79,19 @@ async function post(body: Record<string, unknown>) {
   return payload;
 }
 
-export default function OnboardingTestRunner() {
+export default function OnboardingTestRunner({
+  households,
+  childProfiles,
+}: OnboardingTestRunnerProps) {
+  const defaultHouseholdId = households[0]?.id ?? "";
+  const defaultChildProfileId =
+    childProfiles.find((profile) => profile.householdId === defaultHouseholdId)
+      ?.id ?? "";
+
   const [phases, setPhases] = useState<Phase[]>([]);
   const [supportedIds, setSupportedIds] = useState<string[]>([]);
-  const [householdId, setHouseholdId] = useState("");
-  const [childProfileId, setChildProfileId] = useState("");
+  const [householdId, setHouseholdId] = useState(defaultHouseholdId);
+  const [childProfileId, setChildProfileId] = useState(defaultChildProfileId);
   const [modelSlug, setModelSlug] = useState("deepseek/deepseek-v4-flash");
   const [initialStateText, setInitialStateText] = useState(DEFAULT_STATE);
   const [sessionId, setSessionId] = useState("");
@@ -73,6 +102,45 @@ export default function OnboardingTestRunner() {
   const [result, setResult] = useState<RunResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  const availableProfiles = useMemo(
+    () => childProfiles.filter((profile) => profile.householdId === householdId),
+    [childProfiles, householdId],
+  );
+
+  useEffect(() => {
+    const rememberedHouseholdId = window.localStorage.getItem(LAST_HOUSEHOLD_KEY);
+    const rememberedChildProfileId = window.localStorage.getItem(
+      LAST_CHILD_PROFILE_KEY,
+    );
+    const rememberedModelSlug = window.localStorage.getItem(LAST_MODEL_KEY);
+
+    const nextHouseholdId = households.some(
+      (household) => household.id === rememberedHouseholdId,
+    )
+      ? rememberedHouseholdId ?? defaultHouseholdId
+      : defaultHouseholdId;
+    const nextProfiles = childProfiles.filter(
+      (profile) => profile.householdId === nextHouseholdId,
+    );
+    const nextChildProfileId = nextProfiles.some(
+      (profile) => profile.id === rememberedChildProfileId,
+    )
+      ? rememberedChildProfileId ?? nextProfiles[0]?.id ?? ""
+      : nextProfiles[0]?.id ?? "";
+
+    setHouseholdId(nextHouseholdId);
+    setChildProfileId(nextChildProfileId);
+    if (rememberedModelSlug?.trim()) setModelSlug(rememberedModelSlug);
+  }, [childProfiles, defaultHouseholdId, households]);
+
+  useEffect(() => {
+    if (householdId) window.localStorage.setItem(LAST_HOUSEHOLD_KEY, householdId);
+    if (childProfileId) {
+      window.localStorage.setItem(LAST_CHILD_PROFILE_KEY, childProfileId);
+    }
+    if (modelSlug.trim()) window.localStorage.setItem(LAST_MODEL_KEY, modelSlug);
+  }, [householdId, childProfileId, modelSlug]);
 
   useEffect(() => {
     fetch("/api/settings/test-lab")
@@ -105,10 +173,22 @@ export default function OnboardingTestRunner() {
     (phase) => phase.id === phaseId,
   );
   const currentPhase = currentIndex >= 0 ? runnablePhases[currentIndex] : null;
+  const hasContext = Boolean(householdId && childProfileId);
+
+  function changeHousehold(nextHouseholdId: string) {
+    setHouseholdId(nextHouseholdId);
+    const firstProfile = childProfiles.find(
+      (profile) => profile.householdId === nextHouseholdId,
+    );
+    setChildProfileId(firstProfile?.id ?? "");
+    setSessionId("");
+    setResult(null);
+    setCompletedIds([]);
+  }
 
   async function createSession() {
-    if (!householdId.trim() || !childProfileId.trim() || !modelSlug.trim()) {
-      setMessage("Household ID, Child Profile ID ve model bilgisi gerekli.");
+    if (!householdId || !childProfileId || !modelSlug.trim()) {
+      setMessage("Aile alanı, çocuk profili ve model seçimi gerekli.");
       return;
     }
     setBusy(true);
@@ -230,22 +310,57 @@ export default function OnboardingTestRunner() {
             />
           </label>
           <label className={styles.field}>
-            Household ID
-            <input
+            Aile alanı
+            <select
               className={styles.input}
               value={householdId}
-              onChange={(event) => setHouseholdId(event.target.value)}
-            />
+              disabled={households.length === 0 || busy}
+              onChange={(event) => changeHousehold(event.target.value)}
+            >
+              {households.length === 0 ? (
+                <option value="">Kayıtlı aile alanı yok</option>
+              ) : null}
+              {households.map((household) => (
+                <option key={household.id} value={household.id}>
+                  {household.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className={styles.field}>
-            Child Profile ID
-            <input
+            Çocuk profili
+            <select
               className={styles.input}
               value={childProfileId}
-              onChange={(event) => setChildProfileId(event.target.value)}
-            />
+              disabled={availableProfiles.length === 0 || busy}
+              onChange={(event) => {
+                setChildProfileId(event.target.value);
+                setSessionId("");
+                setResult(null);
+                setCompletedIds([]);
+              }}
+            >
+              {availableProfiles.length === 0 ? (
+                <option value="">Kayıtlı çocuk profili yok</option>
+              ) : null}
+              {availableProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.displayName}
+                  {profile.ageBand ? ` — ${profile.ageBand}` : ""}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
+
+        {!hasContext ? (
+          <p className={styles.muted}>
+            Test için önce bir aile alanı ve çocuk profili gerekiyor. UUID
+            aramanıza gerek yok; kayıt oluşturduktan sonra bu listede otomatik
+            görünecek. <a href="/app/onboarding">Profil verisini hazırla</a>
+          </p>
+        ) : null}
+
         <details className={styles.details}>
           <summary className={styles.summary}>
             Gelişmiş: başlangıç sandbox state
@@ -260,7 +375,7 @@ export default function OnboardingTestRunner() {
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={busy}
+          disabled={busy || !hasContext || !modelSlug.trim()}
           onClick={createSession}
         >
           {sessionId ? "Test oturumunu sıfırla" : "Test oturumu oluştur"}
