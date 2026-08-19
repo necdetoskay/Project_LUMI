@@ -18,6 +18,7 @@ const parentHome = source("app/app/page.tsx");
 const dashboardClient = source("app/app/dashboard-v2-client.tsx");
 const dashboardStyles = source("app/app/dashboard-v2.module.css");
 const profileLibrary = source("app/app/profiles/profiles-client-page.tsx");
+const profileStyles = source("app/app/profiles/profiles-canonical.module.css");
 const dashboardContract = JSON.parse(
   repoSource("docs/02-product/experience/dashboard-canonical-ui-v1.json"),
 ) as {
@@ -101,7 +102,7 @@ describe("ULTEF S41 canonical parent home and child profile contract", () => {
   });
 
   it("keeps profile management routes and API contracts reachable", () => {
-    expect(profileLibrary).toContain('fetch("/api/onboarding")');
+    expect(profileLibrary).toContain('fetch("/api/onboarding",');
     expect(profileLibrary).toContain("/api/child-profiles?householdId=");
     expect(profileLibrary).toContain(
       "/app/profiles/${encodeURIComponent(profile.id)}",
@@ -127,6 +128,11 @@ describe("ULTEF S41 canonical parent home and child profile contract", () => {
     expect(dashboardStyles).toContain("@media (max-width: 860px)");
     expect(dashboardStyles).toContain("@media (max-width: 560px)");
     expect(dashboardContract.responsive.minimumWidthTest).toBe(360);
-    expect(profileLibrary).toContain("md:grid-cols-2");
+    expect(profileStyles).toContain("@media (max-width: 1120px)");
+    expect(profileStyles).toContain(
+      "grid-template-columns: repeat(2, minmax(0, 1fr))",
+    );
+    expect(profileStyles).toContain("@media (max-width: 800px)");
+    expect(profileStyles).toContain("grid-template-columns: 1fr");
   });
 });
