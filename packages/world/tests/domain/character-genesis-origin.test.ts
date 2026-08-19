@@ -20,7 +20,8 @@ function candidateWithOrigin() {
     },
     sections: {
       origin: {
-        summary: "Miro grew up near the old mill and learned to repair small tools.",
+        summary:
+          "Miro grew up near the old mill and learned to repair small tools.",
         narrative:
           "Miro has a rich canonical history. A sealed letter exists, but Miro has never seen it.",
         summaryFactIds: ["fact-home", "fact-skill"],
@@ -66,24 +67,30 @@ function candidateWithOrigin() {
 }
 
 describe("deep Character Genesis origin", () => {
-  it("builds character-visible context without exposing hidden facts or narrative", () => {
-    const candidate = candidateWithOrigin();
-    const origin = candidate.sections.origin!;
+  it(
+    "builds character-visible context without exposing hidden facts or narrative",
+    () => {
+      const candidate = candidateWithOrigin();
+      const origin = candidate.sections.origin!;
 
-    const visible = buildCharacterVisibleOriginContext(origin);
+      const visible = buildCharacterVisibleOriginContext(origin);
 
-    expect(visible.summary).toBe(origin.summary);
-    expect(visible.facts.map((fact) => fact.id)).toEqual([
-      "fact-home",
-      "fact-skill",
-    ]);
-    expect(JSON.stringify(visible)).not.toContain("sealed letter");
-    expect(visible).not.toHaveProperty("narrative");
-  });
+      expect(visible.summary).toBe(origin.summary);
+      expect(visible.facts.map((fact) => fact.id)).toEqual([
+        "fact-home",
+        "fact-skill",
+      ]);
+      expect(JSON.stringify(visible)).not.toContain("sealed letter");
+      expect(visible).not.toHaveProperty("narrative");
+    },
+  );
 
   it("rejects hidden or missing facts used to derive the operational summary", () => {
     const candidate = candidateWithOrigin();
-    candidate.sections.origin!.summaryFactIds = ["fact-letter", "fact-missing"];
+    candidate.sections.origin!.summaryFactIds = [
+      "fact-letter",
+      "fact-missing",
+    ];
 
     const validation = validateCharacterGenesisStructure(candidate);
 
