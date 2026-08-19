@@ -15,11 +15,21 @@ export const SOCIAL_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
       maxItems: 3,
       items: {
         type: "object",
-        required: ["key", "title", "characterIdentityKey", "npcs", "relationships"],
+        required: [
+          "key",
+          "title",
+          "characterIdentityKey",
+          "npcs",
+          "relationships",
+        ],
         properties: {
           key: { type: "string", minLength: 1, maxLength: 80 },
           title: { type: "string", minLength: 1, maxLength: 120 },
-          characterIdentityKey: { type: "string", minLength: 1, maxLength: 120 },
+          characterIdentityKey: {
+            type: "string",
+            minLength: 1,
+            maxLength: 120,
+          },
           npcs: {
             type: "array",
             maxItems: 6,
@@ -60,7 +70,11 @@ export const SOCIAL_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                 },
                 personality: {
                   type: "object",
-                  required: ["traits", "interactionStyle", "futureInteractionPotential"],
+                  required: [
+                    "traits",
+                    "interactionStyle",
+                    "futureInteractionPotential",
+                  ],
                   properties: {
                     traits: {
                       type: "array",
@@ -97,8 +111,16 @@ export const SOCIAL_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                 "rationale",
               ],
               properties: {
-                fromIdentityKey: { type: "string", minLength: 1, maxLength: 120 },
-                toIdentityKey: { type: "string", minLength: 1, maxLength: 120 },
+                fromIdentityKey: {
+                  type: "string",
+                  minLength: 1,
+                  maxLength: 120,
+                },
+                toIdentityKey: {
+                  type: "string",
+                  minLength: 1,
+                  maxLength: 120,
+                },
                 dimension: {
                   type: "string",
                   enum: [
