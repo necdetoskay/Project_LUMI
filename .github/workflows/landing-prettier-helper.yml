@@ -1,0 +1,41 @@
+name: Landing Prettier Helper
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/app/page.tsx"
+      - "apps/web/app/landing-v2.module.css"
+      - "apps/web/tests/landing-premium-real-ui.contract.test.ts"
+      - ".github/workflows/landing-prettier-helper.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format landing files
+        run: pnpm exec prettier --write apps/web/app/page.tsx apps/web/app/landing-v2.module.css apps/web/tests/landing-premium-real-ui.contract.test.ts
+      - name: Emit formatted files
+        shell: bash
+        run: |
+          echo '===PAGE_TSX_BASE64==='
+          base64 -w0 apps/web/app/page.tsx
+          echo
+          echo '===CSS_BASE64==='
+          base64 -w0 apps/web/app/landing-v2.module.css
+          echo
+          echo '===TEST_BASE64==='
+          base64 -w0 apps/web/tests/landing-premium-real-ui.contract.test.ts
+          echo
+          echo '===END_FORMATTED_FILES==='
