@@ -701,7 +701,7 @@ function ProfileCard({
             characterId={profile.primaryCharacter.id}
             householdId={householdId}
             characterName={profile.primaryCharacter.name}
-            className={styles.characterImage}
+            className={styles.characterImage!}
             sizes="(min-width: 1120px) 28vw, (min-width: 800px) 44vw, 100vw"
             variant="body-three-quarter"
           />
