@@ -163,7 +163,11 @@ function socialGenesisSpec(): OnboardingSuggestionGenerationSpec<SocialGenesisSu
     promptKey: SOCIAL_GENESIS_PROMPT_KEY,
     taskType: "character_genesis_social",
     summaryGuard(summary) {
-      if (!summary.characterIdentity || !getOrigin(summary) || !getTraits(summary)) {
+      if (
+        !summary.characterIdentity ||
+        !getOrigin(summary) ||
+        !getTraits(summary)
+      ) {
         throw new Error("SOCIAL_GENESIS_CONTEXT_REQUIRED");
       }
     },
@@ -191,7 +195,9 @@ function getTraits(summary: Record<string, unknown>): object | null {
   return genesis?.sections?.traits ?? null;
 }
 
-function pickValidatedSocialGenesis(validated: unknown): SocialGenesisSuggestion[] {
+function pickValidatedSocialGenesis(
+  validated: unknown,
+): SocialGenesisSuggestion[] {
   const suggestions = pickSuggestionArray<SocialGenesisSuggestion>(validated);
   for (const suggestion of suggestions) {
     const validation = validateSocialGenesisSuggestion(suggestion);
@@ -244,7 +250,8 @@ export function validateSocialGenesisSuggestion(
   if (suggestion.npcs.length > 6) {
     issues.push({
       code: "SOCIAL_GENESIS_DENSITY_HIGH",
-      message: "Initial social graph should normally stay at six significant NPCs or fewer",
+      message:
+        "Initial social graph should normally stay at six significant NPCs or fewer",
       severity: "warning",
     });
   }
