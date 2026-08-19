@@ -1,3 +1,4 @@
+# Main pushes deploy the current main SHA to Vercel production.
 name: Vercel Deploy
 
 on:
