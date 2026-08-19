@@ -67,6 +67,7 @@ export default function ProfilesClientPage() {
   const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
     null,
   );
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -179,6 +180,7 @@ export default function ProfilesClientPage() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setDeleteTarget(null);
+        setDeleteConfirm("");
         setDeleteError(null);
       }
     };
@@ -225,8 +227,12 @@ export default function ProfilesClientPage() {
     });
   }, [ageSort, profiles, query, storyFilter]);
 
+  const deleteConfirmMatches =
+    deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;
+
   async function handleDelete(mode: DeleteMode) {
     if (!deleteTarget || !householdId) return;
+    if (mode === "permanent" && !deleteConfirmMatches) return;
 
     setDeletingMode(mode);
     setDeleteError(null);
@@ -257,6 +263,7 @@ export default function ProfilesClientPage() {
         current.filter((profile) => profile.id !== deleteTarget.id),
       );
       setDeleteTarget(null);
+      setDeleteConfirm("");
     } catch {
       setDeleteError("İşlem başarısız oldu. Biraz sonra tekrar deneyin.");
     } finally {
@@ -462,6 +469,7 @@ export default function ProfilesClientPage() {
                     index={index}
                     onManage={() => {
                       setDeleteTarget(profile);
+                      setDeleteConfirm("");
                       setDeleteError(null);
                     }}
                   />
@@ -501,6 +509,7 @@ export default function ProfilesClientPage() {
           aria-labelledby="delete-dialog-title"
           onClick={() => {
             setDeleteTarget(null);
+            setDeleteConfirm("");
             setDeleteError(null);
           }}
         >
@@ -520,6 +529,46 @@ export default function ProfilesClientPage() {
                 </p>
               </div>
             </div>
+            <label
+              style={{
+                display: "grid",
+                gap: 8,
+                marginTop: 18,
+              }}
+            >
+              <span style={{ color: "#6d6674", fontSize: 12, lineHeight: 1.5 }}>
+                Kalıcı silme için profil adını birebir yazın:
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: 2,
+                    color: "#2c2732",
+                    fontWeight: 850,
+                  }}
+                >
+                  {deleteTarget.displayName}
+                </strong>
+              </span>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(event) => setDeleteConfirm(event.target.value)}
+                placeholder={deleteTarget.displayName}
+                disabled={deletingMode !== null}
+                autoComplete="off"
+                style={{
+                  minHeight: 42,
+                  border: "1px solid #e6e5ed",
+                  borderRadius: 10,
+                  background: "#fff",
+                  padding: "0 12px",
+                  color: "#17151e",
+                  font: "inherit",
+                  fontSize: 13,
+                  outline: "none",
+                }}
+              />
+            </label>
             {deleteError ? (
               <p className={styles.errorText}>{deleteError}</p>
             ) : null}
@@ -535,7 +584,7 @@ export default function ProfilesClientPage() {
               <button
                 className={styles.deleteButton}
                 type="button"
-                disabled={deletingMode !== null}
+                disabled={deletingMode !== null || !deleteConfirmMatches}
                 onClick={() => void handleDelete("permanent")}
               >
                 {deletingMode === "permanent"
@@ -548,6 +597,7 @@ export default function ProfilesClientPage() {
                 disabled={deletingMode !== null}
                 onClick={() => {
                   setDeleteTarget(null);
+                  setDeleteConfirm("");
                   setDeleteError(null);
                 }}
               >
