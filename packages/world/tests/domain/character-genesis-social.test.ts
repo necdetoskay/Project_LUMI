@@ -6,7 +6,7 @@ import {
   deriveDirectionalRelationships,
   validateGenesisSocialState,
   type GenesisSocialNpcCandidate,
-} from "../../src/domain";
+} from "../../src/domain/character-genesis-social";
 
 const candidates: GenesisSocialNpcCandidate[] = [
   {
@@ -80,8 +80,12 @@ describe("Character Genesis social graph", () => {
     });
 
     expect(edges).toHaveLength(2);
-    const forward = edges.find((edge) => edge.fromCandidateId === "character-mira");
-    const reverse = edges.find((edge) => edge.toCandidateId === "character-mira");
+    const forward = edges.find(
+      (edge) => edge.fromCandidateId === "character-mira",
+    );
+    const reverse = edges.find(
+      (edge) => edge.toCandidateId === "character-mira",
+    );
     expect(forward?.trust).toBeGreaterThan(reverse?.trust ?? 1);
   });
 
