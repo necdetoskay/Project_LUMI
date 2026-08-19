@@ -7,6 +7,7 @@ import { getOnboardingState } from "@lumi/profiles/application";
 import CharacterDnaTestPanel from "./character-dna-test-panel";
 import DeepOriginTestPanel from "./deep-origin-test-panel";
 import OnboardingTestRunner from "./onboarding-test-runner";
+import SocialGenesisTestPanel from "./social-genesis-test-panel";
 
 export default async function TestLabPage() {
   const parent = await getParentFromSessionToken(
@@ -35,6 +36,7 @@ export default async function TestLabPage() {
       />
       <DeepOriginTestPanel />
       <CharacterDnaTestPanel />
+      <SocialGenesisTestPanel />
     </>
   );
 }
