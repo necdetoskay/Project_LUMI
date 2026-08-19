@@ -42,6 +42,12 @@ function validOrigin(): DeepCharacterOriginSuggestion {
       },
     ],
     summaryFactIds: ["fact-home", "fact-skill", "fact-lina"],
+    narrativeFactIds: [
+      "fact-home",
+      "fact-skill",
+      "fact-lina",
+      "fact-letter",
+    ],
     unresolvedQuestions: [
       {
         id: "question-letter",
@@ -85,6 +91,18 @@ describe("deep character origin validation", () => {
     expect(evidence.valid).toBe(false);
     expect(evidence.issues.map((issue) => issue.code)).toContain(
       "DEEP_ORIGIN_SUMMARY_HIDDEN_FACT",
+    );
+  });
+
+  it("requires operational summary facts to belong to the narrative fact set", () => {
+    const origin = validOrigin();
+    origin.narrativeFactIds = ["fact-home", "fact-letter"];
+
+    const evidence = validateDeepCharacterOrigin(origin);
+
+    expect(evidence.valid).toBe(false);
+    expect(evidence.issues.map((issue) => issue.code)).toContain(
+      "DEEP_ORIGIN_SUMMARY_FACT_NOT_IN_NARRATIVE",
     );
   });
 
