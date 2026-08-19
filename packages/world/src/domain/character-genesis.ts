@@ -4,7 +4,8 @@ export const CHARACTER_GENESIS_STATUSES = [
   "committed",
 ] as const;
 
-export type CharacterGenesisStatus = (typeof CHARACTER_GENESIS_STATUSES)[number];
+export type CharacterGenesisStatus =
+  (typeof CHARACTER_GENESIS_STATUSES)[number];
 
 export const GENESIS_VISIBILITIES = [
   "user_visible",
@@ -187,7 +188,9 @@ function requireNonEmpty(value: string, field: string): void {
   }
 }
 
-function cloneSections(sections: CharacterGenesisSections): CharacterGenesisSections {
+function cloneSections(
+  sections: CharacterGenesisSections,
+): CharacterGenesisSections {
   return structuredClone(sections);
 }
 
@@ -283,7 +286,10 @@ export function validateCharacterGenesisStructure(
   }
 
   for (const relationship of social?.relationships ?? []) {
-    if (!npcIds.has(relationship.fromCandidateId) && relationship.fromCandidateId !== candidate.characterId) {
+    if (
+      !npcIds.has(relationship.fromCandidateId) &&
+      relationship.fromCandidateId !== candidate.characterId
+    ) {
       issues.push({
         code: "GENESIS_RELATIONSHIP_FROM_MISSING",
         message: `Relationship source ${relationship.fromCandidateId} does not exist`,
@@ -291,7 +297,10 @@ export function validateCharacterGenesisStructure(
         severity: "error",
       });
     }
-    if (!npcIds.has(relationship.toCandidateId) && relationship.toCandidateId !== candidate.characterId) {
+    if (
+      !npcIds.has(relationship.toCandidateId) &&
+      relationship.toCandidateId !== candidate.characterId
+    ) {
       issues.push({
         code: "GENESIS_RELATIONSHIP_TO_MISSING",
         message: `Relationship target ${relationship.toCandidateId} does not exist`,
@@ -324,8 +333,14 @@ export function validateCharacterGenesisStructure(
   }
 
   const factRefs: Array<{ path: string; ids: string[] }> = [
-    ...(social?.npcs.map((npc) => ({ path: `npc:${npc.candidateId}`, ids: npc.originFactIds })) ?? []),
-    ...(inventory?.items.map((item) => ({ path: `item:${item.candidateId}`, ids: item.originFactIds })) ?? []),
+    ...(social?.npcs.map((npc) => ({
+      path: `npc:${npc.candidateId}`,
+      ids: npc.originFactIds,
+    })) ?? []),
+    ...(inventory?.items.map((item) => ({
+      path: `item:${item.candidateId}`,
+      ids: item.originFactIds,
+    })) ?? []),
     ...(candidate.sections.memoryAndThreads?.memories.map((memory) => ({
       path: `memory:${memory.candidateId}`,
       ids: memory.originFactIds,
