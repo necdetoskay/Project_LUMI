@@ -1,15 +1,15 @@
 name: Temporary Profiles PR 353 Patcher
 
 on:
-  pull_request_target:
-    types: [edited]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.event.pull_request.number == 353 && github.actor != 'github-actions[bot]'
+    if: github.event.issue.number == 353 && contains(github.event.comment.body, '/apply-profiles-delete-confirm-fix')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,139 +45,139 @@ jobs:
 
           replace_once(
               '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
-              null,
-            );
-            const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);'''.replace("            ", ""),
+    null,
+  );
+  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);''',
               '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
-              null,
-            );
-            const [deleteConfirm, setDeleteConfirm] = useState("");
-            const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);'''.replace("            ", ""),
+    null,
+  );
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);''',
               "delete state",
           )
 
           replace_once(
               '''      if (event.key === "Escape") {
-                setDeleteTarget(null);
-                setDeleteError(null);
-              }'''.replace("        ", ""),
+        setDeleteTarget(null);
+        setDeleteError(null);
+      }''',
               '''      if (event.key === "Escape") {
-                setDeleteTarget(null);
-                setDeleteConfirm("");
-                setDeleteError(null);
-              }'''.replace("        ", ""),
+        setDeleteTarget(null);
+        setDeleteConfirm("");
+        setDeleteError(null);
+      }''',
               "escape reset",
           )
 
           replace_once(
               '''  }, [ageSort, profiles, query, storyFilter]);
 
-            async function handleDelete'''.replace("            ", ""),
+  async function handleDelete''',
               '''  }, [ageSort, profiles, query, storyFilter]);
 
-            const deleteConfirmMatches =
-              deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;
+  const deleteConfirmMatches =
+    deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;
 
-            async function handleDelete'''.replace("            ", ""),
+  async function handleDelete''',
               "delete confirmation predicate",
           )
 
           replace_once(
               '''  async function handleDelete(mode: DeleteMode) {
-                if (!deleteTarget || !householdId) return;
+    if (!deleteTarget || !householdId) return;
 
-                setDeletingMode(mode);'''.replace("              ", ""),
+    setDeletingMode(mode);''',
               '''  async function handleDelete(mode: DeleteMode) {
-                if (!deleteTarget || !householdId) return;
-                if (mode === "permanent" && !deleteConfirmMatches) return;
+    if (!deleteTarget || !householdId) return;
+    if (mode === "permanent" && !deleteConfirmMatches) return;
 
-                setDeletingMode(mode);'''.replace("              ", ""),
+    setDeletingMode(mode);''',
               "delete guard",
           )
 
           replace_once(
               '''      setDeleteTarget(null);
-            } catch {'''.replace("      ", ""),
+    } catch {''',
               '''      setDeleteTarget(null);
-            setDeleteConfirm("");
-            } catch {'''.replace("      ", ""),
+      setDeleteConfirm("");
+    } catch {''',
               "delete success reset",
           )
 
           replace_once(
               '''                    onManage={() => {
-                                setDeleteTarget(profile);
-                                setDeleteError(null);
-                              }}'''.replace("                      ", ""),
+                      setDeleteTarget(profile);
+                      setDeleteError(null);
+                    }}''',
               '''                    onManage={() => {
-                                setDeleteTarget(profile);
-                                setDeleteConfirm("");
-                                setDeleteError(null);
-                              }}'''.replace("                      ", ""),
+                      setDeleteTarget(profile);
+                      setDeleteConfirm("");
+                      setDeleteError(null);
+                    }}''',
               "manage reset",
           )
 
           replace_once(
               '''          onClick={() => {
-                    setDeleteTarget(null);
-                    setDeleteError(null);
-                  }}'''.replace("          ", ""),
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }}''',
               '''          onClick={() => {
-                    setDeleteTarget(null);
-                    setDeleteConfirm("");
-                    setDeleteError(null);
-                  }}'''.replace("          ", ""),
+            setDeleteTarget(null);
+            setDeleteConfirm("");
+            setDeleteError(null);
+          }}''',
               "backdrop reset",
           )
 
           replace_once(
               '''            {deleteError ? (
-                    <p className={styles.errorText}>{deleteError}</p>
-                  ) : null}
-                  <div className={styles.modalActions}>'''.replace("            ", ""),
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
+            <div className={styles.modalActions}>''',
               '''            <label className={styles.confirmField}>
-                    <span>
-                      Kalıcı silme için profil adını birebir yazın:
-                      <strong>{deleteTarget.displayName}</strong>
-                    </span>
-                    <input
-                      type="text"
-                      value={deleteConfirm}
-                      onChange={(event) => setDeleteConfirm(event.target.value)}
-                      placeholder={deleteTarget.displayName}
-                      disabled={deletingMode !== null}
-                      autoComplete="off"
-                    />
-                  </label>
-                  {deleteError ? (
-                    <p className={styles.errorText}>{deleteError}</p>
-                  ) : null}
-                  <div className={styles.modalActions}>'''.replace("            ", ""),
+              <span>
+                Kalıcı silme için profil adını birebir yazın:
+                <strong>{deleteTarget.displayName}</strong>
+              </span>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(event) => setDeleteConfirm(event.target.value)}
+                placeholder={deleteTarget.displayName}
+                disabled={deletingMode !== null}
+                autoComplete="off"
+              />
+            </label>
+            {deleteError ? (
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
+            <div className={styles.modalActions}>''',
               "confirmation field",
           )
 
           replace_once(
               '''                className={styles.deleteButton}
-                        type="button"
-                        disabled={deletingMode !== null}
-                        onClick={() => void handleDelete("permanent")}'''.replace("                ", ""),
+                type="button"
+                disabled={deletingMode !== null}
+                onClick={() => void handleDelete("permanent")}''',
               '''                className={styles.deleteButton}
-                        type="button"
-                        disabled={deletingMode !== null || !deleteConfirmMatches}
-                        onClick={() => void handleDelete("permanent")}'''.replace("                ", ""),
+                type="button"
+                disabled={deletingMode !== null || !deleteConfirmMatches}
+                onClick={() => void handleDelete("permanent")}''',
               "permanent button guard",
           )
 
           replace_once(
               '''                onClick={() => {
-                          setDeleteTarget(null);
-                          setDeleteError(null);
-                        }}'''.replace("                ", ""),
+                  setDeleteTarget(null);
+                  setDeleteError(null);
+                }}''',
               '''                onClick={() => {
-                          setDeleteTarget(null);
-                          setDeleteConfirm("");
-                          setDeleteError(null);
-                        }}'''.replace("                ", ""),
+                  setDeleteTarget(null);
+                  setDeleteConfirm("");
+                  setDeleteError(null);
+                }}''',
               "cancel reset",
           )
 
