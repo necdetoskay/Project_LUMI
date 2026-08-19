@@ -31,6 +31,7 @@ export const DEEP_CHARACTER_ORIGIN_OUTPUT_SCHEMA: Record<string, unknown> = {
           "narrative",
           "facts",
           "summaryFactIds",
+          "narrativeFactIds",
           "unresolvedQuestions",
           "storyHooks",
         ],
@@ -70,6 +71,11 @@ export const DEEP_CHARACTER_ORIGIN_OUTPUT_SCHEMA: Record<string, unknown> = {
             },
           },
           summaryFactIds: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string" },
+          },
+          narrativeFactIds: {
             type: "array",
             minItems: 1,
             items: { type: "string" },
@@ -150,6 +156,8 @@ BAĞLAM:
 KURALLAR:
 - Normal bir karakterde yeterli malzeme varsa deep narrative yaklaşık 300-500 kelime derinliğinde olabilir; bunu katı kelime hedefi yapma, metni doldurma veya sırf limite uymak için kesme.
 - summary ve narrative aynı canonical facts kümesinden türemeli; birbiriyle çelişmemeli.
+- narrativeFactIds narrative içinde kullanılan canonical fact'lerin id'lerini içersin.
+- summaryFactIds narrativeFactIds'in alt kümesi olsun ve operational summary'nin dayandığı fact'leri açıkça göstersin.
 - facts bağımsız olarak geri çağrılabilecek kadar atomik ve anlamlı olsun.
 - Önemli kişiler, yerler, geçmiş olaylar, beceriler, tercihler ve eşyalar yalnız gerçekten uygunsa yer alsın; her kategoriyi zorla doldurma.
 - En az bir anlamlı unresolved question bırak. Her şeyi açıklama.
