@@ -73,6 +73,7 @@ export type {
   GenesisValidationIssue,
   GenesisValidationResult,
 } from "./character-genesis";
+export type { GenesisDeepOriginState } from "./character-genesis-origin";
 
 export {
   WORLD_LIFECYCLE_STATUSES,
