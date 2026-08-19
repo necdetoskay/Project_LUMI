@@ -67,6 +67,7 @@ export interface DeepCharacterOriginSuggestion {
   narrative: string;
   facts: DeepOriginFact[];
   summaryFactIds: string[];
+  narrativeFactIds: string[];
   unresolvedQuestions: DeepOriginQuestion[];
   storyHooks: DeepOriginHook[];
 }
@@ -203,6 +204,18 @@ export function validateDeepCharacterOrigin(
     factById.set(fact.id, fact);
   }
 
+  const narrativeFactIds = new Set(suggestion.narrativeFactIds);
+  for (const factId of suggestion.narrativeFactIds) {
+    if (!factIds.has(factId)) {
+      issues.push({
+        code: "DEEP_ORIGIN_NARRATIVE_FACT_MISSING",
+        message: `Narrative references missing fact ${factId}`,
+        path: "narrativeFactIds",
+        severity: "error",
+      });
+    }
+  }
+
   for (const factId of suggestion.summaryFactIds) {
     const fact = factById.get(factId);
     if (!fact) {
@@ -213,6 +226,14 @@ export function validateDeepCharacterOrigin(
         severity: "error",
       });
       continue;
+    }
+    if (!narrativeFactIds.has(factId)) {
+      issues.push({
+        code: "DEEP_ORIGIN_SUMMARY_FACT_NOT_IN_NARRATIVE",
+        message: `Summary fact ${factId} must also be part of the canonical narrative fact set`,
+        path: "summaryFactIds",
+        severity: "error",
+      });
     }
     if (
       fact.visibility !== "user_visible" &&
