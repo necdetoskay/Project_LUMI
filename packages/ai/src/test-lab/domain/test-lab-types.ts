@@ -36,6 +36,7 @@ export interface TestRunExecutionSnapshot {
     user: string;
   } | null;
   finalProviderRequest: JsonObject | null;
+  rawProviderOutput?: string | null;
   renderedPromptFingerprint: string | null;
   contextFingerprint: string | null;
 }

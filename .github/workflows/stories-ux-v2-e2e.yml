@@ -22,7 +22,7 @@ permissions:
 jobs:
   browser-e2e:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17
@@ -73,6 +73,16 @@ jobs:
         run: |
           pnpm --filter @lumi/profiles typecheck
           pnpm --filter @lumi/web typecheck
+      - name: Harden Ubuntu apt mirror for Playwright
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            printf 'https://archive.ubuntu.com/ubuntu\n' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          sudo apt-get \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20 \
+            update
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
       - name: Run Stories UX v2 browser journey

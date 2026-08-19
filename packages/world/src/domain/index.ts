@@ -44,6 +44,7 @@ export {
   createCharacterGenesisPackage,
   selectCharacterGenesisPackage,
   markCharacterGenesisCommitted,
+  buildCharacterVisibleOriginContext,
   validateCharacterGenesisStructure,
 } from "./character-genesis";
 export type {
@@ -51,7 +52,10 @@ export type {
   GenesisVisibility,
   GenesisProvenance,
   GenesisOriginFact,
+  GenesisOriginQuestion,
+  GenesisOriginHook,
   GenesisOriginState,
+  CharacterVisibleGenesisOriginContext,
   GenesisTraitState,
   GenesisNpcState,
   GenesisRelationshipState,
@@ -69,6 +73,7 @@ export type {
   GenesisValidationIssue,
   GenesisValidationResult,
 } from "./character-genesis";
+export type { GenesisDeepOriginState } from "./character-genesis-origin";
 
 export {
   WORLD_LIFECYCLE_STATUSES,

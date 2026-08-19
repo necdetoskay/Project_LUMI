@@ -4,6 +4,7 @@ import { getParentSessionCookie } from "@/lib/auth/http";
 import { getParentFromSessionToken } from "@/lib/auth/service";
 import { getOnboardingState } from "@lumi/profiles/application";
 
+import DeepOriginTestPanel from "./deep-origin-test-panel";
 import OnboardingTestRunner from "./onboarding-test-runner";
 
 export default async function TestLabPage() {
@@ -26,9 +27,12 @@ export default async function TestLabPage() {
     : [];
 
   return (
-    <OnboardingTestRunner
-      households={households}
-      childProfiles={childProfiles}
-    />
+    <>
+      <OnboardingTestRunner
+        households={households}
+        childProfiles={childProfiles}
+      />
+      <DeepOriginTestPanel />
+    </>
   );
 }
