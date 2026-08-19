@@ -68,13 +68,7 @@ export const CHARACTER_DNA_OUTPUT_SCHEMA: Record<string, unknown> = {
             maxItems: 8,
             items: {
               type: "object",
-              required: [
-                "id",
-                "kind",
-                "context",
-                "intensity",
-                "sourceFactIds",
-              ],
+              required: ["id", "kind", "context", "intensity", "sourceFactIds"],
               properties: {
                 id: { type: "string", minLength: 1, maxLength: 100 },
                 kind: {
