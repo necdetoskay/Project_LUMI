@@ -135,3 +135,4 @@ export type {
   InventoryEventType,
   InventoryDomainEvent,
 } from "./inventory-events";
+export * from "./inventory-genesis";
