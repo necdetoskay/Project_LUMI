@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    if: startsWith(github.event.head_commit.message, 'deploy(landing): production')
+    if: ${{ startsWith(github.event.head_commit.message, 'deploy(landing): production') }}
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
