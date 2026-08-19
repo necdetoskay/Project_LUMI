@@ -172,7 +172,8 @@ function getCharacterOrigin(summary: Record<string, unknown>): object | null {
 function pickValidatedCharacterDnaEvidence(
   validated: unknown,
 ): CharacterDnaEvidenceSuggestion[] {
-  const suggestions = pickSuggestionArray<CharacterDnaEvidenceSuggestion>(validated);
+  const suggestions =
+    pickSuggestionArray<CharacterDnaEvidenceSuggestion>(validated);
   for (const suggestion of suggestions) {
     const evidence = validateCharacterDnaEvidenceSuggestion(suggestion);
     if (!evidence.valid) {
