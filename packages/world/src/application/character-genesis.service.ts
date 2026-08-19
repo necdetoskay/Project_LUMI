@@ -71,7 +71,9 @@ export class CharacterGenesisCoordinator {
       throw new Error("Only the selected genesis package can be committed");
     }
 
-    const siblings = await this.repository.listByCharacter(candidate.characterId);
+    const siblings = await this.repository.listByCharacter(
+      candidate.characterId,
+    );
     const selectedSiblings = siblings.filter(
       (entry) => entry.status === "selected",
     );
