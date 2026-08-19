@@ -24,7 +24,7 @@ describe("Character Genesis Deep Origin Test Lab contract", () => {
 
   it("previews and runs the production deep-origin prompt in sandbox", () => {
     const panel = readApp("settings/test-lab/deep-origin-test-panel.tsx");
-    const route = readApp("../../api/settings/test-lab/genesis/origin/route.ts");
+    const route = readApp("../api/settings/test-lab/genesis/origin/route.ts");
 
     expect(panel).toContain('action: "preview"');
     expect(panel).toContain('action: "run"');
@@ -36,7 +36,7 @@ describe("Character Genesis Deep Origin Test Lab contract", () => {
 
   it("persists prompt, raw output, parsed candidates, validation, tokens and cost evidence", () => {
     const panel = readApp("settings/test-lab/deep-origin-test-panel.tsx");
-    const route = readApp("../../api/settings/test-lab/genesis/origin/route.ts");
+    const route = readApp("../api/settings/test-lab/genesis/origin/route.ts");
     const types = readProject(
       "packages/ai/src/test-lab/domain/test-lab-types.ts",
     );
@@ -51,7 +51,7 @@ describe("Character Genesis Deep Origin Test Lab contract", () => {
   });
 
   it("never commits deep-origin generation directly to the canonical universe", () => {
-    const route = readApp("../../api/settings/test-lab/genesis/origin/route.ts");
+    const route = readApp("../api/settings/test-lab/genesis/origin/route.ts");
 
     expect(route).toContain("recordRunCandidates");
     expect(route).not.toContain("canonicalCommit");
