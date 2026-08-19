@@ -97,6 +97,15 @@ export type {
   CharacterTraitValidationIssue,
   CharacterTraitValidationResult,
 } from "./character-genesis-traits";
+export {
+  CHARACTER_TRAIT_STRENGTH_LEVELS,
+  normalizeSemanticCharacterTraitEvidence,
+  validateCharacterTraitEvidenceReferences,
+} from "./character-genesis-trait-evidence";
+export type {
+  CharacterTraitStrengthLevel,
+  SemanticCharacterTraitEvidence,
+} from "./character-genesis-trait-evidence";
 
 export {
   WORLD_LIFECYCLE_STATUSES,
