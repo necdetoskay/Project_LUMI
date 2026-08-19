@@ -33,6 +33,9 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         typeof request.generationConfig?.outputLocale === "string"
           ? request.generationConfig.outputLocale
           : undefined;
+      const promptOverride = readPromptOverride(
+        request.generationConfig?.promptOverride,
+      );
       const result = await executeCharacterOnboardingTestLabPhase({
         userId: request.actor.userId,
         householdId: request.actor.householdId,
@@ -41,6 +44,7 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         parentState: request.parentState,
         modelSlug: request.modelSlug,
         ...(outputLocale ? { localeOverride: outputLocale } : {}),
+        ...(promptOverride ? { promptOverride } : {}),
         ...(request.promptVersionOverride === undefined
           ? {}
           : { promptVersionOverride: request.promptVersionOverride }),
@@ -93,6 +97,18 @@ function isCharacterOnboardingPhase(
   return CHARACTER_ONBOARDING_PHASES.has(
     phaseId as CharacterOnboardingTestLabPhase,
   );
+}
+
+function readPromptOverride(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const system = typeof record.system === "string" ? record.system : undefined;
+  const user = typeof record.user === "string" ? record.user : undefined;
+  if (!system && !user) return null;
+  return {
+    ...(system ? { system } : {}),
+    ...(user ? { user } : {}),
+  };
 }
 
 function toJsonObject(value: unknown): JsonObject {
