@@ -9,6 +9,7 @@ on:
       - apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx
       - apps/web/app/api/settings/test-lab/prompt-optimization/route.ts
       - apps/web/lib/ai/test-lab-prompt-improvement.ts
+      - apps/web/lib/ai/test-lab-prompt-improvement.test.ts
       - .github/workflows/test-lab-ui4-bind.yml
 
 permissions:
@@ -31,7 +32,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: node scripts/apply-test-lab-ui4.mjs
-      - run: pnpm exec prettier --write apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts
+      - run: pnpm exec prettier --write apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts apps/web/lib/ai/test-lab-prompt-improvement.test.ts
       - name: Commit generated binding
         run: |
           if git diff --quiet; then
@@ -40,6 +41,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts
+          git add apps/web/app/app/settings/test-lab/canonical-dashboard.tsx apps/web/app/app/settings/test-lab/canonical-dashboard.module.css apps/web/app/app/settings/test-lab/prompt-improvement-card.tsx apps/web/app/api/settings/test-lab/prompt-optimization/route.ts apps/web/lib/ai/test-lab-prompt-improvement.ts apps/web/lib/ai/test-lab-prompt-improvement.test.ts
           git commit -m "feat(test-lab): bind canonical prompt improvement card [ui4-bind]"
           git push origin HEAD:agent/test-lab-canonical-ui-4
