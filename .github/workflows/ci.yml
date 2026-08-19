@@ -37,11 +37,22 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
-      - name: Print Inventory Genesis prettier diff
+      - name: Format Inventory Genesis files
         run: |
           pnpm exec prettier --write apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
-          git diff -- apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
-          exit 1
+      - name: Upload formatted Inventory Genesis files
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-genesis-prettier
+          path: |
+            apps/web/app/api/settings/test-lab/genesis/inventory/route.ts
+            apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx
+            apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts
+            packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts
+            packages/profiles/src/application/inventory-genesis.service.ts
+            packages/profiles/src/domain/inventory-genesis.ts
+      - name: Stop after formatter export
+        run: exit 1
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
