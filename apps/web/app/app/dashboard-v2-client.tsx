@@ -92,29 +92,36 @@ export default function DashboardV2Client({
 
     async function load() {
       try {
-        const [charactersResponse, storiesResponse, worldResponse, personalizationResponse] =
-          await Promise.all([
-            fetch(
-              `/api/characters?${query}&childProfileId=${encodeURIComponent(childProfileId)}`,
-              { signal: controller.signal },
-            ),
-            fetch(
-              `/api/child-profiles/${encodeURIComponent(childProfileId)}/stories?${query}`,
-              { signal: controller.signal },
-            ),
-            fetch(
-              `/api/child-profiles/${encodeURIComponent(childProfileId)}/world?${query}`,
-              { signal: controller.signal },
-            ),
-            fetch(
-              `/api/child-profiles/${encodeURIComponent(childProfileId)}/personalization?${query}`,
-              { signal: controller.signal },
-            ),
-          ]);
+        const [
+          charactersResponse,
+          storiesResponse,
+          worldResponse,
+          personalizationResponse,
+        ] = await Promise.all([
+          fetch(
+            `/api/characters?${query}&childProfileId=${encodeURIComponent(childProfileId)}`,
+            { signal: controller.signal },
+          ),
+          fetch(
+            `/api/child-profiles/${encodeURIComponent(childProfileId)}/stories?${query}`,
+            { signal: controller.signal },
+          ),
+          fetch(
+            `/api/child-profiles/${encodeURIComponent(childProfileId)}/world?${query}`,
+            { signal: controller.signal },
+          ),
+          fetch(
+            `/api/child-profiles/${encodeURIComponent(childProfileId)}/personalization?${query}`,
+            { signal: controller.signal },
+          ),
+        ]);
 
         const characters = charactersResponse.ok
-          ? (((await charactersResponse.json()) as { characters?: CharacterInfo[] })
-              .characters ?? [])
+          ? ((
+              (await charactersResponse.json()) as {
+                characters?: CharacterInfo[];
+              }
+            ).characters ?? [])
           : [];
         const stories = storiesResponse.ok
           ? ((await storiesResponse.json()) as StoriesResponse)
@@ -123,9 +130,11 @@ export default function DashboardV2Client({
           ? (((await worldResponse.json()) as WorldResponse).world ?? null)
           : null;
         const personalization = personalizationResponse.ok
-          ? (((await personalizationResponse.json()) as {
-              personalization?: Personalization;
-            }).personalization ?? {})
+          ? ((
+              (await personalizationResponse.json()) as {
+                personalization?: Personalization;
+              }
+            ).personalization ?? {})
           : {};
 
         if (!controller.signal.aborted) {
@@ -152,10 +161,11 @@ export default function DashboardV2Client({
     launch?.world?.label ??
     null;
   const interests = useMemo(
-    () => [
-      ...(data.personalization.interests ?? []),
-      ...(data.personalization.customInterests ?? []),
-    ].slice(0, 5),
+    () =>
+      [
+        ...(data.personalization.interests ?? []),
+        ...(data.personalization.customInterests ?? []),
+      ].slice(0, 5),
     [data.personalization.customInterests, data.personalization.interests],
   );
 
@@ -276,32 +286,40 @@ export default function DashboardV2Client({
                 <div className={styles.storyMeta}>
                   {ongoing.currentSceneTitle ? (
                     <span>
-                      <span className="material-symbols-outlined">auto_stories</span>
+                      <span className="material-symbols-outlined">
+                        auto_stories
+                      </span>
                       {ongoing.currentSceneTitle}
                     </span>
                   ) : null}
                   {worldLabel ? (
                     <span>
-                      <span className="material-symbols-outlined">location_on</span>
+                      <span className="material-symbols-outlined">
+                        location_on
+                      </span>
                       {worldLabel}
                     </span>
                   ) : null}
                 </div>
                 <Link className={styles.primaryButton} href={storiesRoute}>
                   Devam Et
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                  <span className="material-symbols-outlined">
+                    arrow_forward
+                  </span>
                 </Link>
               </>
             ) : (
               <>
                 <h2>Yeni bir maceraya hazır mısın?</h2>
                 <p className={styles.recap}>
-                  Henüz devam eden bir hikâye yok. Dünyanın sunduğu gerçek macera
-                  başlangıçlarını keşfedebilirsin.
+                  Henüz devam eden bir hikâye yok. Dünyanın sunduğu gerçek
+                  macera başlangıçlarını keşfedebilirsin.
                 </p>
                 <Link className={styles.primaryButton} href={storiesRoute}>
                   Yeni Hikâye Başlat
-                  <span className="material-symbols-outlined">auto_awesome</span>
+                  <span className="material-symbols-outlined">
+                    auto_awesome
+                  </span>
                 </Link>
               </>
             )}
@@ -331,18 +349,26 @@ export default function DashboardV2Client({
             </div>
             <div className={styles.interests}>
               {interests.length > 0 ? (
-                interests.map((interest) => <span key={interest}>{interest}</span>)
+                interests.map((interest) => (
+                  <span key={interest}>{interest}</span>
+                ))
               ) : (
                 <span>İlgi alanları henüz eklenmedi</span>
               )}
             </div>
             <div className={styles.childStats}>
-              <Stat label="Hikâyeler" value={String(past.length + (ongoing ? 1 : 0))} />
+              <Stat
+                label="Hikâyeler"
+                value={String(past.length + (ongoing ? 1 : 0))}
+              />
               <Stat label="Dünya" value={data.world ? "1" : "—"} />
               <Stat label="Başarılar" value="—" />
               <Stat label="Okuma Süresi" value="—" />
             </div>
-            <Link className={styles.textLink} href={`/app/profiles/${encodeURIComponent(childProfileId)}`}>
+            <Link
+              className={styles.textLink}
+              href={`/app/profiles/${encodeURIComponent(childProfileId)}`}
+            >
               Çocuğun alanını aç →
             </Link>
           </article>
@@ -359,20 +385,32 @@ export default function DashboardV2Client({
                 <DashboardSkeleton compact />
               ) : past.length > 0 ? (
                 past.slice(0, 4).map((adventure, index) => (
-                  <article className={styles.adventureCard} key={adventure.sessionId}>
-                    <div className={`${styles.adventureArt} ${styles[`art${index % 4}`]}`} aria-hidden="true">
-                      <span className="material-symbols-outlined">auto_stories</span>
+                  <article
+                    className={styles.adventureCard}
+                    key={adventure.sessionId}
+                  >
+                    <div
+                      className={`${styles.adventureArt} ${styles[`art${index % 4}`]}`}
+                      aria-hidden="true"
+                    >
+                      <span className="material-symbols-outlined">
+                        auto_stories
+                      </span>
                     </div>
                     <div>
                       <h3>{adventure.title}</h3>
-                      <p>{adventure.semanticState === "completed" ? "Tamamlandı" : "Geçmiş macera"}</p>
+                      <p>
+                        {adventure.semanticState === "completed"
+                          ? "Tamamlandı"
+                          : "Geçmiş macera"}
+                      </p>
                     </div>
                   </article>
                 ))
               ) : (
                 <div className={styles.emptyRow}>
-                  İlk maceran burada görünecek. Hikâye dünyan hazır olduğunda yeni bir
-                  başlangıç seçebilirsin.
+                  İlk maceran burada görünecek. Hikâye dünyan hazır olduğunda
+                  yeni bir başlangıç seçebilirsin.
                 </div>
               )}
             </div>
@@ -408,7 +446,8 @@ export default function DashboardV2Client({
                   <Badge icon="auto_awesome" label="Hayal Gücü" />
                 </div>
                 <p className={styles.mutedCopy}>
-                  Başarı verileri hazır olduğunda gerçek kazanımlar burada gösterilecek.
+                  Başarı verileri hazır olduğunda gerçek kazanımlar burada
+                  gösterilecek.
                 </p>
               </article>
             </div>
@@ -425,22 +464,28 @@ export default function DashboardV2Client({
                     <span className="material-symbols-outlined">menu_book</span>
                     <p>
                       <strong>{adventure.title}</strong>
-                      <small>{adventure.semanticState === "completed" ? "Tamamlanan macera" : "Geçmiş macera"}</small>
+                      <small>
+                        {adventure.semanticState === "completed"
+                          ? "Tamamlanan macera"
+                          : "Geçmiş macera"}
+                      </small>
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
               <p className={styles.emptyActivity}>
-                Henüz doğrulanmış bir etkinlik akışı yok. LUMI burada gerçekleşmemiş
-                olayları uydurmaz.
+                Henüz doğrulanmış bir etkinlik akışı yok. LUMI burada
+                gerçekleşmemiş olayları uydurmaz.
               </p>
             )}
           </aside>
         </section>
 
         <section className={styles.newStoryBanner}>
-          <div className={styles.owl} aria-hidden="true">✦</div>
+          <div className={styles.owl} aria-hidden="true">
+            ✦
+          </div>
           <div>
             <h2>Bugün yeni bir hikâye başlatmaya ne dersin?</h2>
             <p>LUMI, yeni keşifler için burada.</p>
@@ -467,8 +512,13 @@ function SideLink({
   active?: boolean;
 }) {
   return (
-    <Link className={`${styles.navLink} ${active ? styles.navActive : ""}`} href={href}>
-      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+    <Link
+      className={`${styles.navLink} ${active ? styles.navActive : ""}`}
+      href={href}
+    >
+      <span className="material-symbols-outlined" aria-hidden="true">
+        {icon}
+      </span>
       {label}
     </Link>
   );
@@ -487,7 +537,12 @@ function QuickAction({
 }) {
   return (
     <Link className={styles.quickCard} href={href}>
-      <span className={`material-symbols-outlined ${styles.quickIcon}`} aria-hidden="true">{icon}</span>
+      <span
+        className={`material-symbols-outlined ${styles.quickIcon}`}
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
       <strong>{label}</strong>
       {detail ? <small>{detail}</small> : null}
     </Link>
@@ -506,12 +561,19 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Badge({ icon, label }: { icon: string; label: string }) {
   return (
     <div>
-      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+      <span className="material-symbols-outlined" aria-hidden="true">
+        {icon}
+      </span>
       <small>{label}</small>
     </div>
   );
 }
 
 function DashboardSkeleton({ compact = false }: { compact?: boolean }) {
-  return <div className={`${styles.skeleton} ${compact ? styles.skeletonCompact : ""}`} aria-label="Dashboard yükleniyor" />;
+  return (
+    <div
+      className={`${styles.skeleton} ${compact ? styles.skeletonCompact : ""}`}
+      aria-label="Dashboard yükleniyor"
+    />
+  );
 }

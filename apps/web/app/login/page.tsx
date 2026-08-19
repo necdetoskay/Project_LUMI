@@ -77,10 +77,7 @@ export default async function LoginPage({
             </div>
 
             {error ? (
-              <div
-                className={`${styles.message} ${styles.error}`}
-                role="alert"
-              >
+              <div className={`${styles.message} ${styles.error}`} role="alert">
                 {error}
               </div>
             ) : null}

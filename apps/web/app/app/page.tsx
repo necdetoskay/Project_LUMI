@@ -43,14 +43,20 @@ export default async function ProtectedAppPage() {
                 seni bekliyor <span>✦</span>
               </h1>
               <p>
-                Dashboard gerçek çocuk, karakter ve dünya verileriyle canlanır. Önce
-                aile alanını ve ilk çocuk profilini hazırlayalım.
+                Dashboard gerçek çocuk, karakter ve dünya verileriyle canlanır.
+                Önce aile alanını ve ilk çocuk profilini hazırlayalım.
               </p>
               <Link
                 className={styles.primaryButton}
-                href={state.hasHousehold ? "/app/onboarding?addProfile=1" : "/app/onboarding"}
+                href={
+                  state.hasHousehold
+                    ? "/app/onboarding?addProfile=1"
+                    : "/app/onboarding"
+                }
               >
-                {state.hasHousehold ? "Çocuk Profili Oluştur" : "Aile Alanını Hazırla"}
+                {state.hasHousehold
+                  ? "Çocuk Profili Oluştur"
+                  : "Aile Alanını Hazırla"}
                 <span className="material-symbols-outlined">arrow_forward</span>
               </Link>
             </div>
