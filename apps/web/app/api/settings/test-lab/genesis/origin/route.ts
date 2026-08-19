@@ -12,6 +12,7 @@ import {
 } from "@lumi/ai/test-lab";
 import {
   generateDeepCharacterOrigins,
+  previewDeepCharacterOriginPrompt,
   type DeepCharacterOriginSuggestion,
   type GenerateDeepCharacterOriginsOptions,
 } from "@lumi/profiles";
@@ -31,6 +32,7 @@ export const POST = observeHandler(async (request: Request) => {
     const coordinator = new TestLabCoordinator(repository);
 
     try {
+      const action = optionalString(body.action) ?? "run";
       const sessionId = requiredString(body.sessionId, "sessionId");
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
@@ -79,6 +81,18 @@ export const POST = observeHandler(async (request: Request) => {
           : { promptVersionOverride }),
       };
 
+      if (action === "preview") {
+        const preview = await previewDeepCharacterOriginPrompt(
+          parent.id,
+          { householdId, childProfileId },
+          options,
+        );
+        return NextResponse.json({ data: preview });
+      }
+      if (action !== "run") {
+        throw new Error(`TEST_LAB_DEEP_ORIGIN_UNKNOWN_ACTION:${action}`);
+      }
+
       const generated = await generateDeepCharacterOrigins(
         parent.id,
         { householdId, childProfileId },
@@ -108,7 +122,9 @@ export const POST = observeHandler(async (request: Request) => {
           promptVersion: generated.provenance.promptVersion,
           promptTemplateSnapshot: generated.provenance.promptTemplateSnapshot,
           renderedPrompt: generated.provenance.renderedPrompt,
-          finalProviderRequest: generated.provenance.finalProviderRequest,
+          finalProviderRequest: generated.provenance.finalProviderRequest
+            ? toJsonObject(generated.provenance.finalProviderRequest)
+            : null,
           rawProviderOutput: generated.rawProviderOutput,
           renderedPromptFingerprint: fingerprint(
             generated.provenance.renderedPrompt,
