@@ -167,16 +167,17 @@ export function createInventoryGenesisManifest(input: {
     };
     validateItemDefinitionInput(definition);
 
+    const originId =
+      suggestion.provenance.originFactIds[0] ??
+      suggestion.provenance.givenByNpcId ??
+      null;
     const instance: Omit<ItemInstanceCreateInput, "itemDefinitionId"> = {
       ...(suggestion.instanceName
         ? { instanceName: suggestion.instanceName }
         : {}),
       quantity: 1,
       originType: suggestion.originType,
-      originId:
-        suggestion.provenance.originFactIds[0] ??
-        suggestion.provenance.givenByNpcId ??
-        undefined,
+      ...(originId ? { originId } : {}),
       customProperties: {
         genesisProvenance: structuredClone(suggestion.provenance),
         inventoryGenesisRevision: "inventory-genesis.v1",
