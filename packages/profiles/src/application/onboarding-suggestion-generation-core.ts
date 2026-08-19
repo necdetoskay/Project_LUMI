@@ -123,16 +123,16 @@ export async function prepareOnboardingSuggestionPrompt<T>(
           context,
         );
   const languageInstruction = outputLanguageInstruction(effectiveLocale);
-  const baseSystemPrompt = options.promptOverride?.system ?? prompt.system;
-  const baseUserPrompt = options.promptOverride?.user ?? prompt.user;
-  const finalUserPrompt = `${baseUserPrompt}\n\n${languageInstruction}`;
+  const finalSystemPrompt = options.promptOverride?.system ?? prompt.system;
+  const finalUserPrompt =
+    options.promptOverride?.user ?? `${prompt.user}\n\n${languageInstruction}`;
 
   return {
     promptKey: prompt.promptKey,
     promptVersion: prompt.promptVersion,
     systemTemplate: prompt.systemTemplate,
     userTemplate: prompt.userTemplate,
-    systemPrompt: baseSystemPrompt,
+    systemPrompt: finalSystemPrompt,
     userPrompt: finalUserPrompt,
     outputSchema: prompt.outputSchema,
     modelOverride: options.modelOverride ?? prompt.modelOverride,
