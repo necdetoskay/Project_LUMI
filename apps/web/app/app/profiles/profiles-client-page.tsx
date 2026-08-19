@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { CanonicalCharacterImage } from "@/components/assets/canonical-character-image";
+
+import styles from "./profiles-canonical.module.css";
 
 type Profile = {
   id: string;
@@ -13,67 +17,222 @@ type Profile = {
   createdAt: string;
 };
 
+type CharacterInfo = {
+  id: string;
+  name: string;
+};
+
+type StoriesResponse = {
+  adventureHub?: {
+    ongoingAdventure?: { sessionId: string } | null;
+    pastAdventures?: Array<{ sessionId: string }>;
+  };
+};
+
+type WorldResponse = {
+  world?: { id: string } | null;
+};
+
+type EnrichedProfile = Profile & {
+  storyCount: number;
+  activeStoryCount: number;
+  characterCount: number;
+  worldReady: boolean;
+  primaryCharacter: CharacterInfo | null;
+};
+
 type DeleteMode = "archive" | "permanent";
+type StoryFilter = "all" | "has_story" | "no_story";
+type AgeSort = "default" | "age_asc" | "age_desc";
+type ViewMode = "grid" | "list";
+
+const EMPTY_ENRICHMENT = {
+  storyCount: 0,
+  activeStoryCount: 0,
+  characterCount: 0,
+  worldReady: false,
+  primaryCharacter: null,
+};
 
 export default function ProfilesClientPage() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<EnrichedProfile[]>([]);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [storyFilter, setStoryFilter] = useState<StoryFilter>("all");
+  const [ageSort, setAgeSort] = useState<AgeSort>("default");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
+    null,
+  );
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/onboarding")
-      .then((response) => response.json())
-      .then((data) => {
-        const onboarding = data.onboarding as {
-          hasHousehold: boolean;
-          householdId: string | null;
-        };
+    const controller = new AbortController();
 
-        if (!onboarding.hasHousehold || !onboarding.householdId) {
+    async function load() {
+      try {
+        const onboardingResponse = await fetch("/api/onboarding", {
+          signal: controller.signal,
+        });
+        const onboardingData = (await onboardingResponse.json()) as {
+          onboarding?: { hasHousehold: boolean; householdId: string | null };
+        };
+        const onboarding = onboardingData.onboarding;
+
+        if (!onboarding?.hasHousehold || !onboarding.householdId) {
           setError("Aile evreni henüz oluşturulmamış.");
-          setLoading(false);
-          return undefined;
+          return;
         }
 
         setHouseholdId(onboarding.householdId);
-        return fetch(
+        const profileResponse = await fetch(
           `/api/child-profiles?householdId=${encodeURIComponent(onboarding.householdId)}`,
+          { signal: controller.signal },
         );
-      })
-      .then((response) => response?.json())
-      .then((data) => {
-        if (data) {
-          setProfiles(data.profiles);
+        if (!profileResponse.ok) {
+          throw new Error("PROFILE_LIST_FAILED");
         }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Profiller şu anda yüklenemedi. Biraz sonra tekrar deneyin.");
-        setLoading(false);
-      });
+
+        const profileData = (await profileResponse.json()) as {
+          profiles?: Profile[];
+        };
+        const baseProfiles = profileData.profiles ?? [];
+
+        const enriched = await Promise.all(
+          baseProfiles.map(async (profile): Promise<EnrichedProfile> => {
+            try {
+              const householdQuery = `householdId=${encodeURIComponent(onboarding.householdId!)}`;
+              const [charactersResponse, storiesResponse, worldResponse] =
+                await Promise.all([
+                  fetch(
+                    `/api/characters?${householdQuery}&childProfileId=${encodeURIComponent(profile.id)}`,
+                    { signal: controller.signal },
+                  ),
+                  fetch(
+                    `/api/child-profiles/${encodeURIComponent(profile.id)}/stories?${householdQuery}`,
+                    { signal: controller.signal },
+                  ),
+                  fetch(
+                    `/api/child-profiles/${encodeURIComponent(profile.id)}/world?${householdQuery}`,
+                    { signal: controller.signal },
+                  ),
+                ]);
+
+              const characters = charactersResponse.ok
+                ? ((
+                    (await charactersResponse.json()) as {
+                      characters?: CharacterInfo[];
+                    }
+                  ).characters ?? [])
+                : [];
+              const stories = storiesResponse.ok
+                ? ((await storiesResponse.json()) as StoriesResponse)
+                : null;
+              const world = worldResponse.ok
+                ? (((await worldResponse.json()) as WorldResponse).world ??
+                  null)
+                : null;
+              const ongoing = stories?.adventureHub?.ongoingAdventure ?? null;
+              const past = stories?.adventureHub?.pastAdventures ?? [];
+
+              return {
+                ...profile,
+                storyCount: past.length + (ongoing ? 1 : 0),
+                activeStoryCount: ongoing ? 1 : 0,
+                characterCount: characters.length,
+                worldReady: Boolean(world),
+                primaryCharacter: characters[0] ?? null,
+              };
+            } catch {
+              return { ...profile, ...EMPTY_ENRICHMENT };
+            }
+          }),
+        );
+
+        if (!controller.signal.aborted) {
+          setProfiles(enriched);
+        }
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setError(
+            loadError instanceof Error &&
+              loadError.message === "PROFILE_LIST_FAILED"
+              ? "Profiller şu anda yüklenemedi. Biraz sonra tekrar deneyin."
+              : "Profil verileri şu anda yüklenemedi. Biraz sonra tekrar deneyin.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!deleteTarget) return;
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setDeleteTarget(null);
+        setDeleteConfirm("");
         setDeleteError(null);
       }
     };
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [deleteTarget]);
 
+  const totals = useMemo(
+    () => ({
+      profiles: profiles.length,
+      activeStories: profiles.reduce(
+        (total, profile) => total + profile.activeStoryCount,
+        0,
+      ),
+      characters: profiles.reduce(
+        (total, profile) => total + profile.characterCount,
+        0,
+      ),
+      worlds: profiles.filter((profile) => profile.worldReady).length,
+    }),
+    [profiles],
+  );
+
+  const visibleProfiles = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
+    const filtered = profiles.filter((profile) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        profile.displayName
+          .toLocaleLowerCase("tr-TR")
+          .includes(normalizedQuery);
+      const matchesStory =
+        storyFilter === "all" ||
+        (storyFilter === "has_story" && profile.storyCount > 0) ||
+        (storyFilter === "no_story" && profile.storyCount === 0);
+      return matchesQuery && matchesStory;
+    });
+
+    if (ageSort === "default") return filtered;
+    return [...filtered].sort((left, right) => {
+      const leftAge = left.ageYears ?? Number.MAX_SAFE_INTEGER;
+      const rightAge = right.ageYears ?? Number.MAX_SAFE_INTEGER;
+      return ageSort === "age_asc" ? leftAge - rightAge : rightAge - leftAge;
+    });
+  }, [ageSort, profiles, query, storyFilter]);
+
+  const deleteConfirmMatches =
+    deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;
+
   async function handleDelete(mode: DeleteMode) {
     if (!deleteTarget || !householdId) return;
+    if (mode === "permanent" && !deleteConfirmMatches) return;
 
     setDeletingMode(mode);
     setDeleteError(null);
@@ -104,7 +263,7 @@ export default function ProfilesClientPage() {
         current.filter((profile) => profile.id !== deleteTarget.id),
       );
       setDeleteTarget(null);
-      setDeleteError(null);
+      setDeleteConfirm("");
     } catch {
       setDeleteError("İşlem başarısız oldu. Biraz sonra tekrar deneyin.");
     } finally {
@@ -112,339 +271,593 @@ export default function ProfilesClientPage() {
     }
   }
 
-  if (loading) return <LoadingDisplay />;
-  if (error) return <ErrorDisplay message={error} />;
-
   return (
-    <section className="storybook-page min-h-full">
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-8 px-5 py-8 md:px-6 md:py-10">
-        <header className="flex flex-col gap-6 rounded-[2rem] border border-outline-variant/70 bg-white/80 p-7 shadow-sm md:p-9 lg:flex-row lg:items-end lg:justify-between">
+    <div className={`lumi-profiles-canonical ${styles.page}`}>
+      <style>{`
+        body:has(.lumi-profiles-canonical) { background: #f8f8fc; }
+        body:has(.lumi-profiles-canonical) > header,
+        body:has(.lumi-profiles-canonical) > footer { display: none; }
+        body:has(.lumi-profiles-canonical) > main { min-height: 100vh; }
+      `}</style>
+
+      <ProfilesSidebar />
+
+      <main className={styles.main}>
+        <div className={styles.breadcrumbs} aria-label="Sayfa konumu">
+          <Link href="/app">Ana Sayfa</Link>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            chevron_right
+          </span>
+          <strong>Çocuk Profilleri</strong>
+        </div>
+
+        <header className={styles.header}>
           <div>
-            <Link
-              className="inline-flex items-center gap-2 text-sm font-bold text-on-surface-variant transition-colors hover:text-primary"
-              href="/app"
-            >
-              <span
-                className="material-symbols-outlined text-[18px]"
-                aria-hidden="true"
-              >
-                arrow_back
-              </span>
-              Aile hikâye evine dön
-            </Link>
-            <p className="mt-6 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
-              Çocuklarım
-            </p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-on-surface md:text-4xl">
-              Her profil başka bir hikâye dünyasının kapısı
-            </h1>
-            <p className="mt-3 max-w-[44rem] text-base leading-7 text-on-surface-variant md:text-lg">
-              Çocukların temel bilgilerini burada görebilir, profillerine
-              geçebilir veya yeni bir çocuk için güvenli bir başlangıç
-              oluşturabilirsiniz.
+            <h1>Çocuk Profilleri</h1>
+            <p>
+              Çocuklarınızın profillerini yönetin, yaşayan hikâye dünyalarına
+              geçin.
             </p>
           </div>
-          <Link
-            className="storybook-button"
-            href="/app/onboarding?addProfile=1"
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              person_add
-            </span>
-            Yeni çocuk profili
-          </Link>
-        </header>
-
-        {profiles.length === 0 ? (
-          <div
-            className="rounded-[2rem] border border-dashed border-outline-variant bg-white/75 px-7 py-16 text-center"
-            id="empty-state"
-          >
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary-fixed text-primary">
-              <span
-                className="material-symbols-outlined text-[30px]"
-                aria-hidden="true"
-              >
-                person_add
+          <div className={styles.headerActions}>
+            <button
+              className={styles.helpButton}
+              type="button"
+              aria-label="Profil sayfası yardımı"
+              title="Her profil kendi karakter, hikâye ve dünya verisini ayrı tutar."
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                help
               </span>
-            </div>
-            <h2 className="mt-5 text-2xl font-extrabold text-on-surface">
-              Henüz bir çocuk profili yok
-            </h2>
-            <p className="mx-auto mt-3 max-w-[36rem] text-base leading-7 text-on-surface-variant">
-              İlk profil, çocuğun yaşına ve ileride kişiselleştirilecek ilgi
-              alanlarına göre kendi hikâye dünyasını kurabilmemiz için başlangıç
-              noktasıdır.
-            </p>
+            </button>
             <Link
-              className="storybook-button mt-6"
+              className={styles.primaryButton}
               href="/app/onboarding?addProfile=1"
             >
-              İlk profili oluştur
+              <span className="material-symbols-outlined" aria-hidden="true">
+                add
+              </span>
+              Yeni Profil Ekle
             </Link>
           </div>
+        </header>
+
+        {loading ? (
+          <StateCard icon="progress_activity" title="Profiller yükleniyor" />
+        ) : error ? (
+          <StateCard
+            icon="error"
+            title="Profiller yüklenemedi"
+            message={error}
+          />
         ) : (
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">
-            <div
-              className="grid grid-cols-1 gap-5 md:grid-cols-2"
-              id="profile-container"
-            >
-              {profiles.map((profile, index) => (
-                <article
-                  key={profile.id}
-                  className="group overflow-hidden rounded-[1.8rem] border border-outline-variant/70 bg-white/85 shadow-sm transition-transform hover:-translate-y-1"
+          <>
+            <section className={styles.kpiGrid} aria-label="Profil özeti">
+              <KpiCard
+                icon="groups"
+                label="Toplam Profil"
+                value={String(totals.profiles)}
+                footnote="Aktif çocuk profilleri"
+                accent="purple"
+              />
+              <KpiCard
+                icon="check_circle"
+                label="Aktif Hikayeler"
+                value={String(totals.activeStories)}
+                footnote="Devam eden hikâye"
+                accent="green"
+              />
+              <KpiCard
+                icon="face_6"
+                label="Toplam Karakter"
+                value={String(totals.characters)}
+                footnote="Profillerdeki gerçek karakterler"
+                accent="blue"
+              />
+              <KpiCard
+                icon="public"
+                label="Hazır Dünya"
+                value={String(totals.worlds)}
+                footnote="Oluşturulmuş yaşayan dünya"
+                accent="amber"
+              />
+            </section>
+
+            <section className={styles.toolbar} aria-label="Profil araçları">
+              <label className={styles.searchBox}>
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  search
+                </span>
+                <input
+                  type="search"
+                  placeholder="Profil ara…"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  aria-label="Profil ara"
+                />
+              </label>
+              <div className={styles.toolbarSpacer} />
+              <select
+                className={styles.select}
+                value={storyFilter}
+                onChange={(event) =>
+                  setStoryFilter(event.target.value as StoryFilter)
+                }
+                aria-label="Hikâye durumuna göre filtrele"
+              >
+                <option value="all">Tümü</option>
+                <option value="has_story">Hikâyesi olan</option>
+                <option value="no_story">Henüz hikâyesi yok</option>
+              </select>
+              <select
+                className={styles.select}
+                value={ageSort}
+                onChange={(event) => setAgeSort(event.target.value as AgeSort)}
+                aria-label="Yaşa göre sırala"
+              >
+                <option value="default">Yaşa Göre</option>
+                <option value="age_asc">Küçükten büyüğe</option>
+                <option value="age_desc">Büyükten küçüğe</option>
+              </select>
+              <div className={styles.viewToggle} aria-label="Görünüm seçimi">
+                <button
+                  type="button"
+                  className={viewMode === "grid" ? styles.activeView : ""}
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Kart görünümü"
                 >
-                  <div
-                    className="relative min-h-[190px] overflow-hidden p-6"
-                    style={{
-                      background:
-                        index % 3 === 0
-                          ? "linear-gradient(145deg,#e4f3e8,#f8e7c8)"
-                          : index % 3 === 1
-                            ? "linear-gradient(145deg,#e9e0f8,#f4efd8)"
-                            : "linear-gradient(145deg,#dcecf7,#e9f1d8)",
-                    }}
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
                   >
-                    <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/55" />
-                    <div className="absolute bottom-0 left-0 right-0 h-16 rounded-t-[50%] bg-white/25" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteTarget(profile);
-                        setDeleteError(null);
-                      }}
-                      aria-label={`${profile.displayName} profilini sil veya arşivle`}
-                      title="Sil veya arşivle"
-                      className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full border border-outline-variant/60 bg-white/85 text-on-surface-variant shadow-sm transition-colors hover:bg-error-container hover:text-error focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
-                    >
-                      <span
-                        className="material-symbols-outlined text-[20px]"
-                        aria-hidden="true"
-                      >
-                        delete
-                      </span>
-                    </button>
-                    <div className="relative z-10 flex min-h-[142px] flex-col justify-between">
-                      <div className="grid h-14 w-14 place-items-center rounded-full border border-white/80 bg-white/75 text-primary shadow-sm">
-                        <span
-                          className="material-symbols-outlined text-[28px]"
-                          aria-hidden="true"
-                        >
-                          face_6
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-on-surface-variant">
-                          {profile.ageYears === null
-                            ? `Yaş grubu ${profile.ageBand}`
-                            : `${profile.ageYears} yaş`}
-                        </p>
-                        <h2 className="mt-2 text-2xl font-extrabold text-on-surface">
-                          {profile.displayName}
-                        </h2>
-                      </div>
-                    </div>
-                  </div>
+                    grid_view
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={viewMode === "list" ? styles.activeView : ""}
+                  onClick={() => setViewMode("list")}
+                  aria-label="Liste görünümü"
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
+                    view_list
+                  </span>
+                </button>
+              </div>
+            </section>
 
-                  <div className="p-5">
-                    <div className="grid grid-cols-2 gap-3 rounded-[1.2rem] bg-surface-container-low/75 p-4">
-                      <div>
-                        <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">
-                          Başlangıç
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-on-surface">
-                          {new Date(profile.createdAt).toLocaleDateString(
-                            "tr-TR",
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-on-surface-variant">
-                          Dil
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-on-surface">
-                          {profile.locale}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                      <Link
-                        className="storybook-button flex-1 justify-center"
-                        href={`/app/character-onboarding?childProfileId=${encodeURIComponent(profile.id)}`}
-                      >
-                        Hikâyeye hazırlan
-                      </Link>
-                      <Link
-                        className="storybook-button-secondary flex-1 justify-center"
-                        href={`/app/profiles/${encodeURIComponent(profile.id)}`}
-                      >
-                        Profili aç
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <aside className="rounded-[2rem] border border-outline-variant/70 bg-[#27352b] p-7 text-white shadow-sm xl:sticky xl:top-24 xl:h-fit">
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-white/60">
-                Aile özeti
-              </p>
-              <h2 className="mt-2 text-2xl font-extrabold">
-                {profiles.length} çocuk profili
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-white/75">
-                Her profil kendi karakterini, anılarını ve dünya sürekliliğini
-                ayrı tutacak şekilde ele alınır.
-              </p>
-              <div className="mt-6 rounded-[1.25rem] bg-white/10 p-4">
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/55">
-                  Son eklenen
+            {profiles.length === 0 ? (
+              <section className={styles.emptyState} id="empty-state">
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  person_add
+                </span>
+                <h2>Henüz bir çocuk profili yok</h2>
+                <p>
+                  İlk profili oluşturduğunuzda çocuğun karakteri, hikâyeleri ve
+                  yaşayan dünyası burada tek kart üzerinden yönetilecek.
                 </p>
-                <p className="mt-2 text-lg font-bold">
-                  {profiles[profiles.length - 1]?.displayName ?? "—"}
+                <Link
+                  className={styles.primaryButton}
+                  href="/app/onboarding?addProfile=1"
+                >
+                  İlk Profili Oluştur
+                </Link>
+              </section>
+            ) : visibleProfiles.length === 0 ? (
+              <section className={styles.emptyState}>
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  search_off
+                </span>
+                <h2>Bu filtreye uyan profil bulunamadı</h2>
+                <p>
+                  Arama metnini veya filtreleri değiştirerek tekrar deneyin.
+                </p>
+              </section>
+            ) : (
+              <section
+                id="profile-container"
+                className={`${styles.profileGrid} ${viewMode === "list" ? styles.listMode : ""}`}
+              >
+                {visibleProfiles.map((profile, index) => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    householdId={householdId}
+                    index={index}
+                    onManage={() => {
+                      setDeleteTarget(profile);
+                      setDeleteConfirm("");
+                      setDeleteError(null);
+                    }}
+                  />
+                ))}
+              </section>
+            )}
+
+            <section className={styles.createBanner}>
+              <div className={styles.bannerIcon} aria-hidden="true">
+                <span className="material-symbols-outlined">add_box</span>
+              </div>
+              <div>
+                <h2>Yeni bir profil oluşturun</h2>
+                <p>
+                  Her çocuk için kişiselleştirilmiş yaşayan hikâye deneyimi.
                 </p>
               </div>
               <Link
-                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-white px-5 text-sm font-extrabold text-[#27352b]"
+                className={styles.primaryButton}
                 href="/app/onboarding?addProfile=1"
               >
-                Yeni profil ekle
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  add
+                </span>
+                Yeni Profil Ekle
               </Link>
-            </aside>
-          </section>
+            </section>
+          </>
         )}
-      </div>
+      </main>
 
-      {deleteTarget && (
+      {deleteTarget ? (
         <div
+          className={styles.modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-dialog-title"
-          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
           onClick={() => {
             setDeleteTarget(null);
+            setDeleteConfirm("");
             setDeleteError(null);
           }}
         >
           <div
-            className="w-full max-w-md rounded-[1.75rem] border border-outline-variant/70 bg-white p-6 shadow-2xl"
+            className={styles.modal}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-error-container text-error">
-                <span
-                  className="material-symbols-outlined text-[26px]"
-                  aria-hidden="true"
-                >
-                  delete
-                </span>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon} aria-hidden="true">
+                <span className="material-symbols-outlined">delete</span>
               </div>
               <div>
-                <h2
-                  id="delete-dialog-title"
-                  className="text-xl font-extrabold text-on-surface"
-                >
-                  Profili sil veya arşivle
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-                  <span className="font-bold text-on-surface">
-                    {deleteTarget.displayName}
-                  </span>{" "}
-                  profiline ne yapmak istiyorsunuz?
+                <h2 id="delete-dialog-title">Profili sil veya arşivle</h2>
+                <p>
+                  <strong>{deleteTarget.displayName}</strong> profiline ne
+                  yapmak istiyorsunuz?
                 </p>
               </div>
             </div>
-
-            <div className="mt-6 flex flex-col gap-2">
+            <label
+              style={{
+                display: "grid",
+                gap: 8,
+                marginTop: 18,
+              }}
+            >
+              <span style={{ color: "#6d6674", fontSize: 12, lineHeight: 1.5 }}>
+                Kalıcı silme için profil adını birebir yazın:
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: 2,
+                    color: "#2c2732",
+                    fontWeight: 850,
+                  }}
+                >
+                  {deleteTarget.displayName}
+                </strong>
+              </span>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(event) => setDeleteConfirm(event.target.value)}
+                placeholder={deleteTarget.displayName}
+                disabled={deletingMode !== null}
+                autoComplete="off"
+                style={{
+                  minHeight: 42,
+                  border: "1px solid #e6e5ed",
+                  borderRadius: 10,
+                  background: "#fff",
+                  padding: "0 12px",
+                  color: "#17151e",
+                  font: "inherit",
+                  fontSize: 13,
+                  outline: "none",
+                }}
+              />
+            </label>
+            {deleteError ? (
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
+            <div className={styles.modalActions}>
               <button
+                className={styles.archiveButton}
                 type="button"
                 disabled={deletingMode !== null}
-                onClick={() => handleDelete("archive")}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => void handleDelete("archive")}
               >
-                <span
-                  className="material-symbols-outlined text-[18px]"
-                  aria-hidden="true"
-                >
-                  archive
-                </span>
                 {deletingMode === "archive" ? "Arşivleniyor…" : "Arşivle"}
               </button>
               <button
+                className={styles.deleteButton}
                 type="button"
-                disabled={deletingMode !== null}
-                onClick={() => handleDelete("permanent")}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-error bg-error-container/60 px-5 text-sm font-extrabold text-error transition-colors hover:bg-error-container disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={deletingMode !== null || !deleteConfirmMatches}
+                onClick={() => void handleDelete("permanent")}
               >
-                <span
-                  className="material-symbols-outlined text-[18px]"
-                  aria-hidden="true"
-                >
-                  delete_forever
-                </span>
                 {deletingMode === "permanent"
                   ? "Kalıcı olarak siliniyor…"
                   : "Kalıcı olarak sil"}
               </button>
               <button
+                className={styles.cancelButton}
                 type="button"
                 disabled={deletingMode !== null}
                 onClick={() => {
                   setDeleteTarget(null);
+                  setDeleteConfirm("");
                   setDeleteError(null);
                 }}
-                className="mt-1 inline-flex h-11 items-center justify-center rounded-full text-sm font-bold text-on-surface-variant transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Vazgeç
               </button>
             </div>
-
-            {deleteError && (
-              <p className="mt-4 rounded-xl bg-error-container/60 px-4 py-3 text-sm font-semibold leading-6 text-error">
-                {deleteError}
-              </p>
-            )}
-
-            <p className="mt-4 text-xs leading-5 text-on-surface-variant">
-              Arşivleme profili bu sayfadan gizler ve geri alınabilir. Kalıcı
-              silme, bu profille bağlantılı hikâyeleri ve dünyaları da kaldırır
-              ve geri alınamaz.
-            </p>
           </div>
         </div>
-      )}
-    </section>
+      ) : null}
+    </div>
   );
 }
 
-function LoadingDisplay() {
+function ProfilesSidebar() {
   return (
-    <section className="storybook-page min-h-full">
-      <div className="mx-auto w-full max-w-[1180px] px-5 py-10 md:px-6">
-        <div className="rounded-[2rem] border border-outline-variant/70 bg-white/80 px-7 py-10 text-on-surface-variant shadow-sm">
-          Çocukların dünyaları hazırlanıyor…
+    <aside className={styles.sidebar}>
+      <Link className={styles.brand} href="/app" aria-label="Project LUMI">
+        <span className={styles.brandMark}>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            auto_awesome
+          </span>
+        </span>
+        <span className={styles.brandText}>
+          <small>PROJECT</small>
+          <strong>LUMI</strong>
+        </span>
+      </Link>
+
+      <nav className={styles.nav} aria-label="Uygulama navigasyonu">
+        <SidebarLink icon="dashboard" label="Dashboard" href="/app" />
+        <SidebarLink
+          icon="person"
+          label="Karakter Onboarding"
+          href="/app/character-onboarding"
+        />
+        <SidebarLink icon="menu_book" label="Hikayeler" href="/app" />
+        <SidebarLink
+          icon="image"
+          label="Görsel Kütüphanesi"
+          href="/app/assets"
+        />
+        <SidebarLink
+          icon="science"
+          label="Test Lab"
+          href="/app/settings/test-lab"
+        />
+      </nav>
+
+      <div className={styles.sidebarBottom}>
+        <div className={styles.teamCard}>
+          <div className={styles.teamAvatar}>L</div>
+          <div>
+            <strong>LUMI Ekibi</strong>
+            <small>Pro Plan</small>
+          </div>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            expand_more
+          </span>
         </div>
+        <form action="/api/auth/logout" method="post">
+          <button className={styles.logoutButton} type="submit">
+            <span className="material-symbols-outlined" aria-hidden="true">
+              logout
+            </span>
+            Çıkış Yap
+          </button>
+        </form>
       </div>
-    </section>
+    </aside>
   );
 }
 
-function ErrorDisplay({ message }: { message: string }) {
+function SidebarLink({
+  icon,
+  label,
+  href,
+}: {
+  icon: string;
+  label: string;
+  href: string;
+}) {
   return (
-    <section className="storybook-page min-h-full">
-      <div className="mx-auto w-full max-w-[1180px] px-5 py-10 md:px-6">
-        <div className="rounded-[2rem] border border-error-container bg-white/85 px-7 py-10 text-error shadow-sm">
-          <p>{message}</p>
-          <Link
-            className="mt-5 inline-flex font-bold underline"
-            href="/app/onboarding?addProfile=1"
-          >
-            Kuruluma git
-          </Link>
-        </div>
+    <Link className={styles.navLink} href={href}>
+      <span className="material-symbols-outlined" aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </Link>
+  );
+}
+
+function KpiCard({
+  icon,
+  label,
+  value,
+  footnote,
+  accent,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  footnote: string;
+  accent: "purple" | "green" | "blue" | "amber";
+}) {
+  const accentClass = {
+    purple: styles.kpiPurple,
+    green: styles.kpiGreen,
+    blue: styles.kpiBlue,
+    amber: styles.kpiAmber,
+  }[accent];
+
+  return (
+    <article className={styles.kpiCard}>
+      <div className={`${styles.kpiIcon} ${accentClass}`} aria-hidden="true">
+        <span className="material-symbols-outlined">{icon}</span>
       </div>
+      <div>
+        <small>{label}</small>
+        <strong>{value}</strong>
+      </div>
+      <em>{footnote}</em>
+    </article>
+  );
+}
+
+function composeChildProfileSafeDetailPath(childProfileId: string) {
+  return `/app/profiles/${encodeURIComponent(childProfileId)}`;
+}
+
+function ProfileCard({
+  profile,
+  householdId,
+  index,
+  onManage,
+}: {
+  profile: EnrichedProfile;
+  householdId: string | null;
+  index: number;
+  onManage: () => void;
+}) {
+  const heroClass =
+    index % 3 === 1
+      ? styles.profileHeroAlt1
+      : index % 3 === 2
+        ? styles.profileHeroAlt2
+        : "";
+  const ageLabel =
+    profile.ageYears === null ? profile.ageBand : `${profile.ageYears} yaş`;
+
+  return (
+    <article className={styles.profileCard} data-profile-id={profile.id}>
+      <div className={`${styles.profileHero} ${heroClass}`}>
+        {profile.primaryCharacter ? (
+          <CanonicalCharacterImage
+            characterId={profile.primaryCharacter.id}
+            householdId={householdId}
+            characterName={profile.primaryCharacter.name}
+            className={styles.characterImage!}
+            sizes="(min-width: 1120px) 28vw, (min-width: 800px) 44vw, 100vw"
+            variant="body-three-quarter"
+          />
+        ) : (
+          <div className={styles.fallbackAvatar} aria-hidden="true">
+            <span className="material-symbols-outlined">face_6</span>
+          </div>
+        )}
+        <button
+          className={styles.cardMenu}
+          type="button"
+          aria-label={`${profile.displayName} profilini yönet`}
+          title="Sil veya arşivle"
+          onClick={onManage}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            more_vert
+          </span>
+        </button>
+      </div>
+
+      <div className={styles.cardBody}>
+        <div className={styles.cardTitleRow}>
+          <h2>{profile.displayName}</h2>
+          <span className={styles.agePill}>{ageLabel}</span>
+        </div>
+        <p className={styles.cardDescription}>
+          {profile.primaryCharacter
+            ? `${profile.primaryCharacter.name} karakteriyle yaşayan hikâye dünyasına devam edin.`
+            : "Karakterini oluşturup bu profile özel yaşayan hikâye dünyasını başlatın."}
+        </p>
+
+        <div className={styles.statsRow}>
+          <ProfileStat
+            icon="menu_book"
+            value={profile.storyCount}
+            label="Hikâye"
+          />
+          <ProfileStat
+            icon="star"
+            value={profile.characterCount}
+            label="Karakter"
+          />
+          <ProfileStat
+            icon="public"
+            value={profile.worldReady ? "Hazır" : "—"}
+            label="Dünya"
+          />
+        </div>
+
+        <Link
+          className={styles.profileButton}
+          href={composeChildProfileSafeDetailPath(profile.id)}
+        >
+          Profili Görüntüle
+          <span className="material-symbols-outlined" aria-hidden="true">
+            chevron_right
+          </span>
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function ProfileStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: string;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <div className={styles.stat}>
+      <div className={styles.statLine}>
+        <span className="material-symbols-outlined" aria-hidden="true">
+          {icon}
+        </span>
+        {value}
+      </div>
+      <div className={styles.statLabel}>{label}</div>
+    </div>
+  );
+}
+
+function StateCard({
+  icon,
+  title,
+  message,
+}: {
+  icon: string;
+  title: string;
+  message?: string;
+}) {
+  return (
+    <section className={styles.stateCard}>
+      <span className="material-symbols-outlined" aria-hidden="true">
+        {icon}
+      </span>
+      <h2>{title}</h2>
+      {message ? <p>{message}</p> : null}
     </section>
   );
 }

@@ -1,0 +1,103 @@
+{
+  "document": {
+    "name": "LUMI Profiles Canonical UI Contract",
+    "version": "1.0.0",
+    "status": "DESIGN_LOCKED",
+    "route": "/app/profiles",
+    "reference_viewport": { "width": 1400, "height": 1120 },
+    "purpose": "Çocuk Profilleri sayfasını onaylanan açık renkli Project LUMI dashboard mockup'ına mümkün olan en yakın şekilde uygulamak.",
+    "implementation_rule": "Bu sözleşme görsel hiyerarşi ve yerleşim için source-of-truth'tur. Backend semantiği korunur; sahte ürün metriği veya sahte profil verisi eklenmez."
+  },
+  "design_lock": {
+    "layout_deviation_allowed": false,
+    "section_reordering_allowed": false,
+    "fake_data_allowed": false,
+    "primary_structure": [
+      "fixed_left_sidebar",
+      "breadcrumb_and_header",
+      "four_kpi_cards",
+      "search_filter_toolbar",
+      "profile_card_grid",
+      "bottom_create_profile_banner"
+    ],
+    "acceptance": [
+      "Desktop görünümünde yaklaşık 220-245px sabit sol sidebar bulunmalı.",
+      "Sayfa açık beyaz/lavanta arka plan, beyaz kartlar ve mor primary aksiyon dili kullanmalı.",
+      "Başlık bölgesinde breadcrumb, Çocuk Profilleri başlığı, açıklama ve Yeni Profil Ekle aksiyonu aynı hiyerarşide olmalı.",
+      "Dört KPI kartı tek satırda ve eşit görsel ağırlıkta olmalı.",
+      "Arama + iki filter/sort kontrolü + grid/list görünüm kontrolleri tek toolbar satırında olmalı.",
+      "Profil kartlarında gerçek karakter görseli varsa canonical asset kullanılmalı; yoksa deterministic fallback kullanılmalı.",
+      "Kartlarda profil adı, yaş, gerçek hikâye sayısı, gerçek karakter sayısı ve gerçek dünya durumu gösterilmeli.",
+      "Silme/arşivleme mevcut işlevi korunmalı ve modal ile yapılmalı.",
+      "Footer/banner yeni profil oluşturma çağrısını tekrar etmeli.",
+      "Public site header/footer bu authenticated dashboard yüzeyinde görünmemeli."
+    ]
+  },
+  "visual_tokens": {
+    "font_family": "Plus Jakarta Sans",
+    "page_background": "#F8F8FC",
+    "surface": "#FFFFFF",
+    "text_primary": "#17151E",
+    "text_secondary": "#686878",
+    "border": "#E6E5ED",
+    "primary": "#6D32E8",
+    "primary_dark": "#5B25D6",
+    "primary_soft": "#F0E9FF",
+    "blue_soft": "#EAF3FF",
+    "green_soft": "#E8F8EF",
+    "amber_soft": "#FFF5DD",
+    "sidebar_width_px": 228,
+    "card_radius_px": 16,
+    "control_radius_px": 12,
+    "card_shadow": "0 8px 24px rgba(28,24,50,0.06)"
+  },
+  "sidebar": {
+    "brand": "PROJECT LUMI",
+    "navigation": [
+      { "label": "Dashboard", "href": "/app", "icon": "dashboard" },
+      { "label": "Karakter Onboarding", "href": "/app/character-onboarding", "icon": "person" },
+      { "label": "Hikayeler", "href": "/app", "icon": "menu_book" },
+      { "label": "Görsel Kütüphanesi", "href": "/app/assets", "icon": "image" },
+      { "label": "Test Lab", "href": "/app/settings/test-lab", "icon": "science" }
+    ],
+    "bottom": ["team_card", "logout"]
+  },
+  "header": {
+    "breadcrumb": ["Ana Sayfa", "Çocuk Profilleri"],
+    "title": "Çocuk Profilleri",
+    "subtitle": "Çocuklarınızın profillerini yönetin, yaşayan hikâye dünyalarına geçin.",
+    "primary_action": "Yeni Profil Ekle"
+  },
+  "kpis": [
+    { "key": "profile_count", "label": "Toplam Profil", "source": "childProfiles.length", "accent": "purple" },
+    { "key": "active_stories", "label": "Aktif Hikayeler", "source": "profile story hubs", "accent": "green" },
+    { "key": "character_count", "label": "Toplam Karakter", "source": "characters per child profile", "accent": "blue" },
+    { "key": "worlds_ready", "label": "Hazır Dünya", "source": "world state per child profile", "accent": "amber" }
+  ],
+  "toolbar": {
+    "search": true,
+    "story_filter": ["all", "has_story", "no_story"],
+    "age_sort": ["default", "age_asc", "age_desc"],
+    "view_modes": ["grid", "list"]
+  },
+  "profile_card": {
+    "hero": "canonical character image or deterministic fallback",
+    "fields": ["displayName", "age", "storyCount", "characterCount", "worldStatus"],
+    "actions": ["open_profile", "archive_or_delete"],
+    "no_internal_ids": true
+  },
+  "responsive": {
+    "desktop": "fixed sidebar + 3-column profile grid",
+    "tablet": "collapsible visual density + 2-column grid",
+    "mobile": "sidebar becomes horizontal/top utility; single-column cards"
+  },
+  "functional_invariants": [
+    "Existing /api/onboarding household discovery remains the authority.",
+    "Existing /api/child-profiles loading remains the authority.",
+    "Archive uses POST /api/child-profiles/archive/:id.",
+    "Permanent delete uses DELETE /api/child-profiles/:id.",
+    "No production data is invented for visual parity.",
+    "Profile cards link to /app/profiles/:childProfileId.",
+    "New profile action links to /app/onboarding?addProfile=1."
+  ]
+}
