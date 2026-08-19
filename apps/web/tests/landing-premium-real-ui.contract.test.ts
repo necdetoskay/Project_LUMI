@@ -22,7 +22,7 @@ describe("premium landing real UI contract", () => {
 
   it("uses clean standalone artwork instead of the old full-page screenshot", () => {
     expect(page).toContain('src="/landing/hero-world.webp"');
-    expect(page).toContain('src={card.image}');
+    expect(page).toContain("src={card.image}");
     expect(page).not.toContain("/api/landing-art");
     expect(styles).not.toContain("/api/landing-art");
     expect(styles).not.toContain("background-size: 100% 100%");
@@ -30,7 +30,7 @@ describe("premium landing real UI contract", () => {
   });
 
   it("makes the portal an accessible interactive entry point", () => {
-    expect(page).toContain('className={styles.portalLink}');
+    expect(page).toContain("className={styles.portalLink}");
     expect(page).toContain('aria-label="Masal dünyasına gir"');
     expect(styles).toContain(".portalLink:hover");
     expect(styles).toContain(".portalLink:focus-visible");

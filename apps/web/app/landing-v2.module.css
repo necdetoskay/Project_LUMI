@@ -10,8 +10,16 @@
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 78% 10%, rgba(118, 90, 255, 0.11), transparent 24%),
-    radial-gradient(circle at 60% 52%, rgba(79, 170, 255, 0.06), transparent 24%),
+    radial-gradient(
+      circle at 78% 10%,
+      rgba(118, 90, 255, 0.11),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 60% 52%,
+      rgba(79, 170, 255, 0.06),
+      transparent 24%
+    ),
     linear-gradient(180deg, #020718 0%, #06102a 56%, #040819 100%);
   color: var(--landing-text);
   isolation: isolate;
@@ -34,8 +42,18 @@
   opacity: 0.2;
   filter: saturate(0.82) brightness(0.72);
   mix-blend-mode: screen;
-  mask-image: radial-gradient(circle at center, #000 0%, rgba(0, 0, 0, 0.9) 44%, transparent 77%);
-  -webkit-mask-image: radial-gradient(circle at center, #000 0%, rgba(0, 0, 0, 0.9) 44%, transparent 77%);
+  mask-image: radial-gradient(
+    circle at center,
+    #000 0%,
+    rgba(0, 0, 0, 0.9) 44%,
+    transparent 77%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    #000 0%,
+    rgba(0, 0, 0, 0.9) 44%,
+    transparent 77%
+  );
 }
 
 .cornerMechanical {
@@ -651,11 +669,7 @@
 .storyImageWrap::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(8, 14, 37, 0.4),
-    transparent 42%
-  );
+  background: linear-gradient(90deg, rgba(8, 14, 37, 0.4), transparent 42%);
   pointer-events: none;
   content: "";
 }
@@ -885,11 +899,7 @@
   }
 
   .storyImageWrap::after {
-    background: linear-gradient(
-      180deg,
-      rgba(8, 14, 37, 0.25),
-      transparent 32%
-    );
+    background: linear-gradient(180deg, rgba(8, 14, 37, 0.25), transparent 32%);
   }
 
   .ambientCorner {

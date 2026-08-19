@@ -197,7 +197,9 @@ export default function HomePage() {
                 className={`${styles.featureIcon} ${styles[feature.tone]}`}
                 aria-hidden="true"
               >
-                <span className="material-symbols-outlined">{feature.icon}</span>
+                <span className="material-symbols-outlined">
+                  {feature.icon}
+                </span>
               </span>
               <div>
                 <h2>{feature.title}</h2>
@@ -236,7 +238,10 @@ export default function HomePage() {
                     href={card.href}
                     aria-label={`${card.title} bölümüne git`}
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">
+                    <span
+                      className="material-symbols-outlined"
+                      aria-hidden="true"
+                    >
                       arrow_forward
                     </span>
                   </Link>
