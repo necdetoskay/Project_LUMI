@@ -8,7 +8,7 @@ on:
       - develop
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -37,22 +37,7 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
-      - name: Commit formatted Inventory Genesis files
-        shell: bash
-        run: |
-          git fetch origin agent/inventory-genesis
-          git checkout -B agent/inventory-genesis origin/agent/inventory-genesis
-          pnpm exec prettier --write apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
-          if git diff --cached --quiet; then
-            echo "No formatter changes to commit"
-          else
-            git commit -m "style(genesis): format Inventory Genesis files"
-            git push origin HEAD:agent/inventory-genesis
-          fi
-          exit 1
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
