@@ -33,4 +33,21 @@ describe("Test Lab stage 1 contract", () => {
     expect(runner).toContain("Bu adayı seç ve sonraki aşamaya geç");
     expect(runner).not.toContain("7 / 7 seçildi");
   });
+
+  it("uses centralized application theme tokens instead of page-local colors", () => {
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+    const theme = read("settings/test-lab/test-lab-runner.module.css");
+
+    expect(runner).toContain(
+      'import styles from "./test-lab-runner.module.css"',
+    );
+    expect(runner).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(theme).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(theme).not.toMatch(/\brgba?\(/i);
+    expect(theme).not.toMatch(/\bhsla?\(/i);
+    expect(theme).toContain("var(--on-surface)");
+    expect(theme).toContain("var(--surface-container-lowest)");
+    expect(theme).toContain("var(--primary)");
+    expect(theme).toContain("var(--outline-variant)");
+  });
 });
