@@ -1,0 +1,130 @@
+import {
+  markCharacterGenesisCommitted,
+  selectCharacterGenesisPackage,
+  validateCharacterGenesisStructure,
+  type CharacterGenesisPackage,
+  type CreateCharacterGenesisPackageInput,
+  type GenesisValidationResult,
+} from "../domain/character-genesis";
+import { createCharacterGenesisPackage } from "../domain/character-genesis";
+
+export interface CharacterGenesisRepositoryPort {
+  save(candidate: CharacterGenesisPackage): Promise<void>;
+  getById(candidateId: string): Promise<CharacterGenesisPackage | null>;
+  listByCharacter(characterId: string): Promise<CharacterGenesisPackage[]>;
+  selectExclusive(
+    characterId: string,
+    selected: CharacterGenesisPackage,
+  ): Promise<void>;
+  markCommitted(candidate: CharacterGenesisPackage): Promise<void>;
+}
+
+export interface CharacterGenesisCanonicalCommitResult {
+  worldId?: string;
+  regionId?: string;
+  locationId?: string;
+  homeId?: string;
+  npcIds?: string[];
+  itemIds?: string[];
+  memoryIds?: string[];
+  threadIds?: string[];
+}
+
+export interface CharacterGenesisCanonicalCommitPort {
+  commit(
+    candidate: CharacterGenesisPackage,
+  ): Promise<CharacterGenesisCanonicalCommitResult>;
+}
+
+export interface CommitCharacterGenesisResult {
+  candidate: CharacterGenesisPackage;
+  canonical: CharacterGenesisCanonicalCommitResult;
+  validation: GenesisValidationResult;
+}
+
+export class CharacterGenesisCoordinator {
+  constructor(
+    private readonly repository: CharacterGenesisRepositoryPort,
+    private readonly canonicalCommitter: CharacterGenesisCanonicalCommitPort,
+  ) {}
+
+  async stage(
+    input: CreateCharacterGenesisPackageInput,
+  ): Promise<CharacterGenesisPackage> {
+    const candidate = createCharacterGenesisPackage(input);
+    await this.repository.save(candidate);
+    return candidate;
+  }
+
+  async select(candidateId: string): Promise<CharacterGenesisPackage> {
+    const candidate = await this.requireCandidate(candidateId);
+    const selected = selectCharacterGenesisPackage(candidate);
+
+    await this.repository.selectExclusive(candidate.characterId, selected);
+    return selected;
+  }
+
+  async commit(candidateId: string): Promise<CommitCharacterGenesisResult> {
+    const candidate = await this.requireCandidate(candidateId);
+
+    if (candidate.status !== "selected") {
+      throw new Error("Only the selected genesis package can be committed");
+    }
+
+    const siblings = await this.repository.listByCharacter(candidate.characterId);
+    const selectedSiblings = siblings.filter((entry) => entry.status === "selected");
+    if (
+      selectedSiblings.length !== 1 ||
+      selectedSiblings[0]?.id !== candidate.id
+    ) {
+      throw new Error(
+        "Genesis commit requires exactly one selected candidate for the character",
+      );
+    }
+
+    const validation = validateCharacterGenesisStructure(candidate);
+    if (!validation.valid) {
+      throw new CharacterGenesisValidationError(validation);
+    }
+
+    const canonical = await this.canonicalCommitter.commit(
+      structuredClone(candidate),
+    );
+    const committed = markCharacterGenesisCommitted(candidate);
+    await this.repository.markCommitted(committed);
+
+    return {
+      candidate: committed,
+      canonical,
+      validation,
+    };
+  }
+
+  async inspect(candidateId: string): Promise<{
+    candidate: CharacterGenesisPackage;
+    validation: GenesisValidationResult;
+  }> {
+    const candidate = await this.requireCandidate(candidateId);
+    return {
+      candidate,
+      validation: validateCharacterGenesisStructure(candidate),
+    };
+  }
+
+  private async requireCandidate(
+    candidateId: string,
+  ): Promise<CharacterGenesisPackage> {
+    const candidate = await this.repository.getById(candidateId);
+    if (!candidate) {
+      throw new Error(`Character genesis candidate ${candidateId} not found`);
+    }
+    return candidate;
+  }
+}
+
+export class CharacterGenesisValidationError extends Error {
+  constructor(public readonly validation: GenesisValidationResult) {
+    super("Character genesis package failed structural validation");
+    this.name = "CharacterGenesisValidationError";
+  }
+}
