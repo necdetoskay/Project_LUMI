@@ -18,7 +18,7 @@ describe("Deep Origin prompt contract", () => {
         string,
         Record<string, unknown>
       >
-    ).suggestions;
+    ).suggestions!;
     const item = suggestions.items as Record<string, unknown>;
     const required = item.required as string[];
 
