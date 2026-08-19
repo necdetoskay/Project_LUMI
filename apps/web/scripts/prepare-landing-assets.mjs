@@ -11,6 +11,8 @@ const LANDING_ASSETS = [
   "corner-ocean-map.webp",
   "corner-animals.webp",
 ];
+const MAX_DECODE_LAYERS = 5;
+const BASE64_TEXT = /^[A-Za-z0-9+/=]+$/;
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const landingDirectory = path.resolve(scriptDirectory, "../public/landing");
@@ -23,21 +25,25 @@ function isWebP(buffer) {
   );
 }
 
-function decodePackagedWebP(buffer, filename) {
-  if (isWebP(buffer)) {
-    return { buffer, converted: false };
+function decodePackagedWebP(source, filename) {
+  let candidate = source;
+
+  for (let layer = 0; layer <= MAX_DECODE_LAYERS; layer += 1) {
+    if (isWebP(candidate)) {
+      return { buffer: candidate, converted: layer > 0 };
+    }
+
+    const encoded = candidate.toString("utf8").replace(/\s+/g, "");
+    if (!encoded || !BASE64_TEXT.test(encoded) || encoded.length % 4 !== 0) {
+      break;
+    }
+
+    candidate = Buffer.from(encoded, "base64");
   }
 
-  const encoded = buffer.toString("utf8").replace(/\s+/g, "");
-  const decoded = Buffer.from(encoded, "base64");
-
-  if (!isWebP(decoded)) {
-    throw new Error(
-      `[landing-assets] ${filename} is neither a WebP file nor base64-encoded WebP data.`,
-    );
-  }
-
-  return { buffer: decoded, converted: true };
+  throw new Error(
+    `[landing-assets] ${filename} did not resolve to valid RIFF/WEBP bytes after ${MAX_DECODE_LAYERS} base64 layers.`,
+  );
 }
 
 async function prepareLandingAssets() {
