@@ -7,7 +7,9 @@ import {
 
 describe("Deep Origin prompt contract", () => {
   it("uses a dedicated Character Genesis prompt key", () => {
-    expect(DEEP_CHARACTER_ORIGIN_PROMPT_KEY).toBe("character_genesis.deep_origin");
+    expect(DEEP_CHARACTER_ORIGIN_PROMPT_KEY).toBe(
+      "character_genesis.deep_origin",
+    );
   });
 
   it("requires fact lineage, unresolved questions and future hooks", () => {
