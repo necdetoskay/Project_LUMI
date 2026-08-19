@@ -48,7 +48,10 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
       const modelSlug = requiredString(body.modelSlug, "modelSlug");
 
       const session = await repository.getSession(sessionId);
@@ -65,8 +68,11 @@ export const POST = observeHandler(async (request: Request) => {
         householdId,
         childProfileId,
       });
-      if (!parentState) throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
+      if (!parentState)
+        throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
 
+      const localeOverride = optionalString(body.locale);
+      const promptOverride = readPromptOverride(body.promptOverride);
       const options: GenerateCharacterDnaEvidenceOptions = {
         modelOverride: modelSlug,
         creationOverride: {
@@ -74,12 +80,8 @@ export const POST = observeHandler(async (request: Request) => {
           previousSelections: parentState.value,
         },
         recordTrace: false,
-        ...(optionalString(body.locale)
-          ? { localeOverride: optionalString(body.locale) }
-          : {}),
-        ...(readPromptOverride(body.promptOverride)
-          ? { promptOverride: readPromptOverride(body.promptOverride) }
-          : {}),
+        ...(localeOverride ? { localeOverride } : {}),
+        ...(promptOverride ? { promptOverride } : {}),
       };
 
       if (action === "preview") {
@@ -99,33 +101,43 @@ export const POST = observeHandler(async (request: Request) => {
         { householdId, childProfileId },
         options,
       );
-      const modelProfile = await new OpenRouterModelCatalog().resolveModelProfile({
-        modelSlug,
-        capturedAt: now,
-      });
-      const usageSnapshot = createUsageSnapshot(generated, modelProfile.pricing);
-      const originFactIds = readOriginFactIds(parentState.value);
-      const baseSeed = readGenesisSeed(parentState.value) ?? `${sessionId}:${branchId}`;
-
-      const preparedCandidates = generated.suggestions.map((suggestion, index) => {
-        const traits = deriveTraitState(suggestion, `${baseSeed}:dna:${suggestion.key}`);
-        const referenceIssues = validateCharacterTraitEvidenceReferences({
-          originFactIds,
-          evidence: traits.evidence,
-          contextual: traits.contextual,
+      const modelProfile =
+        await new OpenRouterModelCatalog().resolveModelProfile({
+          modelSlug,
+          capturedAt: now,
         });
-        const traitValidation = validateCharacterTraitState(traits);
-        const validation = {
-          production: generated.validation[index],
-          domain: {
-            valid:
-              traitValidation.valid &&
-              referenceIssues.every((issue) => issue.severity !== "error"),
-            issues: [...traitValidation.issues, ...referenceIssues],
-          },
-        };
-        return { suggestion, traits, validation };
-      });
+      const usageSnapshot = createUsageSnapshot(
+        generated,
+        modelProfile.pricing,
+      );
+      const originFactIds = readOriginFactIds(parentState.value);
+      const baseSeed =
+        readGenesisSeed(parentState.value) ?? `${sessionId}:${branchId}`;
+
+      const preparedCandidates = generated.suggestions.map(
+        (suggestion, index) => {
+          const traits = deriveTraitState(
+            suggestion,
+            `${baseSeed}:dna:${suggestion.key}`,
+          );
+          const referenceIssues = validateCharacterTraitEvidenceReferences({
+            originFactIds,
+            evidence: traits.evidence,
+            contextual: traits.contextual,
+          });
+          const traitValidation = validateCharacterTraitState(traits);
+          const validation = {
+            production: generated.validation[index],
+            domain: {
+              valid:
+                traitValidation.valid &&
+                referenceIssues.every((issue) => issue.severity !== "error"),
+              issues: [...traitValidation.issues, ...referenceIssues],
+            },
+          };
+          return { suggestion, traits, validation };
+        },
+      );
 
       const recorded = await coordinator.recordRunCandidates({
         runId: crypto.randomUUID(),
@@ -147,15 +159,22 @@ export const POST = observeHandler(async (request: Request) => {
             ? toJsonObject(generated.provenance.finalProviderRequest)
             : null,
           rawProviderOutput: generated.rawProviderOutput,
-          renderedPromptFingerprint: fingerprint(generated.provenance.renderedPrompt),
+          renderedPromptFingerprint: fingerprint(
+            generated.provenance.renderedPrompt,
+          ),
           contextFingerprint: fingerprint(parentState.value),
         },
-        candidates: preparedCandidates.map(({ suggestion, traits, validation }) => ({
-          candidateId: crypto.randomUUID(),
-          candidateStateId: crypto.randomUUID(),
-          payload: toJsonObject({ suggestion, traits, validation }),
-          candidateState: characterDnaCandidateState(parentState.value, traits),
-        })),
+        candidates: preparedCandidates.map(
+          ({ suggestion, traits, validation }) => ({
+            candidateId: crypto.randomUUID(),
+            candidateStateId: crypto.randomUUID(),
+            payload: toJsonObject({ suggestion, traits, validation }),
+            candidateState: characterDnaCandidateState(
+              parentState.value,
+              traits,
+            ),
+          }),
+        ),
         now,
       });
 
@@ -182,19 +201,29 @@ export const POST = observeHandler(async (request: Request) => {
   });
 }, "/api/settings/test-lab/genesis/dna");
 
-function deriveTraitState(suggestion: CharacterDnaEvidenceSuggestion, seed: string) {
-  const evidence = suggestion.evidence.map(normalizeSemanticCharacterTraitEvidence);
-  const contextual: CharacterContextualTrait[] = suggestion.contextual.map((item) => ({
-    id: item.id,
-    kind: item.kind,
-    context: item.context,
-    intensity: STRENGTH_TO_NUMBER[item.intensity],
-    sourceFactIds: [...item.sourceFactIds],
-  }));
+function deriveTraitState(
+  suggestion: CharacterDnaEvidenceSuggestion,
+  seed: string,
+) {
+  const evidence = suggestion.evidence.map(
+    normalizeSemanticCharacterTraitEvidence,
+  );
+  const contextual: CharacterContextualTrait[] = suggestion.contextual.map(
+    (item) => ({
+      id: item.id,
+      kind: item.kind,
+      context: item.context,
+      intensity: STRENGTH_TO_NUMBER[item.intensity],
+      sourceFactIds: [...item.sourceFactIds],
+    }),
+  );
   return createInitialCharacterTraitState({ evidence, contextual, seed });
 }
 
-function characterDnaCandidateState(parentState: JsonObject, traits: object): JsonObject {
+function characterDnaCandidateState(
+  parentState: JsonObject,
+  traits: object,
+): JsonObject {
   const existingGenesis = asRecord(parentState.characterGenesis);
   const existingSections = asRecord(existingGenesis.sections);
   return toJsonObject({
