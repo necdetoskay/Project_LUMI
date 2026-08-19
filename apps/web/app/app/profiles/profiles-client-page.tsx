@@ -64,7 +64,9 @@ export default function ProfilesClientPage() {
   const [ageSort, setAgeSort] = useState<AgeSort>("default");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
+    null,
+  );
   const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -121,15 +123,18 @@ export default function ProfilesClientPage() {
                 ]);
 
               const characters = charactersResponse.ok
-                ? (((await charactersResponse.json()) as {
-                    characters?: CharacterInfo[];
-                  }).characters ?? [])
+                ? ((
+                    (await charactersResponse.json()) as {
+                      characters?: CharacterInfo[];
+                    }
+                  ).characters ?? [])
                 : [];
               const stories = storiesResponse.ok
                 ? ((await storiesResponse.json()) as StoriesResponse)
                 : null;
               const world = worldResponse.ok
-                ? (((await worldResponse.json()) as WorldResponse).world ?? null)
+                ? (((await worldResponse.json()) as WorldResponse).world ??
+                  null)
                 : null;
               const ongoing = stories?.adventureHub?.ongoingAdventure ?? null;
               const past = stories?.adventureHub?.pastAdventures ?? [];
@@ -154,7 +159,8 @@ export default function ProfilesClientPage() {
       } catch (loadError) {
         if (!controller.signal.aborted) {
           setError(
-            loadError instanceof Error && loadError.message === "PROFILE_LIST_FAILED"
+            loadError instanceof Error &&
+              loadError.message === "PROFILE_LIST_FAILED"
               ? "Profiller şu anda yüklenemedi. Biraz sonra tekrar deneyin."
               : "Profil verileri şu anda yüklenemedi. Biraz sonra tekrar deneyin.",
           );
@@ -201,7 +207,9 @@ export default function ProfilesClientPage() {
     const filtered = profiles.filter((profile) => {
       const matchesQuery =
         !normalizedQuery ||
-        profile.displayName.toLocaleLowerCase("tr-TR").includes(normalizedQuery);
+        profile.displayName
+          .toLocaleLowerCase("tr-TR")
+          .includes(normalizedQuery);
       const matchesStory =
         storyFilter === "all" ||
         (storyFilter === "has_story" && profile.storyCount > 0) ||
@@ -310,7 +318,11 @@ export default function ProfilesClientPage() {
         {loading ? (
           <StateCard icon="progress_activity" title="Profiller yükleniyor" />
         ) : error ? (
-          <StateCard icon="error" title="Profiller yüklenemedi" message={error} />
+          <StateCard
+            icon="error"
+            title="Profiller yüklenemedi"
+            message={error}
+          />
         ) : (
           <>
             <section className={styles.kpiGrid} aria-label="Profil özeti">
@@ -387,7 +399,10 @@ export default function ProfilesClientPage() {
                   onClick={() => setViewMode("grid")}
                   aria-label="Kart görünümü"
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     grid_view
                   </span>
                 </button>
@@ -397,7 +412,10 @@ export default function ProfilesClientPage() {
                   onClick={() => setViewMode("list")}
                   aria-label="Liste görünümü"
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
+                  <span
+                    className="material-symbols-outlined"
+                    aria-hidden="true"
+                  >
                     view_list
                   </span>
                 </button>
@@ -427,7 +445,9 @@ export default function ProfilesClientPage() {
                   search_off
                 </span>
                 <h2>Bu filtreye uyan profil bulunamadı</h2>
-                <p>Arama metnini veya filtreleri değiştirerek tekrar deneyin.</p>
+                <p>
+                  Arama metnini veya filtreleri değiştirerek tekrar deneyin.
+                </p>
               </section>
             ) : (
               <section
@@ -455,7 +475,9 @@ export default function ProfilesClientPage() {
               </div>
               <div>
                 <h2>Yeni bir profil oluşturun</h2>
-                <p>Her çocuk için kişiselleştirilmiş yaşayan hikâye deneyimi.</p>
+                <p>
+                  Her çocuk için kişiselleştirilmiş yaşayan hikâye deneyimi.
+                </p>
               </div>
               <Link
                 className={styles.primaryButton}
@@ -482,7 +504,10 @@ export default function ProfilesClientPage() {
             setDeleteError(null);
           }}
         >
-          <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
+          <div
+            className={styles.modal}
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className={styles.modalHeader}>
               <div className={styles.modalIcon} aria-hidden="true">
                 <span className="material-symbols-outlined">delete</span>
@@ -490,12 +515,14 @@ export default function ProfilesClientPage() {
               <div>
                 <h2 id="delete-dialog-title">Profili sil veya arşivle</h2>
                 <p>
-                  <strong>{deleteTarget.displayName}</strong> profiline ne yapmak
-                  istiyorsunuz?
+                  <strong>{deleteTarget.displayName}</strong> profiline ne
+                  yapmak istiyorsunuz?
                 </p>
               </div>
             </div>
-            {deleteError ? <p className={styles.errorText}>{deleteError}</p> : null}
+            {deleteError ? (
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
             <div className={styles.modalActions}>
               <button
                 className={styles.archiveButton}
@@ -708,8 +735,16 @@ function ProfileCard({
         </p>
 
         <div className={styles.statsRow}>
-          <ProfileStat icon="menu_book" value={profile.storyCount} label="Hikâye" />
-          <ProfileStat icon="star" value={profile.characterCount} label="Karakter" />
+          <ProfileStat
+            icon="menu_book"
+            value={profile.storyCount}
+            label="Hikâye"
+          />
+          <ProfileStat
+            icon="star"
+            value={profile.characterCount}
+            label="Karakter"
+          />
           <ProfileStat
             icon="public"
             value={profile.worldReady ? "Hazır" : "—"}
