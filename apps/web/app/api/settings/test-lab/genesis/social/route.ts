@@ -19,6 +19,7 @@ import {
 import {
   createGenesisSocialState,
   validateGenesisSocialState,
+  type GenesisSocialValidationIssue,
 } from "@lumi/world";
 import { withParent } from "@/lib/auth/with-parent";
 import { assertSandboxOwner } from "@/lib/ai/test-lab-sandbox-owner";
@@ -122,9 +123,7 @@ export const POST = observeHandler(async (request: Request) => {
             social,
             originFactIds,
           });
-          const contradictions = domainIssues.filter(
-            (issue) => issue.code === "GENESIS_SOCIAL_CONTRADICTORY_EVIDENCE",
-          );
+          const contradictions = domainIssues.filter(isContradiction);
           const stateDiff = buildSocialStateDiff(parentState.value, social);
           const validation = {
             production: generated.validation[index],
@@ -143,6 +142,13 @@ export const POST = observeHandler(async (request: Request) => {
           };
         },
       );
+
+      const candidates = preparedCandidates.map((item) => ({
+        candidateId: crypto.randomUUID(),
+        candidateStateId: crypto.randomUUID(),
+        payload: toJsonObject(item),
+        candidateState: socialCandidateState(parentState.value, item.social),
+      }));
 
       const recorded = await coordinator.recordRunCandidates({
         runId: crypto.randomUUID(),
@@ -169,20 +175,7 @@ export const POST = observeHandler(async (request: Request) => {
           ),
           contextFingerprint: fingerprint(parentState.value),
         },
-        candidates: preparedCandidates.map(
-          ({ suggestion, social, validation, contradictions, stateDiff }) => ({
-            candidateId: crypto.randomUUID(),
-            candidateStateId: crypto.randomUUID(),
-            payload: toJsonObject({
-              suggestion,
-              social,
-              validation,
-              contradictions,
-              stateDiff,
-            }),
-            candidateState: socialCandidateState(parentState.value, social),
-          }),
-        ),
+        candidates,
         now,
       });
 
@@ -195,7 +188,9 @@ export const POST = observeHandler(async (request: Request) => {
           parsedOutput: generated.suggestions,
           derivedSocial: preparedCandidates.map((item) => item.social),
           validation: preparedCandidates.map((item) => item.validation),
-          contradictions: preparedCandidates.map((item) => item.contradictions),
+          contradictions: preparedCandidates.map(
+            (item) => item.contradictions,
+          ),
           stateDiff: preparedCandidates.map((item) => item.stateDiff),
           modelProfile,
         },
@@ -223,6 +218,10 @@ function deriveSocialState(
     evidence: suggestion.relationships,
     seed,
   });
+}
+
+function isContradiction(issue: GenesisSocialValidationIssue): boolean {
+  return issue.code === "GENESIS_SOCIAL_CONTRADICTORY_EVIDENCE";
 }
 
 function evaluateSocialQuality(
