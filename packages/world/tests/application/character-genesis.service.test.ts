@@ -6,11 +6,10 @@ import {
   type CharacterGenesisCanonicalCommitPort,
   type CharacterGenesisRepositoryPort,
 } from "../../src/application/character-genesis.service";
-import type {
-  CharacterGenesisPackage,
-} from "../../src/domain/character-genesis";
+import type { CharacterGenesisPackage } from "../../src/domain";
 
 type Stored = Map<string, CharacterGenesisPackage>;
+type CandidateList = CharacterGenesisPackage[];
 
 class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
   private readonly stored: Stored = new Map();
@@ -23,9 +22,7 @@ class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
     return structuredClone(this.stored.get(candidateId) ?? null);
   }
 
-  async listByCharacter(
-    characterId: string,
-  ): Promise<CharacterGenesisPackage[]> {
+  async listByCharacter(characterId: string): Promise<CandidateList> {
     return [...this.stored.values()]
       .filter((candidate) => candidate.characterId === characterId)
       .map((candidate) => structuredClone(candidate));
@@ -142,12 +139,15 @@ describe("CharacterGenesisCoordinator", () => {
     const selectedSecond = await coordinator.select(second.id);
 
     const candidates = await repository.listByCharacter("character-1");
-    expect(
-      candidates.filter((candidate) => candidate.status === "selected"),
-    ).toEqual([selectedSecond]);
-    expect(
-      candidates.find((candidate) => candidate.id === first.id)?.status,
-    ).toBe("staged");
+    const selected = candidates.filter(
+      (candidate) => candidate.status === "selected",
+    );
+    const firstCandidate = candidates.find(
+      (candidate) => candidate.id === first.id,
+    );
+
+    expect(selected).toEqual([selectedSecond]);
+    expect(firstCandidate?.status).toBe("staged");
   });
 
   it("commits only a selected structurally valid candidate", async () => {
@@ -170,23 +170,20 @@ describe("CharacterGenesisCoordinator", () => {
     expect(committer.committed[0]?.status).toBe("selected");
   });
 
-  it(
-    "blocks invalid cross-domain references before canonical mutation",
-    async () => {
-      const repository = new InMemoryGenesisRepository();
-      const committer = new RecordingCommitter();
-      const coordinator = new CharacterGenesisCoordinator(repository, committer);
+  it("blocks invalid references before canonical mutation", async () => {
+    const repository = new InMemoryGenesisRepository();
+    const committer = new RecordingCommitter();
+    const coordinator = new CharacterGenesisCoordinator(repository, committer);
 
-      const input = baseInput("candidate-a");
-      input.sections.social.relationships[0]!.toCandidateId = "npc-missing";
+    const input = baseInput("candidate-a");
+    input.sections.social.relationships[0]!.toCandidateId = "npc-missing";
 
-      const staged = await coordinator.stage(input);
-      const selected = await coordinator.select(staged.id);
+    const staged = await coordinator.stage(input);
+    const selected = await coordinator.select(staged.id);
 
-      await expect(coordinator.commit(selected.id)).rejects.toBeInstanceOf(
-        CharacterGenesisValidationError,
-      );
-      expect(committer.committed).toHaveLength(0);
-    },
-  );
+    await expect(coordinator.commit(selected.id)).rejects.toBeInstanceOf(
+      CharacterGenesisValidationError,
+    );
+    expect(committer.committed).toHaveLength(0);
+  });
 });
