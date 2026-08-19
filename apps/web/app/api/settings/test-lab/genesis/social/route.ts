@@ -40,7 +40,10 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
       const modelSlug = requiredString(body.modelSlug, "modelSlug");
 
       const session = await repository.getSession(sessionId);
@@ -91,14 +94,19 @@ export const POST = observeHandler(async (request: Request) => {
         { householdId, childProfileId },
         options,
       );
-      const modelProfile = await new OpenRouterModelCatalog().resolveModelProfile({
-        modelSlug,
-        capturedAt: now,
-      });
-      const usageSnapshot = createUsageSnapshot(generated, modelProfile.pricing);
+      const modelProfile =
+        await new OpenRouterModelCatalog().resolveModelProfile({
+          modelSlug,
+          capturedAt: now,
+        });
+      const usageSnapshot = createUsageSnapshot(
+        generated,
+        modelProfile.pricing,
+      );
       const originFactIds = readOriginFactIds(parentState.value);
       const characterId =
-        readCharacterId(parentState.value) ?? `testlab-character-${childProfileId}`;
+        readCharacterId(parentState.value) ??
+        `testlab-character-${childProfileId}`;
       const baseSeed =
         readGenesisSeed(parentState.value) ?? `${sessionId}:${branchId}`;
 
@@ -114,6 +122,10 @@ export const POST = observeHandler(async (request: Request) => {
             social,
             originFactIds,
           });
+          const contradictions = domainIssues.filter(
+            (issue) => issue.code === "GENESIS_SOCIAL_CONTRADICTORY_EVIDENCE",
+          );
+          const stateDiff = buildSocialStateDiff(parentState.value, social);
           const validation = {
             production: generated.validation[index],
             domain: {
@@ -122,7 +134,13 @@ export const POST = observeHandler(async (request: Request) => {
             },
             quality: evaluateSocialQuality(social),
           };
-          return { suggestion, social, validation };
+          return {
+            suggestion,
+            social,
+            validation,
+            contradictions,
+            stateDiff,
+          };
         },
       );
 
@@ -146,15 +164,25 @@ export const POST = observeHandler(async (request: Request) => {
             ? toJsonObject(generated.provenance.finalProviderRequest)
             : null,
           rawProviderOutput: generated.rawProviderOutput,
-          renderedPromptFingerprint: fingerprint(generated.provenance.renderedPrompt),
+          renderedPromptFingerprint: fingerprint(
+            generated.provenance.renderedPrompt,
+          ),
           contextFingerprint: fingerprint(parentState.value),
         },
-        candidates: preparedCandidates.map(({ suggestion, social, validation }) => ({
-          candidateId: crypto.randomUUID(),
-          candidateStateId: crypto.randomUUID(),
-          payload: toJsonObject({ suggestion, social, validation }),
-          candidateState: socialCandidateState(parentState.value, social),
-        })),
+        candidates: preparedCandidates.map(
+          ({ suggestion, social, validation, contradictions, stateDiff }) => ({
+            candidateId: crypto.randomUUID(),
+            candidateStateId: crypto.randomUUID(),
+            payload: toJsonObject({
+              suggestion,
+              social,
+              validation,
+              contradictions,
+              stateDiff,
+            }),
+            candidateState: socialCandidateState(parentState.value, social),
+          }),
+        ),
         now,
       });
 
@@ -167,6 +195,8 @@ export const POST = observeHandler(async (request: Request) => {
           parsedOutput: generated.suggestions,
           derivedSocial: preparedCandidates.map((item) => item.social),
           validation: preparedCandidates.map((item) => item.validation),
+          contradictions: preparedCandidates.map((item) => item.contradictions),
+          stateDiff: preparedCandidates.map((item) => item.stateDiff),
           modelProfile,
         },
       });
@@ -195,15 +225,22 @@ function deriveSocialState(
   });
 }
 
-function evaluateSocialQuality(social: ReturnType<typeof createGenesisSocialState>) {
+function evaluateSocialQuality(
+  social: ReturnType<typeof createGenesisSocialState>,
+) {
   const styles = new Set(
-    social.npcs.map((npc) => npc.personality.interactionStyle.trim().toLowerCase()),
+    social.npcs.map((npc) =>
+      npc.personality.interactionStyle.trim().toLowerCase(),
+    ),
   );
   const highPotential = social.npcs.filter(
     (npc) => npc.personality.futureInteractionPotential === "high",
   ).length;
-  const distinctiveness = social.npcs.length === 0 ? 1 : styles.size / social.npcs.length;
-  const coherence = social.relationships.every((edge) => edge.evidence.length > 0)
+  const distinctiveness =
+    social.npcs.length === 0 ? 1 : styles.size / social.npcs.length;
+  const coherence = social.relationships.every(
+    (edge) => edge.evidence.length > 0,
+  )
     ? 1
     : 0.5;
   const futureInteractionPotential =
@@ -213,7 +250,9 @@ function evaluateSocialQuality(social: ReturnType<typeof createGenesisSocialStat
     coherence,
     futureInteractionPotential,
     warnings: [
-      ...(distinctiveness < 0.6 ? ["SOCIAL_QUALITY_LOW_DISTINCTIVENESS"] : []),
+      ...(distinctiveness < 0.6
+        ? ["SOCIAL_QUALITY_LOW_DISTINCTIVENESS"]
+        : []),
       ...(futureInteractionPotential < 0.25 && social.npcs.length > 0
         ? ["SOCIAL_QUALITY_LOW_FUTURE_POTENTIAL"]
         : []),
@@ -221,7 +260,35 @@ function evaluateSocialQuality(social: ReturnType<typeof createGenesisSocialStat
   };
 }
 
-function socialCandidateState(parentState: JsonObject, social: object): JsonObject {
+function buildSocialStateDiff(
+  parentState: JsonObject,
+  social: ReturnType<typeof createGenesisSocialState>,
+) {
+  const previousSocial = asRecord(
+    asRecord(asRecord(parentState.characterGenesis).sections).social,
+  );
+  const previousNpcs = Array.isArray(previousSocial.npcs)
+    ? previousSocial.npcs
+    : [];
+  const previousRelationships = Array.isArray(previousSocial.relationships)
+    ? previousSocial.relationships
+    : [];
+  return {
+    npcCountBefore: previousNpcs.length,
+    npcCountAfter: social.npcs.length,
+    relationshipCountBefore: previousRelationships.length,
+    relationshipCountAfter: social.relationships.length,
+    addedNpcIds: social.npcs.map((npc) => npc.candidateId),
+    relationshipEdges: social.relationships.map(
+      (edge) => `${edge.fromCandidateId}->${edge.toCandidateId}`,
+    ),
+  };
+}
+
+function socialCandidateState(
+  parentState: JsonObject,
+  social: object,
+): JsonObject {
   const existingGenesis = asRecord(parentState.characterGenesis);
   const existingSections = asRecord(existingGenesis.sections);
   return toJsonObject({
