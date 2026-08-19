@@ -74,6 +74,38 @@ export type {
   GenesisValidationResult,
 } from "./character-genesis";
 export type { GenesisDeepOriginState } from "./character-genesis-origin";
+export {
+  CHARACTER_DNA_AXES,
+  CHARACTER_DYNAMIC_AXES,
+  deriveCharacterDna,
+  createInitialCharacterTraitState,
+  updateDynamicCharacterState,
+  addLearnedCharacterModifier,
+  getEffectiveCharacterDna,
+  validateCharacterTraitState,
+} from "./character-genesis-traits";
+export type {
+  CharacterDnaAxis,
+  CharacterDynamicAxis,
+  CharacterDnaVector,
+  CharacterDynamicState,
+  CharacterTraitDirection,
+  CharacterTraitEvidence,
+  CharacterContextualTrait,
+  CharacterLearnedModifier,
+  CharacterTraitDerivationState,
+  CharacterTraitValidationIssue,
+  CharacterTraitValidationResult,
+} from "./character-genesis-traits";
+export {
+  CHARACTER_TRAIT_STRENGTH_LEVELS,
+  normalizeSemanticCharacterTraitEvidence,
+  validateCharacterTraitEvidenceReferences,
+} from "./character-genesis-trait-evidence";
+export type {
+  CharacterTraitStrengthLevel,
+  SemanticCharacterTraitEvidence,
+} from "./character-genesis-trait-evidence";
 
 export {
   WORLD_LIFECYCLE_STATUSES,
