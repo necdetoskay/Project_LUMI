@@ -259,7 +259,7 @@ export default function DashboardV2Client({
             <QuickAction
               icon="public"
               label="Dünyan"
-              detail={worldLabel ?? undefined}
+              detail={worldLabel ?? "Dünya henüz hazır değil"}
               href={worldRoute}
             />
             <QuickAction
@@ -333,7 +333,7 @@ export default function DashboardV2Client({
                   characterId={primaryCharacter.id}
                   householdId={householdId}
                   characterName={primaryCharacter.name}
-                  className={styles.characterImage}
+                  className={styles.characterImage!}
                   sizes="88px"
                   priority
                 />
@@ -441,8 +441,8 @@ export default function DashboardV2Client({
                   <h2>Kazanımların</h2>
                 </div>
                 <div className={styles.badges}>
-                  <Badge icon="explore" label="İlk Keşif" />
-                  <Badge icon="menu_book" label="Okuma Kâşifi" />
+                  <Badge icon="explore" label="Keşif" />
+                  <Badge icon="menu_book" label="Okuma" />
                   <Badge icon="auto_awesome" label="Hayal Gücü" />
                 </div>
                 <p className={styles.mutedCopy}>
