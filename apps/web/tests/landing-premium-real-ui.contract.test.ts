@@ -50,8 +50,8 @@ describe("premium landing real UI contract", () => {
 
   it("keeps all three lower cards as real HTML content", () => {
     expect(page).toContain("Hikâyeni Başlat");
-    expect(page).toContain("Keşfet &amp; Yaşa");
-    expect(page).toContain("Büyüt &amp; Geliştir");
+    expect(page).toContain("Keşfet & Yaşa");
+    expect(page).toContain("Büyüt & Geliştir");
     expect(page).toContain("/landing/card-story.webp");
     expect(page).toContain("/landing/card-explore.webp");
     expect(page).toContain("/landing/card-grow.webp");
