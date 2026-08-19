@@ -88,7 +88,9 @@ async function post(body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -129,11 +131,16 @@ export default function OnboardingTestRunner() {
   }, []);
 
   const runnablePhases = useMemo(
-    () => phases.filter((phase) => phase.testable && supportedIds.includes(phase.id)),
+    () =>
+      phases.filter(
+        (phase) => phase.testable && supportedIds.includes(phase.id),
+      ),
     [phases, supportedIds],
   );
 
-  const currentIndex = runnablePhases.findIndex((phase) => phase.id === phaseId);
+  const currentIndex = runnablePhases.findIndex(
+    (phase) => phase.id === phaseId,
+  );
   const currentPhase = currentIndex >= 0 ? runnablePhases[currentIndex] : null;
 
   async function createSession() {
@@ -144,7 +151,10 @@ export default function OnboardingTestRunner() {
     setBusy(true);
     setMessage("");
     try {
-      const initialState = JSON.parse(initialStateText) as Record<string, unknown>;
+      const initialState = JSON.parse(initialStateText) as Record<
+        string,
+        unknown
+      >;
       const payload = await post({
         action: "create-session",
         scenarioKey: "character_onboarding",
@@ -159,7 +169,9 @@ export default function OnboardingTestRunner() {
       setResult(null);
       const first = runnablePhases[0];
       if (first) setPhaseId(first.id);
-      setMessage("Test oturumu hazır. İlk onboarding aşamasını çalıştırabilirsiniz.");
+      setMessage(
+        "Test oturumu hazır. İlk onboarding aşamasını çalıştırabilirsiniz.",
+      );
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -188,7 +200,9 @@ export default function OnboardingTestRunner() {
       });
       const nextResult = payload.data as RunResult;
       setResult(nextResult);
-      setMessage(`${nextResult.candidates.length} aday üretildi. Birini seçerek sonraki aşamaya geçin.`);
+      setMessage(
+        `${nextResult.candidates.length} aday üretildi. Birini seçerek sonraki aşamaya geçin.`,
+      );
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -233,31 +247,54 @@ export default function OnboardingTestRunner() {
     <main style={shell}>
       <header style={{ marginBottom: 22 }}>
         <p style={{ opacity: 0.65, margin: 0 }}>Settings / Test Lab</p>
-        <h1 style={{ margin: "8px 0", fontSize: 34 }}>Karakter Onboarding Test Lab</h1>
+        <h1 style={{ margin: "8px 0", fontSize: 34 }}>
+          Karakter Onboarding Test Lab
+        </h1>
         <p style={{ maxWidth: 820, opacity: 0.8, lineHeight: 1.6 }}>
-          Amaç: onboarding üretim aşamalarını gerçek production LLM yoluyla sırayla test etmek,
-          her aşamada çıkan adaylardan birini seçmek ve seçilen state ile bir sonraki aşamaya geçmek.
+          Amaç: onboarding üretim aşamalarını gerçek production LLM yoluyla
+          sırayla test etmek, her aşamada çıkan adaylardan birini seçmek ve
+          seçilen state ile bir sonraki aşamaya geçmek.
         </p>
       </header>
 
       <section style={{ ...panel, marginBottom: 18 }}>
         <h2 style={{ marginTop: 0 }}>1. Test ayarları</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 14 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
+            gap: 14,
+          }}
+        >
           <label>
             OpenRouter model slug
-            <input style={input} value={modelSlug} onChange={(event) => setModelSlug(event.target.value)} />
+            <input
+              style={input}
+              value={modelSlug}
+              onChange={(event) => setModelSlug(event.target.value)}
+            />
           </label>
           <label>
             Household ID
-            <input style={input} value={householdId} onChange={(event) => setHouseholdId(event.target.value)} />
+            <input
+              style={input}
+              value={householdId}
+              onChange={(event) => setHouseholdId(event.target.value)}
+            />
           </label>
           <label>
             Child Profile ID
-            <input style={input} value={childProfileId} onChange={(event) => setChildProfileId(event.target.value)} />
+            <input
+              style={input}
+              value={childProfileId}
+              onChange={(event) => setChildProfileId(event.target.value)}
+            />
           </label>
         </div>
         <details style={{ marginTop: 14 }}>
-          <summary style={{ cursor: "pointer", opacity: 0.8 }}>Gelişmiş: başlangıç sandbox state</summary>
+          <summary style={{ cursor: "pointer", opacity: 0.8 }}>
+            Gelişmiş: başlangıç sandbox state
+          </summary>
           <textarea
             rows={9}
             style={{ ...input, fontFamily: "monospace", resize: "vertical" }}
@@ -278,8 +315,9 @@ export default function OnboardingTestRunner() {
       <section style={{ ...panel, marginBottom: 18 }}>
         <h2 style={{ marginTop: 0 }}>2. Onboarding aşamaları</h2>
         <p style={{ opacity: 0.7 }}>
-          API şu anda {runnablePhases.length} production-backed üretim aşamasını doğrudan çalıştırabiliyor.
-          Desteklenmeyen aşamalar açıkça pasif gösterilir; sahte test olarak sayılmaz.
+          API şu anda {runnablePhases.length} production-backed üretim aşamasını
+          doğrudan çalıştırabiliyor. Desteklenmeyen aşamalar açıkça pasif
+          gösterilir; sahte test olarak sayılmaz.
         </p>
         <div style={{ display: "grid", gap: 9 }}>
           {phases.map((phase, index) => {
@@ -306,9 +344,17 @@ export default function OnboardingTestRunner() {
                   cursor: supported ? "pointer" : "not-allowed",
                 }}
               >
-                <strong>{index + 1}. {phase.label}</strong>
+                <strong>
+                  {index + 1}. {phase.label}
+                </strong>
                 <span style={{ float: "right", fontSize: 13, opacity: 0.75 }}>
-                  {completed ? "✓ tamamlandı" : supported ? (active ? "şimdi" : "hazır") : "backend desteği yok"}
+                  {completed
+                    ? "✓ tamamlandı"
+                    : supported
+                      ? active
+                        ? "şimdi"
+                        : "hazır"
+                      : "backend desteği yok"}
                 </span>
               </button>
             );
@@ -319,7 +365,19 @@ export default function OnboardingTestRunner() {
       <section style={panel}>
         <h2 style={{ marginTop: 0 }}>3. Aşamayı çalıştır</h2>
         <p style={{ fontSize: 18 }}>
-          {currentPhase ? <><strong>{currentIndex + 1}. {currentPhase.label}</strong><br /><span style={{ opacity: 0.7 }}>{currentPhase.productionOperation}</span></> : "Çalıştırılabilir aşama seçili değil."}
+          {currentPhase ? (
+            <>
+              <strong>
+                {currentIndex + 1}. {currentPhase.label}
+              </strong>
+              <br />
+              <span style={{ opacity: 0.7 }}>
+                {currentPhase.productionOperation}
+              </span>
+            </>
+          ) : (
+            "Çalıştırılabilir aşama seçili değil."
+          )}
         </p>
         <button
           type="button"
@@ -327,7 +385,9 @@ export default function OnboardingTestRunner() {
           disabled={!sessionId || !currentPhase || busy}
           onClick={runCurrentPhase}
         >
-          {busy ? "Çalışıyor..." : `${currentPhase?.label ?? "Aşama"} testini çalıştır`}
+          {busy
+            ? "Çalışıyor..."
+            : `${currentPhase?.label ?? "Aşama"} testini çalıştır`}
         </button>
 
         {result ? (
@@ -335,12 +395,33 @@ export default function OnboardingTestRunner() {
             <h3>Üretilen adaylar</h3>
             <div style={{ display: "grid", gap: 12 }}>
               {result.candidates.map((candidate, index) => (
-                <article key={candidate.id} style={{ border: "1px solid #2d3555", borderRadius: 12, padding: 14, background: "#0b1020" }}>
+                <article
+                  key={candidate.id}
+                  style={{
+                    border: "1px solid #2d3555",
+                    borderRadius: 12,
+                    padding: 14,
+                    background: "#0b1020",
+                  }}
+                >
                   <strong>Aday {index + 1}</strong>
-                  <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 13, lineHeight: 1.5, opacity: 0.9 }}>
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                      opacity: 0.9,
+                    }}
+                  >
                     {JSON.stringify(candidate.payload, null, 2)}
                   </pre>
-                  <button type="button" style={secondaryButton} disabled={busy} onClick={() => selectCandidate(candidate)}>
+                  <button
+                    type="button"
+                    style={secondaryButton}
+                    disabled={busy}
+                    onClick={() => selectCandidate(candidate)}
+                  >
                     Bu adayı seç ve sonraki aşamaya geç
                   </button>
                 </article>
@@ -351,7 +432,16 @@ export default function OnboardingTestRunner() {
       </section>
 
       {message ? (
-        <div role="status" style={{ marginTop: 16, padding: "12px 14px", borderRadius: 10, background: "#151c31", border: "1px solid #30395c" }}>
+        <div
+          role="status"
+          style={{
+            marginTop: 16,
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "#151c31",
+            border: "1px solid #30395c",
+          }}
+        >
           {message}
         </div>
       ) : null}

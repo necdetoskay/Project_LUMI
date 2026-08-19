@@ -17,7 +17,9 @@ describe("Test Lab stage 1 contract", () => {
 
   it("uses the real onboarding runner as the primary Test Lab surface", () => {
     const page = read("settings/test-lab/page.tsx");
-    expect(page).toContain('import OnboardingTestRunner from "./onboarding-test-runner"');
+    expect(page).toContain(
+      'import OnboardingTestRunner from "./onboarding-test-runner"',
+    );
     expect(page).toContain("<OnboardingTestRunner />");
     expect(page).not.toContain("CanonicalTestLabDashboard");
   });
