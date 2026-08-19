@@ -20,8 +20,23 @@ describe("Test Lab stage 1 contract", () => {
     expect(page).toContain(
       'import OnboardingTestRunner from "./onboarding-test-runner"',
     );
-    expect(page).toContain("<OnboardingTestRunner />");
+    expect(page).toContain("<OnboardingTestRunner");
     expect(page).not.toContain("CanonicalTestLabDashboard");
+  });
+
+  it("loads real household and child profile records for selection", () => {
+    const page = read("settings/test-lab/page.tsx");
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+
+    expect(page).toContain("getOnboardingState(parent.id)");
+    expect(page).toContain("state.childProfiles.map");
+    expect(runner).toContain("Aile alanı");
+    expect(runner).toContain("Çocuk profili");
+    expect(runner).toContain("<select");
+    expect(runner).not.toContain("Household ID");
+    expect(runner).not.toContain("Child Profile ID");
+    expect(runner).toContain("lumi.testLab.householdId");
+    expect(runner).toContain("lumi.testLab.childProfileId");
   });
 
   it("keeps the manual production-backed onboarding workflow visible", () => {
