@@ -1,0 +1,47 @@
+name: Test Lab Run Usage Cost One Shot
+
+on:
+  push:
+    branches:
+      - feat/test-lab-run-usage-cost
+    paths:
+      - scripts/apply-test-lab-run-usage-cost.mjs
+      - .github/workflows/test-lab-run-usage-cost-one-shot.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/test-lab-run-usage-cost
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply usage and cost UI patch
+        run: node scripts/apply-test-lab-run-usage-cost.mjs
+      - name: Format changed source
+        run: pnpm exec prettier --write apps/web/app/app/settings/test-lab/onboarding-test-runner.tsx
+      - name: Verify focused web typecheck
+        run: pnpm --filter @lumi/web typecheck
+      - name: Commit implementation
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No implementation changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/app/app/settings/test-lab/onboarding-test-runner.tsx
+          git commit -m "feat(test-lab): show token usage and API cost per run"
+          git push origin HEAD:feat/test-lab-run-usage-cost
