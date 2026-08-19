@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import styles from "./login-v2.module.css";
 
@@ -15,6 +15,8 @@ export default async function LoginPage({
   searchParams: SearchParams;
 }) {
   const t = await getTranslations("login");
+  const locale = await getLocale();
+  const isTurkish = locale === "tr";
   const params = await searchParams;
   const email = getValue(params.email) ?? "";
   const errorCode = getValue(params.error);
@@ -37,6 +39,15 @@ export default async function LoginPage({
       : successCode === "password_reset"
         ? t("success.passwordReset")
         : null;
+
+  const formDescription = isTurkish
+    ? "Maceralara kaldığın yerden devam et. Hikâyelerin seni bekliyor."
+    : "Continue your adventures where you left off. Your stories are waiting.";
+  const submitLabel = isTurkish ? "Giriş Yap" : "Sign in";
+  const accountLabel = isTurkish ? "Hesap oluştur" : "Create account";
+  const trustLabel = isTurkish
+    ? "Güvenli ebeveyn girişi"
+    : "Secure parent sign-in";
 
   return (
     <section className={`lumi-login-v2 ${styles.page}`}>
@@ -62,7 +73,7 @@ export default async function LoginPage({
 
             <div className={styles.heading}>
               <h1>{t("sceneTitle")}</h1>
-              <p>{t("cardDescription")}</p>
+              <p>{formDescription}</p>
             </div>
 
             {error ? (
@@ -150,7 +161,7 @@ export default async function LoginPage({
                 <span className="material-symbols-outlined" aria-hidden="true">
                   person
                 </span>
-                {t("submit")}
+                {submitLabel}
                 <span aria-hidden="true">✦</span>
               </button>
             </form>
@@ -161,14 +172,14 @@ export default async function LoginPage({
 
             <Link className={styles.secondary} href="/register">
               <span aria-hidden="true">✦</span>
-              {t("createParentAccount")}
+              {accountLabel}
             </Link>
 
             <p className={styles.trust}>
               <span className="material-symbols-outlined" aria-hidden="true">
                 verified_user
               </span>
-              {t("noUniverse")}
+              {trustLabel}
             </p>
           </div>
         </div>
