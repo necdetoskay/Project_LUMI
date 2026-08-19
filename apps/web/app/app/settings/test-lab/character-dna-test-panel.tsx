@@ -56,7 +56,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -113,7 +115,9 @@ export default function CharacterDnaTestPanel() {
   async function previewPrompt() {
     const context = sandboxContext();
     if (!context.sessionId || !context.branchId || !context.parentStateId) {
-      setMessage("Önce Deep Origin dahil önceki sandbox aşamalarını tamamlayın.");
+      setMessage(
+        "Önce Deep Origin dahil önceki sandbox aşamalarını tamamlayın.",
+      );
       return;
     }
     setBusy(true);
@@ -133,7 +137,9 @@ export default function CharacterDnaTestPanel() {
       });
       setMessage("Character DNA evidence production promptu hazırlandı.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt hazırlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Prompt hazırlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -141,7 +147,12 @@ export default function CharacterDnaTestPanel() {
 
   async function runCharacterDna() {
     const context = sandboxContext();
-    if (!prompt || !context.sessionId || !context.branchId || !context.parentStateId) {
+    if (
+      !prompt ||
+      !context.sessionId ||
+      !context.branchId ||
+      !context.parentStateId
+    ) {
       setMessage("Önce production promptunu yükleyin.");
       return;
     }
@@ -160,7 +171,11 @@ export default function CharacterDnaTestPanel() {
         `${payload.data.candidates.length} Character DNA adayı üretildi; semantic evidence ve deterministic DNA kaydedildi.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Character DNA çalıştırılamadı.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Character DNA çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -179,7 +194,10 @@ export default function CharacterDnaTestPanel() {
         runId: entry.run.id,
         candidateId: candidate.id,
       });
-      window.localStorage.setItem(LAST_BRANCH_KEY, payload.data.activeBranchId as string);
+      window.localStorage.setItem(
+        LAST_BRANCH_KEY,
+        payload.data.activeBranchId as string,
+      );
       window.localStorage.setItem(
         LAST_STATE_KEY,
         payload.data.selection.selectedStateId as string,
@@ -194,13 +212,16 @@ export default function CharacterDnaTestPanel() {
   }
 
   return (
-    <section className={styles.shell} aria-label="Character DNA Genesis Test Lab">
+    <section
+      className={styles.shell}
+      aria-label="Character DNA Genesis Test Lab"
+    >
       <section className={styles.panel}>
         <p className={styles.eyebrow}>Character Genesis</p>
         <h2>Character DNA</h2>
         <p className={styles.muted}>
-          Deep Origin fact&apos;lerinden semantic trait evidence çıkarır. Model DNA
-          ondalıkları üretmez; numeric DNA canonical mapping ve seed ile
+          Deep Origin fact&apos;lerinden semantic trait evidence çıkarır. Model
+          DNA ondalıkları üretmez; numeric DNA canonical mapping ve seed ile
           deterministik türetilir. Dynamic state, contextual traits ve learned
           modifiers base DNA&apos;dan ayrı tutulur.
         </p>
@@ -245,7 +266,9 @@ export default function CharacterDnaTestPanel() {
                 rows={6}
                 className={styles.promptTextarea}
                 value={prompt.system}
-                onChange={(event) => setPrompt({ ...prompt, system: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, system: event.target.value })
+                }
               />
             </label>
             <label className={styles.field}>
@@ -254,7 +277,9 @@ export default function CharacterDnaTestPanel() {
                 rows={14}
                 className={styles.promptTextarea}
                 value={prompt.user}
-                onChange={(event) => setPrompt({ ...prompt, user: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, user: event.target.value })
+                }
               />
             </label>
             <button
@@ -281,7 +306,9 @@ export default function CharacterDnaTestPanel() {
             </button>
           </div>
           {runs.length === 0 ? (
-            <div className={styles.emptyState}>Henüz Character DNA runı yok.</div>
+            <div className={styles.emptyState}>
+              Henüz Character DNA runı yok.
+            </div>
           ) : (
             <div className={styles.runList}>
               {[...runs].reverse().map((entry, index) => {
@@ -301,7 +328,11 @@ export default function CharacterDnaTestPanel() {
                         <span>Output {usage.completionTokens} token</span>
                         <span>Toplam {usage.totalTokens} token</span>
                         <span>{usage.latencyMs} ms</span>
-                        <span>{formatCost(usage.actualCostUsd ?? usage.estimatedCostUsd)}</span>
+                        <span>
+                          {formatCost(
+                            usage.actualCostUsd ?? usage.estimatedCostUsd,
+                          )}
+                        </span>
                       </div>
                     ) : null}
                     <details className={styles.runPrompt}>
@@ -321,7 +352,10 @@ export default function CharacterDnaTestPanel() {
                     </details>
                     <div className={styles.candidateList}>
                       {entry.candidates.map((candidate, candidateIndex) => (
-                        <article key={candidate.id} className={styles.candidate}>
+                        <article
+                          key={candidate.id}
+                          className={styles.candidate}
+                        >
                           <strong>DNA adayı {candidateIndex + 1}</strong>
                           <pre className={styles.payload}>
                             {JSON.stringify(candidate.payload, null, 2)}
@@ -329,7 +363,9 @@ export default function CharacterDnaTestPanel() {
                           <button
                             type="button"
                             className={styles.secondaryButton}
-                            disabled={busy || Boolean(entry.selectedCandidateId)}
+                            disabled={
+                              busy || Boolean(entry.selectedCandidateId)
+                            }
                             onClick={() => selectCandidate(entry, candidate)}
                           >
                             {candidate.id === entry.selectedCandidateId
