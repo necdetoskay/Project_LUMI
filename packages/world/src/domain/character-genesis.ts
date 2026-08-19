@@ -286,7 +286,8 @@ export function buildCharacterVisibleOriginContext(
     isCharacterVisibleOriginFact(fact),
   );
   const visibleFactIds = new Set(visibleFacts.map((fact) => fact.id));
-  const requestedIds = origin.summaryFactIds ?? visibleFacts.map((fact) => fact.id);
+  const requestedIds =
+    origin.summaryFactIds ?? visibleFacts.map((fact) => fact.id);
   const summaryFacts = requestedIds
     .filter((id) => visibleFactIds.has(id))
     .map((id) => visibleFacts.find((fact) => fact.id === id))
@@ -404,7 +405,8 @@ export function validateCharacterGenesisStructure(
   if (origin && (origin.unresolvedQuestions?.length ?? 0) === 0) {
     issues.push({
       code: "GENESIS_ORIGIN_NO_UNRESOLVED_QUESTION",
-      message: "Origin should deliberately preserve at least one unresolved question",
+      message:
+        "Origin should deliberately preserve at least one unresolved question",
       path: "sections.origin.unresolvedQuestions",
       severity: "warning",
     });
