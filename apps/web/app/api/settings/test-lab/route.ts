@@ -15,6 +15,10 @@ import {
   type JsonObject,
   type TestPhaseDefinition,
 } from "@lumi/ai/test-lab";
+import {
+  previewCharacterOnboardingTestLabPhase,
+  type CharacterOnboardingTestLabPhase,
+} from "@lumi/profiles";
 import { withParent } from "@/lib/auth/with-parent";
 import { testLabProductionScenarioAdapter } from "@/lib/ai/test-lab-production-adapter";
 import {
@@ -24,6 +28,15 @@ import {
 } from "@/lib/ai/test-lab-sandbox-owner";
 import { readRequestBody } from "@/lib/http/request-body";
 import { observeHandler } from "@/lib/observability/observed-api-route";
+
+const CHARACTER_ONBOARDING_PRODUCTION_PHASES = [
+  "character_first_identity_suggestions",
+  "world_suggestions",
+  "compatibility",
+  "region_suggestions",
+  "origin_suggestions",
+  "core_saga",
+] as const satisfies readonly CharacterOnboardingTestLabPhase[];
 
 function services() {
   const repository = new DrizzleTestLabRepository(getAiDb());
@@ -45,14 +58,7 @@ export const GET = observeHandler(() => {
           characterOnboarding: CHARACTER_ONBOARDING_SCENARIO,
           storyGeneration: createStoryGenerationScenario(10),
         },
-        productionBackedPhaseIds: [
-          "character_first_identity_suggestions",
-          "world_suggestions",
-          "compatibility",
-          "region_suggestions",
-          "origin_suggestions",
-          "core_saga",
-        ],
+        productionBackedPhaseIds: CHARACTER_ONBOARDING_PRODUCTION_PHASES,
       },
     }),
   );
@@ -91,6 +97,54 @@ export const POST = observeHandler(async (request: Request) => {
           now,
         });
         return NextResponse.json({ data: created });
+      }
+
+      if (action === "preview-phase-prompt") {
+        const sessionId = requiredString(body.sessionId, "sessionId");
+        const phaseId = requiredString(body.phaseId, "phaseId");
+        const parentStateId = requiredString(
+          body.parentStateId,
+          "parentStateId",
+        );
+        const modelSlug = requiredString(body.modelSlug, "modelSlug");
+        const householdId = requiredString(body.householdId, "householdId");
+        const childProfileId = requiredString(
+          body.childProfileId,
+          "childProfileId",
+        );
+        const localeOverride = optionalString(body.locale, "locale");
+        const promptVersionOverride = optionalPositiveInteger(
+          body.promptVersionOverride,
+          "promptVersionOverride",
+        );
+        const parentState = await repository.getState(parentStateId);
+        assertSandboxOwner(parentState, {
+          parentId: parent.id,
+          householdId,
+          childProfileId,
+        });
+        const session = await repository.getSession(sessionId);
+        if (!session)
+          throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
+        if (session.scenarioKey !== CHARACTER_ONBOARDING_SCENARIO.key) {
+          throw new Error(
+            `TEST_LAB_PROMPT_PREVIEW_UNSUPPORTED:${session.scenarioKey}`,
+          );
+        }
+        const phase = phaseForSession(session.scenarioKey, phaseId);
+        const preview = await previewCharacterOnboardingTestLabPhase({
+          userId: parent.id,
+          householdId,
+          childProfileId,
+          phaseId: phase.id as CharacterOnboardingTestLabPhase,
+          parentState: parentState?.value ?? {},
+          modelSlug,
+          ...(localeOverride ? { localeOverride } : {}),
+          ...(promptVersionOverride === undefined
+            ? {}
+            : { promptVersionOverride }),
+        });
+        return NextResponse.json({ data: preview });
       }
 
       if (action === "run-phase") {
@@ -191,9 +245,30 @@ export const POST = observeHandler(async (request: Request) => {
           throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
         const branches = await repository.listBranches(sessionId);
         const timeline = [];
+        const runs = [];
 
         for (const branch of branches) {
           const selections = await repository.listSelections(branch.id);
+          const branchRuns = await repository.listRuns(branch.id);
+          for (const run of branchRuns) {
+            const parentState = await repository.getState(run.parentStateId);
+            assertSandboxOwner(parentState, {
+              parentId: parent.id,
+              householdId,
+              childProfileId,
+            });
+            const candidates = await repository.listCandidates(run.id);
+            const selection = selections.find(
+              (candidate) => candidate.runId === run.id,
+            );
+            runs.push({
+              run,
+              candidates,
+              selectedCandidateId: selection?.candidateId ?? null,
+              selectedStateId: selection?.selectedStateId ?? null,
+            });
+          }
+
           for (const selection of selections) {
             const run = await repository.getRun(selection.runId);
             if (!run)
@@ -237,11 +312,13 @@ export const POST = observeHandler(async (request: Request) => {
         }
 
         timeline.sort((a, b) => a.selectedAt.localeCompare(b.selectedAt));
+        runs.sort((a, b) => a.run.createdAt.localeCompare(b.run.createdAt));
         return NextResponse.json({
           data: {
             session,
             branches,
             timeline,
+            runs,
           },
         });
       }
@@ -294,6 +371,14 @@ function scenarioKeyFromBody(value: unknown): string {
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`TEST_LAB_REQUIRED_FIELD:${field}`);
+  }
+  return value.trim();
+}
+
+function optionalString(value: unknown, field: string): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") {
+    throw new Error(`TEST_LAB_STRING_REQUIRED:${field}`);
   }
   return value.trim();
 }

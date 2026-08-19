@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import {
   generateOnboardingSuggestionsWithProductionPipeline,
   pickSuggestionArray,
+  prepareOnboardingSuggestionPrompt,
+  type OnboardingPromptOverride,
   type OnboardingSuggestionGenerationResult,
   type OnboardingSuggestionGenerationSpec,
 } from "./onboarding-suggestion-generation-core";
@@ -23,7 +25,30 @@ export interface CharacterOnboardingTestLabExecutionInput {
   parentState: Record<string, unknown>;
   modelSlug: string;
   localeOverride?: string;
+  promptOverride?: OnboardingPromptOverride;
   promptVersionOverride?: number;
+}
+
+export interface CharacterOnboardingTestLabPromptPreviewInput {
+  userId: string;
+  householdId: string;
+  childProfileId: string;
+  phaseId: CharacterOnboardingTestLabPhase;
+  parentState: Record<string, unknown>;
+  modelSlug: string;
+  localeOverride?: string;
+  promptVersionOverride?: number;
+}
+
+export interface CharacterOnboardingTestLabPromptPreview {
+  promptKey: string;
+  promptVersion: number;
+  renderedPrompt: {
+    system: string;
+    user: string;
+  };
+  inputContext: Record<string, string | number | boolean | null | object>;
+  modelSlug: string;
 }
 
 export interface CharacterOnboardingTestLabCandidate {
@@ -60,6 +85,54 @@ export interface CharacterOnboardingTestLabExecutionResult {
 type Suggestion = Record<string, unknown>;
 const pickSuggestions = pickSuggestionArray<Suggestion>;
 
+function generationOptions(input: {
+  parentState: Record<string, unknown>;
+  modelSlug: string;
+  localeOverride?: string;
+  promptOverride?: OnboardingPromptOverride;
+  promptVersionOverride?: number;
+}) {
+  return {
+    creationOverride: {
+      startDirection: "character_first" as const,
+      previousSelections: input.parentState,
+    },
+    modelOverride: input.modelSlug,
+    ...(input.localeOverride ? { localeOverride: input.localeOverride } : {}),
+    ...(input.promptOverride ? { promptOverride: input.promptOverride } : {}),
+    ...(input.promptVersionOverride === undefined
+      ? {}
+      : { promptVersionOverride: input.promptVersionOverride }),
+    recordTrace: false,
+  };
+}
+
+export async function previewCharacterOnboardingTestLabPhase(
+  input: CharacterOnboardingTestLabPromptPreviewInput,
+): Promise<CharacterOnboardingTestLabPromptPreview> {
+  const definition = phaseDefinition(input.phaseId);
+  const prepared = await prepareOnboardingSuggestionPrompt(
+    input.userId,
+    {
+      householdId: input.householdId,
+      childProfileId: input.childProfileId,
+    },
+    definition.spec,
+    generationOptions(input),
+  );
+
+  return {
+    promptKey: prepared.promptKey,
+    promptVersion: prepared.promptVersion,
+    renderedPrompt: {
+      system: prepared.systemPrompt,
+      user: prepared.userPrompt,
+    },
+    inputContext: prepared.inputContext,
+    modelSlug: input.modelSlug,
+  };
+}
+
 export async function executeCharacterOnboardingTestLabPhase(
   input: CharacterOnboardingTestLabExecutionInput,
 ): Promise<CharacterOnboardingTestLabExecutionResult> {
@@ -71,18 +144,7 @@ export async function executeCharacterOnboardingTestLabPhase(
       childProfileId: input.childProfileId,
     },
     definition.spec,
-    {
-      creationOverride: {
-        startDirection: "character_first",
-        previousSelections: input.parentState,
-      },
-      modelOverride: input.modelSlug,
-      ...(input.localeOverride ? { localeOverride: input.localeOverride } : {}),
-      ...(input.promptVersionOverride === undefined
-        ? {}
-        : { promptVersionOverride: input.promptVersionOverride }),
-      recordTrace: false,
-    },
+    generationOptions(input),
   );
 
   const suggestions = result.suggestions.map(asRecord);

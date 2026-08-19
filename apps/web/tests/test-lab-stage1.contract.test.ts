@@ -54,16 +54,40 @@ describe("Test Lab stage 1 contract", () => {
     expect(runner).toContain("lumi.testLab.locale");
     expect(runner).toContain('<option value="tr">Türkçe</option>');
     expect(runner).toContain('<option value="en">English</option>');
-    expect(runner).toContain("generationConfig: { outputLocale: locale }");
+    expect(runner).toContain("outputLocale: locale");
   });
 
-  it("retains each phase result while navigating between onboarding phases", () => {
+  it("uses a two-column phase navigation and prompt workbench", () => {
     const runner = read("settings/test-lab/onboarding-test-runner.tsx");
-    expect(runner).toContain("resultsByPhase");
-    expect(runner).toContain("setResultsByPhase");
-    expect(runner).toContain("resultsByPhase[phaseId]");
-    expect(runner).toContain("sonuçları gör");
-    expect(runner).not.toContain("setResult(null)");
+    const theme = read("settings/test-lab/test-lab-runner.module.css");
+
+    expect(runner).toContain("styles.workspace");
+    expect(runner).toContain("styles.sidebar");
+    expect(runner).toContain("styles.contentPanel");
+    expect(runner).toContain("LLM&apos;e gönderilecek prompt");
+    expect(runner).toContain("System prompt");
+    expect(runner).toContain("User prompt");
+    expect(theme).toContain("grid-template-columns: minmax(260px, 320px)");
+  });
+
+  it("previews and sends a per-run prompt override without mutating production", () => {
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+    expect(runner).toContain('action: "preview-phase-prompt"');
+    expect(runner).toContain("promptOverride");
+    expect(runner).toContain("Production promptunu geri yükle");
+    expect(runner).toContain(
+      "Buradaki değişiklik yalnız yeni Test Lab runına uygulanır",
+    );
+  });
+
+  it("keeps multiple runs per phase and associates each with its prompt snapshot", () => {
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+    expect(runner).toContain("runsByPhase");
+    expect(runner).toContain('action: "inspect-session"');
+    expect(runner).toContain("Her sonuç kendi prompt snapshotı ile saklanır");
+    expect(runner).toContain("Bu run&apos;da kullanılan prompt");
+    expect(runner).toContain("executionSnapshot?.renderedPrompt");
+    expect(runner).toContain("lumi.testLab.sessionId");
   });
 
   it("uses centralized application theme tokens instead of page-local colors", () => {
