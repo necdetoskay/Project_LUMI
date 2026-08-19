@@ -673,6 +673,10 @@ function KpiCard({
   );
 }
 
+function composeChildProfileSafeDetailPath(childProfileId: string) {
+  return `/app/profiles/${encodeURIComponent(childProfileId)}`;
+}
+
 function ProfileCard({
   profile,
   householdId,
@@ -754,7 +758,7 @@ function ProfileCard({
 
         <Link
           className={styles.profileButton}
-          href={`/app/profiles/${encodeURIComponent(profile.id)}`}
+          href={composeChildProfileSafeDetailPath(profile.id)}
         >
           Profili Görüntüle
           <span className="material-symbols-outlined" aria-hidden="true">
