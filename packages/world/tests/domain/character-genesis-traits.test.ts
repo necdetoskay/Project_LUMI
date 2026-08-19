@@ -43,7 +43,10 @@ describe("Character Genesis traits", () => {
   });
 
   it("keeps short-term dynamic state separate from base DNA", () => {
-    const state = createInitialCharacterTraitState({ evidence, seed: "seed-2" });
+    const state = createInitialCharacterTraitState({
+      evidence,
+      seed: "seed-2",
+    });
     const before = structuredClone(state.dna);
     const updated = updateDynamicCharacterState(state, {
       anxiety: 0.95,
@@ -56,7 +59,10 @@ describe("Character Genesis traits", () => {
   });
 
   it("applies learned modifiers explicitly without rewriting base DNA", () => {
-    const state = createInitialCharacterTraitState({ evidence, seed: "seed-3" });
+    const state = createInitialCharacterTraitState({
+      evidence,
+      seed: "seed-3",
+    });
     const baseCourage = state.dna.courage;
     const withModifier = addLearnedCharacterModifier(state, {
       id: "lesson-1",
