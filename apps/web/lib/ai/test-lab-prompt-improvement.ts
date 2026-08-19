@@ -1,7 +1,4 @@
-import type {
-  EvaluationCriterion,
-  EvaluationFinding,
-} from "@lumi/ai/test-lab";
+import type { EvaluationCriterion, EvaluationFinding } from "@lumi/ai/test-lab";
 
 export type PromptImprovementPlan = {
   targetCriterionKey: string;

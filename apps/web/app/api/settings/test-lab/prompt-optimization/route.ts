@@ -39,7 +39,8 @@ export const GET = observeHandler(() => {
         return NextResponse.json({
           data: {
             ready: false,
-            message: "Prompt provenance içeren judge değerlendirmesi henüz yok.",
+            message:
+              "Prompt provenance içeren judge değerlendirmesi henüz yok.",
           },
         });
       }
@@ -48,7 +49,8 @@ export const GET = observeHandler(() => {
         return NextResponse.json({
           data: {
             ready: false,
-            message: "Judge değerlendirmesinde iyileştirilebilir kriter bulunamadı.",
+            message:
+              "Judge değerlendirmesinde iyileştirilebilir kriter bulunamadı.",
           },
         });
       }
@@ -89,7 +91,8 @@ export const POST = observeHandler(async (request: Request) => {
         return NextResponse.json(
           {
             error: "NO_OPTIMIZATION_CONTEXT",
-            message: "Prompt provenance içeren judge değerlendirmesi bulunamadı.",
+            message:
+              "Prompt provenance içeren judge değerlendirmesi bulunamadı.",
           },
           { status: 409 },
         );
@@ -189,7 +192,10 @@ async function loadLatestOptimizationContext(
         testLabEvaluationExecutions.id,
       ),
     )
-    .innerJoin(testLabRuns, eq(testLabCandidateEvaluations.runId, testLabRuns.id))
+    .innerJoin(
+      testLabRuns,
+      eq(testLabCandidateEvaluations.runId, testLabRuns.id),
+    )
     .innerJoin(
       testLabStateSnapshots,
       eq(testLabRuns.parentStateId, testLabStateSnapshots.id),

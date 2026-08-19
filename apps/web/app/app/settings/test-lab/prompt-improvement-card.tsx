@@ -144,14 +144,16 @@ export function PromptImprovementCard() {
             </summary>
             <div className={styles.promptDetailBody}>
               <strong>
-                {suggestion.targetCriterion.label} · {suggestion.targetCriterion.score}
+                {suggestion.targetCriterion.label} ·{" "}
+                {suggestion.targetCriterion.score}
                 /100
               </strong>
               {suggestion.details.map((detail) => (
                 <span key={detail}>{detail}</span>
               ))}
               <small>
-                Kaynak prompt: v{suggestion.sourcePromptVersion} · {suggestion.rubricLabel}
+                Kaynak prompt: v{suggestion.sourcePromptVersion} ·{" "}
+                {suggestion.rubricLabel}
               </small>
             </div>
           </details>
@@ -162,7 +164,9 @@ export function PromptImprovementCard() {
             disabled={apply.status === "applying" || apply.status === "created"}
             onClick={createDraft}
           >
-            <Icon name={apply.status === "created" ? "check" : "construction"} />
+            <Icon
+              name={apply.status === "created" ? "check" : "construction"}
+            />
             {apply.status === "applying"
               ? "Draft oluşturuluyor…"
               : apply.status === "created"
