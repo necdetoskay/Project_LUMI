@@ -42,12 +42,7 @@ function validOrigin(): DeepCharacterOriginSuggestion {
       },
     ],
     summaryFactIds: ["fact-home", "fact-skill", "fact-lina"],
-    narrativeFactIds: [
-      "fact-home",
-      "fact-skill",
-      "fact-lina",
-      "fact-letter",
-    ],
+    narrativeFactIds: ["fact-home", "fact-skill", "fact-lina", "fact-letter"],
     unresolvedQuestions: [
       {
         id: "question-letter",
@@ -94,38 +89,32 @@ describe("deep character origin validation", () => {
     );
   });
 
-  it(
-    "requires operational summary facts to belong to the narrative fact set",
-    () => {
-      const origin = validOrigin();
-      origin.narrativeFactIds = ["fact-home", "fact-letter"];
+  it("requires operational summary facts to belong to the narrative fact set", () => {
+    const origin = validOrigin();
+    origin.narrativeFactIds = ["fact-home", "fact-letter"];
 
-      const evidence = validateDeepCharacterOrigin(origin);
+    const evidence = validateDeepCharacterOrigin(origin);
 
-      expect(evidence.valid).toBe(false);
-      expect(evidence.issues.map((issue) => issue.code)).toContain(
-        "DEEP_ORIGIN_SUMMARY_FACT_NOT_IN_NARRATIVE",
-      );
-    },
-  );
+    expect(evidence.valid).toBe(false);
+    expect(evidence.issues.map((issue) => issue.code)).toContain(
+      "DEEP_ORIGIN_SUMMARY_FACT_NOT_IN_NARRATIVE",
+    );
+  });
 
-  it(
-    "treats narrative depth as evidence rather than an exact word-count gate",
-    () => {
-      const origin = validOrigin();
-      origin.narrative = "A short but coherent childhood summary.";
+  it("treats narrative depth as evidence rather than an exact word-count gate", () => {
+    const origin = validOrigin();
+    origin.narrative = "A short but coherent childhood summary.";
 
-      const evidence = validateDeepCharacterOrigin(origin);
+    const evidence = validateDeepCharacterOrigin(origin);
 
-      expect(evidence.valid).toBe(true);
-      expect(evidence.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            code: "DEEP_ORIGIN_NARRATIVE_SHALLOW",
-            severity: "warning",
-          }),
-        ]),
-      );
-    },
-  );
+    expect(evidence.valid).toBe(true);
+    expect(evidence.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "DEEP_ORIGIN_NARRATIVE_SHALLOW",
+          severity: "warning",
+        }),
+      ]),
+    );
+  });
 });
