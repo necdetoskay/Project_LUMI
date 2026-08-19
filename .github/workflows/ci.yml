@@ -37,7 +37,11 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
-      - run: pnpm format:check
+      - name: Print Inventory Genesis prettier diff
+        run: |
+          pnpm exec prettier --write apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
+          git diff -- apps/web/app/api/settings/test-lab/genesis/inventory/route.ts apps/web/app/app/settings/test-lab/inventory-genesis-test-panel.tsx apps/web/tests/character-genesis-inventory-test-lab.contract.test.ts packages/profiles/src/application/inventory-genesis-prompt-bootstrap.service.ts packages/profiles/src/application/inventory-genesis.service.ts packages/profiles/src/domain/inventory-genesis.ts
+          exit 1
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
