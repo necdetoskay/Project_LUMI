@@ -61,7 +61,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -101,7 +103,11 @@ export default function DeepOriginTestPanel() {
 
   async function refreshHistory() {
     const context = sandboxContext();
-    if (!context.sessionId || !context.householdId || !context.childProfileId) {
+    if (
+      !context.sessionId ||
+      !context.householdId ||
+      !context.childProfileId
+    ) {
       setRuns([]);
       return;
     }
@@ -138,9 +144,13 @@ export default function DeepOriginTestPanel() {
         system: payload.data.renderedPrompt.system,
         user: payload.data.renderedPrompt.user,
       });
-      setMessage("Deep Origin production promptu sandbox context ile hazırlandı.");
+      setMessage(
+        "Deep Origin production promptu sandbox context ile hazırlandı.",
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt hazırlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Prompt hazırlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -148,7 +158,12 @@ export default function DeepOriginTestPanel() {
 
   async function runDeepOrigin() {
     const context = sandboxContext();
-    if (!prompt || !context.sessionId || !context.branchId || !context.parentStateId) {
+    if (
+      !prompt ||
+      !context.sessionId ||
+      !context.branchId ||
+      !context.parentStateId
+    ) {
       setMessage("Önce production promptunu yükleyin.");
       return;
     }
@@ -167,7 +182,9 @@ export default function DeepOriginTestPanel() {
         `${payload.data.candidates.length} Deep Origin adayı üretildi; raw/parsed/validation kanıtları kaydedildi.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Deep Origin çalıştırılamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Deep Origin çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
