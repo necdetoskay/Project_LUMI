@@ -490,7 +490,9 @@ export default function OnboardingTestRunner({
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={!sessionId || !currentPhase || busy || currentPhaseCompleted}
+          disabled={
+            !sessionId || !currentPhase || busy || currentPhaseCompleted
+          }
           onClick={runCurrentPhase}
         >
           {busy
@@ -503,7 +505,8 @@ export default function OnboardingTestRunner({
         {currentResult ? (
           <div className={styles.results}>
             <h3>
-              Üretilen adaylar — {currentPhase?.label ?? currentResult.run.phaseId}
+              Üretilen adaylar —{" "}
+              {currentPhase?.label ?? currentResult.run.phaseId}
             </h3>
             {currentPhaseCompleted ? (
               <p className={styles.muted}>
