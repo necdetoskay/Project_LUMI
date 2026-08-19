@@ -178,7 +178,7 @@ KURALLAR:
     requiredVariables: ["locale", "characterIdentity", "world", "region"],
     outputSchema: DEEP_CHARACTER_ORIGIN_OUTPUT_SCHEMA,
     schemaVersion: "deep-origin.v1",
-    generationConfig: { temperature: 0.8, maxTokens: 4200 },
+    generationConfig: { temperature: 0.8, maxOutputTokens: 4200 },
     activatedAt: new Date(),
   });
 }
