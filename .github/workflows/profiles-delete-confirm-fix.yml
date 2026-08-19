@@ -27,66 +27,191 @@ jobs:
           tsx = Path('apps/web/app/app/profiles/profiles-client-page.tsx')
           text = tsx.read_text()
 
-          state_old = '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(null);\n  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);\n  const [deleteError, setDeleteError] = useState<string | null>(null);'''
-          state_new = '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(null);\n  const [deleteConfirm, setDeleteConfirm] = useState(\"\");\n  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);\n  const [deleteError, setDeleteError] = useState<string | null>(null);'''
+          state_old = '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
+    null,
+  );
+  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);'''
+          state_new = '''  const [deleteTarget, setDeleteTarget] = useState<EnrichedProfile | null>(
+    null,
+  );
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deletingMode, setDeletingMode] = useState<DeleteMode | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);'''
           if state_old not in text:
               raise SystemExit('delete state marker not found')
           text = text.replace(state_old, state_new, 1)
 
-          escape_old = '''      if (event.key === \"Escape\") {\n        setDeleteTarget(null);\n        setDeleteError(null);\n      }'''
-          escape_new = '''      if (event.key === \"Escape\") {\n        setDeleteTarget(null);\n        setDeleteConfirm(\"\");\n        setDeleteError(null);\n      }'''
-          if escape_old not in text:
-              raise SystemExit('escape marker not found')
-          text = text.replace(escape_old, escape_new, 1)
+          replacements = [
+            (
+              '''      if (event.key === "Escape") {
+        setDeleteTarget(null);
+        setDeleteError(null);
+      }''',
+              '''      if (event.key === "Escape") {
+        setDeleteTarget(null);
+        setDeleteConfirm("");
+        setDeleteError(null);
+      }''',
+              'escape marker',
+            ),
+            (
+              '''  }, [ageSort, profiles, query, storyFilter]);
 
-          visible_marker = '''  }, [ageSort, profiles, query, storyFilter]);\n\n  async function handleDelete'''
-          visible_replacement = '''  }, [ageSort, profiles, query, storyFilter]);\n\n  const deleteConfirmMatches =\n    deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;\n\n  async function handleDelete'''
-          if visible_marker not in text:
-              raise SystemExit('visible profile marker not found')
-          text = text.replace(visible_marker, visible_replacement, 1)
+  async function handleDelete''',
+              '''  }, [ageSort, profiles, query, storyFilter]);
 
-          success_old = '''      setDeleteTarget(null);\n    } catch {'''
-          success_new = '''      setDeleteTarget(null);\n      setDeleteConfirm(\"\");\n    } catch {'''
-          if success_old not in text:
-              raise SystemExit('delete success marker not found')
-          text = text.replace(success_old, success_new, 1)
+  const deleteConfirmMatches =
+    deleteTarget !== null && deleteConfirm.trim() === deleteTarget.displayName;
 
-          manage_old = '''                    onManage={() => {\n                      setDeleteTarget(profile);\n                      setDeleteError(null);\n                    }}'''
-          manage_new = '''                    onManage={() => {\n                      setDeleteTarget(profile);\n                      setDeleteConfirm(\"\");\n                      setDeleteError(null);\n                    }}'''
-          if manage_old not in text:
-              raise SystemExit('manage marker not found')
-          text = text.replace(manage_old, manage_new, 1)
+  async function handleDelete''',
+              'visible profile marker',
+            ),
+            (
+              '''      setDeleteTarget(null);
+    } catch {''',
+              '''      setDeleteTarget(null);
+      setDeleteConfirm("");
+    } catch {''',
+              'delete success marker',
+            ),
+            (
+              '''                    onManage={() => {
+                      setDeleteTarget(profile);
+                      setDeleteError(null);
+                    }}''',
+              '''                    onManage={() => {
+                      setDeleteTarget(profile);
+                      setDeleteConfirm("");
+                      setDeleteError(null);
+                    }}''',
+              'manage marker',
+            ),
+            (
+              '''          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }}''',
+              '''          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteConfirm("");
+            setDeleteError(null);
+          }}''',
+              'backdrop marker',
+            ),
+          ]
+          for old, new, label in replacements:
+              if old not in text:
+                  raise SystemExit(f'{label} not found')
+              text = text.replace(old, new, 1)
 
-          backdrop_old = '''          onClick={() => {\n            setDeleteTarget(null);\n            setDeleteError(null);\n          }}'''
-          backdrop_new = '''          onClick={() => {\n            setDeleteTarget(null);\n            setDeleteConfirm(\"\");\n            setDeleteError(null);\n          }}'''
-          if backdrop_old not in text:
-              raise SystemExit('backdrop marker not found')
-          text = text.replace(backdrop_old, backdrop_new, 1)
-
-          modal_marker = '''            {deleteError ? <p className={styles.errorText}>{deleteError}</p> : null}\n            <div className={styles.modalActions}>'''
-          modal_insert = '''            <label className={styles.confirmField}>\n              <span>\n                Kalıcı silme için profil adını birebir yazın:\n                <strong>{deleteTarget.displayName}</strong>\n              </span>\n              <input\n                type=\"text\"\n                value={deleteConfirm}\n                onChange={(event) => setDeleteConfirm(event.target.value)}\n                placeholder={deleteTarget.displayName}\n                disabled={deletingMode !== null}\n                autoComplete=\"off\"\n              />\n            </label>\n            {deleteError ? <p className={styles.errorText}>{deleteError}</p> : null}\n            <div className={styles.modalActions}>'''
+          modal_marker = '''            {deleteError ? (
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
+            <div className={styles.modalActions}>'''
+          modal_insert = '''            <label className={styles.confirmField}>
+              <span>
+                Kalıcı silme için profil adını birebir yazın:
+                <strong>{deleteTarget.displayName}</strong>
+              </span>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(event) => setDeleteConfirm(event.target.value)}
+                placeholder={deleteTarget.displayName}
+                disabled={deletingMode !== null}
+                autoComplete="off"
+              />
+            </label>
+            {deleteError ? (
+              <p className={styles.errorText}>{deleteError}</p>
+            ) : null}
+            <div className={styles.modalActions}>'''
           if modal_marker not in text:
               raise SystemExit('modal insertion marker not found')
           text = text.replace(modal_marker, modal_insert, 1)
 
-          permanent_old = '''                className={styles.deleteButton}\n                type=\"button\"\n                disabled={deletingMode !== null}\n                onClick={() => void handleDelete(\"permanent\")}'''
-          permanent_new = '''                className={styles.deleteButton}\n                type=\"button\"\n                disabled={deletingMode !== null || !deleteConfirmMatches}\n                onClick={() => void handleDelete(\"permanent\")}'''
+          permanent_old = '''                className={styles.deleteButton}
+                type="button"
+                disabled={deletingMode !== null}
+                onClick={() => void handleDelete("permanent")}'''
+          permanent_new = '''                className={styles.deleteButton}
+                type="button"
+                disabled={deletingMode !== null || !deleteConfirmMatches}
+                onClick={() => void handleDelete("permanent")}'''
           if permanent_old not in text:
               raise SystemExit('permanent delete marker not found')
           text = text.replace(permanent_old, permanent_new, 1)
 
-          cancel_old = '''                onClick={() => {\n                  setDeleteTarget(null);\n                  setDeleteError(null);\n                }}'''
-          cancel_new = '''                onClick={() => {\n                  setDeleteTarget(null);\n                  setDeleteConfirm(\"\");\n                  setDeleteError(null);\n                }}'''
+          cancel_old = '''                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteError(null);
+                }}'''
+          cancel_new = '''                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteConfirm("");
+                  setDeleteError(null);
+                }}'''
           if cancel_old not in text:
               raise SystemExit('cancel marker not found')
           text = text.replace(cancel_old, cancel_new, 1)
-
           tsx.write_text(text)
 
           css = Path('apps/web/app/app/profiles/profiles-canonical.module.css')
           css_text = css.read_text()
-          css_marker = '''.errorText {\n  margin-top: 12px !important;\n  color: #be4037 !important;\n  font-weight: 700;\n}\n'''
-          css_insert = '''.confirmField {\n  display: grid;\n  gap: 8px;\n  margin-top: 18px;\n}\n\n.confirmField span {\n  color: #6d6674;\n  font-size: 12px;\n  line-height: 1.5;\n}\n\n.confirmField strong {\n  display: block;\n  margin-top: 2px;\n  color: #2c2732;\n  font-weight: 850;\n}\n\n.confirmField input {\n  min-height: 42px;\n  border: 1px solid var(--profiles-border);\n  border-radius: 10px;\n  background: #fff;\n  padding: 0 12px;\n  color: var(--profiles-text);\n  font: inherit;\n  font-size: 13px;\n  outline: none;\n}\n\n.confirmField input:focus {\n  border-color: #bda3f2;\n  box-shadow: 0 0 0 3px rgba(109, 50, 232, 0.09);\n}\n\n.modalActions button:disabled {\n  cursor: not-allowed;\n  opacity: 0.5;\n}\n\n.errorText {\n  margin-top: 12px !important;\n  color: #be4037 !important;\n  font-weight: 700;\n}\n'''
+          css_marker = '''.errorText {
+  margin-top: 12px !important;
+  color: #be4037 !important;
+  font-weight: 700;
+}
+'''
+          css_insert = '''.confirmField {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.confirmField span {
+  color: #6d6674;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.confirmField strong {
+  display: block;
+  margin-top: 2px;
+  color: #2c2732;
+  font-weight: 850;
+}
+
+.confirmField input {
+  min-height: 42px;
+  border: 1px solid var(--profiles-border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--profiles-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.confirmField input:focus {
+  border-color: #bda3f2;
+  box-shadow: 0 0 0 3px rgba(109, 50, 232, 0.09);
+}
+
+.modalActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.errorText {
+  margin-top: 12px !important;
+  color: #be4037 !important;
+  font-weight: 700;
+}
+'''
           if css_marker not in css_text:
               raise SystemExit('css marker not found')
           css.write_text(css_text.replace(css_marker, css_insert, 1))
