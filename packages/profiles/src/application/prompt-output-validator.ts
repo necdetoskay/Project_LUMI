@@ -5,7 +5,7 @@ export class PromptOutputValidationError extends Error {
   }
 }
 
-type JsonSchema = Record<string, unknown>;
+export type JsonSchema = Record<string, unknown>;
 
 export interface PromptOutputValidationOptions {
   allowOverMaxLength?: boolean;
