@@ -48,9 +48,6 @@ async function prepareLandingAssets() {
 
     if (prepared.converted) {
       await writeFile(assetPath, prepared.buffer);
-      console.log(`[landing-assets] decoded ${filename}`);
-    } else {
-      console.log(`[landing-assets] verified ${filename}`);
     }
   }
 }
