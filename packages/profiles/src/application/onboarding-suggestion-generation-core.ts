@@ -14,7 +14,10 @@ import {
   type GenerationContext,
   type GenerationCreationOverride,
 } from "./generation-context.service";
-import { parseAndValidatePromptOutput } from "./prompt-output-validator";
+import {
+  parseAndValidatePromptOutput,
+  type JsonSchema,
+} from "./prompt-output-validator";
 import {
   resolveActivePrompt,
   resolvePromptVersion,
@@ -57,7 +60,7 @@ export interface PreparedOnboardingSuggestionPrompt {
   userTemplate: string;
   systemPrompt: string;
   userPrompt: string;
-  outputSchema: unknown;
+  outputSchema: JsonSchema;
   modelOverride: string | null;
   generationConfig: Record<string, unknown> | null;
   inputContext: Record<string, string | number | boolean | null | object>;
@@ -189,10 +192,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           taskType: spec.taskType,
           promptKey: prepared.promptKey,
           promptVersion: prepared.promptVersion,
-          inputContext: {
-            ...prepared.inputContext,
-            generationAttempt: attempt,
-          },
+          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
           contextEvidence: prepared.contextEvidence,
           outputPayload: { suggestions },
           validationStatus: "valid",
@@ -222,10 +222,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           taskType: spec.taskType,
           promptKey: prepared.promptKey,
           promptVersion: prepared.promptVersion,
-          inputContext: {
-            ...prepared.inputContext,
-            generationAttempt: attempt,
-          },
+          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
           contextEvidence: prepared.contextEvidence,
           outputPayload: { raw: generated.content },
           validationStatus: "invalid",
