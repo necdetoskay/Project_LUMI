@@ -37,7 +37,9 @@ describe("Character Genesis DNA Test Lab contract", () => {
     expect(route).toContain("generateCharacterDnaEvidence");
     expect(route).toContain("normalizeSemanticCharacterTraitEvidence");
     expect(route).toContain("createInitialCharacterTraitState");
-    expect(prompt).toContain("Numeric DNA uygulama kodunda deterministik türetilecek");
+    expect(prompt).toContain(
+      "Numeric DNA uygulama kodunda deterministik türetilecek",
+    );
   });
 
   it("records raw output, usage, derived traits and validation evidence", () => {
