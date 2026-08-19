@@ -14,10 +14,12 @@ export type {
 export {
   CharacterGenesisCoordinator,
   CharacterGenesisValidationError,
+  characterGenesisCommitIdempotencyKey,
 } from "./character-genesis.service";
 export type {
   CharacterGenesisRepositoryPort,
   CharacterGenesisCanonicalCommitPort,
+  CharacterGenesisCanonicalCommitRequest,
   CharacterGenesisCanonicalCommitResult,
   CommitCharacterGenesisResult,
 } from "./character-genesis.service";
