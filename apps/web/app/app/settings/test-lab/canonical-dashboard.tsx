@@ -7,6 +7,8 @@ import type {
   CanonicalTestLabRunView,
 } from "@/lib/ai/test-lab-dashboard-view-model";
 
+import { PromptImprovementCard } from "./prompt-improvement-card";
+
 import styles from "./canonical-dashboard.module.css";
 
 const testItems = [
@@ -230,7 +232,11 @@ function LiveRunPanel({
       evaluationReady ? "100%" : "Queued",
       evaluationReady ? "done" : "queued",
     ],
-    ["Promptu iyileştir", "UI-4", "queued"],
+    [
+      "Promptu iyileştir",
+      evaluationReady ? "Ready" : "Queued",
+      evaluationReady ? "done" : "queued",
+    ],
     ["Final raporu oluştur", "Queued", "queued"],
   ] as const;
   const trendGeometry = evaluation.trend.map((point, index, items) => {
@@ -411,27 +417,6 @@ function QualityPanel({
   );
 }
 
-function PromptSuggestion() {
-  return (
-    <section className={`${styles.panel} ${styles.promptPanel}`}>
-      <PanelTitle icon="auto_awesome">Prompt İyileştirme Önerisi</PanelTitle>
-      <span className={styles.aiBadge}>UI-4</span>
-      <p>
-        Prompt iyileştirme önerileri, değerlendirme sonuçları UI-3 ile
-        bağlandıktan sonra immutable draft akışı üzerinden burada gösterilecek.
-      </p>
-      <button className={styles.promptDetails} type="button" disabled>
-        <span>Örnek Prompt Değişiklikleri</span>
-        <Icon name="expand_more" />
-      </button>
-      <button className={styles.applyPromptButton} type="button" disabled>
-        <Icon name="construction" />
-        Prompta Uygula
-      </button>
-    </section>
-  );
-}
-
 function RecentRuns({ runs }: { runs: CanonicalTestLabRunView[] }) {
   return (
     <section className={`${styles.panel} ${styles.recentPanel}`}>
@@ -599,7 +584,7 @@ export default function CanonicalTestLabDashboard({
           <LiveRunPanel latestRun={latestRun} evaluation={data.evaluation} />
           <div className={styles.rightColumn}>
             <QualityPanel metrics={data.evaluation.qualityMetrics} />
-            <PromptSuggestion />
+            <PromptImprovementCard />
           </div>
         </section>
 
