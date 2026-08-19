@@ -188,9 +188,7 @@ export const POST = observeHandler(async (request: Request) => {
           parsedOutput: generated.suggestions,
           derivedSocial: preparedCandidates.map((item) => item.social),
           validation: preparedCandidates.map((item) => item.validation),
-          contradictions: preparedCandidates.map(
-            (item) => item.contradictions,
-          ),
+          contradictions: preparedCandidates.map((item) => item.contradictions),
           stateDiff: preparedCandidates.map((item) => item.stateDiff),
           modelProfile,
         },
@@ -249,9 +247,7 @@ function evaluateSocialQuality(
     coherence,
     futureInteractionPotential,
     warnings: [
-      ...(distinctiveness < 0.6
-        ? ["SOCIAL_QUALITY_LOW_DISTINCTIVENESS"]
-        : []),
+      ...(distinctiveness < 0.6 ? ["SOCIAL_QUALITY_LOW_DISTINCTIVENESS"] : []),
       ...(futureInteractionPotential < 0.25 && social.npcs.length > 0
         ? ["SOCIAL_QUALITY_LOW_FUTURE_POTENTIAL"]
         : []),
