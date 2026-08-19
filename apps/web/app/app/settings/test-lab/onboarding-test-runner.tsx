@@ -141,8 +141,8 @@ function groupRuns(entries: RunHistoryEntry[]) {
 function formatCost(value: number | null | undefined) {
   if (typeof value !== "number") return "—";
   if (value === 0) return "$0.000000";
-  if (value < 0.000001) return `${value.toExponential(2)}`;
-  return `${value.toFixed(6)}`;
+  if (value < 0.000001) return "$" + value.toExponential(2);
+  return "$" + value.toFixed(6);
 }
 
 function runCost(usage: UsageSnapshot) {
