@@ -12,6 +12,17 @@ export type {
 } from "./world-bootstrap.service";
 
 export {
+  CharacterGenesisCoordinator,
+  CharacterGenesisValidationError,
+} from "./character-genesis.service";
+export type {
+  CharacterGenesisRepositoryPort,
+  CharacterGenesisCanonicalCommitPort,
+  CharacterGenesisCanonicalCommitResult,
+  CommitCharacterGenesisResult,
+} from "./character-genesis.service";
+
+export {
   moveCharacterToLocation,
   getCharacterCurrentLocation,
   getCharacterMovementHistory,
