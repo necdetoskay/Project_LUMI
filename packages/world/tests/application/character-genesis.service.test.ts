@@ -145,9 +145,9 @@ describe("CharacterGenesisCoordinator", () => {
     expect(
       candidates.filter((candidate) => candidate.status === "selected"),
     ).toEqual([selectedSecond]);
-    expect(candidates.find((candidate) => candidate.id === first.id)?.status).toBe(
-      "staged",
-    );
+    expect(
+      candidates.find((candidate) => candidate.id === first.id)?.status,
+    ).toBe("staged");
   });
 
   it("commits only a selected structurally valid candidate", async () => {
@@ -170,20 +170,23 @@ describe("CharacterGenesisCoordinator", () => {
     expect(committer.committed[0]?.status).toBe("selected");
   });
 
-  it("blocks invalid cross-domain references before canonical mutation", async () => {
-    const repository = new InMemoryGenesisRepository();
-    const committer = new RecordingCommitter();
-    const coordinator = new CharacterGenesisCoordinator(repository, committer);
+  it(
+    "blocks invalid cross-domain references before canonical mutation",
+    async () => {
+      const repository = new InMemoryGenesisRepository();
+      const committer = new RecordingCommitter();
+      const coordinator = new CharacterGenesisCoordinator(repository, committer);
 
-    const input = baseInput("candidate-a");
-    input.sections.social.relationships[0]!.toCandidateId = "npc-missing";
+      const input = baseInput("candidate-a");
+      input.sections.social.relationships[0]!.toCandidateId = "npc-missing";
 
-    const staged = await coordinator.stage(input);
-    const selected = await coordinator.select(staged.id);
+      const staged = await coordinator.stage(input);
+      const selected = await coordinator.select(staged.id);
 
-    await expect(coordinator.commit(selected.id)).rejects.toBeInstanceOf(
-      CharacterGenesisValidationError,
-    );
-    expect(committer.committed).toHaveLength(0);
-  });
+      await expect(coordinator.commit(selected.id)).rejects.toBeInstanceOf(
+        CharacterGenesisValidationError,
+      );
+      expect(committer.committed).toHaveLength(0);
+    },
+  );
 });
