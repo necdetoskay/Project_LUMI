@@ -1,17 +1,19 @@
 name: Test Lab Character Type Apply
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/test-lab-character-type
+      - main
     paths:
       - .github/workflows/test-lab-character-type-apply.yml
+      - apps/web/app/app/settings/test-lab/onboarding-test-runner.tsx
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +56,7 @@ jobs:
             { key: "human", label: "İnsan" },
             { key: "animal", label: "Hayvan" },
             { key: "fantastic", label: "Fantastik" },
-            { key: "synthetic", label: "Yapay / Sentetik" },
+            { key: "synthetic", label: "Sentetik" },
           ] as const;
           type CharacterTypeKey = (typeof CHARACTER_TYPE_OPTIONS)[number]["key"];
 
@@ -292,7 +294,7 @@ jobs:
             '{ key: "human", label: "İnsan" }',
             '{ key: "animal", label: "Hayvan" }',
             '{ key: "fantastic", label: "Fantastik" }',
-            '{ key: "synthetic", label: "Yapay / Sentetik" }',
+            '{ key: "synthetic", label: "Sentetik" }',
             'characterType: { key: characterType }',
             'selectionPhase ||',
             'Karakter tipi seçimi',
