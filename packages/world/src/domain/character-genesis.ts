@@ -39,9 +39,31 @@ export interface GenesisOriginFact {
   sourceRef?: string;
 }
 
+export interface GenesisOriginQuestion {
+  id: string;
+  summary: string;
+  visibility: GenesisVisibility;
+  relatedFactIds: string[];
+}
+
+export interface GenesisOriginHook {
+  id: string;
+  summary: string;
+  relatedFactIds: string[];
+  potential: number;
+}
+
 export interface GenesisOriginState {
   summary: string;
   narrative: string;
+  facts: GenesisOriginFact[];
+  summaryFactIds?: string[];
+  unresolvedQuestions?: GenesisOriginQuestion[];
+  storyHooks?: GenesisOriginHook[];
+}
+
+export interface CharacterVisibleGenesisOriginContext {
+  summary: string;
   facts: GenesisOriginFact[];
 }
 
@@ -257,6 +279,32 @@ export function markCharacterGenesisCommitted(
   };
 }
 
+export function buildCharacterVisibleOriginContext(
+  origin: GenesisOriginState,
+): CharacterVisibleGenesisOriginContext {
+  const visibleFacts = origin.facts.filter((fact) =>
+    isCharacterVisibleOriginFact(fact),
+  );
+  const visibleFactIds = new Set(visibleFacts.map((fact) => fact.id));
+  const requestedIds = origin.summaryFactIds ?? visibleFacts.map((fact) => fact.id);
+  const summaryFacts = requestedIds
+    .filter((id) => visibleFactIds.has(id))
+    .map((id) => visibleFacts.find((fact) => fact.id === id))
+    .filter((fact): fact is GenesisOriginFact => fact !== undefined);
+
+  return {
+    summary: origin.summary,
+    facts: structuredClone(summaryFacts),
+  };
+}
+
+function isCharacterVisibleOriginFact(fact: GenesisOriginFact): boolean {
+  return (
+    fact.visibility === "user_visible" ||
+    fact.visibility === "known_to_character"
+  );
+}
+
 export function validateCharacterGenesisStructure(
   candidate: CharacterGenesisPackage,
 ): GenesisValidationResult {
@@ -272,6 +320,101 @@ export function validateCharacterGenesisStructure(
       message: "Origin fact ids must be unique",
       path: "sections.origin.facts",
       severity: "error",
+    });
+  }
+
+  const originFactById = new Map(
+    origin?.facts.map((fact) => [fact.id, fact] as const) ?? [],
+  );
+  for (const factId of origin?.summaryFactIds ?? []) {
+    const fact = originFactById.get(factId);
+    if (!fact) {
+      issues.push({
+        code: "GENESIS_ORIGIN_SUMMARY_FACT_MISSING",
+        message: `Origin summary references unknown fact ${factId}`,
+        path: "sections.origin.summaryFactIds",
+        severity: "error",
+      });
+      continue;
+    }
+    if (!isCharacterVisibleOriginFact(fact)) {
+      issues.push({
+        code: "GENESIS_ORIGIN_SUMMARY_HIDDEN_FACT",
+        message: `Origin summary cannot derive from hidden fact ${factId}`,
+        path: "sections.origin.summaryFactIds",
+        severity: "error",
+      });
+    }
+  }
+
+  const questionIds = new Set<string>();
+  for (const question of origin?.unresolvedQuestions ?? []) {
+    if (questionIds.has(question.id)) {
+      issues.push({
+        code: "GENESIS_DUPLICATE_ORIGIN_QUESTION",
+        message: `Origin question id ${question.id} is duplicated`,
+        path: "sections.origin.unresolvedQuestions",
+        severity: "error",
+      });
+    }
+    questionIds.add(question.id);
+    for (const factId of question.relatedFactIds) {
+      if (!originFactIds.has(factId)) {
+        issues.push({
+          code: "GENESIS_ORIGIN_QUESTION_FACT_MISSING",
+          message: `Origin question ${question.id} references unknown fact ${factId}`,
+          path: "sections.origin.unresolvedQuestions",
+          severity: "error",
+        });
+      }
+    }
+  }
+
+  const hookIds = new Set<string>();
+  for (const hook of origin?.storyHooks ?? []) {
+    if (hookIds.has(hook.id)) {
+      issues.push({
+        code: "GENESIS_DUPLICATE_ORIGIN_HOOK",
+        message: `Origin hook id ${hook.id} is duplicated`,
+        path: "sections.origin.storyHooks",
+        severity: "error",
+      });
+    }
+    hookIds.add(hook.id);
+    if (hook.potential < 0 || hook.potential > 1) {
+      issues.push({
+        code: "GENESIS_ORIGIN_HOOK_POTENTIAL_RANGE",
+        message: `Origin hook ${hook.id} potential must be within [0,1]`,
+        path: "sections.origin.storyHooks",
+        severity: "error",
+      });
+    }
+    for (const factId of hook.relatedFactIds) {
+      if (!originFactIds.has(factId)) {
+        issues.push({
+          code: "GENESIS_ORIGIN_HOOK_FACT_MISSING",
+          message: `Origin hook ${hook.id} references unknown fact ${factId}`,
+          path: "sections.origin.storyHooks",
+          severity: "error",
+        });
+      }
+    }
+  }
+
+  if (origin && (origin.unresolvedQuestions?.length ?? 0) === 0) {
+    issues.push({
+      code: "GENESIS_ORIGIN_NO_UNRESOLVED_QUESTION",
+      message: "Origin should deliberately preserve at least one unresolved question",
+      path: "sections.origin.unresolvedQuestions",
+      severity: "warning",
+    });
+  }
+  if (origin && (origin.storyHooks?.length ?? 0) === 0) {
+    issues.push({
+      code: "GENESIS_ORIGIN_NO_STORY_HOOK",
+      message: "Origin should preserve at least one future-story hook",
+      path: "sections.origin.storyHooks",
+      severity: "warning",
     });
   }
 
