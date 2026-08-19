@@ -24,146 +24,157 @@ import { observeHandler } from "@/lib/observability/observed-api-route";
 export const CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID =
   "character_genesis_deep_origin";
 
-export const POST = observeHandler(async (request: Request) => {
-  return withParent(async (parent) => {
-    const body = (await readRequestBody(request)) as Record<string, unknown>;
-    const now = new Date().toISOString();
-    const repository = new DrizzleTestLabRepository(getAiDb());
-    const coordinator = new TestLabCoordinator(repository);
+export const POST = observeHandler(
+  async (request: Request) => {
+    return withParent(async (parent) => {
+      const body = (await readRequestBody(request)) as Record<string, unknown>;
+      const now = new Date().toISOString();
+      const repository = new DrizzleTestLabRepository(getAiDb());
+      const coordinator = new TestLabCoordinator(repository);
 
-    try {
-      const action = optionalString(body.action) ?? "run";
-      const sessionId = requiredString(body.sessionId, "sessionId");
-      const branchId = requiredString(body.branchId, "branchId");
-      const parentStateId = requiredString(body.parentStateId, "parentStateId");
-      const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(
-        body.childProfileId,
-        "childProfileId",
-      );
-      const modelSlug = requiredString(body.modelSlug, "modelSlug");
-
-      const session = await repository.getSession(sessionId);
-      if (!session) throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
-      if (session.scenarioKey !== CHARACTER_ONBOARDING_SCENARIO.key) {
-        throw new Error(
-          `TEST_LAB_DEEP_ORIGIN_REQUIRES_CHARACTER_ONBOARDING:${session.scenarioKey}`,
+      try {
+        const action = optionalString(body.action) ?? "run";
+        const sessionId = requiredString(body.sessionId, "sessionId");
+        const branchId = requiredString(body.branchId, "branchId");
+        const parentStateId = requiredString(
+          body.parentStateId,
+          "parentStateId",
         );
-      }
+        const householdId = requiredString(body.householdId, "householdId");
+        const childProfileId = requiredString(
+          body.childProfileId,
+          "childProfileId",
+        );
+        const modelSlug = requiredString(body.modelSlug, "modelSlug");
 
-      const parentState = await repository.getState(parentStateId);
-      assertSandboxOwner(parentState, {
-        parentId: parent.id,
-        householdId,
-        childProfileId,
-      });
-      if (!parentState) {
-        throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
-      }
+        const session = await repository.getSession(sessionId);
+        if (!session) {
+          throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
+        }
+        if (session.scenarioKey !== CHARACTER_ONBOARDING_SCENARIO.key) {
+          throw new Error(
+            `TEST_LAB_DEEP_ORIGIN_REQUIRES_CHARACTER_ONBOARDING:${session.scenarioKey}`,
+          );
+        }
 
-      const promptOverride = readPromptOverride(body.promptOverride);
-      const localeOverride = optionalString(body.locale);
-      const promptVersionOverride = optionalPositiveInteger(
-        body.promptVersionOverride,
-        "promptVersionOverride",
-      );
-      const options: GenerateDeepCharacterOriginsOptions = {
-        modelOverride: modelSlug,
-        creationOverride: {
-          startDirection: "character_first",
-          previousSelections: parentState.value,
-        },
-        recordTrace: false,
-        ...(localeOverride ? { localeOverride } : {}),
-        ...(promptOverride ? { promptOverride } : {}),
-        ...(promptVersionOverride === undefined
-          ? {}
-          : { promptVersionOverride }),
-      };
+        const parentState = await repository.getState(parentStateId);
+        assertSandboxOwner(parentState, {
+          parentId: parent.id,
+          householdId,
+          childProfileId,
+        });
+        if (!parentState) {
+          throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
+        }
 
-      if (action === "preview") {
-        const preview = await previewDeepCharacterOriginPrompt(
+        const promptOverride = readPromptOverride(body.promptOverride);
+        const localeOverride = optionalString(body.locale);
+        const promptVersionOverride = optionalPositiveInteger(
+          body.promptVersionOverride,
+          "promptVersionOverride",
+        );
+        const options: GenerateDeepCharacterOriginsOptions = {
+          modelOverride: modelSlug,
+          creationOverride: {
+            startDirection: "character_first",
+            previousSelections: parentState.value,
+          },
+          recordTrace: false,
+          ...(localeOverride ? { localeOverride } : {}),
+          ...(promptOverride ? { promptOverride } : {}),
+          ...(promptVersionOverride === undefined
+            ? {}
+            : { promptVersionOverride }),
+        };
+
+        if (action === "preview") {
+          const preview = await previewDeepCharacterOriginPrompt(
+            parent.id,
+            { householdId, childProfileId },
+            options,
+          );
+          return NextResponse.json({ data: preview });
+        }
+        if (action !== "run") {
+          throw new Error(`TEST_LAB_DEEP_ORIGIN_UNKNOWN_ACTION:${action}`);
+        }
+
+        const generated = await generateDeepCharacterOrigins(
           parent.id,
           { householdId, childProfileId },
           options,
         );
-        return NextResponse.json({ data: preview });
-      }
-      if (action !== "run") {
-        throw new Error(`TEST_LAB_DEEP_ORIGIN_UNKNOWN_ACTION:${action}`);
-      }
+        const modelProfile =
+          await new OpenRouterModelCatalog().resolveModelProfile({
+            modelSlug,
+            capturedAt: now,
+          });
+        const usageSnapshot = createUsageSnapshot(
+          generated,
+          modelProfile.pricing,
+        );
+        const runId = crypto.randomUUID();
 
-      const generated = await generateDeepCharacterOrigins(
-        parent.id,
-        { householdId, childProfileId },
-        options,
-      );
-      const modelProfile =
-        await new OpenRouterModelCatalog().resolveModelProfile({
-          modelSlug,
-          capturedAt: now,
-        });
-      const usageSnapshot = createUsageSnapshot(generated, modelProfile.pricing);
-      const runId = crypto.randomUUID();
-
-      const recorded = await coordinator.recordRunCandidates({
-        runId,
-        sessionId,
-        branchId,
-        phaseId: CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID,
-        parentStateId,
-        modelSlug,
-        pricingSnapshot: modelProfile.pricing,
-        usageSnapshot,
-        executionSnapshot: {
-          productionOperation: "character_genesis.deep_origin",
-          generationConfig: null,
-          promptKey: generated.provenance.promptKey,
-          promptVersion: generated.provenance.promptVersion,
-          promptTemplateSnapshot: generated.provenance.promptTemplateSnapshot,
-          renderedPrompt: generated.provenance.renderedPrompt,
-          finalProviderRequest: generated.provenance.finalProviderRequest
-            ? toJsonObject(generated.provenance.finalProviderRequest)
-            : null,
-          rawProviderOutput: generated.rawProviderOutput,
-          renderedPromptFingerprint: fingerprint(
-            generated.provenance.renderedPrompt,
-          ),
-          contextFingerprint: fingerprint(parentState.value),
-        },
-        candidates: generated.suggestions.map((origin, index) => ({
-          candidateId: crypto.randomUUID(),
-          candidateStateId: crypto.randomUUID(),
-          payload: toJsonObject({
-            origin,
-            validation: generated.validation[index],
-          }),
-          candidateState: deepOriginCandidateState(parentState.value, origin),
-        })),
-        now,
-      });
-
-      return NextResponse.json({
-        data: {
+        const recorded = await coordinator.recordRunCandidates({
+          runId,
+          sessionId,
+          branchId,
           phaseId: CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID,
-          run: recorded.run,
-          candidates: recorded.candidates,
-          rawProviderOutput: generated.rawProviderOutput,
-          parsedOutput: generated.suggestions,
-          validation: generated.validation,
-          modelProfile,
-        },
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      const status = message.includes("FORBIDDEN") ? 403 : 400;
-      return NextResponse.json(
-        { error: "TEST_LAB_DEEP_ORIGIN_ERROR", message },
-        { status },
-      );
-    }
-  });
-}, "/api/settings/test-lab/genesis/origin");
+          parentStateId,
+          modelSlug,
+          pricingSnapshot: modelProfile.pricing,
+          usageSnapshot,
+          executionSnapshot: {
+            productionOperation: "character_genesis.deep_origin",
+            generationConfig: null,
+            promptKey: generated.provenance.promptKey,
+            promptVersion: generated.provenance.promptVersion,
+            promptTemplateSnapshot: generated.provenance.promptTemplateSnapshot,
+            renderedPrompt: generated.provenance.renderedPrompt,
+            finalProviderRequest: generated.provenance.finalProviderRequest
+              ? toJsonObject(generated.provenance.finalProviderRequest)
+              : null,
+            rawProviderOutput: generated.rawProviderOutput,
+            renderedPromptFingerprint: fingerprint(
+              generated.provenance.renderedPrompt,
+            ),
+            contextFingerprint: fingerprint(parentState.value),
+          },
+          candidates: generated.suggestions.map((origin, index) => ({
+            candidateId: crypto.randomUUID(),
+            candidateStateId: crypto.randomUUID(),
+            payload: toJsonObject({
+              origin,
+              validation: generated.validation[index],
+            }),
+            candidateState: deepOriginCandidateState(parentState.value, origin),
+          })),
+          now,
+        });
+
+        return NextResponse.json({
+          data: {
+            phaseId: CHARACTER_GENESIS_DEEP_ORIGIN_PHASE_ID,
+            run: recorded.run,
+            candidates: recorded.candidates,
+            rawProviderOutput: generated.rawProviderOutput,
+            parsedOutput: generated.suggestions,
+            validation: generated.validation,
+            modelProfile,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        const status = message.includes("FORBIDDEN") ? 403 : 400;
+        return NextResponse.json(
+          { error: "TEST_LAB_DEEP_ORIGIN_ERROR", message },
+          { status },
+        );
+      }
+    });
+  },
+  "/api/settings/test-lab/genesis/origin",
+);
 
 function deepOriginCandidateState(
   parentState: JsonObject,
