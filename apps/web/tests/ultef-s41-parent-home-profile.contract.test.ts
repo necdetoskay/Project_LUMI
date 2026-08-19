@@ -121,7 +121,9 @@ describe("ULTEF S41 canonical parent home and child profile contract", () => {
   });
 
   it("keeps the approved desktop shell responsive down to the mobile contract", () => {
-    expect(dashboardStyles).toContain("grid-template-columns: 244px minmax(0, 1fr)");
+    expect(dashboardStyles).toContain(
+      "grid-template-columns: 244px minmax(0, 1fr)",
+    );
     expect(dashboardStyles).toContain("@media (max-width: 860px)");
     expect(dashboardStyles).toContain("@media (max-width: 560px)");
     expect(dashboardContract.responsive.minimumWidthTest).toBe(360);
