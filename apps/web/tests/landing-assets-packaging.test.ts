@@ -14,6 +14,8 @@ const assets = [
   "corner-ocean-map.webp",
   "corner-animals.webp",
 ] as const;
+const maxDecodeLayers = 5;
+const base64Text = /^[A-Za-z0-9+/=]+$/;
 
 function isWebP(buffer: Buffer) {
   const riff = buffer.subarray(0, 4).toString("ascii");
@@ -23,14 +25,23 @@ function isWebP(buffer: Buffer) {
 }
 
 function unpackAsset(source: Buffer) {
-  if (isWebP(source)) {
-    return source;
+  let candidate = source;
+
+  for (let layer = 0; layer <= maxDecodeLayers; layer += 1) {
+    if (isWebP(candidate)) {
+      return candidate;
+    }
+
+    const text = candidate.toString("utf8");
+    const encoded = text.replace(/\s+/g, "");
+    if (!encoded || !base64Text.test(encoded) || encoded.length % 4 !== 0) {
+      return candidate;
+    }
+
+    candidate = Buffer.from(encoded, "base64");
   }
 
-  const text = source.toString("utf8");
-  const encoded = text.replace(/\s+/g, "");
-
-  return Buffer.from(encoded, "base64");
+  return candidate;
 }
 
 describe("landing asset packaging", () => {
