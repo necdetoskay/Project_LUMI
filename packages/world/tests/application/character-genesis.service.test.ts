@@ -4,6 +4,7 @@ import {
   CharacterGenesisCoordinator,
   CharacterGenesisValidationError,
   type CharacterGenesisCanonicalCommitPort,
+  type CharacterGenesisCanonicalCommitRequest,
   type CharacterGenesisRepositoryPort,
 } from "../../src/application/character-genesis.service";
 import type { CharacterGenesisPackage } from "../../src/domain";
@@ -13,6 +14,7 @@ type CandidateList = CharacterGenesisPackage[];
 
 class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
   private readonly stored: Stored = new Map();
+  failNextMarkCommitted = false;
 
   async save(candidate: CharacterGenesisPackage): Promise<void> {
     this.stored.set(candidate.id, structuredClone(candidate));
@@ -49,16 +51,31 @@ class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
   }
 
   async markCommitted(candidate: CharacterGenesisPackage): Promise<void> {
+    if (this.failNextMarkCommitted) {
+      this.failNextMarkCommitted = false;
+      throw new Error("GENESIS_MARK_COMMITTED_FAILED");
+    }
     this.stored.set(candidate.id, structuredClone(candidate));
   }
 }
 
 class RecordingCommitter implements CharacterGenesisCanonicalCommitPort {
   readonly committed: CharacterGenesisPackage[] = [];
+  readonly keys: string[] = [];
+  private readonly results = new Map<
+    string,
+    { worldId: string; homeId: string }
+  >();
 
-  async commit(candidate: CharacterGenesisPackage) {
-    this.committed.push(structuredClone(candidate));
-    return { worldId: "world-1", homeId: "home-1" };
+  async commit(request: CharacterGenesisCanonicalCommitRequest) {
+    this.keys.push(request.idempotencyKey);
+    const existing = this.results.get(request.idempotencyKey);
+    if (existing) return existing;
+
+    this.committed.push(structuredClone(request.candidate));
+    const result = { worldId: "world-1", homeId: "home-1" };
+    this.results.set(request.idempotencyKey, result);
+    return result;
   }
 }
 
@@ -167,6 +184,7 @@ describe("CharacterGenesisCoordinator", () => {
     expect(result.canonical).toEqual({ worldId: "world-1", homeId: "home-1" });
     expect(committer.committed).toHaveLength(1);
     expect(committer.committed[0]?.status).toBe("selected");
+    expect(committer.keys).toEqual([`character-genesis:${selected.id}`]);
   });
 
   it("blocks invalid references before canonical mutation", async () => {
@@ -184,5 +202,30 @@ describe("CharacterGenesisCoordinator", () => {
       CharacterGenesisValidationError,
     );
     expect(committer.committed).toHaveLength(0);
+  });
+
+  it("reuses a stable canonical idempotency key when finalization is retried", async () => {
+    const repository = new InMemoryGenesisRepository();
+    const committer = new RecordingCommitter();
+    const coordinator = new CharacterGenesisCoordinator(repository, committer);
+
+    const staged = await coordinator.stage(baseInput("candidate-a"));
+    const selected = await coordinator.select(staged.id);
+    repository.failNextMarkCommitted = true;
+
+    await expect(coordinator.commit(selected.id)).rejects.toThrow(
+      "GENESIS_MARK_COMMITTED_FAILED",
+    );
+    expect(committer.committed).toHaveLength(1);
+    expect((await repository.getById(selected.id))?.status).toBe("selected");
+
+    const retried = await coordinator.commit(selected.id);
+
+    expect(retried.candidate.status).toBe("committed");
+    expect(committer.committed).toHaveLength(1);
+    expect(committer.keys).toHaveLength(2);
+    expect(new Set(committer.keys)).toEqual(
+      new Set([`character-genesis:${selected.id}`]),
+    );
   });
 });
