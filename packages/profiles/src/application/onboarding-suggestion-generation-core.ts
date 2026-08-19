@@ -40,6 +40,7 @@ export interface OnboardingSuggestionGenerationOptions {
   creationOverride?: GenerationCreationOverride;
   modelOverride?: string | null;
   promptVersionOverride?: number;
+  localeOverride?: string;
   recordTrace?: boolean;
 }
 
@@ -84,10 +85,12 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           new DrizzleGenerationContextSnapshotStore(getProfileDb()),
         );
   const contextEvidence = createAiGenerationContextTraceEvidence(assembled);
+  const effectiveLocale =
+    options.localeOverride?.trim() || generationContext.child.locale || "en";
   const context = {
     ...toPromptGenerationContext(assembled),
     previousSelections: summary,
-    locale: generationContext.child.locale,
+    locale: effectiveLocale,
     ...(spec.contextExtras?.(summary) ?? {}),
   };
   const prompt =
@@ -98,6 +101,8 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           options.promptVersionOverride,
           context,
         );
+  const languageInstruction = outputLanguageInstruction(effectiveLocale);
+  const finalUserPrompt = `${prompt.user}\n\n${languageInstruction}`;
   const maxAttempts = Math.max(1, Math.min(spec.maxAttempts ?? 3, 3));
   let lastError: unknown;
 
@@ -109,8 +114,8 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
       system: prompt.system,
       user:
         attempt === 1
-          ? prompt.user
-          : `${prompt.user}\n\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
+          ? finalUserPrompt
+          : `${finalUserPrompt}\n\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
       modelOverride: options.modelOverride ?? prompt.modelOverride,
       generationConfig: prompt.generationConfig,
     });
@@ -148,7 +153,7 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
         systemTemplate: prompt.systemTemplate,
         userTemplate: prompt.userTemplate,
         systemPrompt: prompt.system,
-        userPrompt: prompt.user,
+        userPrompt: finalUserPrompt,
         inputContext: context,
         generated,
       };
@@ -180,4 +185,15 @@ export function pickSuggestionArray<T>(validated: unknown): T[] {
   if (!Array.isArray(suggestions))
     throw new Error("ONBOARDING_EMPTY_SUGGESTIONS");
   return suggestions as T[];
+}
+
+function outputLanguageInstruction(locale: string): string {
+  const normalized = locale.toLowerCase();
+  if (normalized === "tr" || normalized.startsWith("tr-")) {
+    return "OUTPUT LANGUAGE: Turkish. Write every user-visible value in Turkish. Keep technical JSON property names, stable keys, IDs, enum values, and machine-readable identifiers unchanged. Names may remain proper names. Do not translate JSON keys.";
+  }
+  if (normalized === "en" || normalized.startsWith("en-")) {
+    return "OUTPUT LANGUAGE: English. Write every user-visible value in English. Keep technical JSON property names, stable keys, IDs, enum values, and machine-readable identifiers unchanged. Do not translate JSON keys.";
+  }
+  return `OUTPUT LANGUAGE: ${locale}. Write every user-visible value in this language. Keep technical JSON property names, stable keys, IDs, enum values, and machine-readable identifiers unchanged. Do not translate JSON keys.`;
 }
