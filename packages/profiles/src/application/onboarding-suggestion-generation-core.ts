@@ -36,12 +36,33 @@ export interface OnboardingSuggestionGenerationSpec<T> {
   maxAttempts?: number;
 }
 
+export interface OnboardingPromptOverride {
+  system?: string;
+  user?: string;
+}
+
 export interface OnboardingSuggestionGenerationOptions {
   creationOverride?: GenerationCreationOverride;
   modelOverride?: string | null;
   promptVersionOverride?: number;
+  promptOverride?: OnboardingPromptOverride;
   localeOverride?: string;
   recordTrace?: boolean;
+}
+
+export interface PreparedOnboardingSuggestionPrompt {
+  promptKey: string;
+  promptVersion: number;
+  systemTemplate: string;
+  userTemplate: string;
+  systemPrompt: string;
+  userPrompt: string;
+  outputSchema: unknown;
+  modelOverride: string | null;
+  generationConfig: Record<string, unknown> | null;
+  inputContext: Record<string, string | number | boolean | null | object>;
+  generationContext: GenerationContext;
+  contextEvidence: ReturnType<typeof createAiGenerationContextTraceEvidence>;
 }
 
 export interface OnboardingSuggestionGenerationResult<T> {
@@ -57,12 +78,12 @@ export interface OnboardingSuggestionGenerationResult<T> {
   generated: TextLlmGatewayResult;
 }
 
-export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
+export async function prepareOnboardingSuggestionPrompt<T>(
   userId: string,
   input: { householdId: string; childProfileId: string },
   spec: OnboardingSuggestionGenerationSpec<T>,
   options: OnboardingSuggestionGenerationOptions = {},
-): Promise<OnboardingSuggestionGenerationResult<T>> {
+): Promise<PreparedOnboardingSuggestionPrompt> {
   const generationContext = await buildGenerationContext(
     userId,
     {
@@ -102,7 +123,38 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           context,
         );
   const languageInstruction = outputLanguageInstruction(effectiveLocale);
-  const finalUserPrompt = `${prompt.user}\n\n${languageInstruction}`;
+  const baseSystemPrompt = options.promptOverride?.system ?? prompt.system;
+  const baseUserPrompt = options.promptOverride?.user ?? prompt.user;
+  const finalUserPrompt = `${baseUserPrompt}\n\n${languageInstruction}`;
+
+  return {
+    promptKey: prompt.promptKey,
+    promptVersion: prompt.promptVersion,
+    systemTemplate: prompt.systemTemplate,
+    userTemplate: prompt.userTemplate,
+    systemPrompt: baseSystemPrompt,
+    userPrompt: finalUserPrompt,
+    outputSchema: prompt.outputSchema,
+    modelOverride: options.modelOverride ?? prompt.modelOverride,
+    generationConfig: prompt.generationConfig,
+    inputContext: context,
+    generationContext,
+    contextEvidence,
+  };
+}
+
+export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
+  userId: string,
+  input: { householdId: string; childProfileId: string },
+  spec: OnboardingSuggestionGenerationSpec<T>,
+  options: OnboardingSuggestionGenerationOptions = {},
+): Promise<OnboardingSuggestionGenerationResult<T>> {
+  const prepared = await prepareOnboardingSuggestionPrompt(
+    userId,
+    input,
+    spec,
+    options,
+  );
   const maxAttempts = Math.max(1, Math.min(spec.maxAttempts ?? 3, 3));
   let lastError: unknown;
 
@@ -111,19 +163,19 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
       userId,
       householdId: input.householdId,
       taskType: spec.taskType,
-      system: prompt.system,
+      system: prepared.systemPrompt,
       user:
         attempt === 1
-          ? finalUserPrompt
-          : `${finalUserPrompt}\n\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
-      modelOverride: options.modelOverride ?? prompt.modelOverride,
-      generationConfig: prompt.generationConfig,
+          ? prepared.userPrompt
+          : `${prepared.userPrompt}\n\nRETRY ${attempt}: Return one complete valid JSON value only. Do not truncate. Use exactly the required schema and root property suggestions. Preserve the requested semantic content and field types.`,
+      modelOverride: prepared.modelOverride,
+      generationConfig: prepared.generationConfig,
     });
 
     try {
       const validated = parseAndValidatePromptOutput(
         generated.content,
-        prompt.outputSchema,
+        prepared.outputSchema,
       );
       const suggestions = spec.pick(validated);
       if (suggestions.length === 0)
@@ -133,12 +185,12 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
         await recordAiGenerationTrace({
           householdId: input.householdId,
           childProfileId: input.childProfileId,
-          creationCycleId: generationContext.creation.cycleId,
+          creationCycleId: prepared.generationContext.creation.cycleId,
           taskType: spec.taskType,
-          promptKey: prompt.promptKey,
-          promptVersion: prompt.promptVersion,
-          inputContext: { ...context, generationAttempt: attempt },
-          contextEvidence,
+          promptKey: prepared.promptKey,
+          promptVersion: prepared.promptVersion,
+          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
+          contextEvidence: prepared.contextEvidence,
           outputPayload: { suggestions },
           validationStatus: "valid",
           generated,
@@ -148,13 +200,13 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
       return {
         suggestions,
         modelId: generated.model,
-        promptKey: prompt.promptKey,
-        promptVersion: prompt.promptVersion,
-        systemTemplate: prompt.systemTemplate,
-        userTemplate: prompt.userTemplate,
-        systemPrompt: prompt.system,
-        userPrompt: finalUserPrompt,
-        inputContext: context,
+        promptKey: prepared.promptKey,
+        promptVersion: prepared.promptVersion,
+        systemTemplate: prepared.systemTemplate,
+        userTemplate: prepared.userTemplate,
+        systemPrompt: prepared.systemPrompt,
+        userPrompt: prepared.userPrompt,
+        inputContext: prepared.inputContext,
         generated,
       };
     } catch (error) {
@@ -163,12 +215,12 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
         await recordAiGenerationTrace({
           householdId: input.householdId,
           childProfileId: input.childProfileId,
-          creationCycleId: generationContext.creation.cycleId,
+          creationCycleId: prepared.generationContext.creation.cycleId,
           taskType: spec.taskType,
-          promptKey: prompt.promptKey,
-          promptVersion: prompt.promptVersion,
-          inputContext: { ...context, generationAttempt: attempt },
-          contextEvidence,
+          promptKey: prepared.promptKey,
+          promptVersion: prepared.promptVersion,
+          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
+          contextEvidence: prepared.contextEvidence,
           outputPayload: { raw: generated.content },
           validationStatus: "invalid",
           generated,
