@@ -49,6 +49,23 @@ describe("Test Lab stage 1 contract", () => {
     expect(runner).not.toContain("7 / 7 seçildi");
   });
 
+  it("lets Test Lab override output locale explicitly", () => {
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+    expect(runner).toContain("lumi.testLab.locale");
+    expect(runner).toContain('<option value="tr">Türkçe</option>');
+    expect(runner).toContain('<option value="en">English</option>');
+    expect(runner).toContain("generationConfig: { outputLocale: locale }");
+  });
+
+  it("retains each phase result while navigating between onboarding phases", () => {
+    const runner = read("settings/test-lab/onboarding-test-runner.tsx");
+    expect(runner).toContain("resultsByPhase");
+    expect(runner).toContain("setResultsByPhase");
+    expect(runner).toContain("resultsByPhase[phaseId]");
+    expect(runner).toContain("sonuçları gör");
+    expect(runner).not.toContain("setResult(null)");
+  });
+
   it("uses centralized application theme tokens instead of page-local colors", () => {
     const runner = read("settings/test-lab/onboarding-test-runner.tsx");
     const theme = read("settings/test-lab/test-lab-runner.module.css");
