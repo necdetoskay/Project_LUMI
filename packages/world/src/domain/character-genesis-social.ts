@@ -39,7 +39,7 @@ export interface GenesisRelationshipSemanticEvidence {
   rationale: string;
 }
 
-export interface GenesisNpcState {
+export interface CharacterGenesisSocialNpcState {
   candidateId: string;
   identityKey: string;
   role: string;
@@ -50,7 +50,7 @@ export interface GenesisNpcState {
   personality: GenesisNpcPersonalityProfile;
 }
 
-export interface GenesisRelationshipState {
+export interface CharacterGenesisRelationshipState {
   fromCandidateId: string;
   toCandidateId: string;
   trust: number;
@@ -63,9 +63,9 @@ export interface GenesisRelationshipState {
   derivationRevision: string;
 }
 
-export interface GenesisSocialState {
-  npcs: GenesisNpcState[];
-  relationships: GenesisRelationshipState[];
+export interface CharacterGenesisSocialState {
+  npcs: CharacterGenesisSocialNpcState[];
+  relationships: CharacterGenesisRelationshipState[];
   derivationRevision: string;
 }
 
@@ -114,8 +114,8 @@ function deterministicCandidateId(identityKey: string, seed: string): string {
 export function deduplicateGenesisNpcCandidates(
   candidates: GenesisSocialNpcCandidate[],
   seed: string,
-): GenesisNpcState[] {
-  const byIdentity = new Map<string, GenesisNpcState>();
+): CharacterGenesisSocialNpcState[] {
+  const byIdentity = new Map<string, CharacterGenesisSocialNpcState>();
 
   for (const candidate of candidates) {
     const identityKey = canonicalIdentityKey(candidate.identityKey);
@@ -157,10 +157,10 @@ export function deduplicateGenesisNpcCandidates(
 export function deriveDirectionalRelationships(input: {
   characterId: string;
   characterIdentityKey: string;
-  npcs: GenesisNpcState[];
+  npcs: CharacterGenesisSocialNpcState[];
   evidence: GenesisRelationshipSemanticEvidence[];
   seed: string;
-}): GenesisRelationshipState[] {
+}): CharacterGenesisRelationshipState[] {
   const idByIdentity = new Map<string, string>([
     [canonicalIdentityKey(input.characterIdentityKey), input.characterId],
     ...input.npcs.map((npc) => [npc.identityKey, npc.candidateId] as const),
@@ -172,7 +172,11 @@ export function deriveDirectionalRelationships(input: {
     const toKey = canonicalIdentityKey(evidence.toIdentityKey);
     const fromCandidateId = idByIdentity.get(fromKey);
     const toCandidateId = idByIdentity.get(toKey);
-    if (!fromCandidateId || !toCandidateId || fromCandidateId === toCandidateId) {
+    if (
+      !fromCandidateId ||
+      !toCandidateId ||
+      fromCandidateId === toCandidateId
+    ) {
       continue;
     }
     const edgeKey = `${fromCandidateId}->${toCandidateId}`;
@@ -182,10 +186,17 @@ export function deriveDirectionalRelationships(input: {
   }
 
   return [...grouped.entries()].map(([edgeKey, edgeEvidence]) => {
-    const [fromCandidateId, toCandidateId] = edgeKey.split("->");
+    const separatorIndex = edgeKey.indexOf("->");
+    if (separatorIndex < 1 || separatorIndex >= edgeKey.length - 2) {
+      throw new Error("GENESIS_SOCIAL_INVALID_EDGE_KEY");
+    }
+    const fromCandidateId = edgeKey.slice(0, separatorIndex);
+    const toCandidateId = edgeKey.slice(separatorIndex + 2);
     const vector = Object.fromEntries(
       GENESIS_RELATIONSHIP_DIMENSIONS.map((dimension) => {
-        const items = edgeEvidence.filter((item) => item.dimension === dimension);
+        const items = edgeEvidence.filter(
+          (item) => item.dimension === dimension,
+        );
         if (items.length === 0) return [dimension, 0.5];
         let weighted = 0;
         let totalWeight = 0;
@@ -217,7 +228,7 @@ export function createGenesisSocialState(input: {
   candidates: GenesisSocialNpcCandidate[];
   evidence: GenesisRelationshipSemanticEvidence[];
   seed: string;
-}): GenesisSocialState {
+}): CharacterGenesisSocialState {
   const npcs = deduplicateGenesisNpcCandidates(input.candidates, input.seed);
   const relationships = deriveDirectionalRelationships({
     characterId: input.characterId,
@@ -231,7 +242,7 @@ export function createGenesisSocialState(input: {
 
 export function validateGenesisSocialState(input: {
   characterId: string;
-  social: GenesisSocialState;
+  social: CharacterGenesisSocialState;
   originFactIds: Iterable<string>;
 }): GenesisSocialValidationIssue[] {
   const issues: GenesisSocialValidationIssue[] = [];
@@ -260,7 +271,10 @@ export function validateGenesisSocialState(input: {
   }
 
   for (const edge of input.social.relationships) {
-    if (!knownIds.has(edge.fromCandidateId) || !knownIds.has(edge.toCandidateId)) {
+    if (
+      !knownIds.has(edge.fromCandidateId) ||
+      !knownIds.has(edge.toCandidateId)
+    ) {
       issues.push({
         code: "GENESIS_SOCIAL_RELATIONSHIP_ENDPOINT_MISSING",
         message: `${edge.fromCandidateId}->${edge.toCandidateId} references a missing identity`,
@@ -274,6 +288,20 @@ export function validateGenesisSocialState(input: {
           code: "GENESIS_SOCIAL_RELATIONSHIP_RANGE",
           message: `${dimension} must be within [0,1]`,
           severity: "error",
+        });
+      }
+      const dimensionEvidence = edge.evidence.filter(
+        (item) => item.dimension === dimension && item.strength === "strong",
+      );
+      const hasLow = dimensionEvidence.some((item) => item.direction === "low");
+      const hasHigh = dimensionEvidence.some(
+        (item) => item.direction === "high",
+      );
+      if (hasLow && hasHigh) {
+        issues.push({
+          code: "GENESIS_SOCIAL_CONTRADICTORY_EVIDENCE",
+          message: `${edge.fromCandidateId}->${edge.toCandidateId} has strong low/high evidence for ${dimension}`,
+          severity: "warning",
         });
       }
     }
@@ -293,7 +321,8 @@ export function validateGenesisSocialState(input: {
   if (input.social.npcs.length > 6) {
     issues.push({
       code: "GENESIS_SOCIAL_DENSITY_HIGH",
-      message: "Initial Social Genesis should normally stay at six significant NPCs or fewer",
+      message:
+        "Initial Social Genesis should normally stay at six significant NPCs or fewer",
       severity: "warning",
     });
   }
