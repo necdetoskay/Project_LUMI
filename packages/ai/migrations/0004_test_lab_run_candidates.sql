@@ -49,5 +49,6 @@ CREATE INDEX test_lab_selections_candidate_idx
 
 ALTER TABLE ai.test_lab_runs
   DROP CONSTRAINT IF EXISTS test_lab_runs_candidate_state_id_test_lab_state_snapshots_id_fk;
-DROP INDEX IF EXISTS ai.test_lab_runs_candidate_state_uq;
+ALTER TABLE ai.test_lab_runs
+  DROP CONSTRAINT IF EXISTS test_lab_runs_candidate_state_uq;
 ALTER TABLE ai.test_lab_runs DROP COLUMN candidate_state_id;
