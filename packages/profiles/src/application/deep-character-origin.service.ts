@@ -230,8 +230,11 @@ function deepOriginSpec(): OnboardingSuggestionGenerationSpec<DeepCharacterOrigi
   };
 }
 
-function pickValidatedDeepOrigins(validated: unknown): DeepCharacterOriginSuggestion[] {
-  const suggestions = pickSuggestionArray<DeepCharacterOriginSuggestion>(validated);
+function pickValidatedDeepOrigins(
+  validated: unknown,
+): DeepCharacterOriginSuggestion[] {
+  const suggestions =
+    pickSuggestionArray<DeepCharacterOriginSuggestion>(validated);
   for (const suggestion of suggestions) {
     const evidence = validateDeepCharacterOrigin(suggestion);
     if (!evidence.valid) {
@@ -358,7 +361,8 @@ export function validateDeepCharacterOrigin(
   if (suggestion.unresolvedQuestions.length === 0) {
     issues.push({
       code: "DEEP_ORIGIN_NO_UNRESOLVED_QUESTION",
-      message: "Origin should deliberately leave at least one question unresolved",
+      message:
+        "Origin should deliberately leave at least one question unresolved",
       path: "unresolvedQuestions",
       severity: "error",
     });
@@ -392,7 +396,8 @@ export function validateDeepCharacterOrigin(
   if (suggestion.facts.length < 4) {
     issues.push({
       code: "DEEP_ORIGIN_TOO_FEW_FACTS",
-      message: "Origin needs enough structured facts to support retrieval and downstream genesis",
+      message:
+        "Origin needs enough structured facts to support retrieval and downstream genesis",
       path: "facts",
       severity: "warning",
     });
