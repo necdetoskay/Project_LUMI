@@ -67,30 +67,24 @@ function candidateWithOrigin() {
 }
 
 describe("deep Character Genesis origin", () => {
-  it(
-    "builds character-visible context without exposing hidden facts or narrative",
-    () => {
-      const candidate = candidateWithOrigin();
-      const origin = candidate.sections.origin!;
+  it("builds character-visible context without exposing hidden facts or narrative", () => {
+    const candidate = candidateWithOrigin();
+    const origin = candidate.sections.origin!;
 
-      const visible = buildCharacterVisibleOriginContext(origin);
+    const visible = buildCharacterVisibleOriginContext(origin);
 
-      expect(visible.summary).toBe(origin.summary);
-      expect(visible.facts.map((fact) => fact.id)).toEqual([
-        "fact-home",
-        "fact-skill",
-      ]);
-      expect(JSON.stringify(visible)).not.toContain("sealed letter");
-      expect(visible).not.toHaveProperty("narrative");
-    },
-  );
+    expect(visible.summary).toBe(origin.summary);
+    expect(visible.facts.map((fact) => fact.id)).toEqual([
+      "fact-home",
+      "fact-skill",
+    ]);
+    expect(JSON.stringify(visible)).not.toContain("sealed letter");
+    expect(visible).not.toHaveProperty("narrative");
+  });
 
   it("rejects hidden or missing facts used to derive the operational summary", () => {
     const candidate = candidateWithOrigin();
-    candidate.sections.origin!.summaryFactIds = [
-      "fact-letter",
-      "fact-missing",
-    ];
+    candidate.sections.origin!.summaryFactIds = ["fact-letter", "fact-missing"];
 
     const validation = validateCharacterGenesisStructure(candidate);
 
