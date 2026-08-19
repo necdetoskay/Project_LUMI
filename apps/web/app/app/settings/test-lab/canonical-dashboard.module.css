@@ -1287,3 +1287,70 @@
     overflow-x: auto;
   }
 }
+
+/* test-lab-ui4-prompt-improvement */
+.promptDetails {
+  height: auto;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.promptDetails summary {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 9px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.promptDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.promptDetailBody {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid #e5e5ec;
+  padding: 7px 9px 8px;
+  color: #555460;
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+
+.promptDetailBody strong {
+  color: #2d2b35;
+  font-size: 9px;
+}
+
+.promptDetailBody small {
+  color: #787681;
+  font-size: 7.8px;
+}
+
+.applyPromptButton:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.promptApplyMessage,
+.promptApplyError {
+  margin: 6px 0 0 !important;
+  font-size: 8.4px !important;
+  line-height: 1.35 !important;
+}
+
+.promptApplyMessage {
+  color: #24734a !important;
+}
+
+.promptApplyMessage a {
+  color: #6428dd;
+  font-weight: 750;
+}
+
+.promptApplyError {
+  color: #b64035 !important;
+}
