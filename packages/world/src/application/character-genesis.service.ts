@@ -30,9 +30,14 @@ export interface CharacterGenesisCanonicalCommitResult {
   threadIds?: string[];
 }
 
+export interface CharacterGenesisCanonicalCommitRequest {
+  candidate: CharacterGenesisPackage;
+  idempotencyKey: string;
+}
+
 export interface CharacterGenesisCanonicalCommitPort {
   commit(
-    candidate: CharacterGenesisPackage,
+    request: CharacterGenesisCanonicalCommitRequest,
   ): Promise<CharacterGenesisCanonicalCommitResult>;
 }
 
@@ -91,9 +96,10 @@ export class CharacterGenesisCoordinator {
       throw new CharacterGenesisValidationError(validation);
     }
 
-    const canonical = await this.canonicalCommitter.commit(
-      structuredClone(candidate),
-    );
+    const canonical = await this.canonicalCommitter.commit({
+      candidate: structuredClone(candidate),
+      idempotencyKey: characterGenesisCommitIdempotencyKey(candidate),
+    });
     const committed = markCharacterGenesisCommitted(candidate);
     await this.repository.markCommitted(committed);
 
@@ -124,6 +130,12 @@ export class CharacterGenesisCoordinator {
     }
     return candidate;
   }
+}
+
+export function characterGenesisCommitIdempotencyKey(
+  candidate: Pick<CharacterGenesisPackage, "id">,
+): string {
+  return `character-genesis:${candidate.id}`;
 }
 
 export class CharacterGenesisValidationError extends Error {
