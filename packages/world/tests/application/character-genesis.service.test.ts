@@ -38,12 +38,11 @@ class InMemoryGenesisRepository implements CharacterGenesisRepositoryPort {
         candidate.status === "selected" &&
         id !== selected.id
       ) {
-        this.stored.set(id, {
-          ...candidate,
-          status: "staged",
-          selectedAt: undefined,
-          version: candidate.version + 1,
-        });
+        const staged = structuredClone(candidate);
+        delete staged.selectedAt;
+        staged.status = "staged";
+        staged.version = candidate.version + 1;
+        this.stored.set(id, staged);
       }
     }
     this.stored.set(selected.id, structuredClone(selected));
