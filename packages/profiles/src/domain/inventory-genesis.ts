@@ -21,11 +21,19 @@ export const INVENTORY_GENESIS_ROLES = [
 ] as const;
 export type InventoryGenesisRole = (typeof INVENTORY_GENESIS_ROLES)[number];
 
-export const INVENTORY_GENESIS_EMOTIONAL_VALUES = ["low", "medium", "high"] as const;
+export const INVENTORY_GENESIS_EMOTIONAL_VALUES = [
+  "low",
+  "medium",
+  "high",
+] as const;
 export type InventoryGenesisEmotionalValue =
   (typeof INVENTORY_GENESIS_EMOTIONAL_VALUES)[number];
 
-export const INVENTORY_GENESIS_STORY_POTENTIAL = ["low", "medium", "high"] as const;
+export const INVENTORY_GENESIS_STORY_POTENTIAL = [
+  "low",
+  "medium",
+  "high",
+] as const;
 export type InventoryGenesisStoryPotential =
   (typeof INVENTORY_GENESIS_STORY_POTENTIAL)[number];
 
@@ -85,20 +93,24 @@ const POWER_GUARD_PATTERNS = [
 ];
 
 function slug(value: string): string {
-  return value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("en-US")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 56) || "item";
+  return (
+    value
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("en-US")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 56) || "item"
+  );
 }
 
 function shortHash(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex").slice(0, 10);
 }
 
-function definitionStateFromInput(input: ItemDefinitionInput): ItemDefinitionState {
+function definitionStateFromInput(
+  input: ItemDefinitionInput,
+): ItemDefinitionState {
   return {
     id: `preview-definition-${shortHash(input.definitionKey)}`,
     definitionKey: input.definitionKey,
@@ -156,7 +168,9 @@ export function createInventoryGenesisManifest(input: {
     validateItemDefinitionInput(definition);
 
     const instance: Omit<ItemInstanceCreateInput, "itemDefinitionId"> = {
-      ...(suggestion.instanceName ? { instanceName: suggestion.instanceName } : {}),
+      ...(suggestion.instanceName
+        ? { instanceName: suggestion.instanceName }
+        : {}),
       quantity: 1,
       originType: suggestion.originType,
       originId:
@@ -169,7 +183,10 @@ export function createInventoryGenesisManifest(input: {
       },
     };
     validateItemInstanceCreateInput(
-      { itemDefinitionId: definitionStateFromInput(definition).id, ...instance },
+      {
+        itemDefinitionId: definitionStateFromInput(definition).id,
+        ...instance,
+      },
       definitionStateFromInput(definition),
     );
 
@@ -232,7 +249,10 @@ export function validateInventoryGenesisManifest(input: {
     } catch (error) {
       issues.push({
         code: "INVENTORY_GENESIS_CANONICAL_ITEM_INVALID",
-        message: error instanceof Error ? error.message : "Canonical item validation failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Canonical item validation failed",
         severity: "error",
         itemKey: key,
       });
@@ -249,7 +269,10 @@ export function validateInventoryGenesisManifest(input: {
       }
     }
 
-    if (item.provenance.givenByNpcId && !socialNpcIds.has(item.provenance.givenByNpcId)) {
+    if (
+      item.provenance.givenByNpcId &&
+      !socialNpcIds.has(item.provenance.givenByNpcId)
+    ) {
       issues.push({
         code: "INVENTORY_GENESIS_GIVER_MISSING",
         message: `${key} references unknown Social Genesis NPC ${item.provenance.givenByNpcId}`,
@@ -283,7 +306,10 @@ export function validateInventoryGenesisManifest(input: {
       });
     }
 
-    if (item.definition.rarity === "common" && item.provenance.storyPotential !== "high") {
+    if (
+      item.definition.rarity === "common" &&
+      item.provenance.storyPotential !== "high"
+    ) {
       mundaneCount += 1;
     }
     if (["rare", "unique", "legendary"].includes(item.definition.rarity)) {
@@ -304,17 +330,22 @@ export function validateInventoryGenesisManifest(input: {
     }
   }
 
-  if (input.manifest.items.length > 0 && mundaneCount < Math.min(2, input.manifest.items.length)) {
+  if (
+    input.manifest.items.length > 0 &&
+    mundaneCount < Math.min(2, input.manifest.items.length)
+  ) {
     issues.push({
       code: "INVENTORY_GENESIS_MUNDANE_GROUNDING_LOW",
-      message: "Starting inventory should normally contain at least two grounded/common items",
+      message:
+        "Starting inventory should normally contain at least two grounded/common items",
       severity: "warning",
     });
   }
   if (elevatedCount > 1) {
     issues.push({
       code: "INVENTORY_GENESIS_RARITY_OVERLOAD",
-      message: "Starting inventory contains too many rare/unique/legendary items",
+      message:
+        "Starting inventory contains too many rare/unique/legendary items",
       severity: "warning",
     });
   }

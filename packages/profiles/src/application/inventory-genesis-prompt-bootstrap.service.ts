@@ -50,7 +50,10 @@ export const INVENTORY_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                 key: { type: "string", minLength: 1, maxLength: 80 },
                 displayName: { type: "string", minLength: 1, maxLength: 160 },
                 description: { type: "string", minLength: 1, maxLength: 500 },
-                category: { type: "string", enum: [...SAFE_STARTING_CATEGORIES] },
+                category: {
+                  type: "string",
+                  enum: [...SAFE_STARTING_CATEGORIES],
+                },
                 itemType: {
                   type: "string",
                   enum: ["persistent", "story", "collectible"],
@@ -79,7 +82,12 @@ export const INVENTORY_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                   properties: {
                     role: {
                       type: "string",
-                      enum: ["ordinary", "personality", "relationship", "legacy"],
+                      enum: [
+                        "ordinary",
+                        "personality",
+                        "relationship",
+                        "legacy",
+                      ],
                     },
                     originFactIds: {
                       type: "array",

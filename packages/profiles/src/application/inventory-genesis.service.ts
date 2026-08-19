@@ -144,7 +144,8 @@ function getSection(
 function pickValidatedInventoryGenesis(
   validated: unknown,
 ): InventoryGenesisSuggestion[] {
-  const suggestions = pickSuggestionArray<InventoryGenesisSuggestion>(validated);
+  const suggestions =
+    pickSuggestionArray<InventoryGenesisSuggestion>(validated);
   for (const suggestion of suggestions) {
     const validation = validateInventoryGenesisSuggestion(suggestion);
     if (!validation.valid) {
@@ -177,21 +178,28 @@ export function validateInventoryGenesisSuggestion(
     }
     keys.add(key);
 
-    if (item.provenance.role === "relationship" && !item.provenance.givenByNpcId) {
+    if (
+      item.provenance.role === "relationship" &&
+      !item.provenance.givenByNpcId
+    ) {
       issues.push({
         code: "INVENTORY_GENESIS_RELATIONSHIP_GIVER_REQUIRED",
         message: `${item.key} is relationship-related but has no Social Genesis giver`,
         severity: "error",
       });
     }
-    if (item.provenance.role === "legacy" && item.provenance.originFactIds.length === 0) {
+    if (
+      item.provenance.role === "legacy" &&
+      item.provenance.originFactIds.length === 0
+    ) {
       issues.push({
         code: "INVENTORY_GENESIS_LEGACY_FACT_REQUIRED",
         message: `${item.key} is legacy-related but has no origin fact`,
         severity: "error",
       });
     }
-    if (["rare", "unique", "legendary"].includes(item.rarity)) elevatedRarity += 1;
+    if (["rare", "unique", "legendary"].includes(item.rarity))
+      elevatedRarity += 1;
     if (item.provenance.storyPotential === "high") highStoryPotential += 1;
   }
 
@@ -205,7 +213,8 @@ export function validateInventoryGenesisSuggestion(
   if (suggestion.items.length < 3) {
     issues.push({
       code: "INVENTORY_GENESIS_LIGHT_START",
-      message: "Fewer than three items is valid only for a naturally sparse character concept",
+      message:
+        "Fewer than three items is valid only for a naturally sparse character concept",
       severity: "warning",
     });
   }
@@ -219,7 +228,8 @@ export function validateInventoryGenesisSuggestion(
   if (highStoryPotential > 1) {
     issues.push({
       code: "INVENTORY_GENESIS_STORY_HOOK_OVERLOAD",
-      message: "Only one high story-potential starting item should normally be proposed",
+      message:
+        "Only one high story-potential starting item should normally be proposed",
       severity: "warning",
     });
   }

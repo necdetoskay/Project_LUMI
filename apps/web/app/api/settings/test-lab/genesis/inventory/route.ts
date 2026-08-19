@@ -38,7 +38,10 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
       const modelSlug = requiredString(body.modelSlug, "modelSlug");
 
       const session = await repository.getSession(sessionId);
@@ -94,36 +97,45 @@ export const POST = observeHandler(async (request: Request) => {
           modelSlug,
           capturedAt: now,
         });
-      const usageSnapshot = createUsageSnapshot(generated, modelProfile.pricing);
+      const usageSnapshot = createUsageSnapshot(
+        generated,
+        modelProfile.pricing,
+      );
       const characterId =
-        readCharacterId(parentState.value) ?? `testlab-character-${childProfileId}`;
+        readCharacterId(parentState.value) ??
+        `testlab-character-${childProfileId}`;
       const baseSeed =
         readGenesisSeed(parentState.value) ?? `${sessionId}:${branchId}`;
       const originFactIds = readOriginFactIds(parentState.value);
       const socialNpcIds = readSocialNpcIds(parentState.value);
 
-      const preparedCandidates = generated.suggestions.map((suggestion, index) => {
-        const manifest = createInventoryGenesisManifest({
-          characterId,
-          seed: `${baseSeed}:inventory:${suggestion.key}`,
-          suggestions: suggestion.items,
-        });
-        const domainIssues = validateInventoryGenesisManifest({
-          manifest,
-          originFactIds,
-          socialNpcIds,
-        });
-        const validation = {
-          production: generated.validation[index],
-          domain: {
-            valid: domainIssues.every((issue) => issue.severity !== "error"),
-            issues: domainIssues,
-          },
-          quality: evaluateInventoryQuality(manifest),
-        };
-        const stateDiff = buildInventoryStateDiff(parentState.value, manifest);
-        return { suggestion, manifest, validation, stateDiff };
-      });
+      const preparedCandidates = generated.suggestions.map(
+        (suggestion, index) => {
+          const manifest = createInventoryGenesisManifest({
+            characterId,
+            seed: `${baseSeed}:inventory:${suggestion.key}`,
+            suggestions: suggestion.items,
+          });
+          const domainIssues = validateInventoryGenesisManifest({
+            manifest,
+            originFactIds,
+            socialNpcIds,
+          });
+          const validation = {
+            production: generated.validation[index],
+            domain: {
+              valid: domainIssues.every((issue) => issue.severity !== "error"),
+              issues: domainIssues,
+            },
+            quality: evaluateInventoryQuality(manifest),
+          };
+          const stateDiff = buildInventoryStateDiff(
+            parentState.value,
+            manifest,
+          );
+          return { suggestion, manifest, validation, stateDiff };
+        },
+      );
 
       const recorded = await coordinator.recordRunCandidates({
         runId: crypto.randomUUID(),
@@ -145,14 +157,19 @@ export const POST = observeHandler(async (request: Request) => {
             ? toJsonObject(generated.provenance.finalProviderRequest)
             : null,
           rawProviderOutput: generated.rawProviderOutput,
-          renderedPromptFingerprint: fingerprint(generated.provenance.renderedPrompt),
+          renderedPromptFingerprint: fingerprint(
+            generated.provenance.renderedPrompt,
+          ),
           contextFingerprint: fingerprint(parentState.value),
         },
         candidates: preparedCandidates.map((item) => ({
           candidateId: crypto.randomUUID(),
           candidateStateId: crypto.randomUUID(),
           payload: toJsonObject(item),
-          candidateState: inventoryCandidateState(parentState.value, item.manifest),
+          candidateState: inventoryCandidateState(
+            parentState.value,
+            item.manifest,
+          ),
         })),
         now,
       });
@@ -193,14 +210,16 @@ function evaluateInventoryQuality(manifest: InventoryGenesisManifest) {
   }
   const mundane = manifest.items.filter(
     (item) =>
-      item.definition.rarity === "common" && item.provenance.storyPotential !== "high",
+      item.definition.rarity === "common" &&
+      item.provenance.storyPotential !== "high",
   ).length;
   const personal = manifest.items.filter((item) =>
     ["personality", "relationship", "legacy"].includes(item.provenance.role),
   ).length;
   const usable = manifest.items.filter(
     (item) =>
-      item.definition.isStorySelectable && item.provenance.storyPotential !== "low",
+      item.definition.isStorySelectable &&
+      item.provenance.storyPotential !== "low",
   ).length;
   const mundaneGrounding = mundane / total;
   const personalRelevance = personal / total;
@@ -210,9 +229,15 @@ function evaluateInventoryQuality(manifest: InventoryGenesisManifest) {
     personalRelevance,
     futureUsability,
     warnings: [
-      ...(mundaneGrounding < 0.4 ? ["INVENTORY_QUALITY_LOW_MUNDANE_GROUNDING"] : []),
-      ...(personalRelevance < 0.2 ? ["INVENTORY_QUALITY_LOW_PERSONAL_RELEVANCE"] : []),
-      ...(futureUsability < 0.2 ? ["INVENTORY_QUALITY_LOW_FUTURE_USABILITY"] : []),
+      ...(mundaneGrounding < 0.4
+        ? ["INVENTORY_QUALITY_LOW_MUNDANE_GROUNDING"]
+        : []),
+      ...(personalRelevance < 0.2
+        ? ["INVENTORY_QUALITY_LOW_PERSONAL_RELEVANCE"]
+        : []),
+      ...(futureUsability < 0.2
+        ? ["INVENTORY_QUALITY_LOW_FUTURE_USABILITY"]
+        : []),
     ],
   };
 }

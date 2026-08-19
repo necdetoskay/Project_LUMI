@@ -56,7 +56,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -113,7 +115,9 @@ export default function InventoryGenesisTestPanel() {
   async function previewPrompt() {
     const context = sandboxContext();
     if (!context.sessionId || !context.branchId || !context.parentStateId) {
-      setMessage("Önce Social Genesis dahil önceki sandbox aşamalarını tamamlayın.");
+      setMessage(
+        "Önce Social Genesis dahil önceki sandbox aşamalarını tamamlayın.",
+      );
       return;
     }
     setBusy(true);
@@ -133,7 +137,9 @@ export default function InventoryGenesisTestPanel() {
       });
       setMessage("Inventory Genesis production promptu hazırlandı.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt hazırlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Prompt hazırlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -141,7 +147,12 @@ export default function InventoryGenesisTestPanel() {
 
   async function runInventoryGenesis() {
     const context = sandboxContext();
-    if (!prompt || !context.sessionId || !context.branchId || !context.parentStateId) {
+    if (
+      !prompt ||
+      !context.sessionId ||
+      !context.branchId ||
+      !context.parentStateId
+    ) {
       setMessage("Önce production promptunu yükleyin.");
       return;
     }
@@ -161,7 +172,9 @@ export default function InventoryGenesisTestPanel() {
       );
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Inventory Genesis çalıştırılamadı.",
+        error instanceof Error
+          ? error.message
+          : "Inventory Genesis çalıştırılamadı.",
       );
     } finally {
       setBusy(false);
@@ -181,7 +194,10 @@ export default function InventoryGenesisTestPanel() {
         runId: entry.run.id,
         candidateId: candidate.id,
       });
-      window.localStorage.setItem(LAST_BRANCH_KEY, payload.data.activeBranchId as string);
+      window.localStorage.setItem(
+        LAST_BRANCH_KEY,
+        payload.data.activeBranchId as string,
+      );
       window.localStorage.setItem(
         LAST_STATE_KEY,
         payload.data.selection.selectedStateId as string,
@@ -201,9 +217,10 @@ export default function InventoryGenesisTestPanel() {
         <p className={styles.eyebrow}>Character Genesis</p>
         <h2>Inventory Genesis</h2>
         <p className={styles.muted}>
-          Origin, DNA ve Social Genesis bağlamından küçük bir başlangıç inventory manifesti
-          üretir. Candidate state gerçek inventory ledger&apos;ına yazılmaz; mevcut canonical
-          definition/instance sözleşmeleriyle doğrulanır.
+          Origin, DNA ve Social Genesis bağlamından küçük bir başlangıç
+          inventory manifesti üretir. Candidate state gerçek inventory
+          ledger&apos;ına yazılmaz; mevcut canonical definition/instance
+          sözleşmeleriyle doğrulanır.
         </p>
         <div className={styles.settingsGrid}>
           <label className={styles.field}>
@@ -246,7 +263,9 @@ export default function InventoryGenesisTestPanel() {
                 rows={6}
                 className={styles.promptTextarea}
                 value={prompt.system}
-                onChange={(event) => setPrompt({ ...prompt, system: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, system: event.target.value })
+                }
               />
             </label>
             <label className={styles.field}>
@@ -255,7 +274,9 @@ export default function InventoryGenesisTestPanel() {
                 rows={16}
                 className={styles.promptTextarea}
                 value={prompt.user}
-                onChange={(event) => setPrompt({ ...prompt, user: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, user: event.target.value })
+                }
               />
             </label>
             <button
@@ -284,7 +305,9 @@ export default function InventoryGenesisTestPanel() {
             </button>
           </div>
           {runs.length === 0 ? (
-            <div className={styles.emptyState}>Henüz Inventory Genesis runı yok.</div>
+            <div className={styles.emptyState}>
+              Henüz Inventory Genesis runı yok.
+            </div>
           ) : (
             <div className={styles.runList}>
               {[...runs].reverse().map((entry, index) => {
@@ -293,7 +316,9 @@ export default function InventoryGenesisTestPanel() {
                 return (
                   <article key={entry.run.id} className={styles.runCard}>
                     <div className={styles.runHeader}>
-                      <strong>Inventory Genesis Run {runs.length - index}</strong>
+                      <strong>
+                        Inventory Genesis Run {runs.length - index}
+                      </strong>
                       <span className={styles.runMeta}>
                         {entry.run.modelSlug ?? "model bilinmiyor"}
                       </span>
@@ -305,7 +330,9 @@ export default function InventoryGenesisTestPanel() {
                         <span>Toplam {usage.totalTokens} token</span>
                         <span>{usage.latencyMs} ms</span>
                         <span>
-                          {formatCost(usage.actualCostUsd ?? usage.estimatedCostUsd)}
+                          {formatCost(
+                            usage.actualCostUsd ?? usage.estimatedCostUsd,
+                          )}
                         </span>
                       </div>
                     ) : null}
@@ -326,7 +353,10 @@ export default function InventoryGenesisTestPanel() {
                     </details>
                     <div className={styles.candidateList}>
                       {entry.candidates.map((candidate, candidateIndex) => (
-                        <article key={candidate.id} className={styles.candidate}>
+                        <article
+                          key={candidate.id}
+                          className={styles.candidate}
+                        >
                           <strong>Inventory aday {candidateIndex + 1}</strong>
                           <pre className={styles.payload}>
                             {JSON.stringify(candidate.payload, null, 2)}
@@ -334,7 +364,9 @@ export default function InventoryGenesisTestPanel() {
                           <button
                             type="button"
                             className={styles.primaryButton}
-                            disabled={busy || entry.selectedCandidateId === candidate.id}
+                            disabled={
+                              busy || entry.selectedCandidateId === candidate.id
+                            }
                             onClick={() => selectCandidate(entry, candidate)}
                           >
                             {entry.selectedCandidateId === candidate.id
