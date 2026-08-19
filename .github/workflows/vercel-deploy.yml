@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify Vercel token
         run: |
@@ -55,11 +57,35 @@ jobs:
             echo "environment=preview" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve deployment source
+        id: source
+        shell: bash
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            git fetch --no-tags origin main
+            deployment_ref="main"
+            deployment_sha="$(git rev-parse origin/main)"
+          else
+            deployment_ref="$GITHUB_REF_NAME"
+            deployment_sha="$GITHUB_SHA"
+          fi
+
+          if [ -z "$deployment_sha" ]; then
+            echo "Unable to resolve deployment SHA."
+            exit 1
+          fi
+
+          echo "ref=$deployment_ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$deployment_sha" >> "$GITHUB_OUTPUT"
+          echo "Resolved deployment source: $deployment_ref@$deployment_sha"
+
       - name: Create deployment request
         id: request
         shell: bash
         env:
           DEPLOYMENT_ENVIRONMENT: ${{ steps.target.outputs.environment }}
+          DEPLOYMENT_REF: ${{ steps.source.outputs.ref }}
+          DEPLOYMENT_SHA: ${{ steps.source.outputs.sha }}
         run: |
           request="$RUNNER_TEMP/vercel-deployment-request.json"
           response="$RUNNER_TEMP/vercel-deployment-response.json"
@@ -69,8 +95,8 @@ jobs:
             --arg project "$VERCEL_PROJECT_ID" \
             --arg org "$GITHUB_REPOSITORY_OWNER" \
             --arg repo "${GITHUB_REPOSITORY#*/}" \
-            --arg ref "$GITHUB_REF_NAME" \
-            --arg sha "$GITHUB_SHA" \
+            --arg ref "$DEPLOYMENT_REF" \
+            --arg sha "$DEPLOYMENT_SHA" \
             --arg remoteUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
             '{
               name: $name,
@@ -110,6 +136,7 @@ jobs:
           deployment_url="$(jq -r '.url // empty' "$response")"
           deployment_target="$(jq -r '.target // empty' "$response")"
           deployment_state="$(jq -r '.readyState // .status // empty' "$response")"
+          deployment_sha="$(jq -r '.meta.githubCommitSha // .gitSource.sha // empty' "$response")"
 
           if [ -z "$deployment_id" ] || [ -z "$deployment_url" ]; then
             echo "Vercel did not return a deployment id/url."
@@ -122,6 +149,11 @@ jobs:
             exit 1
           fi
 
+          if [ "$DEPLOYMENT_ENVIRONMENT" = "production" ] && [ -n "$deployment_sha" ] && [ "$deployment_sha" != "$DEPLOYMENT_SHA" ]; then
+            echo "Safety check failed: Vercel created deployment for $deployment_sha instead of $DEPLOYMENT_SHA."
+            exit 1
+          fi
+
           echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
           echo "deployment_url=https://$deployment_url" >> "$GITHUB_OUTPUT"
           echo "deployment_target=${deployment_target:-preview}" >> "$GITHUB_OUTPUT"
@@ -130,6 +162,7 @@ jobs:
           echo "Deployment created: $deployment_id"
           echo "URL: https://$deployment_url"
           echo "Requested environment: $DEPLOYMENT_ENVIRONMENT"
+          echo "Source: $DEPLOYMENT_REF@$DEPLOYMENT_SHA"
           echo "Vercel target: ${deployment_target:-preview}"
           echo "Initial state: ${deployment_state:-unknown}"
 
@@ -137,6 +170,8 @@ jobs:
         run: |
           echo "### Vercel deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "- Environment: ${{ steps.target.outputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source ref: ${{ steps.source.outputs.ref }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source SHA: ${{ steps.source.outputs.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Deployment ID: ${{ steps.request.outputs.deployment_id }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Target: ${{ steps.request.outputs.deployment_target }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Initial state: ${{ steps.request.outputs.deployment_state }}" >> "$GITHUB_STEP_SUMMARY"
