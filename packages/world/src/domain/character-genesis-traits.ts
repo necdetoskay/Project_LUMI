@@ -211,10 +211,14 @@ export function validateCharacterTraitState(
     }
 
     const strongLow = state.evidence.some(
-      (item) => item.axis === axis && item.direction === "low" && item.strength >= 0.75,
+      (item) =>
+        item.axis === axis && item.direction === "low" && item.strength >= 0.75,
     );
     const strongHigh = state.evidence.some(
-      (item) => item.axis === axis && item.direction === "high" && item.strength >= 0.75,
+      (item) =>
+        item.axis === axis &&
+        item.direction === "high" &&
+        item.strength >= 0.75,
     );
     if (strongLow && strongHigh) {
       issues.push({
