@@ -22,6 +22,7 @@ export interface CharacterOnboardingTestLabExecutionInput {
   phaseId: CharacterOnboardingTestLabPhase;
   parentState: Record<string, unknown>;
   modelSlug: string;
+  localeOverride?: string;
   promptVersionOverride?: number;
 }
 
@@ -76,6 +77,7 @@ export async function executeCharacterOnboardingTestLabPhase(
         previousSelections: input.parentState,
       },
       modelOverride: input.modelSlug,
+      ...(input.localeOverride ? { localeOverride: input.localeOverride } : {}),
       ...(input.promptVersionOverride === undefined
         ? {}
         : { promptVersionOverride: input.promptVersionOverride }),
