@@ -29,6 +29,10 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         );
       }
 
+      const outputLocale =
+        typeof request.generationConfig?.outputLocale === "string"
+          ? request.generationConfig.outputLocale
+          : undefined;
       const result = await executeCharacterOnboardingTestLabPhase({
         userId: request.actor.userId,
         householdId: request.actor.householdId,
@@ -36,6 +40,7 @@ export const characterOnboardingProductionScenarioAdapter: ProductionScenarioAda
         phaseId: request.phaseId,
         parentState: request.parentState,
         modelSlug: request.modelSlug,
+        ...(outputLocale ? { localeOverride: outputLocale } : {}),
         ...(request.promptVersionOverride === undefined
           ? {}
           : { promptVersionOverride: request.promptVersionOverride }),

@@ -59,6 +59,7 @@ const DEFAULT_STATE = JSON.stringify(
 const LAST_HOUSEHOLD_KEY = "lumi.testLab.householdId";
 const LAST_CHILD_PROFILE_KEY = "lumi.testLab.childProfileId";
 const LAST_MODEL_KEY = "lumi.testLab.modelSlug";
+const LAST_LOCALE_KEY = "lumi.testLab.locale";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Bilinmeyen hata";
@@ -93,13 +94,16 @@ export default function OnboardingTestRunner({
   const [householdId, setHouseholdId] = useState(defaultHouseholdId);
   const [childProfileId, setChildProfileId] = useState(defaultChildProfileId);
   const [modelSlug, setModelSlug] = useState("deepseek/deepseek-v4-flash");
+  const [locale, setLocale] = useState("tr");
   const [initialStateText, setInitialStateText] = useState(DEFAULT_STATE);
   const [sessionId, setSessionId] = useState("");
   const [branchId, setBranchId] = useState("");
   const [parentStateId, setParentStateId] = useState("");
   const [phaseId, setPhaseId] = useState("");
   const [completedIds, setCompletedIds] = useState<string[]>([]);
-  const [result, setResult] = useState<RunResult | null>(null);
+  const [resultsByPhase, setResultsByPhase] = useState<
+    Record<string, RunResult>
+  >({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -116,6 +120,7 @@ export default function OnboardingTestRunner({
       LAST_CHILD_PROFILE_KEY,
     );
     const rememberedModelSlug = window.localStorage.getItem(LAST_MODEL_KEY);
+    const rememberedLocale = window.localStorage.getItem(LAST_LOCALE_KEY);
 
     const nextHouseholdId = households.some(
       (household) => household.id === rememberedHouseholdId,
@@ -134,6 +139,9 @@ export default function OnboardingTestRunner({
     setHouseholdId(nextHouseholdId);
     setChildProfileId(nextChildProfileId);
     if (rememberedModelSlug?.trim()) setModelSlug(rememberedModelSlug);
+    if (rememberedLocale === "tr" || rememberedLocale === "en") {
+      setLocale(rememberedLocale);
+    }
   }, [childProfiles, defaultHouseholdId, households]);
 
   useEffect(() => {
@@ -144,7 +152,8 @@ export default function OnboardingTestRunner({
     }
     if (modelSlug.trim())
       window.localStorage.setItem(LAST_MODEL_KEY, modelSlug);
-  }, [householdId, childProfileId, modelSlug]);
+    window.localStorage.setItem(LAST_LOCALE_KEY, locale);
+  }, [householdId, childProfileId, modelSlug, locale]);
 
   useEffect(() => {
     fetch("/api/settings/test-lab")
@@ -177,7 +186,17 @@ export default function OnboardingTestRunner({
     (phase) => phase.id === phaseId,
   );
   const currentPhase = currentIndex >= 0 ? runnablePhases[currentIndex] : null;
+  const currentResult = resultsByPhase[phaseId] ?? null;
+  const currentPhaseCompleted = completedIds.includes(phaseId);
   const hasContext = Boolean(householdId && childProfileId);
+
+  function resetSessionState() {
+    setSessionId("");
+    setBranchId("");
+    setParentStateId("");
+    setCompletedIds([]);
+    setResultsByPhase({});
+  }
 
   function changeHousehold(nextHouseholdId: string) {
     setHouseholdId(nextHouseholdId);
@@ -185,9 +204,7 @@ export default function OnboardingTestRunner({
       (profile) => profile.householdId === nextHouseholdId,
     );
     setChildProfileId(firstProfile?.id ?? "");
-    setSessionId("");
-    setResult(null);
-    setCompletedIds([]);
+    resetSessionState();
   }
 
   async function createSession() {
@@ -213,7 +230,7 @@ export default function OnboardingTestRunner({
       setBranchId(payload.data.session.activeBranchId);
       setParentStateId(payload.data.initialState.id);
       setCompletedIds([]);
-      setResult(null);
+      setResultsByPhase({});
       const first = runnablePhases[0];
       if (first) setPhaseId(first.id);
       setMessage(
@@ -233,7 +250,6 @@ export default function OnboardingTestRunner({
     }
     setBusy(true);
     setMessage("");
-    setResult(null);
     try {
       const payload = await post({
         action: "run-phase",
@@ -244,9 +260,13 @@ export default function OnboardingTestRunner({
         modelSlug,
         householdId,
         childProfileId,
+        generationConfig: { outputLocale: locale },
       });
       const nextResult = payload.data as RunResult;
-      setResult(nextResult);
+      setResultsByPhase((previous) => ({
+        ...previous,
+        [phaseId]: nextResult,
+      }));
       setMessage(
         `${nextResult.candidates.length} aday üretildi. Birini seçerek sonraki aşamaya geçin.`,
       );
@@ -258,7 +278,7 @@ export default function OnboardingTestRunner({
   }
 
   async function selectCandidate(candidate: Candidate) {
-    if (!result) return;
+    if (!currentResult || currentPhaseCompleted) return;
     setBusy(true);
     setMessage("");
     try {
@@ -267,7 +287,7 @@ export default function OnboardingTestRunner({
         sessionId,
         branchId,
         phaseId,
-        runId: result.run.id,
+        runId: currentResult.run.id,
         candidateId: candidate.id,
       });
       setBranchId(payload.data.activeBranchId);
@@ -276,7 +296,6 @@ export default function OnboardingTestRunner({
         previous.includes(phaseId) ? previous : [...previous, phaseId],
       );
       const nextPhase = runnablePhases[currentIndex + 1];
-      setResult(null);
       if (nextPhase) {
         setPhaseId(nextPhase.id);
         setMessage(`Aday seçildi. Sıradaki aşama: ${nextPhase.label}`);
@@ -314,6 +333,21 @@ export default function OnboardingTestRunner({
             />
           </label>
           <label className={styles.field}>
+            Dil
+            <select
+              className={styles.input}
+              value={locale}
+              disabled={busy}
+              onChange={(event) => {
+                setLocale(event.target.value);
+                resetSessionState();
+              }}
+            >
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label className={styles.field}>
             Aile alanı
             <select
               className={styles.input}
@@ -339,9 +373,7 @@ export default function OnboardingTestRunner({
               disabled={availableProfiles.length === 0 || busy}
               onChange={(event) => {
                 setChildProfileId(event.target.value);
-                setSessionId("");
-                setResult(null);
-                setCompletedIds([]);
+                resetSessionState();
               }}
             >
               {availableProfiles.length === 0 ? (
@@ -397,6 +429,7 @@ export default function OnboardingTestRunner({
           {phases.map((phase, index) => {
             const supported = phase.testable && supportedIds.includes(phase.id);
             const completed = completedIds.includes(phase.id);
+            const hasResult = Boolean(resultsByPhase[phase.id]);
             const active = phase.id === phaseId;
             const phaseClassName = [
               styles.phaseButton,
@@ -413,7 +446,6 @@ export default function OnboardingTestRunner({
                 disabled={!supported || busy}
                 onClick={() => {
                   setPhaseId(phase.id);
-                  setResult(null);
                   setMessage("");
                 }}
                 className={phaseClassName}
@@ -423,12 +455,14 @@ export default function OnboardingTestRunner({
                 </strong>
                 <span className={styles.phaseStatus}>
                   {completed
-                    ? "✓ tamamlandı"
-                    : supported
-                      ? active
-                        ? "şimdi"
-                        : "hazır"
-                      : "backend desteği yok"}
+                    ? "✓ tamamlandı — sonuçları gör"
+                    : hasResult
+                      ? "sonuç hazır"
+                      : supported
+                        ? active
+                          ? "şimdi"
+                          : "hazır"
+                        : "backend desteği yok"}
                 </span>
               </button>
             );
@@ -456,19 +490,32 @@ export default function OnboardingTestRunner({
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={!sessionId || !currentPhase || busy}
+          disabled={
+            !sessionId || !currentPhase || busy || currentPhaseCompleted
+          }
           onClick={runCurrentPhase}
         >
           {busy
             ? "Çalışıyor..."
-            : `${currentPhase?.label ?? "Aşama"} testini çalıştır`}
+            : currentPhaseCompleted
+              ? "Bu aşama tamamlandı"
+              : `${currentPhase?.label ?? "Aşama"} testini çalıştır`}
         </button>
 
-        {result ? (
+        {currentResult ? (
           <div className={styles.results}>
-            <h3>Üretilen adaylar</h3>
+            <h3>
+              Üretilen adaylar —{" "}
+              {currentPhase?.label ?? currentResult.run.phaseId}
+            </h3>
+            {currentPhaseCompleted ? (
+              <p className={styles.muted}>
+                Bu aşamanın sonuçları geçmişten gösteriliyor. Seçim tamamlandığı
+                için state yeniden değiştirilmez.
+              </p>
+            ) : null}
             <div className={styles.candidateList}>
-              {result.candidates.map((candidate, index) => (
+              {currentResult.candidates.map((candidate, index) => (
                 <article key={candidate.id} className={styles.candidate}>
                   <strong>Aday {index + 1}</strong>
                   <pre className={styles.payload}>
@@ -477,10 +524,12 @@ export default function OnboardingTestRunner({
                   <button
                     type="button"
                     className={styles.secondaryButton}
-                    disabled={busy}
+                    disabled={busy || currentPhaseCompleted}
                     onClick={() => selectCandidate(candidate)}
                   >
-                    Bu adayı seç ve sonraki aşamaya geç
+                    {currentPhaseCompleted
+                      ? "Aşama tamamlandı"
+                      : "Bu adayı seç ve sonraki aşamaya geç"}
                   </button>
                 </article>
               ))}
