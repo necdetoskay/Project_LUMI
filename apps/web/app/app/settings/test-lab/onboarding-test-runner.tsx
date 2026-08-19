@@ -104,12 +104,14 @@ export default function OnboardingTestRunner({
   const [message, setMessage] = useState("");
 
   const availableProfiles = useMemo(
-    () => childProfiles.filter((profile) => profile.householdId === householdId),
+    () =>
+      childProfiles.filter((profile) => profile.householdId === householdId),
     [childProfiles, householdId],
   );
 
   useEffect(() => {
-    const rememberedHouseholdId = window.localStorage.getItem(LAST_HOUSEHOLD_KEY);
+    const rememberedHouseholdId =
+      window.localStorage.getItem(LAST_HOUSEHOLD_KEY);
     const rememberedChildProfileId = window.localStorage.getItem(
       LAST_CHILD_PROFILE_KEY,
     );
@@ -118,7 +120,7 @@ export default function OnboardingTestRunner({
     const nextHouseholdId = households.some(
       (household) => household.id === rememberedHouseholdId,
     )
-      ? rememberedHouseholdId ?? defaultHouseholdId
+      ? (rememberedHouseholdId ?? defaultHouseholdId)
       : defaultHouseholdId;
     const nextProfiles = childProfiles.filter(
       (profile) => profile.householdId === nextHouseholdId,
@@ -126,8 +128,8 @@ export default function OnboardingTestRunner({
     const nextChildProfileId = nextProfiles.some(
       (profile) => profile.id === rememberedChildProfileId,
     )
-      ? rememberedChildProfileId ?? nextProfiles[0]?.id ?? ""
-      : nextProfiles[0]?.id ?? "";
+      ? (rememberedChildProfileId ?? nextProfiles[0]?.id ?? "")
+      : (nextProfiles[0]?.id ?? "");
 
     setHouseholdId(nextHouseholdId);
     setChildProfileId(nextChildProfileId);
@@ -135,11 +137,13 @@ export default function OnboardingTestRunner({
   }, [childProfiles, defaultHouseholdId, households]);
 
   useEffect(() => {
-    if (householdId) window.localStorage.setItem(LAST_HOUSEHOLD_KEY, householdId);
+    if (householdId)
+      window.localStorage.setItem(LAST_HOUSEHOLD_KEY, householdId);
     if (childProfileId) {
       window.localStorage.setItem(LAST_CHILD_PROFILE_KEY, childProfileId);
     }
-    if (modelSlug.trim()) window.localStorage.setItem(LAST_MODEL_KEY, modelSlug);
+    if (modelSlug.trim())
+      window.localStorage.setItem(LAST_MODEL_KEY, modelSlug);
   }, [householdId, childProfileId, modelSlug]);
 
   useEffect(() => {
