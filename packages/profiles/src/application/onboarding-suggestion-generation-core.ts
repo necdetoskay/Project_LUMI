@@ -189,7 +189,10 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           taskType: spec.taskType,
           promptKey: prepared.promptKey,
           promptVersion: prepared.promptVersion,
-          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
+          inputContext: {
+            ...prepared.inputContext,
+            generationAttempt: attempt,
+          },
           contextEvidence: prepared.contextEvidence,
           outputPayload: { suggestions },
           validationStatus: "valid",
@@ -219,7 +222,10 @@ export async function generateOnboardingSuggestionsWithProductionPipeline<T>(
           taskType: spec.taskType,
           promptKey: prepared.promptKey,
           promptVersion: prepared.promptVersion,
-          inputContext: { ...prepared.inputContext, generationAttempt: attempt },
+          inputContext: {
+            ...prepared.inputContext,
+            generationAttempt: attempt,
+          },
           contextEvidence: prepared.contextEvidence,
           outputPayload: { raw: generated.content },
           validationStatus: "invalid",

@@ -156,9 +156,9 @@ export default function OnboardingTestRunner({
   const [runsByPhase, setRunsByPhase] = useState<
     Record<string, RunHistoryEntry[]>
   >({});
-  const [promptDrafts, setPromptDrafts] = useState<
-    Record<string, PromptDraft>
-  >({});
+  const [promptDrafts, setPromptDrafts] = useState<Record<string, PromptDraft>>(
+    {},
+  );
   const [busy, setBusy] = useState(false);
   const [promptBusy, setPromptBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -467,7 +467,13 @@ export default function OnboardingTestRunner({
   }
 
   async function runCurrentPhase() {
-    if (!sessionId || !branchId || !parentStateId || !phaseId || !currentDraft) {
+    if (
+      !sessionId ||
+      !branchId ||
+      !parentStateId ||
+      !phaseId ||
+      !currentDraft
+    ) {
       setMessage("Önce test oturumu ve prompt önizlemesi hazır olmalı.");
       return;
     }
@@ -516,7 +522,8 @@ export default function OnboardingTestRunner({
         candidateId: candidate.id,
       });
       const nextBranchId = payload.data.activeBranchId as string;
-      const nextParentStateId = payload.data.selection.selectedStateId as string;
+      const nextParentStateId = payload.data.selection
+        .selectedStateId as string;
       setBranchId(nextBranchId);
       setParentStateId(nextParentStateId);
       persistSession({
@@ -713,7 +720,9 @@ export default function OnboardingTestRunner({
                     {currentPhase.productionOperation}
                   </p>
                 </div>
-                <span className={styles.runBadge}>{currentRuns.length} run</span>
+                <span className={styles.runBadge}>
+                  {currentRuns.length} run
+                </span>
               </div>
 
               {!sessionId ? (
@@ -802,80 +811,104 @@ export default function OnboardingTestRunner({
                       </div>
                     ) : (
                       <div className={styles.runList}>
-                        {[...currentRuns].reverse().map((entry, reverseIndex) => {
-                          const runNumber = currentRuns.length - reverseIndex;
-                          const usedPrompt =
-                            entry.run.executionSnapshot?.renderedPrompt;
-                          const usage = entry.run.usageSnapshot;
-                          return (
-                            <article key={entry.run.id} className={styles.runCard}>
-                              <div className={styles.runHeader}>
-                                <div>
-                                  <strong>Run {runNumber}</strong>
-                                  <p className={styles.runMeta}>
-                                    {entry.run.modelSlug ?? "model bilinmiyor"} ·{" "}
-                                    {new Date(entry.run.createdAt).toLocaleString()}
-                                  </p>
+                        {[...currentRuns]
+                          .reverse()
+                          .map((entry, reverseIndex) => {
+                            const runNumber = currentRuns.length - reverseIndex;
+                            const usedPrompt =
+                              entry.run.executionSnapshot?.renderedPrompt;
+                            const usage = entry.run.usageSnapshot;
+                            return (
+                              <article
+                                key={entry.run.id}
+                                className={styles.runCard}
+                              >
+                                <div className={styles.runHeader}>
+                                  <div>
+                                    <strong>Run {runNumber}</strong>
+                                    <p className={styles.runMeta}>
+                                      {entry.run.modelSlug ??
+                                        "model bilinmiyor"}{" "}
+                                      ·{" "}
+                                      {new Date(
+                                        entry.run.createdAt,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  {entry.selectedCandidateId ? (
+                                    <span className={styles.selectedBadge}>
+                                      seçim yapıldı
+                                    </span>
+                                  ) : null}
                                 </div>
-                                {entry.selectedCandidateId ? (
-                                  <span className={styles.selectedBadge}>
-                                    seçim yapıldı
-                                  </span>
+
+                                {usage ? (
+                                  <div className={styles.metrics}>
+                                    <span>{usage.totalTokens} token</span>
+                                    <span>{usage.latencyMs} ms</span>
+                                    <span>
+                                      {formatCost(usage.estimatedCostUsd)}
+                                    </span>
+                                  </div>
                                 ) : null}
-                              </div>
 
-                              {usage ? (
-                                <div className={styles.metrics}>
-                                  <span>{usage.totalTokens} token</span>
-                                  <span>{usage.latencyMs} ms</span>
-                                  <span>{formatCost(usage.estimatedCostUsd)}</span>
-                                </div>
-                              ) : null}
-
-                              <details className={styles.runPrompt}>
-                                <summary>Bu run&apos;da kullanılan prompt</summary>
-                                <div className={styles.promptSnapshot}>
-                                  <strong>System</strong>
-                                  <pre>{usedPrompt?.system ?? "Prompt snapshotı yok"}</pre>
-                                  <strong>User</strong>
-                                  <pre>{usedPrompt?.user ?? "Prompt snapshotı yok"}</pre>
-                                </div>
-                              </details>
-
-                              <div className={styles.candidateList}>
-                                {entry.candidates.map((candidate, index) => (
-                                  <article
-                                    key={candidate.id}
-                                    className={styles.candidate}
-                                  >
-                                    <strong>Aday {index + 1}</strong>
-                                    <pre className={styles.payload}>
-                                      {JSON.stringify(candidate.payload, null, 2)}
+                                <details className={styles.runPrompt}>
+                                  <summary>
+                                    Bu run&apos;da kullanılan prompt
+                                  </summary>
+                                  <div className={styles.promptSnapshot}>
+                                    <strong>System</strong>
+                                    <pre>
+                                      {usedPrompt?.system ??
+                                        "Prompt snapshotı yok"}
                                     </pre>
-                                    <button
-                                      type="button"
-                                      className={styles.secondaryButton}
-                                      disabled={
-                                        busy ||
-                                        currentPhaseCompleted ||
-                                        Boolean(entry.selectedCandidateId)
-                                      }
-                                      onClick={() =>
-                                        selectCandidate(entry, candidate)
-                                      }
+                                    <strong>User</strong>
+                                    <pre>
+                                      {usedPrompt?.user ??
+                                        "Prompt snapshotı yok"}
+                                    </pre>
+                                  </div>
+                                </details>
+
+                                <div className={styles.candidateList}>
+                                  {entry.candidates.map((candidate, index) => (
+                                    <article
+                                      key={candidate.id}
+                                      className={styles.candidate}
                                     >
-                                      {candidate.id === entry.selectedCandidateId
-                                        ? "Seçilen aday"
-                                        : currentPhaseCompleted
-                                          ? "Aşama tamamlandı"
-                                          : "Bu adayı seç ve sonraki aşamaya geç"}
-                                    </button>
-                                  </article>
-                                ))}
-                              </div>
-                            </article>
-                          );
-                        })}
+                                      <strong>Aday {index + 1}</strong>
+                                      <pre className={styles.payload}>
+                                        {JSON.stringify(
+                                          candidate.payload,
+                                          null,
+                                          2,
+                                        )}
+                                      </pre>
+                                      <button
+                                        type="button"
+                                        className={styles.secondaryButton}
+                                        disabled={
+                                          busy ||
+                                          currentPhaseCompleted ||
+                                          Boolean(entry.selectedCandidateId)
+                                        }
+                                        onClick={() =>
+                                          selectCandidate(entry, candidate)
+                                        }
+                                      >
+                                        {candidate.id ===
+                                        entry.selectedCandidateId
+                                          ? "Seçilen aday"
+                                          : currentPhaseCompleted
+                                            ? "Aşama tamamlandı"
+                                            : "Bu adayı seç ve sonraki aşamaya geç"}
+                                      </button>
+                                    </article>
+                                  ))}
+                                </div>
+                              </article>
+                            );
+                          })}
                       </div>
                     )}
                   </section>
