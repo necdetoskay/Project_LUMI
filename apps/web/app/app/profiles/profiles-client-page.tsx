@@ -748,7 +748,7 @@ function ProfileCard({
     profile.ageYears === null ? profile.ageBand : `${profile.ageYears} yaş`;
 
   return (
-    <article className={styles.profileCard}>
+    <article className={styles.profileCard} data-profile-id={profile.id}>
       <div className={`${styles.profileHero} ${heroClass}`}>
         {profile.primaryCharacter ? (
           <CanonicalCharacterImage
