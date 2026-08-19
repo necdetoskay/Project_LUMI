@@ -25,7 +25,10 @@ function isWebP(buffer: Buffer) {
 
 function unpackAsset(source: Buffer) {
   if (isWebP(source)) return source;
-  return Buffer.from(source.toString("utf8").replace(/\s+/g, ""), "base64");
+  return Buffer.from(
+    source.toString("utf8").replace(/\s+/g, ""),
+    "base64",
+  );
 }
 
 describe("landing asset packaging", () => {
@@ -38,9 +41,14 @@ describe("landing asset packaging", () => {
   });
 
   it("prepares packaged assets before dev and production build", () => {
-    const packageJson = fs.readFileSync(path.join(WEB_ROOT, "package.json"), "utf8");
+    const packageJson = fs.readFileSync(
+      path.join(WEB_ROOT, "package.json"),
+      "utf8",
+    );
 
-    expect(packageJson).toContain("node scripts/prepare-landing-assets.mjs && next dev");
+    expect(packageJson).toContain(
+      "node scripts/prepare-landing-assets.mjs && next dev",
+    );
     expect(packageJson).toContain(
       "node scripts/prepare-landing-assets.mjs && next build --webpack",
     );
