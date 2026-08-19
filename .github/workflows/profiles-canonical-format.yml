@@ -1,16 +1,20 @@
 name: Profiles Canonical Formatter
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/profiles-canonical-ui
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
 
 jobs:
   format:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/profiles-canonical-ui' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
