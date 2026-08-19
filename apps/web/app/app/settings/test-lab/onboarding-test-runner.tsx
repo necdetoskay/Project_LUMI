@@ -26,6 +26,8 @@ type UsageSnapshot = {
   completionTokens: number;
   totalTokens: number;
   estimatedCostUsd: number;
+  actualCostUsd: number | null;
+  upstreamInferenceCostUsd: number | null;
   latencyMs: number;
 };
 
@@ -136,9 +138,39 @@ function groupRuns(entries: RunHistoryEntry[]) {
   }, {});
 }
 
-function formatCost(value: number | undefined) {
+function formatCost(value: number | null | undefined) {
   if (typeof value !== "number") return "—";
-  return `$${value.toFixed(6)}`;
+  if (value === 0) return "$0.000000";
+  if (value < 0.000001) return `${value.toExponential(2)}`;
+  return `${value.toFixed(6)}`;
+}
+
+function runCost(usage: UsageSnapshot) {
+  return usage.actualCostUsd ?? usage.estimatedCostUsd;
+}
+
+function summarizeUsage(entries: RunHistoryEntry[]) {
+  return entries.reduce(
+    (summary, entry) => {
+      const usage = entry.run.usageSnapshot;
+      if (!usage) return summary;
+      summary.runCount += 1;
+      summary.promptTokens += usage.promptTokens;
+      summary.completionTokens += usage.completionTokens;
+      summary.totalTokens += usage.totalTokens;
+      summary.costUsd += runCost(usage);
+      if (usage.actualCostUsd !== null) summary.actualCostRuns += 1;
+      return summary;
+    },
+    {
+      runCount: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      costUsd: 0,
+      actualCostRuns: 0,
+    },
+  );
 }
 
 export default function OnboardingTestRunner({
@@ -278,6 +310,7 @@ export default function OnboardingTestRunner({
   const currentPhase = phases.find((phase) => phase.id === phaseId) ?? null;
   const currentIsCharacterType = phaseId === CHARACTER_TYPE_PHASE_ID;
   const currentRuns = runsByPhase[phaseId] ?? [];
+  const currentUsageSummary = summarizeUsage(currentRuns);
   const currentDraft = promptDrafts[phaseId] ?? null;
   const currentPhaseCompleted = completedIds.includes(phaseId);
   const hasContext = Boolean(householdId && childProfileId);
@@ -788,6 +821,27 @@ export default function OnboardingTestRunner({
                 </span>
               </div>
 
+              {!currentIsCharacterType && currentUsageSummary.runCount > 0 ? (
+                <div
+                  className={styles.metrics}
+                  aria-label="Aşama kullanım özeti"
+                >
+                  <span>{currentUsageSummary.runCount} ücretli run</span>
+                  <span>Input {currentUsageSummary.promptTokens} token</span>
+                  <span>
+                    Output {currentUsageSummary.completionTokens} token
+                  </span>
+                  <span>Toplam {currentUsageSummary.totalTokens} token</span>
+                  <span>
+                    {currentUsageSummary.actualCostRuns ===
+                    currentUsageSummary.runCount
+                      ? "Gerçek API"
+                      : "API / tahmini"}{" "}
+                    {formatCost(currentUsageSummary.costUsd)}
+                  </span>
+                </div>
+              ) : null}
+
               {currentIsCharacterType ? (
                 <section className={styles.promptCard}>
                   <h3>Karakter tipi seçimi</h3>
@@ -940,11 +994,25 @@ export default function OnboardingTestRunner({
                                 </div>
 
                                 {usage ? (
-                                  <div className={styles.metrics}>
-                                    <span>{usage.totalTokens} token</span>
+                                  <div
+                                    className={styles.metrics}
+                                    aria-label={`Run ${runNumber} token ve maliyet kullanımı`}
+                                  >
+                                    <span>
+                                      Input {usage.promptTokens} token
+                                    </span>
+                                    <span>
+                                      Output {usage.completionTokens} token
+                                    </span>
+                                    <span>
+                                      Toplam {usage.totalTokens} token
+                                    </span>
                                     <span>{usage.latencyMs} ms</span>
                                     <span>
-                                      {formatCost(usage.estimatedCostUsd)}
+                                      {usage.actualCostUsd !== null
+                                        ? "Gerçek API"
+                                        : "Tahmini"}{" "}
+                                      {formatCost(runCost(usage))}
                                     </span>
                                   </div>
                                 ) : null}
