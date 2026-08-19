@@ -105,7 +105,13 @@ describe("ULTEF S41 canonical parent home and child profile contract", () => {
     expect(profileLibrary).toContain('fetch("/api/onboarding",');
     expect(profileLibrary).toContain("/api/child-profiles?householdId=");
     expect(profileLibrary).toContain(
-      "/app/profiles/${encodeURIComponent(profile.id)}",
+      "function composeChildProfileSafeDetailPath(childProfileId: string)",
+    );
+    expect(profileLibrary).toContain(
+      "`/app/profiles/${encodeURIComponent(childProfileId)}`",
+    );
+    expect(profileLibrary).toContain(
+      "href={composeChildProfileSafeDetailPath(profile.id)}",
     );
     expect(profileLibrary).toContain(
       "/app/character-onboarding?childProfileId=",
