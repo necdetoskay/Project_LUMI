@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   addLearnedCharacterModifier,
+  createCharacterGenesisPackage,
   createInitialCharacterTraitState,
   deriveCharacterDna,
   getEffectiveCharacterDna,
   updateDynamicCharacterState,
+  validateCharacterGenesisStructure,
   validateCharacterTraitState,
   type CharacterTraitEvidence,
 } from "../../src/domain";
@@ -126,6 +128,61 @@ describe("Character Genesis traits", () => {
       expect.arrayContaining([
         "CHARACTER_DNA_CONTRADICTORY_EVIDENCE",
         "CHARACTER_CONTEXTUAL_TRAIT_OUT_OF_RANGE",
+      ]),
+    );
+  });
+
+  it("binds the rich trait state into canonical genesis validation", () => {
+    const traits = createInitialCharacterTraitState({
+      evidence: [
+        {
+          axis: "curiosity",
+          direction: "high",
+          strength: 0.85,
+          sourceFactIds: ["fact-missing"],
+          rationale: "Explores unfamiliar places.",
+        },
+      ],
+      seed: "seed-5",
+    });
+    const candidate = createCharacterGenesisPackage({
+      householdId: "household-1",
+      childProfileId: "child-1",
+      characterId: "character-1",
+      universeSeed: "universe-seed",
+      candidateSeed: "candidate-seed",
+      provenance: {
+        schemaRevision: "character-genesis.v1",
+        seed: "candidate-seed",
+        generatedAt: "2026-08-19T18:00:00.000Z",
+      },
+      sections: {
+        origin: {
+          summary: "Miro often visits the library.",
+          narrative: "Miro grew up visiting the library and preparing for storms.",
+          facts: [
+            {
+              id: "fact-library",
+              kind: "place",
+              summary: "Miro often visits the library.",
+              visibility: "known_to_character",
+            },
+          ],
+        },
+        traits,
+      },
+    });
+
+    const validation = validateCharacterGenesisStructure(candidate);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "CHARACTER_TRAIT_EVIDENCE_FACT_MISSING",
+          path: "sections.traits",
+          severity: "error",
+        }),
       ]),
     );
   });
