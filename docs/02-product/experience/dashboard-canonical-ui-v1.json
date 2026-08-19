@@ -1,0 +1,125 @@
+{
+  "contract": "lumi-dashboard-canonical-ui-v1",
+  "version": 1,
+  "status": "approved",
+  "route": "/app",
+  "issues": [319, 320],
+  "visualSource": "approved LUMI dashboard mockup",
+  "referenceViewport": { "width": 1448, "height": 1086, "aspectRatio": "4:3" },
+  "designLock": {
+    "desktopCompositionLocked": true,
+    "sectionReorderingAllowed": false,
+    "alternateThemeAllowed": false,
+    "visualAcceptanceRequiresBrowserScreenshot": true
+  },
+  "theme": {
+    "background": "deep navy star-map shell",
+    "sidebar": "dark navy with warm gold typography and purple active state",
+    "surface": "indigo/navy cards with thin warm-gold border",
+    "primary": "violet-purple gradient",
+    "accent": "warm antique gold",
+    "success": "soft emerald",
+    "textPrimary": "warm ivory",
+    "textSecondary": "cool lavender-gray",
+    "headingStyle": "storybook serif for large titles",
+    "bodyStyle": "clean modern sans-serif"
+  },
+  "shell": {
+    "sidebarWidthRatio": 0.17,
+    "sidebarItems": ["Dashboard", "Hikâyeler", "Karakterler", "Dünyalar", "Görsel Kütüphane", "Ayarlar"],
+    "activeItem": "Dashboard",
+    "premiumCard": true,
+    "topBar": { "search": true, "notifications": true, "parentAccount": true }
+  },
+  "mainGrid": {
+    "leftColumnRatio": 0.52,
+    "rightColumnRatio": 0.48,
+    "gutter": "medium"
+  },
+  "sections": [
+    {
+      "id": "welcome",
+      "placement": "top-left",
+      "title": "Hoş geldin, yeni maceralar hazır ✨",
+      "subtitle": "Hayal gücü, öğrenmeyi ve keşfetmeyi birlikte büyütür."
+    },
+    {
+      "id": "quick-actions",
+      "placement": "top-right",
+      "cards": ["Yeni Hikâye Başlat", "Karakterin", "Dünyan", "Görsel Kütüphane"]
+    },
+    {
+      "id": "continue-story",
+      "placement": "left-primary",
+      "requiredBindings": ["active story/session", "story title", "progress when derivable", "continue route"],
+      "fallback": "no-active-story empty state with New Adventure CTA",
+      "mustNotInvent": ["progress", "chapter count", "duration"]
+    },
+    {
+      "id": "child-profile",
+      "placement": "right-primary",
+      "requiredBindings": ["first/selected child profile", "display name", "age band"],
+      "optionalBindings": ["interests", "story count", "world count", "achievements", "reading time"]
+    },
+    {
+      "id": "recent-adventures",
+      "placement": "left-middle",
+      "visual": "horizontal row of illustrated story cards",
+      "requiredBindings": ["existing recent stories when available"],
+      "fallback": "empty state; do not fabricate story records"
+    },
+    {
+      "id": "recent-activity",
+      "placement": "right-middle",
+      "requiredBindings": ["real activity feed when available"],
+      "fallback": "quiet-state explanation"
+    },
+    {
+      "id": "worlds",
+      "placement": "left-bottom",
+      "visual": "magical atlas/map card",
+      "requiredBindings": ["canonical worlds route"],
+      "fallback": "discovery call-to-action"
+    },
+    {
+      "id": "achievements",
+      "placement": "center-bottom",
+      "requiredBindings": ["real achievement data when available"],
+      "fallback": "locked/empty milestone presentation"
+    },
+    {
+      "id": "new-story-banner",
+      "placement": "full-width-bottom",
+      "cta": "Yeni Hikâye Başlat"
+    }
+  ],
+  "routing": {
+    "Dashboard": "/app",
+    "Hikâyeler": "/app/stories",
+    "Karakterler": "/app/profiles",
+    "Dünyalar": "/app/profiles",
+    "Görsel Kütüphane": "/app/assets",
+    "Ayarlar": "/app/settings"
+  },
+  "dataRules": {
+    "reuseCanonicalServices": true,
+    "parallelStateAllowed": false,
+    "fakeMetricsAllowed": false,
+    "internalIdsVisible": false,
+    "technicalEnumsVisible": false,
+    "missingDataBehavior": "safe empty/placeholder copy"
+  },
+  "responsive": {
+    "desktop": "fixed/anchored sidebar and two-column content composition",
+    "tablet": "sidebar collapses or narrows; content becomes one/two-column hybrid",
+    "mobile": "single-column content; compact navigation; no horizontal overflow",
+    "minimumWidthTest": 360
+  },
+  "accessibility": {
+    "semanticNav": true,
+    "keyboardUsable": true,
+    "visibleFocus": true,
+    "decorativeArtHiddenFromAT": true,
+    "interactiveCardsUseLinksOrButtons": true
+  }
+}

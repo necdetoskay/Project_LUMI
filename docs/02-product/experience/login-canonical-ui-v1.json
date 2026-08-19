@@ -1,0 +1,77 @@
+{
+  "contract": "lumi-login-canonical-ui-v1",
+  "version": 1,
+  "status": "approved",
+  "route": "/login",
+  "issue": 346,
+  "visualSource": "approved LUMI login mockup generated 2026-08-19",
+  "referenceViewport": { "width": 1448, "height": 1086, "aspectRatio": "4:3" },
+  "designLock": {
+    "desktopCompositionLocked": true,
+    "sectionReorderingAllowed": false,
+    "alternateThemeAllowed": false,
+    "visualAcceptanceRequiresBrowserScreenshot": true
+  },
+  "theme": {
+    "background": "deep navy night sky",
+    "surface": "navy/indigo glass panel",
+    "primary": "violet-purple gradient",
+    "accent": "warm antique gold",
+    "textPrimary": "warm ivory",
+    "textSecondary": "cool muted lavender-gray",
+    "border": "low-opacity warm gold",
+    "shadow": "soft violet/gold glow",
+    "headingStyle": "elegant storybook serif",
+    "bodyStyle": "clean modern sans-serif"
+  },
+  "desktopLayout": {
+    "type": "split",
+    "leftArtwork": { "x": 0, "y": 0, "widthRatio": 0.58, "heightRatio": 1 },
+    "formPanel": { "xRatio": 0.58, "yRatio": 0.08, "widthRatio": 0.36, "heightRatio": 0.84 },
+    "trustStrip": { "placement": "bottom-left", "items": 3 }
+  },
+  "leftScene": {
+    "headline": "Her hikâye, seni bekliyor",
+    "supportingCopy": "LUMI’ye geri dön, kaldığın yerden devam et ve hayal gücünün kapılarını yeniden arala.",
+    "motifs": ["crescent moon", "star field", "fantasy map", "friendly dragon", "glowing storybook portal", "child explorer", "owl companion", "lantern", "gold sparkles"],
+    "artBehavior": "decorative visual source; no interaction"
+  },
+  "formPanel": {
+    "brand": "LUMI",
+    "title": "Dünyana geri dön",
+    "description": "Maceralara kaldığın yerden devam et. Hikâyelerin seni bekliyor.",
+    "fields": [
+      { "name": "email", "type": "email", "label": "E-posta adresi", "autocomplete": "email", "required": true },
+      { "name": "password", "type": "password", "label": "Şifre", "autocomplete": "current-password", "required": true }
+    ],
+    "rememberMe": true,
+    "forgotPasswordRoute": "/forgot-password",
+    "submit": { "label": "Giriş Yap", "method": "post", "action": "/api/auth/login" },
+    "secondaryAction": { "label": "Hesap oluştur", "route": "/register" },
+    "trustNote": "Güvenli ebeveyn girişi"
+  },
+  "behavior": {
+    "preserveEmailQueryPrefill": true,
+    "preserveErrorQueryCodes": ["invalid_credentials", "invalid_login_input", "rate_limited", "login_failed"],
+    "preserveSuccessQueryCodes": ["signed_out", "password_reset"],
+    "authSessionBehaviorMayChange": false
+  },
+  "trustItems": [
+    { "title": "%100 Güvenli", "description": "Çocuklara özel güvenli ve reklamsız deneyim." },
+    { "title": "Veriler Korunur", "description": "Tüm verileriniz en üst düzeyde korunur." },
+    { "title": "Ebeveyn Onaylı", "description": "Ebeveyn kontrolü ile güvenli kullanım." }
+  ],
+  "responsive": {
+    "tablet": "artwork narrows; form remains dominant and readable",
+    "mobile": "single-column form-first layout; artwork becomes compact decorative header; no horizontal overflow",
+    "minimumWidthTest": 360
+  },
+  "accessibility": {
+    "semanticLabels": true,
+    "keyboardUsable": true,
+    "visibleFocus": true,
+    "errorRole": "alert",
+    "successRole": "status",
+    "decorativeArtHiddenFromAT": true
+  }
+}

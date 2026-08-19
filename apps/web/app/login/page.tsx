@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
-import {
-  StorybookBackdrop,
-  StorybookCard,
-  StorybookScene,
-} from "@/components/public/storybook-shell";
+import styles from "./login-v2.module.css";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -19,6 +15,8 @@ export default async function LoginPage({
   searchParams: SearchParams;
 }) {
   const t = await getTranslations("login");
+  const locale = await getLocale();
+  const isTurkish = locale === "tr";
   const params = await searchParams;
   const email = getValue(params.email) ?? "";
   const errorCode = getValue(params.error);
@@ -42,96 +40,146 @@ export default async function LoginPage({
         ? t("success.passwordReset")
         : null;
 
+  const formDescription = isTurkish
+    ? "Maceralara kaldığın yerden devam et. Hikâyelerin seni bekliyor."
+    : "Continue your adventures where you left off. Your stories are waiting.";
+  const submitLabel = isTurkish ? "Giriş Yap" : "Sign in";
+  const accountLabel = isTurkish ? "Hesap oluştur" : "Create account";
+  const trustLabel = isTurkish
+    ? "Güvenli ebeveyn girişi"
+    : "Secure parent sign-in";
+
   return (
-    <section className="storybook-page">
-      <StorybookBackdrop />
-      <div className="storybook-grid storybook-grid-auth">
-        <StorybookScene
-          kicker={t("sceneKicker")}
-          title={t("sceneTitle")}
-          text={t("sceneText")}
-          icon="🧭"
+    <section className={`lumi-login-v2 ${styles.page}`}>
+      <style>{`
+        body:has(.lumi-login-v2) { background: #020817; }
+        body:has(.lumi-login-v2) > header,
+        body:has(.lumi-login-v2) > footer { display: none; }
+        body:has(.lumi-login-v2) > main { min-height: 100vh; }
+      `}</style>
+
+      <div className={styles.shell}>
+        <div
+          className={styles.scene}
+          aria-hidden="true"
+          data-testid="login-v2-scene"
         />
 
-        <StorybookCard
-          eyebrow="Project LUMI"
-          title={t("cardTitle")}
-          description={t("cardDescription")}
-          note={
-            <p>
-              {t("noUniverse")}{" "}
-              <Link className="storybook-inline-link" href="/register">
-                {t("createParentAccount")}
-              </Link>
-            </p>
-          }
-        >
-          {error ? (
-            <div
-              className="storybook-message storybook-message-error"
-              role="alert"
-            >
-              {error}
+        <div className={styles.formWrap}>
+          <div className={styles.card}>
+            <Link className={styles.logo} href="/" aria-label="LUMI">
+              LUMI<span>✦</span>
+            </Link>
+
+            <div className={styles.heading}>
+              <h1>{t("sceneTitle")}</h1>
+              <p>{formDescription}</p>
             </div>
-          ) : null}
-          {success ? (
-            <div
-              className="storybook-message storybook-message-success"
-              role="status"
-            >
-              {success}
-            </div>
-          ) : null}
-          <form
-            className="storybook-form"
-            action="/api/auth/login"
-            method="post"
-          >
-            <div className="storybook-field">
-              <label htmlFor="email">{t("emailLabel")}</label>
-              <input
-                className="storybook-input"
-                id="email"
-                name="email"
-                placeholder={t("emailPlaceholder")}
-                required
-                autoComplete="email"
-                type="email"
-                defaultValue={email}
-              />
-            </div>
-            <div className="storybook-field">
-              <div className="storybook-field-heading">
-                <label htmlFor="password">{t("passwordLabel")}</label>
-                <Link href="/forgot-password">{t("forgotPassword")}</Link>
+
+            {error ? (
+              <div className={`${styles.message} ${styles.error}`} role="alert">
+                {error}
               </div>
-              <input
-                className="storybook-input"
-                id="password"
-                name="password"
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-                type="password"
-              />
+            ) : null}
+
+            {success ? (
+              <div
+                className={`${styles.message} ${styles.success}`}
+                role="status"
+              >
+                {success}
+              </div>
+            ) : null}
+
+            <form
+              className={styles.form}
+              action="/api/auth/login"
+              method="post"
+            >
+              <div className={styles.field}>
+                <label htmlFor="email">{t("emailLabel")}</label>
+                <div className={styles.inputWrap}>
+                  <span
+                    className={`material-symbols-outlined ${styles.inputIcon}`}
+                    aria-hidden="true"
+                  >
+                    mail
+                  </span>
+                  <input
+                    className={styles.input}
+                    id="email"
+                    name="email"
+                    placeholder={t("emailPlaceholder")}
+                    required
+                    autoComplete="email"
+                    type="email"
+                    defaultValue={email}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.fieldHeader}>
+                  <label htmlFor="password">{t("passwordLabel")}</label>
+                  <Link href="/forgot-password">{t("forgotPassword")}</Link>
+                </div>
+                <div className={styles.inputWrap}>
+                  <span
+                    className={`material-symbols-outlined ${styles.inputIcon}`}
+                    aria-hidden="true"
+                  >
+                    lock
+                  </span>
+                  <input
+                    className={styles.input}
+                    id="password"
+                    name="password"
+                    placeholder="••••••••••••"
+                    required
+                    autoComplete="current-password"
+                    type="password"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.rememberRow}>
+                <label className={styles.remember} htmlFor="remember">
+                  <input
+                    id="remember"
+                    name="rememberMe"
+                    type="checkbox"
+                    defaultChecked
+                  />
+                  {t("rememberMe")}
+                </label>
+              </div>
+
+              <button className={styles.submit} type="submit">
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  person
+                </span>
+                {submitLabel}
+                <span aria-hidden="true">✦</span>
+              </button>
+            </form>
+
+            <div className={styles.divider} aria-hidden="true">
+              <span>•</span>
             </div>
-            <label className="storybook-check" htmlFor="remember">
-              <input
-                id="remember"
-                name="rememberMe"
-                type="checkbox"
-                defaultChecked
-              />
-              {t("rememberMe")}
-            </label>
-            <button className="storybook-button" type="submit">
-              {t("submit")}
+
+            <Link className={styles.secondary} href="/register">
+              <span aria-hidden="true">✦</span>
+              {accountLabel}
+            </Link>
+
+            <p className={styles.trust}>
               <span className="material-symbols-outlined" aria-hidden="true">
-                arrow_forward
+                verified_user
               </span>
-            </button>
-          </form>
-        </StorybookCard>
+              {trustLabel}
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
