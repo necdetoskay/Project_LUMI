@@ -14,6 +14,8 @@ export * from "./application/deep-character-origin.service";
 export * from "./application/deep-origin-prompt-bootstrap.service";
 export * from "./application/character-dna-evidence.service";
 export * from "./application/character-dna-prompt-bootstrap.service";
+export * from "./application/social-genesis.service";
+export * from "./application/social-genesis-prompt-bootstrap.service";
 export * from "./application/living-world-bootstrap.service";
 export * from "./application/living-world-bootstrap-manifest.store";
 export * from "./application/living-world-bootstrap-profile-materializer.service";
