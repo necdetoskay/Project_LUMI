@@ -78,9 +78,17 @@ type OnboardingTestRunnerProps = {
   childProfiles: ChildProfileOption[];
 };
 
+const CHARACTER_TYPE_PHASE_ID = "character_type";
+const CHARACTER_TYPE_OPTIONS = [
+  { key: "human", label: "İnsan" },
+  { key: "animal", label: "Hayvan" },
+  { key: "fantastic", label: "Fantastik" },
+  { key: "synthetic", label: "Sentetik" },
+] as const;
+type CharacterTypeKey = (typeof CHARACTER_TYPE_OPTIONS)[number]["key"];
+
 const DEFAULT_STATE = JSON.stringify(
   {
-    characterType: { key: "fantastic" },
     universe: { key: "new_world" },
   },
   null,
@@ -91,6 +99,7 @@ const LAST_HOUSEHOLD_KEY = "lumi.testLab.householdId";
 const LAST_CHILD_PROFILE_KEY = "lumi.testLab.childProfileId";
 const LAST_MODEL_KEY = "lumi.testLab.modelSlug";
 const LAST_LOCALE_KEY = "lumi.testLab.locale";
+const LAST_CHARACTER_TYPE_KEY = "lumi.testLab.characterType";
 const LAST_SESSION_KEY = "lumi.testLab.sessionId";
 const LAST_BRANCH_KEY = "lumi.testLab.branchId";
 const LAST_STATE_KEY = "lumi.testLab.parentStateId";
@@ -147,6 +156,8 @@ export default function OnboardingTestRunner({
   const [childProfileId, setChildProfileId] = useState(defaultChildProfileId);
   const [modelSlug, setModelSlug] = useState("deepseek/deepseek-v4-flash");
   const [locale, setLocale] = useState("tr");
+  const [characterType, setCharacterType] =
+    useState<CharacterTypeKey>("fantastic");
   const [initialStateText, setInitialStateText] = useState(DEFAULT_STATE);
   const [sessionId, setSessionId] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -177,6 +188,9 @@ export default function OnboardingTestRunner({
     );
     const rememberedModelSlug = window.localStorage.getItem(LAST_MODEL_KEY);
     const rememberedLocale = window.localStorage.getItem(LAST_LOCALE_KEY);
+    const rememberedCharacterType = window.localStorage.getItem(
+      LAST_CHARACTER_TYPE_KEY,
+    );
 
     const nextHouseholdId = households.some(
       (household) => household.id === rememberedHouseholdId,
@@ -198,6 +212,13 @@ export default function OnboardingTestRunner({
     if (rememberedLocale === "tr" || rememberedLocale === "en") {
       setLocale(rememberedLocale);
     }
+    if (
+      CHARACTER_TYPE_OPTIONS.some(
+        (option) => option.key === rememberedCharacterType,
+      )
+    ) {
+      setCharacterType(rememberedCharacterType as CharacterTypeKey);
+    }
 
     const storedContext = window.localStorage.getItem(LAST_SESSION_CONTEXT_KEY);
     if (storedContext === sessionContext(nextHouseholdId, nextChildProfileId)) {
@@ -216,7 +237,8 @@ export default function OnboardingTestRunner({
     if (modelSlug.trim())
       window.localStorage.setItem(LAST_MODEL_KEY, modelSlug);
     window.localStorage.setItem(LAST_LOCALE_KEY, locale);
-  }, [householdId, childProfileId, modelSlug, locale]);
+    window.localStorage.setItem(LAST_CHARACTER_TYPE_KEY, characterType);
+  }, [householdId, childProfileId, modelSlug, locale, characterType]);
 
   useEffect(() => {
     fetch("/api/settings/test-lab")
@@ -229,9 +251,14 @@ export default function OnboardingTestRunner({
         const nextSupported = payload.data?.productionBackedPhaseIds ?? [];
         setPhases(nextPhases);
         setSupportedIds(nextSupported);
-        const first = nextPhases.find(
-          (phase: Phase) => phase.testable && nextSupported.includes(phase.id),
-        );
+        const first =
+          nextPhases.find(
+            (phase: Phase) => phase.id === CHARACTER_TYPE_PHASE_ID,
+          ) ??
+          nextPhases.find(
+            (phase: Phase) =>
+              phase.testable && nextSupported.includes(phase.id),
+          );
         if (first) setPhaseId((current) => current || first.id);
       })
       .catch(() => setMessage("Onboarding aşamaları yüklenemedi."));
@@ -248,7 +275,8 @@ export default function OnboardingTestRunner({
   const currentIndex = runnablePhases.findIndex(
     (phase) => phase.id === phaseId,
   );
-  const currentPhase = currentIndex >= 0 ? runnablePhases[currentIndex] : null;
+  const currentPhase = phases.find((phase) => phase.id === phaseId) ?? null;
+  const currentIsCharacterType = phaseId === CHARACTER_TYPE_PHASE_ID;
   const currentRuns = runsByPhase[phaseId] ?? [];
   const currentDraft = promptDrafts[phaseId] ?? null;
   const currentPhaseCompleted = completedIds.includes(phaseId);
@@ -324,6 +352,7 @@ export default function OnboardingTestRunner({
 
   useEffect(() => {
     if (!sessionId || !parentStateId || !phaseId || !currentPhase) return;
+    if (currentIsCharacterType) return;
     if (promptDrafts[phaseId]) return;
 
     const latestRun = currentRuns[currentRuns.length - 1];
@@ -370,6 +399,7 @@ export default function OnboardingTestRunner({
     branchId,
     childProfileId,
     currentPhase,
+    currentIsCharacterType,
     currentRuns,
     householdId,
     locale,
@@ -388,10 +418,14 @@ export default function OnboardingTestRunner({
     setBusy(true);
     setMessage("");
     try {
-      const initialState = JSON.parse(initialStateText) as Record<
+      const parsedInitialState = JSON.parse(initialStateText) as Record<
         string,
         unknown
       >;
+      const initialState = {
+        ...parsedInitialState,
+        characterType: { key: characterType },
+      };
       const payload = await post({
         action: "create-session",
         scenarioKey: "character_onboarding",
@@ -411,7 +445,9 @@ export default function OnboardingTestRunner({
       setRunsByPhase({});
       setPromptDrafts({});
       persistSession(next);
-      const first = runnablePhases[0];
+      const first =
+        phases.find((phase) => phase.id === CHARACTER_TYPE_PHASE_ID) ??
+        runnablePhases[0];
       if (first) setPhaseId(first.id);
       setMessage(
         "Test oturumu hazır. Soldan bir onboarding aşaması seçebilirsiniz.",
@@ -570,6 +606,25 @@ export default function OnboardingTestRunner({
             />
           </label>
           <label className={styles.field}>
+            Karakter tipi
+            <select
+              className={styles.input}
+              value={characterType}
+              disabled={busy}
+              onChange={(event) => {
+                setCharacterType(event.target.value as CharacterTypeKey);
+                resetSessionState();
+                setPhaseId(CHARACTER_TYPE_PHASE_ID);
+              }}
+            >
+              {CHARACTER_TYPE_OPTIONS.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.field}>
             Dil
             <select
               className={styles.input}
@@ -660,13 +715,15 @@ export default function OnboardingTestRunner({
           <div className={styles.sidebarHeader}>
             <h2>Onboarding aşamaları</h2>
             <p className={styles.muted}>
-              {runnablePhases.length} production-backed aşama
+              {runnablePhases.length} LLM üretim aşaması
             </p>
           </div>
           <div className={styles.phaseList}>
             {phases.map((phase, index) => {
+              const selectionPhase = phase.id === CHARACTER_TYPE_PHASE_ID;
               const supported =
-                phase.testable && supportedIds.includes(phase.id);
+                selectionPhase ||
+                (phase.testable && supportedIds.includes(phase.id));
               const completed = completedIds.includes(phase.id);
               const runCount = runsByPhase[phase.id]?.length ?? 0;
               const active = phase.id === phaseId;
@@ -693,15 +750,21 @@ export default function OnboardingTestRunner({
                     {index + 1}. {phase.label}
                   </strong>
                   <span className={styles.phaseStatus}>
-                    {!supported
-                      ? "backend desteği yok"
-                      : completed
-                        ? `✓ tamamlandı · ${runCount} run`
-                        : runCount > 0
-                          ? `${runCount} run`
-                          : active
-                            ? "şimdi"
-                            : "hazır"}
+                    {selectionPhase
+                      ? `seçim aşaması · ${
+                          CHARACTER_TYPE_OPTIONS.find(
+                            (option) => option.key === characterType,
+                          )?.label ?? characterType
+                        }`
+                      : !supported
+                        ? "Test Lab bağlantısı henüz yok"
+                        : completed
+                          ? `✓ tamamlandı · ${runCount} run`
+                          : runCount > 0
+                            ? `${runCount} run`
+                            : active
+                              ? "şimdi"
+                              : "hazır"}
                   </span>
                 </button>
               );
@@ -725,7 +788,41 @@ export default function OnboardingTestRunner({
                 </span>
               </div>
 
-              {!sessionId ? (
+              {currentIsCharacterType ? (
+                <section className={styles.promptCard}>
+                  <h3>Karakter tipi seçimi</h3>
+                  <p className={styles.muted}>
+                    Bu aşama LLM çağrısı yapmaz. Seçilen tip yeni sandbox
+                    oturumunun state&apos;ine yazılır ve sonraki üretim
+                    promptlarına context olarak aktarılır.
+                  </p>
+                  <label className={styles.field}>
+                    Karakter tipi
+                    <select
+                      className={styles.input}
+                      value={characterType}
+                      disabled={busy}
+                      onChange={(event) => {
+                        setCharacterType(
+                          event.target.value as CharacterTypeKey,
+                        );
+                        resetSessionState();
+                      }}
+                    >
+                      {CHARACTER_TYPE_OPTIONS.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className={styles.muted}>
+                    Yeni seçimden sonra test oturumunu yeniden oluşturun.
+                    Böylece Character Identity ve sonraki aşamalardaki promptlar
+                    bu tipi kullanır.
+                  </p>
+                </section>
+              ) : !sessionId ? (
                 <div className={styles.emptyState}>
                   Promptu ve sonuçları görmek için önce test oturumu oluşturun.
                 </div>
