@@ -91,8 +91,8 @@ describe("ULTEF S41 canonical parent home and child profile contract", () => {
     expect(dashboardContract.dataRules.internalIdsVisible).toBe(false);
     expect(dashboardContract.dataRules.technicalEnumsVisible).toBe(false);
     expect(dashboardClient).toContain('value="—"');
-    expect(dashboardClient).toContain(
-      "LUMI burada gerçekleşmemiş olayları uydurmaz.",
+    expect(dashboardClient).toMatch(
+      /LUMI burada\s+gerçekleşmemiş olayları uydurmaz\./,
     );
     expect(dashboardClient).not.toMatch(
       /Mino .*geldi|festival başladı|köprü .*yıkıldı/i,
