@@ -103,11 +103,7 @@ export default function DeepOriginTestPanel() {
 
   async function refreshHistory() {
     const context = sandboxContext();
-    if (
-      !context.sessionId ||
-      !context.householdId ||
-      !context.childProfileId
-    ) {
+    if (!context.sessionId || !context.householdId || !context.childProfileId) {
       setRuns([]);
       return;
     }
@@ -226,9 +222,10 @@ export default function DeepOriginTestPanel() {
         <p className={styles.eyebrow}>Character Genesis</p>
         <h2>Deep Canonical Origin</h2>
         <p className={styles.muted}>
-          Üstteki onboarding sandbox state&apos;ini kullanır. Production evrenine
-          commit yapmaz; deep narrative, structured facts, unresolved hooks,
-          raw provider cevabı ve doğrulama kanıtlarını Test Lab&apos;da tutar.
+          Üstteki onboarding sandbox state&apos;ini kullanır. Production
+          evrenine commit yapmaz; deep narrative, structured facts, unresolved
+          hooks, raw provider cevabı ve doğrulama kanıtlarını Test Lab&apos;da
+          tutar.
         </p>
         <div className={styles.settingsGrid}>
           <label className={styles.field}>
@@ -355,7 +352,10 @@ export default function DeepOriginTestPanel() {
                     </details>
                     <div className={styles.candidateList}>
                       {entry.candidates.map((candidate, candidateIndex) => (
-                        <article key={candidate.id} className={styles.candidate}>
+                        <article
+                          key={candidate.id}
+                          className={styles.candidate}
+                        >
                           <strong>Parsed aday {candidateIndex + 1}</strong>
                           <pre className={styles.payload}>
                             {JSON.stringify(candidate.payload, null, 2)}
@@ -363,7 +363,9 @@ export default function DeepOriginTestPanel() {
                           <button
                             type="button"
                             className={styles.secondaryButton}
-                            disabled={busy || Boolean(entry.selectedCandidateId)}
+                            disabled={
+                              busy || Boolean(entry.selectedCandidateId)
+                            }
                             onClick={() => selectCandidate(entry, candidate)}
                           >
                             {candidate.id === entry.selectedCandidateId
