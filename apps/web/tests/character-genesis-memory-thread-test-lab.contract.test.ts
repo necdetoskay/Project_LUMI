@@ -33,7 +33,7 @@ describe("Memory Seeds and Origin Threads Test Lab contract", () => {
     expect(route).not.toContain("canonicalMemoryPort.save");
   });
 
-  it("exposes visibility, duplicates, contradictions, future-story-yield and usage", async () => {
+  it("exposes visibility, quality inspection, state diff and usage", async () => {
     const route = await readFile(
       resolve(
         root,
@@ -50,9 +50,8 @@ describe("Memory Seeds and Origin Threads Test Lab contract", () => {
     );
     expect(route).toContain("canonicalManifest");
     expect(route).toContain("inspectMemoryThreadQuality");
+    expect(route).toContain("quality,");
     expect(route).toContain("visibilityInspection");
-    expect(route).toContain("contradictionCandidates");
-    expect(route).toContain("futureStoryYield");
     expect(route).toContain("stateDiff");
     expect(route).toContain("rawProviderOutput");
     expect(route).toContain("usageSnapshot");
