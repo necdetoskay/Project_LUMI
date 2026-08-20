@@ -238,10 +238,7 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
             label="Total tokens"
             value={formatNumber(trace.totalTokens)}
           />
-          <Metric
-            label="LLM gateway latency"
-            value={`${trace.latencyMs} ms`}
-          />
+          <Metric label="LLM gateway latency" value={`${trace.latencyMs} ms`} />
           <Metric
             label="Approx. cost"
             value={formatUsdMicros(trace.estimatedCostUsdMicros)}
@@ -301,7 +298,9 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
           />
           <Metric
             label="Dropped sections"
-            value={formatNumber(trace.context.observability.droppedSectionCount)}
+            value={formatNumber(
+              trace.context.observability.droppedSectionCount,
+            )}
           />
           <Metric
             label="Compacted sections"
