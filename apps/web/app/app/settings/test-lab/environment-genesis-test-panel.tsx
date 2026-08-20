@@ -56,7 +56,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
@@ -113,7 +115,9 @@ export default function EnvironmentGenesisTestPanel() {
   async function previewPrompt() {
     const context = sandboxContext();
     if (!context.sessionId || !context.branchId || !context.parentStateId) {
-      setMessage("Önce Memory Seeds & Origin Threads dahil önceki sandbox aşamalarını tamamlayın.");
+      setMessage(
+        "Önce Memory Seeds & Origin Threads dahil önceki sandbox aşamalarını tamamlayın.",
+      );
       return;
     }
     setBusy(true);
@@ -133,7 +137,9 @@ export default function EnvironmentGenesisTestPanel() {
       });
       setMessage("Initial World / Season State production promptu hazırlandı.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Prompt hazırlanamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Prompt hazırlanamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -141,7 +147,12 @@ export default function EnvironmentGenesisTestPanel() {
 
   async function runEnvironment() {
     const context = sandboxContext();
-    if (!prompt || !context.sessionId || !context.branchId || !context.parentStateId) {
+    if (
+      !prompt ||
+      !context.sessionId ||
+      !context.branchId ||
+      !context.parentStateId
+    ) {
       setMessage("Önce production promptunu yükleyin.");
       return;
     }
@@ -160,7 +171,11 @@ export default function EnvironmentGenesisTestPanel() {
         `${payload.data.candidates.length} environment adayı üretildi; canonical resolution, compatibility validation, decision trace ve context projection kaydedildi.`,
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Environment Genesis çalıştırılamadı.");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Environment Genesis çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -179,7 +194,10 @@ export default function EnvironmentGenesisTestPanel() {
         runId: entry.run.id,
         candidateId: candidate.id,
       });
-      window.localStorage.setItem(LAST_BRANCH_KEY, payload.data.activeBranchId as string);
+      window.localStorage.setItem(
+        LAST_BRANCH_KEY,
+        payload.data.activeBranchId as string,
+      );
       window.localStorage.setItem(
         LAST_STATE_KEY,
         payload.data.selection.selectedStateId as string,
@@ -225,7 +243,7 @@ export default function EnvironmentGenesisTestPanel() {
             </select>
           </label>
         </div>
-        <div className={styles.actions}>
+        <div className={styles.metrics}>
           <button
             type="button"
             className={styles.secondaryButton}
@@ -244,14 +262,16 @@ export default function EnvironmentGenesisTestPanel() {
           </button>
         </div>
         {prompt ? (
-          <div className={styles.stack}>
+          <div className={styles.promptCard}>
             <label className={styles.field}>
               System prompt
               <textarea
                 className={styles.textarea}
                 rows={8}
                 value={prompt.system}
-                onChange={(event) => setPrompt({ ...prompt, system: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, system: event.target.value })
+                }
               />
             </label>
             <label className={styles.field}>
@@ -260,39 +280,51 @@ export default function EnvironmentGenesisTestPanel() {
                 className={styles.textarea}
                 rows={12}
                 value={prompt.user}
-                onChange={(event) => setPrompt({ ...prompt, user: event.target.value })}
+                onChange={(event) =>
+                  setPrompt({ ...prompt, user: event.target.value })
+                }
               />
             </label>
           </div>
         ) : null}
-        {message ? <p className={styles.muted}>{message}</p> : null}
+        {message ? <p className={styles.status}>{message}</p> : null}
       </section>
 
       {runs.map((entry) => {
         const usage = entry.run.usageSnapshot;
         return (
-          <section className={styles.panel} key={entry.run.id}>
+          <section className={styles.runCard} key={entry.run.id}>
             <h3>Run {entry.run.id.slice(0, 8)}</h3>
             {usage ? (
               <p className={styles.muted}>
-                Input {usage.promptTokens} token · Output {usage.completionTokens} token · Toplam {usage.totalTokens} · {formatCost(usage.actualCostUsd ?? usage.estimatedCostUsd)} · {usage.latencyMs} ms
+                Input {usage.promptTokens} token · Output {usage.completionTokens}{" "}
+                token · Toplam {usage.totalTokens} ·{" "}
+                {formatCost(
+                  usage.actualCostUsd ?? usage.estimatedCostUsd,
+                )} · {usage.latencyMs} ms
               </p>
             ) : null}
-            {entry.candidates.map((candidate) => (
-              <article className={styles.panel} key={candidate.id}>
-                <pre className={styles.codeBlock}>
-                  {JSON.stringify(candidate.payload, null, 2)}
-                </pre>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  disabled={busy || entry.selectedCandidateId === candidate.id}
-                  onClick={() => selectCandidate(entry, candidate)}
-                >
-                  {entry.selectedCandidateId === candidate.id ? "Seçildi" : "Bu adayı seç"}
-                </button>
-              </article>
-            ))}
+            <div className={styles.candidateList}>
+              {entry.candidates.map((candidate) => (
+                <article className={styles.candidate} key={candidate.id}>
+                  <pre className={styles.payload}>
+                    {JSON.stringify(candidate.payload, null, 2)}
+                  </pre>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    disabled={
+                      busy || entry.selectedCandidateId === candidate.id
+                    }
+                    onClick={() => selectCandidate(entry, candidate)}
+                  >
+                    {entry.selectedCandidateId === candidate.id
+                      ? "Seçildi"
+                      : "Bu adayı seç"}
+                  </button>
+                </article>
+              ))}
+            </div>
           </section>
         );
       })}
