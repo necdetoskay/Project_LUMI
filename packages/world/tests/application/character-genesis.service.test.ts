@@ -79,6 +79,162 @@ class RecordingCommitter implements CharacterGenesisCanonicalCommitPort {
   }
 }
 
+function completeSections() {
+  return {
+    origin: {
+      summary: "Miro lives in Ağaçköprü with a life before the first story.",
+      narrative: "A coherent origin narrative.",
+      facts: [
+        {
+          id: "fact-lina",
+          kind: "relationship",
+          summary: "Lina is Miro's close friend.",
+          visibility: "known_to_character" as const,
+        },
+      ],
+      summaryFactIds: ["fact-lina"],
+      unresolvedQuestions: [
+        {
+          id: "question-river",
+          summary: "Why does the river glow?",
+          visibility: "known_to_character" as const,
+          relatedFactIds: ["fact-lina"],
+        },
+      ],
+      storyHooks: [
+        {
+          id: "hook-bridge",
+          summary: "A footprint appears near the bridge.",
+          relatedFactIds: ["fact-lina"],
+          potential: 0.8,
+        },
+      ],
+    },
+    traits: {
+      dna: {
+        curiosity: 0.7,
+        courage: 0.6,
+        empathy: 0.8,
+        sociability: 0.6,
+        patience: 0.5,
+        imagination: 0.8,
+        persistence: 0.6,
+        independence: 0.5,
+        playfulness: 0.7,
+        caution: 0.4,
+        adaptability: 0.7,
+      },
+      dynamic: {
+        happiness: 0.6,
+        anxiety: 0.2,
+        confidence: 0.6,
+        energy: 0.7,
+        loneliness: 0.1,
+        excitement: 0.6,
+      },
+      contextual: [],
+      learnedModifiers: [],
+      evidence: [],
+      seed: "trait-seed",
+      derivationRevision: "character-dna-v1",
+    },
+    social: {
+      npcs: [
+        {
+          candidateId: "npc-lina",
+          role: "friend",
+          displayName: "Lina",
+          originFactIds: ["fact-lina"],
+        },
+      ],
+      relationships: [
+        {
+          fromCandidateId: "character-1",
+          toCandidateId: "npc-lina",
+          trust: 0.8,
+          affection: 0.9,
+          familiarity: 0.9,
+          respect: 0.7,
+          tension: 0.1,
+          dependence: 0.2,
+        },
+      ],
+    },
+    inventory: {
+      items: [
+        {
+          candidateId: "item-compass",
+          displayName: "Old Compass",
+          category: "keepsake",
+          origin: "Found near home",
+          storyPotential: 0.7,
+          originFactIds: ["fact-lina"],
+        },
+      ],
+    },
+    memoryAndThreads: {
+      memories: [
+        {
+          candidateId: "memory-bridge",
+          summary: "Miro remembers repairing the bridge with Lina.",
+          visibility: "known_to_character" as const,
+          originFactIds: ["fact-lina"],
+        },
+      ],
+      threads: [
+        {
+          candidateId: "thread-footprint",
+          summary: "Find who left the footprint near the bridge.",
+          status: "unresolved" as const,
+          visibility: "known_to_character" as const,
+          potential: 0.8,
+          originFactIds: ["fact-lina"],
+        },
+      ],
+    },
+    environment: {
+      binding: { worldId: "world-1", regionId: "region-1", homeId: "home-1" },
+      regionProfile: {
+        habitatType: "temperate forest",
+        terrain: ["woodland"],
+        vegetation: ["oak"],
+        waterFeatures: ["stream"],
+        environmentalFeatures: ["bridge"],
+        climate: {
+          climateType: "cool temperate",
+          temperatureBand: "cool",
+          precipitationBand: "moderate",
+          seasonalVariation: "high",
+        },
+        loreConstraints: [],
+      },
+      calendar: {
+        calendarId: "calendar-1",
+        displayName: "Forest Calendar",
+        seasons: [
+          {
+            id: "leafwhisper",
+            displayName: "Leafwhisper",
+            order: 1,
+            semantics: {
+              temperatureTrend: "stable" as const,
+              precipitationTrend: "stable" as const,
+              daylightTrend: "stable" as const,
+            },
+          },
+        ],
+      },
+      temporal: {
+        calendarId: "calendar-1",
+        seasonId: "leafwhisper",
+        source: "world_lore" as const,
+      },
+      local: { localConditions: [], exceptions: [] },
+      decisionTrace: [],
+    },
+  };
+}
+
 function baseInput(candidateSeed: string) {
   return {
     householdId: "household-1",
@@ -91,42 +247,7 @@ function baseInput(candidateSeed: string) {
       seed: candidateSeed,
       generatedAt: "2026-08-19T12:00:00.000Z",
     },
-    sections: {
-      origin: {
-        summary: "Miro lives in Ağaçköprü with a life before the first story.",
-        narrative: "A coherent origin narrative.",
-        facts: [
-          {
-            id: "fact-lina",
-            kind: "relationship",
-            summary: "Lina is Miro's close friend.",
-            visibility: "known_to_character" as const,
-          },
-        ],
-      },
-      social: {
-        npcs: [
-          {
-            candidateId: "npc-lina",
-            role: "friend",
-            displayName: "Lina",
-            originFactIds: ["fact-lina"],
-          },
-        ],
-        relationships: [
-          {
-            fromCandidateId: "character-1",
-            toCandidateId: "npc-lina",
-            trust: 0.8,
-            affection: 0.9,
-            familiarity: 0.9,
-            respect: 0.7,
-            tension: 0.1,
-            dependence: 0.2,
-          },
-        ],
-      },
-    },
+    sections: completeSections(),
   };
 }
 
@@ -166,7 +287,7 @@ describe("CharacterGenesisCoordinator", () => {
     expect(firstCandidate?.status).toBe("staged");
   });
 
-  it("commits only a selected structurally valid candidate", async () => {
+  it("commits only a selected cross-domain valid complete candidate", async () => {
     const repository = new InMemoryGenesisRepository();
     const committer = new RecordingCommitter();
     const coordinator = new CharacterGenesisCoordinator(repository, committer);
@@ -194,6 +315,22 @@ describe("CharacterGenesisCoordinator", () => {
 
     const input = baseInput("candidate-a");
     input.sections.social.relationships[0]!.toCandidateId = "npc-missing";
+
+    const staged = await coordinator.stage(input);
+    const selected = await coordinator.select(staged.id);
+
+    await expect(coordinator.commit(selected.id)).rejects.toBeInstanceOf(
+      CharacterGenesisValidationError,
+    );
+    expect(committer.committed).toHaveLength(0);
+  });
+
+  it("blocks incomplete packages before canonical mutation", async () => {
+    const repository = new InMemoryGenesisRepository();
+    const committer = new RecordingCommitter();
+    const coordinator = new CharacterGenesisCoordinator(repository, committer);
+    const input = baseInput("candidate-a");
+    delete (input.sections as Partial<typeof input.sections>).environment;
 
     const staged = await coordinator.stage(input);
     const selected = await coordinator.select(staged.id);
