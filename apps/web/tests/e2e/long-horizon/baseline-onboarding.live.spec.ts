@@ -537,8 +537,11 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await checkpoint("child-profile:verified");
 
       await createdProfileCard
-        .getByRole("link", { name: "Profili aç" })
-        .click();
+        .getByRole("link", {
+          name: "Profili Görüntüle",
+          exact: true,
+        })
+        .click({ timeout: 60_000 });
       await expect(page).toHaveURL(
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },
