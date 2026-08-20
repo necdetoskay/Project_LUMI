@@ -37,7 +37,10 @@ describe("Environment Genesis Test Lab contract", () => {
       "utf8",
     );
     const panel = await readFile(
-      resolve(root, "app/app/settings/test-lab/environment-genesis-test-panel.tsx"),
+      resolve(
+        root,
+        "app/app/settings/test-lab/environment-genesis-test-panel.tsx",
+      ),
       "utf8",
     );
     expect(route).toContain("canonicalEnvironment");

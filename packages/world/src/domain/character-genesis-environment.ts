@@ -65,7 +65,11 @@ export interface WorldTemporalState {
   seasonId: string;
   seasonPhase?: "early" | "mid" | "late" | "transition";
   universeTimeMarker?: string;
-  source: "world_lore" | "universe_calendar" | "real_world_soft" | "seeded_default";
+  source:
+    | "world_lore"
+    | "universe_calendar"
+    | "real_world_soft"
+    | "seeded_default";
 }
 
 export interface EnvironmentalException {
@@ -139,17 +143,18 @@ export interface ResolveEnvironmentInput {
   }>;
 }
 
-const SOURCE_PRIORITY: Record<EnvironmentDecisionTraceEntry["signal"], number> = {
-  world_lore: 100,
-  canonical_origin_home: 90,
-  region_climate: 80,
-  universe_calendar: 70,
-  character_concept: 60,
-  character_dna: 50,
-  child_interests: 40,
-  real_world_calendar: 20,
-  seeded_diversity: 10,
-};
+const SOURCE_PRIORITY: Record<EnvironmentDecisionTraceEntry["signal"], number> =
+  {
+    world_lore: 100,
+    canonical_origin_home: 90,
+    region_climate: 80,
+    universe_calendar: 70,
+    character_concept: 60,
+    character_dna: 50,
+    child_interests: 40,
+    real_world_calendar: 20,
+    seeded_diversity: 10,
+  };
 
 export function resolveGenesisEnvironment(
   input: ResolveEnvironmentInput,
@@ -159,7 +164,8 @@ export function resolveGenesisEnvironment(
   }
 
   const sorted = [...input.candidates].sort(
-    (left, right) => SOURCE_PRIORITY[right.source] - SOURCE_PRIORITY[left.source],
+    (left, right) =>
+      SOURCE_PRIORITY[right.source] - SOURCE_PRIORITY[left.source],
   );
   const winner = structuredClone(sorted[0]!.state);
 
@@ -201,21 +207,31 @@ export function validateGenesisEnvironment(
     });
   }
 
-  if (context.expectedWorldId && state.binding.worldId !== context.expectedWorldId) {
+  if (
+    context.expectedWorldId &&
+    state.binding.worldId !== context.expectedWorldId
+  ) {
     issues.push({
       code: "ENVIRONMENT_WORLD_BINDING_CONFLICT",
       message: "Environment world binding contradicts canonical world identity",
       severity: "error",
     });
   }
-  if (context.expectedRegionId && state.binding.regionId !== context.expectedRegionId) {
+  if (
+    context.expectedRegionId &&
+    state.binding.regionId !== context.expectedRegionId
+  ) {
     issues.push({
       code: "ENVIRONMENT_REGION_BINDING_CONFLICT",
-      message: "Environment region binding contradicts canonical region identity",
+      message:
+        "Environment region binding contradicts canonical region identity",
       severity: "error",
     });
   }
-  if (context.expectedHomeId && state.binding.homeId !== context.expectedHomeId) {
+  if (
+    context.expectedHomeId &&
+    state.binding.homeId !== context.expectedHomeId
+  ) {
     issues.push({
       code: "ENVIRONMENT_HOME_BINDING_CONFLICT",
       message: "Environment home binding contradicts canonical home identity",
@@ -224,15 +240,19 @@ export function validateGenesisEnvironment(
   }
 
   if (context.canonicalOriginHomeText) {
-    const normalizedOrigin = context.canonicalOriginHomeText.toLocaleLowerCase("en-US");
-    const normalizedHabitat = state.regionProfile.habitatType.toLocaleLowerCase("en-US");
+    const normalizedOrigin =
+      context.canonicalOriginHomeText.toLocaleLowerCase("en-US");
+    const normalizedHabitat =
+      state.regionProfile.habitatType.toLocaleLowerCase("en-US");
     if (
       normalizedOrigin.includes("harbor") &&
-      (normalizedHabitat.includes("forest") || normalizedHabitat.includes("desert"))
+      (normalizedHabitat.includes("forest") ||
+        normalizedHabitat.includes("desert"))
     ) {
       issues.push({
         code: "ENVIRONMENT_ORIGIN_HOME_CONTRADICTION",
-        message: "Generated habitat contradicts canonical Origin home/place evidence",
+        message:
+          "Generated habitat contradicts canonical Origin home/place evidence",
         severity: "error",
       });
     }
@@ -268,7 +288,9 @@ export function validateGenesisEnvironment(
   const hasError = issues.some((issue) => issue.severity === "error");
   const hasException =
     state.local.exceptions.length > 0 &&
-    issues.some((issue) => issue.code === "ENVIRONMENT_EXPLICIT_EXCEPTION_APPLIED");
+    issues.some(
+      (issue) => issue.code === "ENVIRONMENT_EXPLICIT_EXCEPTION_APPLIED",
+    );
 
   return {
     status: hasError
@@ -284,12 +306,14 @@ export function validateGenesisEnvironment(
 function detectWeatherClimateIncompatibility(
   state: GenesisEnvironmentState,
 ): string | null {
-  const climate = state.regionProfile.climate.climateType.toLocaleLowerCase("en-US");
+  const climate =
+    state.regionProfile.climate.climateType.toLocaleLowerCase("en-US");
   const weather = state.local.weather?.toLocaleLowerCase("en-US") ?? "";
   const habitat = state.regionProfile.habitatType.toLocaleLowerCase("en-US");
 
   const tropical = climate.includes("tropical") || habitat.includes("tropical");
-  const heavySnow = weather.includes("heavy snow") || weather.includes("blizzard");
+  const heavySnow =
+    weather.includes("heavy snow") || weather.includes("blizzard");
   if (tropical && heavySnow) {
     return "Heavy snow is incompatible with the active tropical environment without an explicit lore/event exception";
   }
@@ -297,7 +321,9 @@ function detectWeatherClimateIncompatibility(
   return null;
 }
 
-export function buildEnvironmentContextProjection(state: GenesisEnvironmentState) {
+export function buildEnvironmentContextProjection(
+  state: GenesisEnvironmentState,
+) {
   const season = state.calendar.seasons.find(
     (candidate) => candidate.id === state.temporal.seasonId,
   );

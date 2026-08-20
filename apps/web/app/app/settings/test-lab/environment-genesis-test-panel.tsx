@@ -218,9 +218,9 @@ export default function EnvironmentGenesisTestPanel() {
         <h2>Initial World / Season State</h2>
         <p className={styles.muted}>
           Habitat ve climate gibi kalıcı çevresel gerçekleri season, weather,
-          day phase ve local conditions gibi geçici state&apos;ten ayırır. Custom
-          fantasy season semantics, priority decision trace ve explicit anomaly
-          provenance görünürdür.
+          day phase ve local conditions gibi geçici state&apos;ten ayırır.
+          Custom fantasy season semantics, priority decision trace ve explicit
+          anomaly provenance görünürdür.
         </p>
         <div className={styles.settingsGrid}>
           <label className={styles.field}>
@@ -297,11 +297,10 @@ export default function EnvironmentGenesisTestPanel() {
             <h3>Run {entry.run.id.slice(0, 8)}</h3>
             {usage ? (
               <p className={styles.muted}>
-                Input {usage.promptTokens} token · Output {usage.completionTokens}{" "}
-                token · Toplam {usage.totalTokens} ·{" "}
-                {formatCost(
-                  usage.actualCostUsd ?? usage.estimatedCostUsd,
-                )} · {usage.latencyMs} ms
+                Input {usage.promptTokens} token · Output{" "}
+                {usage.completionTokens} token · Toplam {usage.totalTokens} ·{" "}
+                {formatCost(usage.actualCostUsd ?? usage.estimatedCostUsd)} ·{" "}
+                {usage.latencyMs} ms
               </p>
             ) : null}
             <div className={styles.candidateList}>

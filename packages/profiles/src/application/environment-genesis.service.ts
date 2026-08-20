@@ -215,8 +215,11 @@ function getSection(
   return genesis?.sections?.[key] ?? null;
 }
 
-function pickEnvironmentGenesis(validated: unknown): EnvironmentGenesisCandidateDto[] {
-  const suggestions = pickSuggestionArray<EnvironmentGenesisCandidateDto>(validated);
+function pickEnvironmentGenesis(
+  validated: unknown,
+): EnvironmentGenesisCandidateDto[] {
+  const suggestions =
+    pickSuggestionArray<EnvironmentGenesisCandidateDto>(validated);
   for (const suggestion of suggestions) {
     if (!suggestion.regionProfile?.habitatType?.trim()) {
       throw new Error("ENVIRONMENT_GENESIS_HABITAT_REQUIRED");

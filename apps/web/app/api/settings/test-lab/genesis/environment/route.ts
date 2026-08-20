@@ -42,7 +42,10 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
       const modelSlug = requiredString(body.modelSlug, "modelSlug");
 
       const session = await repository.getSession(sessionId);
@@ -85,7 +88,9 @@ export const POST = observeHandler(async (request: Request) => {
         return NextResponse.json({ data: preview });
       }
       if (action !== "run") {
-        throw new Error(`TEST_LAB_ENVIRONMENT_GENESIS_UNKNOWN_ACTION:${action}`);
+        throw new Error(
+          `TEST_LAB_ENVIRONMENT_GENESIS_UNKNOWN_ACTION:${action}`,
+        );
       }
 
       const generated = await generateEnvironmentGenesis(
@@ -93,11 +98,15 @@ export const POST = observeHandler(async (request: Request) => {
         { householdId, childProfileId },
         options,
       );
-      const modelProfile = await new OpenRouterModelCatalog().resolveModelProfile({
-        modelSlug,
-        capturedAt: now,
-      });
-      const usageSnapshot = createUsageSnapshot(generated, modelProfile.pricing);
+      const modelProfile =
+        await new OpenRouterModelCatalog().resolveModelProfile({
+          modelSlug,
+          capturedAt: now,
+        });
+      const usageSnapshot = createUsageSnapshot(
+        generated,
+        modelProfile.pricing,
+      );
       const compatibility = readCompatibilityContext(parentState.value);
 
       const preparedCandidates = generated.suggestions.map((suggestion) => {
@@ -111,7 +120,10 @@ export const POST = observeHandler(async (request: Request) => {
         });
         const validation = validateGenesisEnvironment(canonical, compatibility);
         const projection = buildEnvironmentContextProjection(canonical);
-        const stateDiff = buildEnvironmentStateDiff(parentState.value, canonical);
+        const stateDiff = buildEnvironmentStateDiff(
+          parentState.value,
+          canonical,
+        );
         return { suggestion, canonical, validation, projection, stateDiff };
       });
 
@@ -135,14 +147,19 @@ export const POST = observeHandler(async (request: Request) => {
             ? toJsonObject(generated.provenance.finalProviderRequest)
             : null,
           rawProviderOutput: generated.rawProviderOutput,
-          renderedPromptFingerprint: fingerprint(generated.provenance.renderedPrompt),
+          renderedPromptFingerprint: fingerprint(
+            generated.provenance.renderedPrompt,
+          ),
           contextFingerprint: fingerprint(parentState.value),
         },
         candidates: preparedCandidates.map((item) => ({
           candidateId: crypto.randomUUID(),
           candidateStateId: crypto.randomUUID(),
           payload: toJsonObject(item),
-          candidateState: environmentCandidateState(parentState.value, item.canonical),
+          candidateState: environmentCandidateState(
+            parentState.value,
+            item.canonical,
+          ),
         })),
         now,
       });
@@ -154,7 +171,9 @@ export const POST = observeHandler(async (request: Request) => {
           candidates: recorded.candidates,
           rawProviderOutput: generated.rawProviderOutput,
           parsedOutput: generated.suggestions,
-          canonicalEnvironment: preparedCandidates.map((item) => item.canonical),
+          canonicalEnvironment: preparedCandidates.map(
+            (item) => item.canonical,
+          ),
           validation: preparedCandidates.map((item) => item.validation),
           contextProjection: preparedCandidates.map((item) => item.projection),
           stateDiff: preparedCandidates.map((item) => item.stateDiff),
@@ -236,7 +255,9 @@ function toCanonicalEnvironment(
   };
 }
 
-function compactOptionalIds(binding: EnvironmentGenesisCandidateDto["binding"]) {
+function compactOptionalIds(
+  binding: EnvironmentGenesisCandidateDto["binding"],
+) {
   return {
     ...(binding.worldId ? { worldId: binding.worldId } : {}),
     ...(binding.regionId ? { regionId: binding.regionId } : {}),

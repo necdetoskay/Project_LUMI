@@ -72,11 +72,31 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
             ],
             properties: {
               habitatType: { type: "string", minLength: 1, maxLength: 160 },
-              terrain: { type: "array", items: { type: "string" }, maxItems: 8 },
-              vegetation: { type: "array", items: { type: "string" }, maxItems: 8 },
-              waterFeatures: { type: "array", items: { type: "string" }, maxItems: 8 },
-              environmentalFeatures: { type: "array", items: { type: "string" }, maxItems: 10 },
-              loreConstraints: { type: "array", items: { type: "string" }, maxItems: 10 },
+              terrain: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 8,
+              },
+              vegetation: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 8,
+              },
+              waterFeatures: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 8,
+              },
+              environmentalFeatures: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 10,
+              },
+              loreConstraints: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 10,
+              },
               climate: {
                 type: "object",
                 required: [
@@ -87,8 +107,16 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                 ],
                 properties: {
                   climateType: { type: "string", minLength: 1, maxLength: 120 },
-                  temperatureBand: { type: "string", minLength: 1, maxLength: 80 },
-                  precipitationBand: { type: "string", minLength: 1, maxLength: 80 },
+                  temperatureBand: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 80,
+                  },
+                  precipitationBand: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 80,
+                  },
                   humidityBand: { type: ["string", "null"] },
                   seasonalVariation: {
                     type: "string",
@@ -113,7 +141,11 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                   required: ["id", "displayName", "order", "semantics"],
                   properties: {
                     id: { type: "string", minLength: 1, maxLength: 100 },
-                    displayName: { type: "string", minLength: 1, maxLength: 120 },
+                    displayName: {
+                      type: "string",
+                      minLength: 1,
+                      maxLength: 120,
+                    },
                     order: { type: "integer", minimum: 0, maximum: 99 },
                     semantics: {
                       type: "object",
@@ -123,9 +155,18 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                         "daylightTrend",
                       ],
                       properties: {
-                        temperatureTrend: { type: "string", enum: [...TREND_ENUM] },
-                        precipitationTrend: { type: "string", enum: [...TREND_ENUM] },
-                        daylightTrend: { type: "string", enum: [...TREND_ENUM] },
+                        temperatureTrend: {
+                          type: "string",
+                          enum: [...TREND_ENUM],
+                        },
+                        precipitationTrend: {
+                          type: "string",
+                          enum: [...TREND_ENUM],
+                        },
+                        daylightTrend: {
+                          type: "string",
+                          enum: [...TREND_ENUM],
+                        },
                         vegetationPhase: { type: ["string", "null"] },
                       },
                     },
@@ -162,7 +203,11 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
             properties: {
               weather: { type: ["string", "null"] },
               dayPhase: { type: ["string", "null"] },
-              localConditions: { type: "array", items: { type: "string" }, maxItems: 10 },
+              localConditions: {
+                type: "array",
+                items: { type: "string" },
+                maxItems: 10,
+              },
               exceptions: {
                 type: "array",
                 maxItems: 4,
@@ -172,10 +217,19 @@ export const ENVIRONMENT_GENESIS_OUTPUT_SCHEMA: Record<string, unknown> = {
                   properties: {
                     sourceType: {
                       type: "string",
-                      enum: ["world_lore", "world_event", "magic", "story_consequence"],
+                      enum: [
+                        "world_lore",
+                        "world_event",
+                        "magic",
+                        "story_consequence",
+                      ],
                     },
                     sourceId: { type: ["string", "null"] },
-                    explanation: { type: "string", minLength: 1, maxLength: 500 },
+                    explanation: {
+                      type: "string",
+                      minLength: 1,
+                      maxLength: 500,
+                    },
                   },
                 },
               },

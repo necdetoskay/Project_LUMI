@@ -7,7 +7,9 @@ import {
   type GenesisEnvironmentState,
 } from "../../src/domain";
 
-function environment(overrides: Partial<GenesisEnvironmentState> = {}): GenesisEnvironmentState {
+function environment(
+  overrides: Partial<GenesisEnvironmentState> = {},
+): GenesisEnvironmentState {
   return {
     binding: { worldId: "world-1", regionId: "region-1", homeId: "home-1" },
     regionProfile: {
