@@ -108,7 +108,9 @@ function visibleFactLeakIssues(
 ): GenesisValidationIssue[] {
   const origin = candidate.sections.origin;
   if (!origin) return [];
-  const factById = new Map(origin.facts.map((fact) => [fact.id, fact] as const));
+  const factById = new Map(
+    origin.facts.map((fact) => [fact.id, fact] as const),
+  );
   const issues: GenesisValidationIssue[] = [];
   const consumers = [
     ...(candidate.sections.memoryAndThreads?.memories.map((memory) => ({
@@ -382,7 +384,9 @@ export function buildCommittedGenesisStoryContextProjection(
           potential: thread.potential,
         })),
       storyHooks: (origin.storyHooks ?? [])
-        .filter((hook) => hook.relatedFactIds.every((id) => visibleFactIds.has(id)))
+        .filter((hook) =>
+          hook.relatedFactIds.every((id) => visibleFactIds.has(id)),
+        )
         .sort((left, right) => right.potential - left.potential)
         .slice(0, 4)
         .map((hook) => ({ summary: hook.summary, potential: hook.potential })),

@@ -51,8 +51,9 @@ function environment(): GenesisEnvironmentState {
   };
 }
 
-function completePackage(status: CharacterGenesisPackage["status"] = "selected"):
-  CharacterGenesisPackage {
+function completePackage(
+  status: CharacterGenesisPackage["status"] = "selected",
+): CharacterGenesisPackage {
   return {
     id: "genesis-1",
     householdId: "household-1",
@@ -277,15 +278,17 @@ describe("Character Genesis cross-domain validation", () => {
       expectedHomeId: "home-1",
     });
     expect(result.valid).toBe(false);
-    expect(result.issues.some((issue) => issue.code.includes("WORLD"))).toBe(true);
+    expect(result.issues.some((issue) => issue.code.includes("WORLD"))).toBe(
+      true,
+    );
   });
 });
 
 describe("committed Genesis first-story projection", () => {
   it("rejects a selected but uncommitted package", () => {
-    expect(() => buildCommittedGenesisStoryContextProjection(completePackage())).toThrow(
-      "GENESIS_FIRST_STORY_REQUIRES_COMMITTED_PACKAGE",
-    );
+    expect(() =>
+      buildCommittedGenesisStoryContextProjection(completePackage()),
+    ).toThrow("GENESIS_FIRST_STORY_REQUIRES_COMMITTED_PACKAGE");
   });
 
   it("projects only relevant character-visible fragments and never the full origin narrative", () => {

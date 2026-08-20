@@ -56,8 +56,13 @@ function projection(): FirstStoryGenesisHandoffProjection {
 
 describe("first-story Genesis Context Assembly handoff", () => {
   it("injects committed canonical projections without creating another context engine", () => {
-    const context = createFirstStoryGenerationContext(baseContext(), projection());
-    expect(context.canonical?.characterState).toEqual(projection().characterState);
+    const context = createFirstStoryGenerationContext(
+      baseContext(),
+      projection(),
+    );
+    expect(context.canonical?.characterState).toEqual(
+      projection().characterState,
+    );
     expect(context.canonical?.worldState).toEqual(projection().worldState);
     expect(context.canonical?.relevantMemories).toEqual(
       projection().relevantMemories,
@@ -66,7 +71,10 @@ describe("first-story Genesis Context Assembly handoff", () => {
   });
 
   it("assembles character/world/relevant-memory sections through the existing story policy", () => {
-    const result = assembleFirstStoryGenesisHandoff(baseContext(), projection());
+    const result = assembleFirstStoryGenesisHandoff(
+      baseContext(),
+      projection(),
+    );
     const sections = new Map(
       result.assembled.sections.map((section) => [section.section, section]),
     );
@@ -91,7 +99,10 @@ describe("first-story Genesis Context Assembly handoff", () => {
   });
 
   it("does not expose internal child/cycle/genesis ids to provider-visible prompt context", () => {
-    const result = assembleFirstStoryGenesisHandoff(baseContext(), projection());
+    const result = assembleFirstStoryGenesisHandoff(
+      baseContext(),
+      projection(),
+    );
     const serialized = JSON.stringify(result.promptContext);
     expect(serialized).not.toContain("child-internal-id");
     expect(serialized).not.toContain("cycle-internal-id");
