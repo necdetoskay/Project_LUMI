@@ -51,6 +51,10 @@ interface InspectorTrace {
     observability: {
       budgetUtilizationRatio: number | null;
       contextToOutputTokenRatio: number | null;
+      includedSectionCount: number;
+      droppedSectionCount: number;
+      compactedSectionCount: number;
+      retrievalEvidenceCoverageRatio: number | null;
     };
     droppedSections: string[];
     sections: InspectorSection[];
@@ -234,7 +238,10 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
             label="Total tokens"
             value={formatNumber(trace.totalTokens)}
           />
-          <Metric label="Latency" value={`${trace.latencyMs} ms`} />
+          <Metric
+            label="LLM gateway latency"
+            value={`${trace.latencyMs} ms`}
+          />
           <Metric
             label="Approx. cost"
             value={formatUsdMicros(trace.estimatedCostUsdMicros)}
@@ -282,6 +289,31 @@ function TraceDetail({ trace }: { trace: InspectorTrace }) {
           <Metric
             label="Fingerprint"
             value={shortFingerprint(trace.context.fingerprint)}
+          />
+        </dl>
+
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric
+            label="Included sections"
+            value={formatNumber(
+              trace.context.observability.includedSectionCount,
+            )}
+          />
+          <Metric
+            label="Dropped sections"
+            value={formatNumber(trace.context.observability.droppedSectionCount)}
+          />
+          <Metric
+            label="Compacted sections"
+            value={formatNumber(
+              trace.context.observability.compactedSectionCount,
+            )}
+          />
+          <Metric
+            label="Retrieval evidence"
+            value={formatPercent(
+              trace.context.observability.retrievalEvidenceCoverageRatio,
+            )}
           />
         </dl>
 
