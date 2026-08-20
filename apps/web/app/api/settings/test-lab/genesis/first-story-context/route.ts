@@ -34,35 +34,54 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
 
       const session = await repository.getSession(sessionId);
       if (!session) throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
       if (session.scenarioKey !== CHARACTER_ONBOARDING_SCENARIO.key) {
-        throw new Error(`TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_CHARACTER_ONBOARDING:${session.scenarioKey}`);
+        throw new Error(
+          `TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_CHARACTER_ONBOARDING:${session.scenarioKey}`,
+        );
       }
 
       const parentState = await repository.getState(parentStateId);
-      assertSandboxOwner(parentState, { parentId: parent.id, householdId, childProfileId });
-      if (!parentState) throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
+      assertSandboxOwner(parentState, {
+        parentId: parent.id,
+        householdId,
+        childProfileId,
+      });
+      if (!parentState) {
+        throw new Error(`TEST_LAB_STATE_NOT_FOUND:${parentStateId}`);
+      }
 
-      const qualification = asRecord(parentState.value.characterGenesisQualification);
+      const qualification = asRecord(
+        parentState.value.characterGenesisQualification,
+      );
       const validationEvidence = asRecord(qualification.validation);
       const validationSummary = asRecord(validationEvidence.summary);
       if (validationSummary.valid !== true) {
-        throw new Error("TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_VALID_GENESIS");
+        throw new Error(
+          "TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_VALID_GENESIS",
+        );
       }
 
       const genesis = asRecord(parentState.value.characterGenesis);
       const sections = asRecord(genesis.sections) as CharacterGenesisSections;
-      const candidateSeed = optionalString(genesis.candidateSeed) ?? `${sessionId}:${branchId}`;
-      const characterId = optionalString(genesis.characterId) ?? `testlab-character-${childProfileId}`;
+      const candidateSeed =
+        optionalString(genesis.candidateSeed) ?? `${sessionId}:${branchId}`;
+      const characterId =
+        optionalString(genesis.characterId) ??
+        `testlab-character-${childProfileId}`;
       const staged = createCharacterGenesisPackage({
         id: optionalString(genesis.id) ?? `testlab-genesis-${sessionId}`,
         householdId,
         childProfileId,
         characterId,
-        universeSeed: optionalString(genesis.universeSeed) ?? `${sessionId}:universe`,
+        universeSeed:
+          optionalString(genesis.universeSeed) ?? `${sessionId}:universe`,
         candidateSeed,
         provenance: {
           schemaRevision: "character-genesis.v1",
@@ -73,17 +92,29 @@ export const POST = observeHandler(async (request: Request) => {
         sections,
         now,
       });
-      const validation = validateCharacterGenesisCrossDomain(staged, { requireCompletePackage: true });
+      const validation = validateCharacterGenesisCrossDomain(staged, {
+        requireCompletePackage: true,
+      });
       if (!validation.valid) {
-        throw new Error(`TEST_LAB_FIRST_STORY_CONTEXT_INVALID_GENESIS:${validation.issues.filter((issue) => issue.severity === "error").map((issue) => issue.code).join(",")}`);
+        const errorCodes = validation.issues
+          .filter((issue) => issue.severity === "error")
+          .map((issue) => issue.code)
+          .join(",");
+        throw new Error(
+          `TEST_LAB_FIRST_STORY_CONTEXT_INVALID_GENESIS:${errorCodes}`,
+        );
       }
 
-      // This status transition is sandbox-only and exists solely to exercise the
-      // exact production first-story handoff contract. No canonical committer is called.
-      const committed = markCharacterGenesisCommitted(selectCharacterGenesisPackage(staged, now), now);
+      // This transition is sandbox-only and exists solely to exercise the exact
+      // production first-story handoff contract. No canonical committer is called.
+      const committed = markCharacterGenesisCommitted(
+        selectCharacterGenesisPackage(staged, now),
+        now,
+      );
       const environment = asRecord(sections.environment);
       const binding = asRecord(environment.binding);
-      const worldId = optionalString(binding.worldId) ?? `testlab-world-${childProfileId}`;
+      const worldId =
+        optionalString(binding.worldId) ?? `testlab-world-${childProfileId}`;
       const manifest = await buildProductionFirstStoryContext({
         readers: {
           readWorkingStory: () => null,
@@ -97,7 +128,8 @@ export const POST = observeHandler(async (request: Request) => {
           focalCharacterId: characterId,
           storySessionId: `testlab-first-story-${sessionId}`,
           generationIntent: "first_story_preview",
-          sceneFocus: "Begin the first story from the committed Character Genesis state without inventing hidden knowledge.",
+          sceneFocus:
+            "Begin the first story from the committed Character Genesis state without inventing hidden knowledge.",
         },
       });
 
@@ -142,35 +174,54 @@ export const POST = observeHandler(async (request: Request) => {
           renderedPromptFingerprint: null,
           contextFingerprint: manifest.contentHash,
         },
-        candidates: [{
-          candidateId: crypto.randomUUID(),
-          candidateStateId: crypto.randomUUID(),
-          payload: preview,
-          candidateState,
-        }],
+        candidates: [
+          {
+            candidateId: crypto.randomUUID(),
+            candidateStateId: crypto.randomUUID(),
+            payload: preview,
+            candidateState,
+          },
+        ],
         now,
       });
 
-      return NextResponse.json({ data: { phaseId: PHASE_ID, run: recorded.run, candidates: recorded.candidates, manifest } });
+      return NextResponse.json({
+        data: {
+          phaseId: PHASE_ID,
+          run: recorded.run,
+          candidates: recorded.candidates,
+          manifest,
+        },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      return NextResponse.json({ error: "TEST_LAB_FIRST_STORY_CONTEXT_ERROR", message }, { status: message.includes("FORBIDDEN") ? 403 : 400 });
+      return NextResponse.json(
+        { error: "TEST_LAB_FIRST_STORY_CONTEXT_ERROR", message },
+        { status: message.includes("FORBIDDEN") ? 403 : 400 },
+      );
     }
   });
 }, "/api/settings/test-lab/genesis/first-story-context");
 
 function requiredString(value: unknown, field: string): string {
-  if (typeof value !== "string" || !value.trim()) throw new Error(`TEST_LAB_REQUIRED_FIELD:${field}`);
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`TEST_LAB_REQUIRED_FIELD:${field}`);
+  }
   return value.trim();
 }
+
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
+
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return value as Record<string, unknown>;
 }
+
 function toJsonObject(value: unknown): JsonObject {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("TEST_LAB_JSON_OBJECT_REQUIRED");
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("TEST_LAB_JSON_OBJECT_REQUIRED");
+  }
   return JSON.parse(JSON.stringify(value)) as JsonObject;
 }
