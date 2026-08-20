@@ -66,7 +66,9 @@ export default function GenesisDerivedStagePanel(props: {
       await refreshHistory();
       setMessage(`${props.title} kanıtı sandbox run olarak kaydedildi.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Aşama çalıştırılamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Aşama çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -96,7 +98,9 @@ export default function GenesisDerivedStagePanel(props: {
       await refreshHistory();
       setMessage(`${props.title} sandbox continuation için seçildi.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Aday seçilemedi.");
+      setMessage(
+        error instanceof Error ? error.message : "Aday seçilemedi.",
+      );
     } finally {
       setBusy(false);
     }
@@ -165,7 +169,9 @@ async function post(path: string, body: Record<string, unknown>) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
   }
   return payload;
 }
