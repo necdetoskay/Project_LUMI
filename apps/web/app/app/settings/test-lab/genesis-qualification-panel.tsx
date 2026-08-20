@@ -14,6 +14,7 @@ const PHASES = [
   ["character_genesis_dna", "Character DNA Derivation"],
   ["character_genesis_social", "Social Genesis"],
   ["character_genesis_inventory", "Inventory Genesis"],
+  ["character_genesis_memory_threads", "Memory Seeds / Origin Threads"],
   ["character_genesis_environment", "Initial World / Season State"],
   ["character_genesis_validation", "Genesis Validation"],
   ["character_genesis_first_story_context", "First Story Context Preview"],
@@ -56,7 +57,9 @@ export default function GenesisQualificationPanel() {
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [phaseId, setPhaseId] = useState(PHASES[0][0]);
   const [runs, setRuns] = useState<RunEntry[]>([]);
-  const [judgeModelSlug, setJudgeModelSlug] = useState("openai/gpt-4.1-mini");
+  const [judgeModelSlug, setJudgeModelSlug] = useState(
+    "openai/gpt-4.1-mini",
+  );
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -68,15 +71,20 @@ export default function GenesisQualificationPanel() {
   const latestRun = useMemo(() => {
     return runs
       .filter((entry) => entry.run.phaseId === phaseId)
-      .sort((left, right) => right.run.createdAt.localeCompare(left.run.createdAt))[0];
+      .sort((left, right) =>
+        right.run.createdAt.localeCompare(left.run.createdAt),
+      )[0];
   }, [phaseId, runs]);
 
-  const candidateIds = latestRun?.candidates.map((candidate) => candidate.id) ?? [];
+  const candidateIds =
+    latestRun?.candidates.map((candidate) => candidate.id) ?? [];
 
   async function loadRubric() {
     const response = await fetch("/api/settings/test-lab/evaluations");
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.message ?? "Rubric yüklenemedi.");
+    if (!response.ok) {
+      throw new Error(payload.message ?? "Rubric yüklenemedi.");
+    }
     setRubric(payload.data.characterGenesisRubric as Rubric);
   }
 
@@ -115,9 +123,13 @@ export default function GenesisQualificationPanel() {
         judgeModelSlug,
       });
       await inspect();
-      setMessage("Character Genesis judge qualification kaydedildi; TestSelection değiştirilmedi.");
+      setMessage(
+        "Character Genesis judge qualification kaydedildi; TestSelection değiştirilmedi.",
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Judge çalıştırılamadı.");
+      setMessage(
+        error instanceof Error ? error.message : "Judge çalıştırılamadı.",
+      );
     } finally {
       setBusy(false);
     }
@@ -136,35 +148,66 @@ export default function GenesisQualificationPanel() {
   }
 
   return (
-    <section className={styles.shell} aria-label="Character Genesis Qualification">
+    <section
+      className={styles.shell}
+      aria-label="Character Genesis Qualification"
+    >
       <section className={styles.panel}>
         <p className={styles.eyebrow}>Character Genesis Qualification</p>
         <h2>Genesis Rubric & Future-Story Yield</h2>
         <p className={styles.muted}>
-          Aynı phase/run içindeki adayları blind olarak karşılaştırır. Judge sonucu aday seçimini otomatik değiştirmez. Future-story-yield, farklı ilişki, eşya, hafıza, yer ve açık thread kaynaklarından tekrar kullanılabilir hikâye potansiyelini ölçer.
+          Aynı phase/run içindeki adayları blind olarak karşılaştırır. Judge
+          sonucu aday seçimini otomatik değiştirmez. Future-story-yield, farklı
+          ilişki, eşya, hafıza, yer ve açık thread kaynaklarından tekrar
+          kullanılabilir hikâye potansiyelini ölçer.
         </p>
         <div className={styles.settingsGrid}>
           <label className={styles.field}>
             Qualification stage
-            <select className={styles.input} value={phaseId} onChange={(event) => { setPhaseId(event.target.value as typeof phaseId); setInspection(null); }}>
+            <select
+              className={styles.input}
+              value={phaseId}
+              onChange={(event) => {
+                setPhaseId(event.target.value as typeof phaseId);
+                setInspection(null);
+              }}
+            >
               {PHASES.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </label>
           <label className={styles.field}>
             Judge model slug
-            <input className={styles.input} value={judgeModelSlug} onChange={(event) => setJudgeModelSlug(event.target.value)} />
+            <input
+              className={styles.input}
+              value={judgeModelSlug}
+              onChange={(event) => setJudgeModelSlug(event.target.value)}
+            />
           </label>
         </div>
         <p className={styles.muted}>
-          Rubric: {rubric ? `${rubric.label} · v${rubric.revision}` : "yükleniyor"} · Latest run candidate count: {candidateIds.length}
+          Rubric:{" "}
+          {rubric ? `${rubric.label} · v${rubric.revision}` : "yükleniyor"} ·
+          Latest run candidate count: {candidateIds.length}
         </p>
         <div className={styles.metrics}>
-          <button type="button" className={styles.primaryButton} disabled={busy || candidateIds.length === 0 || !rubric} onClick={runJudge}>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            disabled={busy || candidateIds.length === 0 || !rubric}
+            onClick={runJudge}
+          >
             Genesis judge çalıştır
           </button>
-          <button type="button" className={styles.secondaryButton} disabled={busy || candidateIds.length === 0} onClick={inspect}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            disabled={busy || candidateIds.length === 0}
+            onClick={inspect}
+          >
             Qualification sonuçlarını yenile
           </button>
         </div>
@@ -172,19 +215,32 @@ export default function GenesisQualificationPanel() {
       </section>
 
       {inspection?.candidates.map((candidate, index) => {
-        const evaluations = candidate.evaluations.filter((evaluation) => evaluation.rubricKey === rubric?.key);
+        const evaluations = candidate.evaluations.filter(
+          (evaluation) => evaluation.rubricKey === rubric?.key,
+        );
         const latest = evaluations.at(-1);
-        const yieldFinding = latest?.findings.find((finding) => finding.criterionKey === "future_story_yield");
+        const yieldFinding = latest?.findings.find(
+          (finding) => finding.criterionKey === "future_story_yield",
+        );
         return (
           <section className={styles.runCard} key={candidate.candidateId}>
             <h3>Candidate #{index + 1}</h3>
             <p className={styles.muted}>
-              Overall {latest?.overallScore.toFixed(2) ?? "—"} · Judge mean {candidate.judgeConsensus.meanScore.toFixed(2)} · Variance {candidate.judgeConsensus.variance.toFixed(3)}
+              Overall {latest?.overallScore.toFixed(2) ?? "—"} · Judge mean{" "}
+              {candidate.judgeConsensus.meanScore.toFixed(2)} · Variance{" "}
+              {candidate.judgeConsensus.variance.toFixed(3)}
             </p>
             <p>
-              <strong>Future-story yield:</strong> {yieldFinding ? `${yieldFinding.score}/10 — ${yieldFinding.finding}` : "henüz değerlendirilmedi"}
+              <strong>Future-story yield:</strong>{" "}
+              {yieldFinding
+                ? `${yieldFinding.score}/10 — ${yieldFinding.finding}`
+                : "henüz değerlendirilmedi"}
             </p>
-            {latest ? <pre className={styles.payload}>{JSON.stringify(latest.findings, null, 2)}</pre> : null}
+            {latest ? (
+              <pre className={styles.payload}>
+                {JSON.stringify(latest.findings, null, 2)}
+              </pre>
+            ) : null}
           </section>
         );
       })}
@@ -207,6 +263,10 @@ async function post(path: string, body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.message ?? payload.error ?? "Test Lab isteği başarısız.");
+  if (!response.ok) {
+    throw new Error(
+      payload.message ?? payload.error ?? "Test Lab isteği başarısız.",
+    );
+  }
   return payload;
 }
