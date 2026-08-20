@@ -78,14 +78,13 @@ export const POST = observeHandler(async (request: Request) => {
       const environmentBinding = asRecord(
         asRecord(sections.environment).binding,
       );
+      const worldId = optionalString(environmentBinding.worldId);
       const snapshot: ExistingCharacterMigrationSnapshot = {
         householdId,
         childProfileId,
         characterId,
         universeSeed,
-        ...(optionalString(environmentBinding.worldId)
-          ? { worldId: optionalString(environmentBinding.worldId) }
-          : {}),
+        ...(worldId ? { worldId } : {}),
         existingSections: { origin: structuredClone(sections.origin) },
         authoritativeFacts: buildAuthoritativeFacts(sections),
       };
@@ -100,7 +99,7 @@ export const POST = observeHandler(async (request: Request) => {
       const candidate = plan.sandboxApplyAllowed
         ? buildExistingCharacterMigrationCandidate({ snapshot, plan, now })
         : null;
-      const expectedWorldId = optionalString(environmentBinding.worldId);
+      const expectedWorldId = worldId;
       const expectedRegionId = optionalString(environmentBinding.regionId);
       const expectedHomeId = optionalString(environmentBinding.homeId);
       const validation = candidate
