@@ -23,6 +23,7 @@ export * from "./application/memory-thread-genesis.service";
 export * from "./application/memory-thread-genesis-context-projection";
 export * from "./application/environment-genesis.service";
 export * from "./application/environment-genesis-prompt-bootstrap.service";
+export * from "./application/first-story-genesis-handoff.service";
 export * from "./application/living-world-bootstrap.service";
 export * from "./application/living-world-bootstrap-manifest.store";
 export * from "./application/living-world-bootstrap-profile-materializer.service";
