@@ -25,6 +25,15 @@ export type {
 } from "./character-genesis.service";
 
 export {
+  projectEnvironmentGenesisContext,
+  projectEnvironmentRegionClimate,
+} from "./environment-genesis-context-projection";
+export type {
+  EnvironmentGenesisContextProjection,
+  EnvironmentRegionClimateProjection,
+} from "./environment-genesis-context-projection";
+
+export {
   moveCharacterToLocation,
   getCharacterCurrentLocation,
   getCharacterMovementHistory,
