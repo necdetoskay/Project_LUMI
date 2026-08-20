@@ -204,7 +204,7 @@ function completeSections() {
           climateType: "cool temperate",
           temperatureBand: "cool",
           precipitationBand: "moderate",
-          seasonalVariation: "high",
+          seasonalVariation: "high" as const,
         },
         loreConstraints: [],
       },
