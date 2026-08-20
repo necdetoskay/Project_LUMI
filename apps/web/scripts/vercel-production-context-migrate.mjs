@@ -35,12 +35,17 @@ const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 try {
   console.warn("Applying production Context Assembly profile migrations...");
   for (const migrationFile of migrationFiles) {
-    const sql = readFileSync(resolve(migrationDirectory, migrationFile), "utf8");
+    const sql = readFileSync(
+      resolve(migrationDirectory, migrationFile),
+      "utf8",
+    );
     console.warn(`Applying profile migration: ${migrationFile}`);
     await pool.query(sql);
     console.warn(`Profile migration ${migrationFile} applied successfully.`);
   }
-  console.warn("Production Context Assembly profile migrations are up to date.");
+  console.warn(
+    "Production Context Assembly profile migrations are up to date.",
+  );
 } catch (error) {
   console.error("Production Context Assembly profile migration failed:", error);
   process.exitCode = 1;
