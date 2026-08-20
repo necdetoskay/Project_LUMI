@@ -6,13 +6,11 @@ on:
       - fix/landing-webp-binary-assets
     paths:
       - .github/workflows/tmp-landing-asset-recovery.yml
-      - apps/web/app/api/landing-art/_exact/**
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/tmp-landing-asset-recovery.yml
-      - apps/web/app/api/landing-art/_exact/**
 
 permissions:
   contents: read
@@ -21,75 +19,52 @@ jobs:
   recover:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Pillow
         run: python -m pip install --disable-pip-version-check pillow==11.3.0
 
-      - name: Rebuild approved mockup and create inspection crops
+      - name: Recover historical packed hero
+        shell: bash
+        run: |
+          set -euo pipefail
+          old_head='a2ee679f0a96143e8b6a34aa8e6fd80b376da7c1'
+          mkdir -p tmp-landing-recovery
+          git show "$old_head:apps/web/public/landing/packed/hero-world.part0.b64" > tmp-landing-recovery/hero-world.part0.b64
+          git show "$old_head:apps/web/public/landing/packed/hero-world.part1.b64" > tmp-landing-recovery/hero-world.part1.b64
+          tr -d '\r\n ' < tmp-landing-recovery/hero-world.part0.b64 > tmp-landing-recovery/hero-world.full.b64
+          tr -d '\r\n ' < tmp-landing-recovery/hero-world.part1.b64 >> tmp-landing-recovery/hero-world.full.b64
+          base64 --decode tmp-landing-recovery/hero-world.full.b64 > tmp-landing-recovery/hero-world.webp
+
+      - name: Validate recovered hero
         shell: python
         run: |
           from __future__ import annotations
 
-          import base64
           import hashlib
-          import re
           from pathlib import Path
+          from PIL import Image
 
-          from PIL import Image, ImageDraw
+          path = Path("tmp-landing-recovery/hero-world.webp")
+          raw = path.read_bytes()
+          if raw[:4] != b"RIFF" or raw[8:12] != b"WEBP":
+              raise SystemExit("historical packed hero is not RIFF/WEBP")
+          with Image.open(path) as image:
+              image.verify()
+          with Image.open(path) as image:
+              print("hero dimensions:", image.size)
+              if image.size != (1000, 563):
+                  raise SystemExit(f"unexpected hero dimensions: {image.size}")
+          print("hero bytes:", len(raw))
+          print("hero sha256:", hashlib.sha256(raw).hexdigest())
 
-          root = Path("apps/web/app/api/landing-art/_exact")
-          payload = []
-          for path in sorted(root.glob("part*.ts")):
-              match = re.search(r'export default "([A-Za-z0-9+/=]+)";', path.read_text())
-              if not match:
-                  raise SystemExit(f"cannot parse {path}")
-              payload.append(match.group(1))
-
-          raw = base64.b64decode("".join(payload))
-          expected = "faaae7ea715f4e2d8538a01fffd9429514f4f01601c17b9d7d4885349c5b3648"
-          actual = hashlib.sha256(raw).hexdigest()
-          if actual != expected:
-              raise SystemExit(f"mockup sha mismatch: {actual}")
-
-          out = Path("tmp-landing-recovery")
-          out.mkdir(exist_ok=True)
-          source = out / "approved-mockup.webp"
-          source.write_bytes(raw)
-
-          image = Image.open(source).convert("RGB")
-          print("approved mockup:", image.size, actual)
-
-          annotated = image.copy()
-          draw = ImageDraw.Draw(annotated)
-          for x in range(0, image.width, 100):
-              draw.line((x, 0, x, image.height), fill=(255, 255, 255), width=1)
-              draw.text((x + 3, 3), str(x), fill=(255, 255, 255))
-          for y in range(0, image.height, 100):
-              draw.line((0, y, image.width, y), fill=(255, 255, 255), width=1)
-              draw.text((3, y + 3), str(y), fill=(255, 255, 255))
-
-          # Broad inspection candidates only. Final crop values will be chosen
-          # after visual review of this artifact.
-          candidates = {
-              "hero": (600, 95, 1290, 610),
-              "card-story": (250, 690, 430, 965),
-              "card-explore": (665, 690, 845, 965),
-              "card-grow": (1075, 690, 1255, 965),
-          }
-          colors = [(255, 80, 80), (80, 255, 120), (80, 190, 255), (255, 210, 80)]
-          for (name, box), color in zip(candidates.items(), colors, strict=True):
-              draw.rectangle(box, outline=color, width=4)
-              draw.text((box[0] + 6, box[1] + 6), name, fill=color)
-              image.crop(box).save(out / f"candidate-{name}.png")
-
-          annotated.save(out / "approved-mockup-grid.png")
-
-      - name: Upload inspection artifact
+      - name: Upload recovered hero
         uses: actions/upload-artifact@v4
         with:
-          name: landing-asset-recovery-inspection
-          path: tmp-landing-recovery/
+          name: landing-recovered-hero
+          path: tmp-landing-recovery/hero-world.webp
           if-no-files-found: error
           retention-days: 2
