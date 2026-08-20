@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/tmp-landing-asset-recovery.yml
       - apps/web/app/api/landing-art/_exact/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/tmp-landing-asset-recovery.yml
+      - apps/web/app/api/landing-art/_exact/**
 
 permissions:
   contents: read
@@ -31,7 +37,7 @@ jobs:
           import re
           from pathlib import Path
 
-          from PIL import Image, ImageDraw, ImageFont
+          from PIL import Image, ImageDraw
 
           root = Path("apps/web/app/api/landing-art/_exact")
           payload = []
