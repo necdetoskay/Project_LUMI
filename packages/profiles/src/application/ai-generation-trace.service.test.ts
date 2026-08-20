@@ -187,6 +187,10 @@ describe("toAiGenerationContextInspectorView", () => {
       observability: {
         budgetUtilizationRatio: 420 / 3_600,
         contextToOutputTokenRatio: 4.2,
+        includedSectionCount: 1,
+        droppedSectionCount: 1,
+        compactedSectionCount: 1,
+        retrievalEvidenceCoverageRatio: null,
       },
       droppedSections: ["relevant_memories"],
     });
@@ -219,6 +223,54 @@ describe("toAiGenerationContextInspectorView", () => {
     expect(serialized).not.toContain("SECRET-OUTPUT-PAYLOAD");
     expect(serialized).not.toContain("33333333-3333-4333-8333-333333333333");
     expect(serialized).not.toContain("44444444-4444-4444-8444-444444444444");
+  });
+
+  it("derives retrieval evidence coverage only from privacy-safe persisted provenance", () => {
+    const record = traceRecord();
+    const provenance = record.contextProvenance as {
+      droppedSections: string[];
+      sections: Array<Record<string, unknown>>;
+    };
+    provenance.droppedSections = [];
+    provenance.sections.push({
+      section: "relevant_memories",
+      priority: "medium",
+      maxTokens: 1_200,
+      estimatedTokens: 80,
+      provenance: {
+        source: "memory.retriever",
+        sourceVersion: "v1",
+        authority: "retrieved",
+        reason: "retrieved",
+      },
+    });
+
+    const view = toAiGenerationContextInspectorView(record);
+    const serialized = JSON.stringify(view);
+
+    expect(view.context.observability).toMatchObject({
+      includedSectionCount: 2,
+      droppedSectionCount: 0,
+      compactedSectionCount: 1,
+      retrievalEvidenceCoverageRatio: 1,
+    });
+    expect(serialized).not.toContain("SECRET-INPUT-CONTEXT");
+    expect(serialized).not.toContain("SECRET-OUTPUT-PAYLOAD");
+  });
+
+  it("does not claim retrieval evidence when a legacy retrieval section lacks provenance fields", () => {
+    const record = traceRecord();
+    const provenance = record.contextProvenance as {
+      sections: Array<{ provenance: Record<string, unknown> }>;
+    };
+    provenance.sections[0]!.provenance.authority = "retrieved";
+    delete provenance.sections[0]!.provenance.sourceVersion;
+
+    const view = toAiGenerationContextInspectorView(record);
+
+    expect(
+      view.context.observability.retrievalEvidenceCoverageRatio,
+    ).toBe(0);
   });
 
   it("does not invent a context-to-output ratio when completion usage is unavailable or zero", () => {
@@ -296,6 +348,10 @@ describe("toAiGenerationContextInspectorView", () => {
       observability: {
         budgetUtilizationRatio: null,
         contextToOutputTokenRatio: null,
+        includedSectionCount: 0,
+        droppedSectionCount: 0,
+        compactedSectionCount: 0,
+        retrievalEvidenceCoverageRatio: null,
       },
       droppedSections: [],
       sections: [],
