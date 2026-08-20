@@ -32,7 +32,10 @@ describe("Character Genesis qualification Test Lab contract", () => {
 
   it("keeps Structured Origin Extraction derived from Deep Origin without a second LLM gateway", async () => {
     const route = await readFile(
-      resolve(root, "app/api/settings/test-lab/genesis/origin-structure/route.ts"),
+      resolve(
+        root,
+        "app/api/settings/test-lab/genesis/origin-structure/route.ts",
+      ),
       "utf8",
     );
 
@@ -73,7 +76,10 @@ describe("Character Genesis qualification Test Lab contract", () => {
       "utf8",
     );
     const panel = await readFile(
-      resolve(root, "app/app/settings/test-lab/genesis-qualification-panel.tsx"),
+      resolve(
+        root,
+        "app/app/settings/test-lab/genesis-qualification-panel.tsx",
+      ),
       "utf8",
     );
 
