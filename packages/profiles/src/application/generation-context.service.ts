@@ -23,10 +23,23 @@ export interface GenerationCreationContext {
   previousSelections: Record<string, unknown>;
 }
 
+/**
+ * Canonical provider-bound projections supplied by domain-owned adapters.
+ * Values are deliberately opaque here so Context Assembly does not own or
+ * duplicate Character/World/Memory domain schemas.
+ */
+export interface GenerationCanonicalContext {
+  characterState?: unknown;
+  worldState?: unknown;
+  relevantMemories?: unknown;
+  sourceRevision?: string;
+}
+
 export interface GenerationContext {
   profile: GenerationContextProfile;
   child: GenerationChildContext;
   creation: GenerationCreationContext;
+  canonical?: GenerationCanonicalContext;
 }
 
 export interface BuildGenerationContextInput {
@@ -45,6 +58,7 @@ export async function buildGenerationContext(
   userId: string,
   input: BuildGenerationContextInput,
   creationOverride?: GenerationCreationOverride,
+  canonicalOverride?: GenerationCanonicalContext,
 ): Promise<GenerationContext> {
   const [child, personalization, cycle] = await Promise.all([
     findChildProfileForUser(input.childProfileId, userId, input.householdId),
@@ -82,5 +96,8 @@ export async function buildGenerationContext(
         creationOverride?.previousSelections ??
         ((cycle?.latestSummary ?? {}) as Record<string, unknown>),
     },
+    ...(canonicalOverride
+      ? { canonical: structuredClone(canonicalOverride) }
+      : {}),
   };
 }
