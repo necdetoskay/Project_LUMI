@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const isProductionVercelBuild = process.env.VERCEL_ENV === "production";
@@ -25,8 +26,8 @@ const migrationFiles = [
   "0076_ai_generation_context_trace.sql",
   "0077_generation_context_snapshots.sql",
 ];
-const migrationDirectory = resolve(
-  new URL("../../../packages/profiles/migrations/", import.meta.url).pathname,
+const migrationDirectory = fileURLToPath(
+  new URL("../../../packages/profiles/migrations/", import.meta.url),
 );
 
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
