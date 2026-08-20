@@ -646,9 +646,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await checkpoint("onboarding:committed");
 
       await page
-        .getByLabel("Çocuk deneyimi")
+        .getByLabel("Karakter yolu")
         .getByRole("link", { name: "Profil", exact: true })
-        .click();
+        .click({ timeout: 60_000 });
       await expect(page).toHaveURL(
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },
