@@ -75,6 +75,31 @@ export type {
 } from "./character-genesis";
 export type { GenesisDeepOriginState } from "./character-genesis-origin";
 export {
+  ENVIRONMENT_VALIDATION_STATUSES,
+  ENVIRONMENT_EXCEPTION_SOURCE_TYPES,
+  resolveGenesisEnvironment,
+  validateGenesisEnvironment,
+  buildEnvironmentContextProjection,
+} from "./character-genesis-environment";
+export type {
+  EnvironmentValidationStatus,
+  EnvironmentExceptionSourceType,
+  EnvironmentTrend,
+  NormalizedSeasonSemantics,
+  RegionEnvironmentProfile,
+  WorldSeasonDefinition,
+  WorldCalendarDefinition,
+  WorldTemporalState,
+  EnvironmentalException,
+  LocalEnvironmentState,
+  EnvironmentBinding,
+  EnvironmentDecisionTraceEntry,
+  EnvironmentCompatibilityContext,
+  EnvironmentValidationIssue,
+  EnvironmentValidationResult,
+  ResolveEnvironmentInput,
+} from "./character-genesis-environment";
+export {
   CHARACTER_DNA_AXES,
   CHARACTER_DYNAMIC_AXES,
   deriveCharacterDna,
