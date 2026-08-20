@@ -268,9 +268,7 @@ describe("toAiGenerationContextInspectorView", () => {
 
     const view = toAiGenerationContextInspectorView(record);
 
-    expect(
-      view.context.observability.retrievalEvidenceCoverageRatio,
-    ).toBe(0);
+    expect(view.context.observability.retrievalEvidenceCoverageRatio).toBe(0);
   });
 
   it("does not invent a context-to-output ratio when completion usage is unavailable or zero", () => {
