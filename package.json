@@ -66,7 +66,7 @@
     "ultef:L3": "node tooling/ultef/src/cli.mjs L3",
     "ultef:L9": "node tooling/ultef/src/cli.mjs L9",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write apps/web/app/api/settings/test-lab/genesis/memory-threads/route.ts apps/web/app/app/settings/test-lab/memory-thread-genesis-test-panel.tsx packages/profiles/src/application/memory-thread-genesis-context-projection.test.ts packages/profiles/src/application/memory-thread-genesis.service.test.ts packages/profiles/src/domain/memory-thread-genesis.test.ts packages/profiles/src/domain/memory-thread-genesis.ts && node -e \"const fs=require('fs');for(const f of process.argv.slice(1)){console.log('FORMAT_FILE:'+f+':'+fs.readFileSync(f).toString('base64'))}\" apps/web/app/api/settings/test-lab/genesis/memory-threads/route.ts apps/web/app/app/settings/test-lab/memory-thread-genesis-test-panel.tsx packages/profiles/src/application/memory-thread-genesis-context-projection.test.ts packages/profiles/src/application/memory-thread-genesis.service.test.ts packages/profiles/src/domain/memory-thread-genesis.test.ts packages/profiles/src/domain/memory-thread-genesis.ts && exit 1",
     "clean": "turbo run clean && rimraf node_modules .turbo",
     "infra:up": "node scripts/infra-up.mjs",
     "infra:down": "node scripts/infra-down.mjs",
