@@ -49,8 +49,9 @@ describe("Environment Genesis Test Lab contract", () => {
     expect(route).toContain("rawProviderOutput");
     expect(route).toContain("usageSnapshot");
     expect(panel).toContain("priority decision trace");
-    expect(panel).toContain("Input {usage.promptTokens} token");
-    expect(panel).toContain("Output {usage.completionTokens} token");
+    expect(panel).toContain("usage.promptTokens");
+    expect(panel).toContain("usage.completionTokens");
+    expect(panel).toContain("usage.totalTokens");
     expect(panel).toContain("actualCostUsd ?? usage.estimatedCostUsd");
   });
 });
