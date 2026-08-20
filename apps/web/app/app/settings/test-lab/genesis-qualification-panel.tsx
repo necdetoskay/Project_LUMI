@@ -57,9 +57,7 @@ export default function GenesisQualificationPanel() {
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [phaseId, setPhaseId] = useState(PHASES[0][0]);
   const [runs, setRuns] = useState<RunEntry[]>([]);
-  const [judgeModelSlug, setJudgeModelSlug] = useState(
-    "openai/gpt-4.1-mini",
-  );
+  const [judgeModelSlug, setJudgeModelSlug] = useState("openai/gpt-4.1-mini");
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");

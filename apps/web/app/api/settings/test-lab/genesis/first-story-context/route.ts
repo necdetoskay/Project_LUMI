@@ -63,9 +63,7 @@ export const POST = observeHandler(async (request: Request) => {
       const validationEvidence = asRecord(qualification.validation);
       const validationSummary = asRecord(validationEvidence.summary);
       if (validationSummary.valid !== true) {
-        throw new Error(
-          "TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_VALID_GENESIS",
-        );
+        throw new Error("TEST_LAB_FIRST_STORY_CONTEXT_REQUIRES_VALID_GENESIS");
       }
 
       const genesis = asRecord(parentState.value.characterGenesis);

@@ -93,7 +93,8 @@ export const POST = observeHandler(async (request: Request) => {
           ? { expectedHomeId: optionalString(binding.homeId) }
           : {}),
       });
-      const futureStoryYieldSignals = calculateFutureStoryYieldSignals(sections);
+      const futureStoryYieldSignals =
+        calculateFutureStoryYieldSignals(sections);
       const evidence = toJsonObject({
         candidate,
         validation,
