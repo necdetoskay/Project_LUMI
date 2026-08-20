@@ -1,0 +1,28 @@
+name: Temporary Patch 250 Character Nav
+
+on:
+  push:
+    branches:
+      - fix/250-live-profile-navigation
+    paths:
+      - .github/workflows/tmp-patch-250-character-nav.yml
+      - .github/scripts/tmp_patch_250_character_nav.py
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply exact character-nav patch
+        run: python .github/scripts/tmp_patch_250_character_nav.py
+      - name: Commit patch and remove helpers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git rm -- .github/workflows/tmp-patch-250-character-nav.yml .github/scripts/tmp_patch_250_character_nav.py
+          git commit -m "test(live): align character detail navigation"
+          git push origin HEAD:fix/250-live-profile-navigation
