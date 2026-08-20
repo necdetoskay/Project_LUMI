@@ -65,6 +65,17 @@ export type AiGenerationContextReconstructabilityReason =
   | "source_revision_evidence_incomplete"
   | "context_evidence_missing";
 
+export type AiGenerationContextObservabilityAlert =
+  | "high_assembly_latency"
+  | "token_budget_pressure"
+  | "low_retrieval_relevance";
+
+export const CONTEXT_OBSERVABILITY_THRESHOLDS = {
+  highAssemblyLatencyMs: 250,
+  budgetPressureRatio: 0.85,
+  lowRetrievalRelevance: 0.35,
+} as const;
+
 export interface AiGenerationContextInspectorView {
   id: string;
   taskType: string;
@@ -89,6 +100,12 @@ export interface AiGenerationContextInspectorView {
     observability: {
       budgetUtilizationRatio: number | null;
       contextToOutputTokenRatio: number | null;
+      assemblyLatencyMs: number | null;
+      retrievalRelevanceScore: number | null;
+      retrievalSampleCount: number;
+      cacheHitRate: number | null;
+      cacheSampleCount: number;
+      alerts: AiGenerationContextObservabilityAlert[];
     };
     droppedSections: string[];
     sections: AiGenerationContextInspectorSection[];
@@ -108,6 +125,11 @@ function asString(value: unknown): string | null {
 
 function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asNonNegativeInteger(value: unknown): number {
+  const parsed = asNumber(value);
+  return parsed !== null && parsed >= 0 ? Math.floor(parsed) : 0;
 }
 
 function safeRatio(
@@ -209,6 +231,9 @@ export function createAiGenerationContextTraceEvidence(
       maxContextTokens: assembled.maxContextTokens,
       estimatedTokens: assembled.estimatedTokens,
       droppedSections: [...assembled.droppedSections],
+      ...(assembled.observability
+        ? { observability: assembled.observability }
+        : {}),
       sections: assembled.sections.map((section) => ({
         section: section.section,
         priority: section.priority,
@@ -302,6 +327,36 @@ function resolveReconstructability(input: {
   };
 }
 
+function buildObservabilityAlerts(input: {
+  budgetUtilizationRatio: number | null;
+  assemblyLatencyMs: number | null;
+  retrievalRelevanceScore: number | null;
+}): AiGenerationContextObservabilityAlert[] {
+  const alerts: AiGenerationContextObservabilityAlert[] = [];
+  if (
+    input.assemblyLatencyMs !== null &&
+    input.assemblyLatencyMs >=
+      CONTEXT_OBSERVABILITY_THRESHOLDS.highAssemblyLatencyMs
+  ) {
+    alerts.push("high_assembly_latency");
+  }
+  if (
+    input.budgetUtilizationRatio !== null &&
+    input.budgetUtilizationRatio >=
+      CONTEXT_OBSERVABILITY_THRESHOLDS.budgetPressureRatio
+  ) {
+    alerts.push("token_budget_pressure");
+  }
+  if (
+    input.retrievalRelevanceScore !== null &&
+    input.retrievalRelevanceScore <
+      CONTEXT_OBSERVABILITY_THRESHOLDS.lowRetrievalRelevance
+  ) {
+    alerts.push("low_retrieval_relevance");
+  }
+  return alerts;
+}
+
 export function toAiGenerationContextInspectorView(
   record: AiGenerationTraceRecord,
 ): AiGenerationContextInspectorView {
@@ -325,6 +380,16 @@ export function toAiGenerationContextInspectorView(
   });
   const maxContextTokens = asNumber(provenance?.maxContextTokens);
   const estimatedContextTokens = asNumber(provenance?.estimatedTokens);
+  const rawObservability = asRecord(provenance?.observability);
+  const budgetUtilizationRatio = safeRatio(
+    estimatedContextTokens,
+    maxContextTokens,
+  );
+  const assemblyLatencyMs = asNumber(rawObservability?.assemblyLatencyMs);
+  const retrievalRelevanceScore = asNumber(
+    rawObservability?.retrievalRelevanceScore,
+  );
+  const cacheHitRate = asNumber(rawObservability?.cacheHitRate);
 
   return {
     id: record.id,
@@ -347,14 +412,25 @@ export function toAiGenerationContextInspectorView(
       maxContextTokens,
       estimatedTokens: estimatedContextTokens,
       observability: {
-        budgetUtilizationRatio: safeRatio(
-          estimatedContextTokens,
-          maxContextTokens,
-        ),
+        budgetUtilizationRatio,
         contextToOutputTokenRatio: safeRatio(
           estimatedContextTokens,
           record.completionTokens,
         ),
+        assemblyLatencyMs,
+        retrievalRelevanceScore,
+        retrievalSampleCount: asNonNegativeInteger(
+          rawObservability?.retrievalSampleCount,
+        ),
+        cacheHitRate,
+        cacheSampleCount: asNonNegativeInteger(
+          rawObservability?.cacheSampleCount,
+        ),
+        alerts: buildObservabilityAlerts({
+          budgetUtilizationRatio,
+          assemblyLatencyMs,
+          retrievalRelevanceScore,
+        }),
       },
       droppedSections,
       sections,
