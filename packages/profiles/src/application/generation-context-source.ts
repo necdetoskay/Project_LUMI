@@ -14,6 +14,22 @@ export type GenerationContextSourceReason =
   | "recent"
   | "retrieved";
 
+export type GenerationContextCacheStatus =
+  | "hit"
+  | "miss"
+  | "bypass"
+  | "unknown";
+
+/**
+ * Optional operational telemetry emitted by a source. It is intentionally
+ * separate from source provenance and therefore must not participate in the
+ * deterministic provider-context fingerprint.
+ */
+export interface GenerationContextSourceTelemetry {
+  relevance?: number;
+  cacheStatus?: GenerationContextCacheStatus;
+}
+
 /**
  * Privacy-safe address for an immutable historical source projection.
  *
@@ -35,6 +51,7 @@ export interface GenerationContextSourceResult {
   revision?: string;
   updatedAt?: string;
   replayReference?: GenerationContextSourceReplayReference;
+  telemetry?: GenerationContextSourceTelemetry;
 }
 
 export interface GenerationContextSource {
