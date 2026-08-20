@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/vercel-production-ai-migrate.mjs && next build --webpack",
+    "build": "node scripts/vercel-production-ai-migrate.mjs && node scripts/vercel-production-context-migrate.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
@@ -44,7 +44,7 @@
     "next": "16.2.12",
     "next-intl": "4.13.4",
     "pg": "^8.22.0",
-    "pngjs": "^7.0.0",
+    "pngjs": "^7.0.5",
     "postgres": "^3.4.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
