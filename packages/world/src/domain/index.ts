@@ -83,6 +83,37 @@ export type {
 } from "./character-genesis-cross-domain";
 export type { GenesisDeepOriginState } from "./character-genesis-origin";
 export {
+  EXISTING_CHARACTER_MIGRATION_MODES,
+  MIGRATION_PROVENANCE_KINDS,
+  EXISTING_CHARACTER_MIGRATION_REVISION,
+  EXISTING_CHARACTER_TARGET_SCHEMA_REVISION,
+  CHARACTER_GENESIS_SECTION_KEYS,
+  auditExistingCharacterGenesis,
+  createExistingCharacterMigrationPlan,
+  detectExistingCharacterMigrationConflicts,
+  applyExistingCharacterMigrationToSandbox,
+  buildExistingCharacterMigrationCandidate,
+  createExistingCharacterRollbackManifest,
+  fingerprintMigrationSnapshot,
+} from "./existing-character-migration";
+export type {
+  ExistingCharacterMigrationMode,
+  MigrationProvenanceKind,
+  CharacterGenesisSectionKey,
+  ExistingCharacterFactAuthority,
+  ExistingCharacterCanonicalFact,
+  ExistingCharacterMigrationMarker,
+  ExistingCharacterMigrationSnapshot,
+  MigrationSectionCoverage,
+  ExistingCharacterMigrationAudit,
+  MigrationFactAssertion,
+  MigrationProposalProvenance,
+  ExistingCharacterBackfillProposal,
+  ExistingCharacterMigrationConflict,
+  ExistingCharacterMigrationPlan,
+  ExistingCharacterRollbackManifest,
+} from "./existing-character-migration";
+export {
   ENVIRONMENT_VALIDATION_STATUSES,
   ENVIRONMENT_EXCEPTION_SOURCE_TYPES,
   resolveGenesisEnvironment,
