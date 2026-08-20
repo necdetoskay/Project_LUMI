@@ -73,6 +73,14 @@ export type {
   GenesisValidationIssue,
   GenesisValidationResult,
 } from "./character-genesis";
+export {
+  validateCharacterGenesisCrossDomain,
+  buildCommittedGenesisStoryContextProjection,
+} from "./character-genesis-cross-domain";
+export type {
+  CharacterGenesisCrossDomainValidationContext,
+  CommittedGenesisStoryContextProjection,
+} from "./character-genesis-cross-domain";
 export type { GenesisDeepOriginState } from "./character-genesis-origin";
 export {
   ENVIRONMENT_VALIDATION_STATUSES,
