@@ -7,6 +7,10 @@ import {
   type GenesisValidationResult,
 } from "../domain/character-genesis";
 import { createCharacterGenesisPackage } from "../domain/character-genesis";
+import {
+  validateCharacterGenesisCrossDomain,
+  type CharacterGenesisCrossDomainValidationContext,
+} from "../domain/character-genesis-cross-domain";
 
 export interface CharacterGenesisRepositoryPort {
   save(candidate: CharacterGenesisPackage): Promise<void>;
@@ -41,6 +45,14 @@ export interface CharacterGenesisCanonicalCommitPort {
   ): Promise<CharacterGenesisCanonicalCommitResult>;
 }
 
+export interface CharacterGenesisValidationContextPort {
+  resolve(
+    candidate: CharacterGenesisPackage,
+  ):
+    | Promise<CharacterGenesisCrossDomainValidationContext>
+    | CharacterGenesisCrossDomainValidationContext;
+}
+
 export interface CommitCharacterGenesisResult {
   candidate: CharacterGenesisPackage;
   canonical: CharacterGenesisCanonicalCommitResult;
@@ -51,6 +63,7 @@ export class CharacterGenesisCoordinator {
   constructor(
     private readonly repository: CharacterGenesisRepositoryPort,
     private readonly canonicalCommitter: CharacterGenesisCanonicalCommitPort,
+    private readonly validationContext?: CharacterGenesisValidationContextPort,
   ) {}
 
   async stage(
@@ -91,7 +104,14 @@ export class CharacterGenesisCoordinator {
       );
     }
 
-    const validation = validateCharacterGenesisStructure(candidate);
+    const resolvedContext = this.validationContext
+      ? await this.validationContext.resolve(structuredClone(candidate))
+      : {};
+    const validation = validateCharacterGenesisCrossDomain(candidate, {
+      ...resolvedContext,
+      requireCompletePackage: true,
+      requireSelectedForCommit: true,
+    });
     if (!validation.valid) {
       throw new CharacterGenesisValidationError(validation);
     }
@@ -111,6 +131,24 @@ export class CharacterGenesisCoordinator {
   }
 
   async inspect(candidateId: string): Promise<{
+    candidate: CharacterGenesisPackage;
+    validation: GenesisValidationResult;
+  }> {
+    const candidate = await this.requireCandidate(candidateId);
+    const resolvedContext = this.validationContext
+      ? await this.validationContext.resolve(structuredClone(candidate))
+      : {};
+    return {
+      candidate,
+      validation: validateCharacterGenesisCrossDomain(candidate, {
+        ...resolvedContext,
+        requireCompletePackage: false,
+      }),
+    };
+  }
+
+  /** Structural-only inspection remains available for staged partial packages. */
+  async inspectStructure(candidateId: string): Promise<{
     candidate: CharacterGenesisPackage;
     validation: GenesisValidationResult;
   }> {
@@ -140,7 +178,7 @@ export function characterGenesisCommitIdempotencyKey(
 
 export class CharacterGenesisValidationError extends Error {
   constructor(public readonly validation: GenesisValidationResult) {
-    super("Character genesis package failed structural validation");
+    super("Character genesis package failed cross-domain validation");
     this.name = "CharacterGenesisValidationError";
   }
 }
