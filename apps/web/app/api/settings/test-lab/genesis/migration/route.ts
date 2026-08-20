@@ -116,7 +116,8 @@ export const POST = observeHandler(async (request: Request) => {
         plan,
         now,
       });
-      const afterSections = candidate?.sections ?? snapshot.existingSections ?? {};
+      const afterSections =
+        candidate?.sections ?? snapshot.existingSections ?? {};
       const evidence = toJsonObject({
         qualificationMode: "mature_sandbox_replay",
         audit,

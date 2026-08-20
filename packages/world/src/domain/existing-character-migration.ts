@@ -182,7 +182,8 @@ export function auditExistingCharacterGenesis(
     .filter((entry) => entry.status === "missing")
     .map((entry) => entry.section);
   const alreadyUpgraded =
-    snapshot.marker?.migrationRevision === EXISTING_CHARACTER_MIGRATION_REVISION ||
+    snapshot.marker?.migrationRevision ===
+      EXISTING_CHARACTER_MIGRATION_REVISION ||
     snapshot.currentGenesis?.provenance.derivationRevision ===
       EXISTING_CHARACTER_MIGRATION_REVISION;
 
@@ -206,7 +207,9 @@ export function createExistingCharacterMigrationPlan(input: {
   now?: string;
 }): ExistingCharacterMigrationPlan {
   if (!EXISTING_CHARACTER_MIGRATION_MODES.includes(input.mode)) {
-    throw new Error(`Unsupported existing-character migration mode: ${input.mode}`);
+    throw new Error(
+      `Unsupported existing-character migration mode: ${input.mode}`,
+    );
   }
   const audit = auditExistingCharacterGenesis(input.snapshot);
   const now = input.now ?? new Date().toISOString();
@@ -217,17 +220,21 @@ export function createExistingCharacterMigrationPlan(input: {
     input.snapshot,
     proposals,
   );
-  const blockingConflict = conflicts.some((issue) => issue.severity === "error");
+  const blockingConflict = conflicts.some(
+    (issue) => issue.severity === "error",
+  );
   const requiresHumanReview = conflicts.some(
     (issue) =>
       issue.code === "MIGRATION_HISTORICAL_INFERENCE_REQUIRES_REVIEW" ||
       issue.code === "MIGRATION_NEW_HISTORY_REQUIRES_REVIEW",
   );
-  const id = input.id ?? `migration-${stableHash({
-    characterId: input.snapshot.characterId,
-    snapshotFingerprint: audit.snapshotFingerprint,
-    proposals,
-  })}`;
+  const id =
+    input.id ??
+    `migration-${stableHash({
+      characterId: input.snapshot.characterId,
+      snapshotFingerprint: audit.snapshotFingerprint,
+      proposals,
+    })}`;
   const idempotencyKey = `existing-character-genesis:${input.snapshot.characterId}:${EXISTING_CHARACTER_MIGRATION_REVISION}:${audit.snapshotFingerprint}`;
   const explicitUpgradeAllowed =
     input.mode === "explicit_upgrade" &&
@@ -335,7 +342,10 @@ export function detectExistingCharacterMigrationConflicts(
     for (const assertion of proposal.assertions) {
       const authoritative = canonicalFacts.get(assertion.path);
       if (!authoritative) continue;
-      if (stableStringify(authoritative.value) === stableStringify(assertion.value)) {
+      if (
+        stableStringify(authoritative.value) ===
+        stableStringify(assertion.value)
+      ) {
         continue;
       }
       issues.push({
@@ -482,7 +492,8 @@ function assertSnapshotScope(snapshot: ExistingCharacterMigrationSnapshot) {
     characterId: snapshot.characterId,
     universeSeed: snapshot.universeSeed,
   })) {
-    if (!value.trim()) throw new Error(`Migration snapshot ${field} is required`);
+    if (!value.trim())
+      throw new Error(`Migration snapshot ${field} is required`);
   }
   if (
     snapshot.currentGenesis &&

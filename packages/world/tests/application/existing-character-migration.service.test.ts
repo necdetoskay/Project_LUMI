@@ -70,7 +70,8 @@ function snapshot(): ExistingCharacterMigrationSnapshot {
     existingSections: {
       origin: {
         summary: "Mira has long lived in Silver Harbor.",
-        narrative: "Mira grew up around Silver Harbor and knows its old lighthouse.",
+        narrative:
+          "Mira grew up around Silver Harbor and knows its old lighthouse.",
         facts: [
           {
             id: "fact-home",

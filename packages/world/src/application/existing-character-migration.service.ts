@@ -135,7 +135,9 @@ export class ExistingCharacterMigrationCoordinator {
     });
     const { snapshot, plan, candidate, validation } = inspected;
 
-    const existing = await this.records.getByIdempotencyKey(plan.idempotencyKey);
+    const existing = await this.records.getByIdempotencyKey(
+      plan.idempotencyKey,
+    );
     if (existing?.status === "applied") return structuredClone(existing);
 
     if (!plan.explicitUpgradeAllowed) {
@@ -153,7 +155,9 @@ export class ExistingCharacterMigrationCoordinator {
     // after planning invalidates the proposal and forces a fresh audit.
     const latest = await this.source.read(input.characterId);
     if (fingerprintMigrationSnapshot(latest) !== plan.snapshotFingerprint) {
-      throw new Error("Migration source changed after planning; re-audit before upgrade");
+      throw new Error(
+        "Migration source changed after planning; re-audit before upgrade",
+      );
     }
 
     const selected = selectCharacterGenesisPackage(candidate, input.now);
@@ -214,7 +218,9 @@ export class ExistingCharacterMigrationCoordinator {
     }
     if (record.status === "rolled_back") return;
     if (record.status !== "applied" || !record.rollbackManifest) {
-      throw new Error("Only an applied migration with recovery evidence can roll back");
+      throw new Error(
+        "Only an applied migration with recovery evidence can roll back",
+      );
     }
 
     await this.upgradePort.rollback({
@@ -254,9 +260,9 @@ export class ExistingCharacterMigrationBlockedError extends Error {
 export class ExistingCharacterMigrationValidationError extends Error {
   constructor(
     public readonly plan: ExistingCharacterMigrationPlan,
-    public readonly validation:
-      | ReturnType<typeof validateCharacterGenesisCrossDomain>
-      | null,
+    public readonly validation: ReturnType<
+      typeof validateCharacterGenesisCrossDomain
+    > | null,
   ) {
     super("Existing-character migration candidate failed Genesis validation");
     this.name = "ExistingCharacterMigrationValidationError";
