@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAiDb } from "@lumi/ai/db/client";
 import {
   calculateJudgeHumanAgreement,
+  CHARACTER_GENESIS_QUALITY_RUBRIC_V1,
   checkNarrativeStateConsistency,
   createStoryArcEvaluationPayload,
   DrizzleEvaluationRepository,
@@ -38,6 +39,7 @@ export const GET = observeHandler(() => {
       data: {
         defaultRubric: STORY_QUALITY_RUBRIC_V1,
         storyArcRubric: STORY_ARC_RUBRIC_V1,
+        characterGenesisRubric: CHARACTER_GENESIS_QUALITY_RUBRIC_V1,
         modes: ["absolute", "blind_ranking"],
       },
     }),
@@ -220,7 +222,11 @@ export const POST = observeHandler(async (request: Request) => {
 async function ensureRubrics(
   repository: DrizzleEvaluationRepository,
 ): Promise<void> {
-  for (const rubric of [STORY_QUALITY_RUBRIC_V1, STORY_ARC_RUBRIC_V1]) {
+  for (const rubric of [
+    STORY_QUALITY_RUBRIC_V1,
+    STORY_ARC_RUBRIC_V1,
+    CHARACTER_GENESIS_QUALITY_RUBRIC_V1,
+  ]) {
     if (await repository.getRubric(rubric.key, rubric.revision)) continue;
     try {
       await repository.saveRubric(rubric);

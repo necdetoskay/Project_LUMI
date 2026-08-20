@@ -1,3 +1,4 @@
+export * from "./character-genesis-rubric";
 export * from "./character-onboarding-scenario";
 export * from "./evaluation";
 export * from "./evaluation-consistency";
