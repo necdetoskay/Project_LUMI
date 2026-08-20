@@ -1,6 +1,9 @@
 name: Format Fix
 
 on:
+  push:
+    branches:
+      - feat/388-genesis-test-lab-qualification
   workflow_dispatch:
     inputs:
       branch:
@@ -18,7 +21,7 @@ jobs:
       - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.branch || github.ref_name }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -48,7 +51,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: format repository with prettier"
-          git push origin HEAD:${{ inputs.branch }}
+          git push origin HEAD:${{ inputs.branch || github.ref_name }}
 
       - name: Verify formatting
         run: pnpm format:check
