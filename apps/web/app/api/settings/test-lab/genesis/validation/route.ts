@@ -81,17 +81,14 @@ export const POST = observeHandler(async (request: Request) => {
 
       const environment = asRecord(sections.environment);
       const binding = asRecord(environment.binding);
+      const expectedWorldId = optionalString(binding.worldId);
+      const expectedRegionId = optionalString(binding.regionId);
+      const expectedHomeId = optionalString(binding.homeId);
       const validation = validateCharacterGenesisCrossDomain(candidate, {
         requireCompletePackage: true,
-        ...(optionalString(binding.worldId)
-          ? { expectedWorldId: optionalString(binding.worldId) }
-          : {}),
-        ...(optionalString(binding.regionId)
-          ? { expectedRegionId: optionalString(binding.regionId) }
-          : {}),
-        ...(optionalString(binding.homeId)
-          ? { expectedHomeId: optionalString(binding.homeId) }
-          : {}),
+        ...(expectedWorldId ? { expectedWorldId } : {}),
+        ...(expectedRegionId ? { expectedRegionId } : {}),
+        ...(expectedHomeId ? { expectedHomeId } : {}),
       });
       const futureStoryYieldSignals =
         calculateFutureStoryYieldSignals(sections);
