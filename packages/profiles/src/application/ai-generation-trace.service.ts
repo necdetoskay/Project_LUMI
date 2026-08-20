@@ -89,6 +89,10 @@ export interface AiGenerationContextInspectorView {
     observability: {
       budgetUtilizationRatio: number | null;
       contextToOutputTokenRatio: number | null;
+      includedSectionCount: number;
+      droppedSectionCount: number;
+      compactedSectionCount: number;
+      retrievalEvidenceCoverageRatio: number | null;
     };
     droppedSections: string[];
     sections: AiGenerationContextInspectorSection[];
@@ -325,6 +329,17 @@ export function toAiGenerationContextInspectorView(
   });
   const maxContextTokens = asNumber(provenance?.maxContextTokens);
   const estimatedContextTokens = asNumber(provenance?.estimatedTokens);
+  const retrievalSections = sections.filter(
+    (section) => section.authority === "retrieved",
+  );
+  const retrievalEvidenceSectionCount = retrievalSections.filter(
+    (section) =>
+      Boolean(
+        section.source?.trim() &&
+          section.sourceVersion?.trim() &&
+          section.reason?.trim(),
+      ),
+  ).length;
 
   return {
     id: record.id,
@@ -354,6 +369,15 @@ export function toAiGenerationContextInspectorView(
         contextToOutputTokenRatio: safeRatio(
           estimatedContextTokens,
           record.completionTokens,
+        ),
+        includedSectionCount: sections.length,
+        droppedSectionCount: droppedSections.length,
+        compactedSectionCount: sections.filter((section) =>
+          Boolean(section.compaction),
+        ).length,
+        retrievalEvidenceCoverageRatio: safeRatio(
+          retrievalEvidenceSectionCount,
+          retrievalSections.length,
         ),
       },
       droppedSections,
