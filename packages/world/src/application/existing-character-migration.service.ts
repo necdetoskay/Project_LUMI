@@ -229,10 +229,11 @@ export class ExistingCharacterMigrationCoordinator {
       idempotencyKey: `${idempotencyKey}:rollback`,
       manifest: structuredClone(record.rollbackManifest),
     });
+    const beforeMarker = record.rollbackManifest.beforeMarker;
     await this.records.save({
       ...record,
       status: "rolled_back",
-      marker: record.rollbackManifest.beforeMarker,
+      ...(beforeMarker ? { marker: beforeMarker } : {}),
       updatedAt: new Date().toISOString(),
     });
   }
