@@ -7,6 +7,7 @@ import { getOnboardingState } from "@lumi/profiles/application";
 import CharacterDnaTestPanel from "./character-dna-test-panel";
 import DeepOriginTestPanel from "./deep-origin-test-panel";
 import InventoryGenesisTestPanel from "./inventory-genesis-test-panel";
+import MemoryThreadGenesisTestPanel from "./memory-thread-genesis-test-panel";
 import OnboardingTestRunner from "./onboarding-test-runner";
 import SocialGenesisTestPanel from "./social-genesis-test-panel";
 
@@ -39,6 +40,7 @@ export default async function TestLabPage() {
       <CharacterDnaTestPanel />
       <SocialGenesisTestPanel />
       <InventoryGenesisTestPanel />
+      <MemoryThreadGenesisTestPanel />
     </>
   );
 }
