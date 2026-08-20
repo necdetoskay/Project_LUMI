@@ -56,12 +56,19 @@ describe("landing asset packaging", () => {
     });
   }
 
-  it("prepares assets before dev and build", () => {
+  it("prepares assets before dev and before production migration/build", () => {
     const packagePath = path.join(webRoot, "package.json");
-    const packageJson = fs.readFileSync(packagePath, "utf8");
+    const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8")) as {
+      scripts?: Record<string, string>;
+    };
     const prepare = "node scripts/prepare-landing-assets.mjs";
+    const migrate = "node scripts/vercel-production-ai-migrate.mjs";
+    const dev = packageJson.scripts?.dev ?? "";
+    const build = packageJson.scripts?.build ?? "";
 
-    expect(packageJson).toContain(`${prepare} && next dev`);
-    expect(packageJson).toContain(`${prepare} && next build --webpack`);
+    expect(dev).toBe(`${prepare} && next dev`);
+    expect(build.startsWith(`${prepare} && `)).toBe(true);
+    expect(build).toContain(`${migrate} && next build --webpack`);
+    expect(build.indexOf(prepare)).toBeLessThan(build.indexOf(migrate));
   });
 });

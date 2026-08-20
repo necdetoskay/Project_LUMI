@@ -39,6 +39,139 @@ export {
 } from "./errors";
 
 export {
+  CHARACTER_GENESIS_STATUSES,
+  GENESIS_VISIBILITIES,
+  createCharacterGenesisPackage,
+  selectCharacterGenesisPackage,
+  markCharacterGenesisCommitted,
+  buildCharacterVisibleOriginContext,
+  validateCharacterGenesisStructure,
+} from "./character-genesis";
+export type {
+  CharacterGenesisStatus,
+  GenesisVisibility,
+  GenesisProvenance,
+  GenesisOriginFact,
+  GenesisOriginQuestion,
+  GenesisOriginHook,
+  GenesisOriginState,
+  CharacterVisibleGenesisOriginContext,
+  GenesisTraitState,
+  GenesisNpcState,
+  GenesisRelationshipState,
+  GenesisSocialState,
+  GenesisInventoryItemState,
+  GenesisInventoryState,
+  GenesisMemoryState,
+  GenesisThreadStatus,
+  GenesisThreadState,
+  GenesisMemoryAndThreadState,
+  GenesisEnvironmentState,
+  CharacterGenesisSections,
+  CharacterGenesisPackage,
+  CreateCharacterGenesisPackageInput,
+  GenesisValidationIssue,
+  GenesisValidationResult,
+} from "./character-genesis";
+export {
+  validateCharacterGenesisCrossDomain,
+  buildCommittedGenesisStoryContextProjection,
+} from "./character-genesis-cross-domain";
+export type {
+  CharacterGenesisCrossDomainValidationContext,
+  CommittedGenesisStoryContextProjection,
+} from "./character-genesis-cross-domain";
+export type { GenesisDeepOriginState } from "./character-genesis-origin";
+export {
+  EXISTING_CHARACTER_MIGRATION_MODES,
+  MIGRATION_PROVENANCE_KINDS,
+  EXISTING_CHARACTER_MIGRATION_REVISION,
+  EXISTING_CHARACTER_TARGET_SCHEMA_REVISION,
+  CHARACTER_GENESIS_SECTION_KEYS,
+  auditExistingCharacterGenesis,
+  createExistingCharacterMigrationPlan,
+  detectExistingCharacterMigrationConflicts,
+  applyExistingCharacterMigrationToSandbox,
+  buildExistingCharacterMigrationCandidate,
+  createExistingCharacterRollbackManifest,
+  fingerprintMigrationSnapshot,
+} from "./existing-character-migration";
+export type {
+  ExistingCharacterMigrationMode,
+  MigrationProvenanceKind,
+  CharacterGenesisSectionKey,
+  ExistingCharacterFactAuthority,
+  ExistingCharacterCanonicalFact,
+  ExistingCharacterMigrationMarker,
+  ExistingCharacterMigrationSnapshot,
+  MigrationSectionCoverage,
+  ExistingCharacterMigrationAudit,
+  MigrationFactAssertion,
+  MigrationProposalProvenance,
+  ExistingCharacterBackfillProposal,
+  ExistingCharacterMigrationConflict,
+  ExistingCharacterMigrationPlan,
+  ExistingCharacterRollbackManifest,
+} from "./existing-character-migration";
+export {
+  ENVIRONMENT_VALIDATION_STATUSES,
+  ENVIRONMENT_EXCEPTION_SOURCE_TYPES,
+  resolveGenesisEnvironment,
+  validateGenesisEnvironment,
+  buildEnvironmentContextProjection,
+} from "./character-genesis-environment";
+export type {
+  EnvironmentValidationStatus,
+  EnvironmentExceptionSourceType,
+  EnvironmentTrend,
+  NormalizedSeasonSemantics,
+  RegionEnvironmentProfile,
+  WorldSeasonDefinition,
+  WorldCalendarDefinition,
+  WorldTemporalState,
+  EnvironmentalException,
+  LocalEnvironmentState,
+  EnvironmentBinding,
+  EnvironmentDecisionTraceEntry,
+  EnvironmentCompatibilityContext,
+  EnvironmentValidationIssue,
+  EnvironmentValidationResult,
+  ResolveEnvironmentInput,
+} from "./character-genesis-environment";
+export {
+  CHARACTER_DNA_AXES,
+  CHARACTER_DYNAMIC_AXES,
+  deriveCharacterDna,
+  createInitialCharacterTraitState,
+  updateDynamicCharacterState,
+  addLearnedCharacterModifier,
+  getEffectiveCharacterDna,
+  validateCharacterTraitState,
+} from "./character-genesis-traits";
+export type {
+  CharacterDnaAxis,
+  CharacterDynamicAxis,
+  CharacterDnaVector,
+  CharacterDynamicState,
+  CharacterTraitDirection,
+  CharacterTraitEvidence,
+  CharacterContextualTrait,
+  CharacterLearnedModifier,
+  CharacterTraitDerivationState,
+  CharacterTraitValidationIssue,
+  CharacterTraitValidationResult,
+} from "./character-genesis-traits";
+export {
+  CHARACTER_TRAIT_STRENGTH_LEVELS,
+  normalizeSemanticCharacterTraitEvidence,
+  validateCharacterTraitEvidenceReferences,
+} from "./character-genesis-trait-evidence";
+export type {
+  CharacterTraitStrengthLevel,
+  SemanticCharacterTraitEvidence,
+} from "./character-genesis-trait-evidence";
+
+export {
   WORLD_LIFECYCLE_STATUSES,
   REGION_ACCESSIBILITY_STATUSES,
   DISCOVERY_STATUSES,

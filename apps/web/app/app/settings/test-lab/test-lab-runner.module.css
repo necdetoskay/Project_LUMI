@@ -1,0 +1,388 @@
+.shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 20px 72px;
+  color: var(--on-surface);
+}
+
+.header {
+  margin-bottom: 22px;
+}
+
+.breadcrumb,
+.eyebrow {
+  margin: 0;
+  color: var(--on-surface-variant);
+}
+
+.title {
+  margin: 8px 0;
+  font-size: 34px;
+  color: var(--on-surface);
+}
+
+.intro {
+  max-width: 900px;
+  margin: 0;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+}
+
+.panel,
+.sidebar,
+.contentPanel {
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+}
+
+.panel {
+  margin-bottom: 18px;
+  padding: 20px;
+}
+
+.panel h2,
+.sidebar h2,
+.contentPanel h2,
+.promptCard h3,
+.historySection h3 {
+  margin-top: 0;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+.input,
+.textarea,
+.promptTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  font: inherit;
+}
+
+.input:focus,
+.textarea:focus,
+.promptTextarea:focus {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary-container);
+  outline-offset: 1px;
+}
+
+.details {
+  margin-top: 14px;
+}
+
+.summary {
+  cursor: pointer;
+  color: var(--on-surface-variant);
+}
+
+.textarea,
+.promptTextarea {
+  margin-top: 8px;
+  resize: vertical;
+  font-family: monospace;
+  line-height: 1.5;
+}
+
+.primaryButton,
+.secondaryButton {
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  margin-top: 16px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.secondaryButton {
+  border: 1px solid var(--outline-variant);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.muted,
+.operation,
+.runMeta {
+  color: var(--on-surface-variant);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 18px;
+  padding: 16px;
+}
+
+.sidebarHeader {
+  margin-bottom: 12px;
+}
+
+.sidebarHeader p {
+  margin-bottom: 0;
+}
+
+.phaseList,
+.candidateList,
+.runList {
+  display: grid;
+  gap: 9px;
+}
+
+.phaseButton {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  text-align: left;
+}
+
+.phaseButton:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--surface-container);
+}
+
+.phaseActive {
+  border-color: var(--primary);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.phaseDisabled {
+  background: var(--surface-container-low);
+  color: var(--outline);
+}
+
+.phaseStatus {
+  display: block;
+  margin-top: 5px;
+  color: inherit;
+  font-size: 12px;
+}
+
+.contentPanel {
+  min-width: 0;
+  padding: 20px;
+}
+
+.contentHeader,
+.promptHeader,
+.historyHeader,
+.runHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.contentHeader {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.contentHeader h2 {
+  margin-bottom: 4px;
+}
+
+.operation,
+.runMeta {
+  margin: 0;
+  font-size: 13px;
+}
+
+.runBadge,
+.selectedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.promptCard,
+.historySection {
+  margin-top: 18px;
+}
+
+.promptCard {
+  padding: 16px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  background: var(--surface-container-low);
+}
+
+.promptHeader {
+  margin-bottom: 14px;
+}
+
+.promptHeader h3,
+.historyHeader h3 {
+  margin-bottom: 4px;
+}
+
+.promptTextarea {
+  min-height: 120px;
+  background: var(--surface-container-lowest);
+}
+
+.historyHeader {
+  margin-bottom: 12px;
+}
+
+.runList {
+  gap: 14px;
+}
+
+.runCard {
+  padding: 16px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  background: var(--surface-container-low);
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.metrics span {
+  padding: 5px 9px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  font-size: 12px;
+}
+
+.runPrompt {
+  margin: 12px 0 14px;
+}
+
+.runPrompt summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.promptSnapshot {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  background: var(--surface-container-lowest);
+}
+
+.promptSnapshot pre,
+.payload {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.candidateList {
+  gap: 12px;
+}
+
+.candidate {
+  padding: 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+}
+
+.payload {
+  margin: 10px 0 12px;
+}
+
+.emptyState {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px dashed var(--outline-variant);
+  border-radius: 12px;
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+}
+
+.status {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 20px 16px 56px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .contentHeader,
+  .promptHeader,
+  .historyHeader,
+  .runHeader {
+    display: grid;
+  }
+}

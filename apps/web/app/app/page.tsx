@@ -67,12 +67,39 @@ export default async function ProtectedAppPage() {
   }
 
   return (
-    <DashboardV2Client
-      parentName={parent.displayName}
-      householdId={state.householdId}
-      childProfileId={firstProfile.id}
-      childName={firstProfile.displayName}
-      ageBand={firstProfile.ageBand}
-    />
+    <>
+      <DashboardV2Client
+        parentName={parent.displayName}
+        householdId={state.householdId}
+        childProfileId={firstProfile.id}
+        childName={firstProfile.displayName}
+        ageBand={firstProfile.ageBand}
+      />
+      <Link
+        href="/app/settings/test-lab"
+        aria-label="Test Lab'ı aç"
+        style={{
+          position: "fixed",
+          right: 24,
+          bottom: 24,
+          zIndex: 50,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "12px 16px",
+          borderRadius: 999,
+          background: "#6f4cff",
+          color: "#fff",
+          fontWeight: 700,
+          textDecoration: "none",
+          boxShadow: "0 12px 32px rgba(61, 36, 146, 0.38)",
+        }}
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">
+          science
+        </span>
+        Test Lab
+      </Link>
+    </>
   );
 }

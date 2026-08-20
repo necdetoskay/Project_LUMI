@@ -74,6 +74,19 @@ function withOptionalSourceId(
   return sourceId ? { value, sourceId } : { value };
 }
 
+function canonicalProjection(
+  context: GenerationContext,
+  key: "characterState" | "worldState" | "relevantMemories",
+): GenerationContextSourceResult {
+  const value = context.canonical?.[key] ?? null;
+  return {
+    value,
+    ...(context.canonical?.sourceRevision
+      ? { revision: context.canonical.sourceRevision }
+      : {}),
+  };
+}
+
 const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
   source("child_identity", "profiles.child-profile", "required", (context) => ({
     value: {
@@ -118,18 +131,29 @@ const DEFAULT_GENERATION_CONTEXT_SOURCES: readonly GenerationContextSource[] = [
         context.creation.cycleId,
       ),
   ),
-  source("character_state", "profiles.character-state", "canonical", () => ({
-    value: null,
-  })),
-  source("world_state", "world.current-state", "canonical", () => ({
-    value: null,
-  })),
+  source(
+    "character_state",
+    "genesis.committed-character-state",
+    "canonical",
+    (context) => canonicalProjection(context, "characterState"),
+  ),
+  source(
+    "world_state",
+    "genesis.committed-world-state",
+    "canonical",
+    (context) => canonicalProjection(context, "worldState"),
+  ),
   source("recent_story_state", "story.recent-state", "recent", () => ({
     value: null,
   })),
-  source("relevant_memories", "memory.relevant", "retrieved", () => ({
-    value: null,
-  })),
+  {
+    section: "relevant_memories",
+    source: "genesis.relevant-memory-thread-fragments",
+    sourceVersion: "v1",
+    authority: "retrieved",
+    reason: "retrieved",
+    resolve: (context) => canonicalProjection(context, "relevantMemories"),
+  },
 ];
 
 export function createGenerationContextSourceRegistry(

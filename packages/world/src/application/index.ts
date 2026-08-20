@@ -12,6 +12,36 @@ export type {
 } from "./world-bootstrap.service";
 
 export {
+  CharacterGenesisCoordinator,
+  CharacterGenesisValidationError,
+  characterGenesisCommitIdempotencyKey,
+} from "./character-genesis.service";
+export type {
+  CharacterGenesisRepositoryPort,
+  CharacterGenesisCanonicalCommitPort,
+  CharacterGenesisCanonicalCommitRequest,
+  CharacterGenesisCanonicalCommitResult,
+  CharacterGenesisValidationContextPort,
+  CommitCharacterGenesisResult,
+} from "./character-genesis.service";
+
+export {
+  ExistingCharacterMigrationCoordinator,
+  ExistingCharacterMigrationBlockedError,
+  ExistingCharacterMigrationValidationError,
+} from "./existing-character-migration.service";
+export type {
+  ExistingCharacterMigrationSourcePort,
+  ExistingCharacterMigrationRecord,
+  ExistingCharacterMigrationRepositoryPort,
+  ExistingCharacterMigrationUpgradeRequest,
+  ExistingCharacterMigrationUpgradeResult,
+  ExistingCharacterMigrationUpgradePort,
+  ExistingCharacterMigrationValidationContextPort,
+  ExistingCharacterMigrationInspection,
+} from "./existing-character-migration.service";
+
+export {
   moveCharacterToLocation,
   getCharacterCurrentLocation,
   getCharacterMovementHistory,

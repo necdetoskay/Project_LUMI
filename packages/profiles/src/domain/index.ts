@@ -135,3 +135,5 @@ export type {
   InventoryEventType,
   InventoryDomainEvent,
 } from "./inventory-events";
+export * from "./inventory-genesis";
+export * from "./memory-thread-genesis";

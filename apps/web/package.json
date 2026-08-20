@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/prepare-landing-assets.mjs && next dev",
-    "build": "node scripts/prepare-landing-assets.mjs && next build --webpack",
+    "build": "node scripts/prepare-landing-assets.mjs && node scripts/vercel-production-ai-migrate.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",

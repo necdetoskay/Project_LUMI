@@ -1,6 +1,10 @@
+# Main pushes deploy the current main SHA to Vercel production.
 name: Vercel Deploy
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       target:
@@ -51,7 +55,7 @@ jobs:
         id: target
         shell: bash
         run: |
-          if [ "${{ inputs.target }}" = "production" ]; then
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.target }}" = "production" ]; then
             echo "environment=production" >> "$GITHUB_OUTPUT"
           else
             echo "environment=preview" >> "$GITHUB_OUTPUT"
@@ -61,7 +65,7 @@ jobs:
         id: source
         shell: bash
         run: |
-          if [ "${{ inputs.target }}" = "production" ]; then
+          if [ "${{ steps.target.outputs.environment }}" = "production" ]; then
             git fetch --no-tags origin main
             deployment_ref="main"
             deployment_sha="$(git rev-parse origin/main)"
