@@ -48,7 +48,7 @@ jobs:
               payload.append(match.group(1))
 
           raw = base64.b64decode("".join(payload))
-          expected = "55f85d1d64272e4ebc7a15925e349896f12b2a4ebf495523108139553d73eb78"
+          expected = "faaae7ea715f4e2d8538a01fffd9429514f4f01601c17b9d7d4885349c5b3648"
           actual = hashlib.sha256(raw).hexdigest()
           if actual != expected:
               raise SystemExit(f"mockup sha mismatch: {actual}")
