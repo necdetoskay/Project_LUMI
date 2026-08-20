@@ -17,6 +17,7 @@ import {
   type GenerationContextSourceReason,
   type GenerationContextSourceReplayReference,
   type GenerationContextSourceResult,
+  type GenerationContextSourceTelemetry,
 } from "./generation-context-source";
 
 export interface GenerationContextCompactionEvidence {
@@ -45,6 +46,15 @@ export interface AssembledGenerationContextSection {
   estimatedTokens: number;
   value: unknown;
   provenance: GenerationContextSectionProvenance;
+  telemetry?: GenerationContextSourceTelemetry;
+}
+
+export interface GenerationContextObservability {
+  assemblyLatencyMs: number;
+  retrievalRelevanceScore: number | null;
+  retrievalSampleCount: number;
+  cacheHitRate: number | null;
+  cacheSampleCount: number;
 }
 
 export interface AssembledGenerationContext {
@@ -54,6 +64,7 @@ export interface AssembledGenerationContext {
   fingerprint: string;
   sections: readonly AssembledGenerationContextSection[];
   droppedSections: readonly GenerationContextSection[];
+  observability?: GenerationContextObservability;
 }
 
 export interface AssembleGenerationContextOptions {
@@ -178,6 +189,55 @@ function provenanceFromSource(
   };
 }
 
+function normalizeSourceTelemetry(
+  telemetry: GenerationContextSourceTelemetry | undefined,
+): GenerationContextSourceTelemetry | undefined {
+  if (!telemetry) return undefined;
+
+  const relevance =
+    typeof telemetry.relevance === "number" &&
+    Number.isFinite(telemetry.relevance)
+      ? Math.min(1, Math.max(0, telemetry.relevance))
+      : undefined;
+  const cacheStatus = telemetry.cacheStatus;
+
+  if (relevance === undefined && cacheStatus === undefined) return undefined;
+  return {
+    ...(relevance !== undefined ? { relevance } : {}),
+    ...(cacheStatus !== undefined ? { cacheStatus } : {}),
+  };
+}
+
+function aggregateObservability(
+  sections: readonly AssembledGenerationContextSection[],
+  assemblyLatencyMs: number,
+): GenerationContextObservability {
+  const retrievalRelevance = sections
+    .filter((section) => section.provenance.authority === "retrieved")
+    .map((section) => section.telemetry?.relevance)
+    .filter((value): value is number => typeof value === "number");
+  const cacheSamples = sections
+    .map((section) => section.telemetry?.cacheStatus)
+    .filter(
+      (status): status is "hit" | "miss" =>
+        status === "hit" || status === "miss",
+    );
+  const cacheHits = cacheSamples.filter((status) => status === "hit").length;
+
+  return {
+    assemblyLatencyMs: Math.max(0, assemblyLatencyMs),
+    retrievalRelevanceScore:
+      retrievalRelevance.length > 0
+        ? retrievalRelevance.reduce((sum, value) => sum + value, 0) /
+          retrievalRelevance.length
+        : null,
+    retrievalSampleCount: retrievalRelevance.length,
+    cacheHitRate:
+      cacheSamples.length > 0 ? cacheHits / cacheSamples.length : null,
+    cacheSampleCount: cacheSamples.length,
+  };
+}
+
 function applyTotalTokenBudget(
   sections: readonly AssembledGenerationContextSection[],
   maxContextTokens: number,
@@ -250,6 +310,7 @@ export function assembleGenerationContext(
   context: GenerationContext,
   options: AssembleGenerationContextOptions = {},
 ): AssembledGenerationContext {
+  const assemblyStartedAt = performance.now();
   const policy = getGenerationContextPolicy(context.profile);
   const maxContextTokens = options.maxContextTokens ?? policy.maxContextTokens;
   const sourceRegistry = createGenerationContextSourceRegistry(options.sources);
@@ -353,6 +414,9 @@ export function assembleGenerationContext(
         result,
         compactionEvidence,
       ),
+      ...(normalizeSourceTelemetry(result.telemetry)
+        ? { telemetry: normalizeSourceTelemetry(result.telemetry) }
+        : {}),
     });
   }
 
@@ -383,6 +447,10 @@ export function assembleGenerationContext(
     droppedSections: policy.sections
       .map((section) => section.section)
       .filter((section) => droppedSections.has(section)),
+    observability: aggregateObservability(
+      budgeted.sections,
+      performance.now() - assemblyStartedAt,
+    ),
   };
 }
 
