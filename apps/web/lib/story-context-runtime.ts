@@ -13,8 +13,12 @@ import {
   WorldEventRetrievalAdapter,
   createStoryGenerationContextComposer,
   type EmotionalStateItem,
+  type LongTermMemorySource,
+  type OriginPackageSource,
+  type RelevantNpcSource,
   type StoryGenerationContextComposer,
   type WorkingStoryItem,
+  type WorldSource,
 } from "@lumi/context";
 import {
   DrizzleCanonicalMemoryRepository,
@@ -36,6 +40,18 @@ export interface StoryContextRuntimeReaders {
 }
 
 /**
+ * One-shot canonical source overrides used by Character Genesis first-story
+ * handoff. Normal story composition leaves these undefined and continues to
+ * use persisted retrieval sources.
+ */
+export interface StoryContextCanonicalSourceOverrides {
+  longTermMemorySource?: LongTermMemorySource;
+  relevantNpcSource?: RelevantNpcSource;
+  worldSource?: WorldSource;
+  originPackageSource?: OriginPackageSource;
+}
+
+/**
  * Web production composition root for story-generation context.
  *
  * Persisted authorities are owned by their domain packages. Request/session
@@ -45,6 +61,7 @@ export interface StoryContextRuntimeReaders {
  */
 export function createProductionStoryContextComposer(
   readers: StoryContextRuntimeReaders,
+  overrides: StoryContextCanonicalSourceOverrides = {},
 ): StoryGenerationContextComposer {
   const memoryRepository = new DrizzleCanonicalMemoryRepository();
   const memoryRetrieval = new CanonicalMemoryRetrievalAdapter(memoryRepository);
@@ -74,10 +91,14 @@ export function createProductionStoryContextComposer(
     emotionalStateSource: new PersistedEmotionalStateSource(
       readers.readEmotionalState,
     ),
-    longTermMemorySource: new RetrievalLongTermMemorySource(memoryRetrieval),
-    relevantNpcSource: new RetrievalNpcSource(npcRetrieval),
+    longTermMemorySource:
+      overrides.longTermMemorySource ??
+      new RetrievalLongTermMemorySource(memoryRetrieval),
+    relevantNpcSource:
+      overrides.relevantNpcSource ?? new RetrievalNpcSource(npcRetrieval),
     knowledgeSource: new NoCanonicalKnowledgeSource(),
-    worldSource: new RetrievalWorldEventSource(worldRetrieval),
-    originPackageSource,
+    worldSource:
+      overrides.worldSource ?? new RetrievalWorldEventSource(worldRetrieval),
+    originPackageSource: overrides.originPackageSource ?? originPackageSource,
   });
 }
