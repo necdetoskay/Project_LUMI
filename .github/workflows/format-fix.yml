@@ -1,3 +1,4 @@
+# issue 388 formatter trigger
 name: Format Fix
 
 on:
