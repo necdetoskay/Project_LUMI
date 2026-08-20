@@ -3,6 +3,10 @@ import {
   validateCharacterTraitState,
   type CharacterTraitDerivationState,
 } from "./character-genesis-traits";
+import {
+  validateGenesisEnvironment,
+  type GenesisEnvironmentState,
+} from "./character-genesis-environment";
 
 export const CHARACTER_GENESIS_STATUSES = [
   "staged",
@@ -143,16 +147,7 @@ export interface GenesisMemoryAndThreadState {
   threads: GenesisThreadState[];
 }
 
-export interface GenesisEnvironmentState {
-  worldId?: string;
-  regionId?: string;
-  homeId?: string;
-  habitat: string;
-  climate: string;
-  season: string;
-  weather?: string;
-  dayPhase?: string;
-}
+export type { GenesisEnvironmentState } from "./character-genesis-environment";
 
 export interface CharacterGenesisSections {
   origin?: GenesisOriginState;
@@ -533,6 +528,20 @@ export function validateCharacterGenesisStructure(
           severity: "error",
         });
       }
+    }
+  }
+
+  if (candidate.sections.environment) {
+    const environmentValidation = validateGenesisEnvironment(
+      candidate.sections.environment,
+    );
+    for (const issue of environmentValidation.issues) {
+      issues.push({
+        code: issue.code,
+        message: issue.message,
+        path: "sections.environment",
+        severity: issue.severity,
+      });
     }
   }
 
