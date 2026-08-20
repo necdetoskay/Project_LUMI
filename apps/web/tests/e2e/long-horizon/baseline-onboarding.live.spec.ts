@@ -477,10 +477,10 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
         ).toBeVisible({ timeout: 60_000 });
         await childAreaLink.click();
 
-        const profilesLink = page.getByRole("link", {
-          name: "Çocuklar",
-          exact: true,
-        });
+        const profilesLink = page
+          .locator('a[href="/app/profiles"]')
+          .filter({ hasText: "LUMI" })
+          .first();
         await expect(profilesLink).toBeVisible({ timeout: 60_000 });
         await profilesLink.click();
         await expect(page).toHaveURL(/\/app\/profiles\/?$/, {
