@@ -332,13 +332,12 @@ export function toAiGenerationContextInspectorView(
   const retrievalSections = sections.filter(
     (section) => section.authority === "retrieved",
   );
-  const retrievalEvidenceSectionCount = retrievalSections.filter(
-    (section) =>
-      Boolean(
-        section.source?.trim() &&
-          section.sourceVersion?.trim() &&
-          section.reason?.trim(),
-      ),
+  const retrievalEvidenceSectionCount = retrievalSections.filter((section) =>
+    Boolean(
+      section.source?.trim() &&
+        section.sourceVersion?.trim() &&
+        section.reason?.trim(),
+    ),
   ).length;
 
   return {
