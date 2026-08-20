@@ -67,6 +67,13 @@ export default async function TestLabPage() {
         actionLabel="Production first-story context oluştur"
       />
       <GenesisQualificationPanel />
+      <GenesisDerivedStagePanel
+        phaseId="character_genesis_existing_character_migration"
+        endpoint="/api/settings/test-lab/genesis/migration"
+        title="Existing Character Migration / Safe Backfill"
+        description="Tam Genesis sandbox state'ini olgun bir legacy karakter kopyası olarak replay eder; mevcut origin/history otoritesini koruyarak coverage, provenance, conflict, before/after, rollback preview ve explicit-upgrade readiness kanıtlarını üretir. Production canonical state'e yazmaz."
+        actionLabel="Safe migration qualification çalıştır"
+      />
     </>
   );
 }
