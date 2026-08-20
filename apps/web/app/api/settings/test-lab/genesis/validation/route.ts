@@ -31,7 +31,10 @@ export const POST = observeHandler(async (request: Request) => {
       const branchId = requiredString(body.branchId, "branchId");
       const parentStateId = requiredString(body.parentStateId, "parentStateId");
       const householdId = requiredString(body.householdId, "householdId");
-      const childProfileId = requiredString(body.childProfileId, "childProfileId");
+      const childProfileId = requiredString(
+        body.childProfileId,
+        "childProfileId",
+      );
 
       const session = await repository.getSession(sessionId);
       if (!session) throw new Error(`TEST_LAB_SESSION_NOT_FOUND:${sessionId}`);
@@ -174,9 +177,10 @@ function calculateFutureStoryYieldSignals(sections: CharacterGenesisSections) {
   const relationships = sections.social?.relationships ?? [];
   const items = sections.inventory?.items ?? [];
   const memories = sections.memoryAndThreads?.memories ?? [];
-  const threads = sections.memoryAndThreads?.threads.filter(
-    (thread) => thread.status !== "resolved" && thread.status !== "abandoned",
-  ) ?? [];
+  const threads =
+    sections.memoryAndThreads?.threads.filter(
+      (thread) => thread.status !== "resolved" && thread.status !== "abandoned",
+    ) ?? [];
   const environmentFeatures =
     sections.environment?.regionProfile.environmentalFeatures ?? [];
 
