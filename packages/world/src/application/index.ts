@@ -21,6 +21,7 @@ export type {
   CharacterGenesisCanonicalCommitPort,
   CharacterGenesisCanonicalCommitRequest,
   CharacterGenesisCanonicalCommitResult,
+  CharacterGenesisValidationContextPort,
   CommitCharacterGenesisResult,
 } from "./character-genesis.service";
 
