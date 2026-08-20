@@ -39,6 +39,17 @@ function environment(overrides: Partial<GenesisEnvironmentState> = {}): GenesisE
             vegetationPhase: "senescence",
           },
         },
+        {
+          id: "longnight",
+          displayName: "Longnight",
+          order: 2,
+          semantics: {
+            temperatureTrend: "strongly_decreasing",
+            precipitationTrend: "stable",
+            daylightTrend: "strongly_decreasing",
+            vegetationPhase: "dormant",
+          },
+        },
       ],
     },
     temporal: {
@@ -59,11 +70,11 @@ function environment(overrides: Partial<GenesisEnvironmentState> = {}): GenesisE
 }
 
 describe("character genesis environment", () => {
-  it("prefers world lore over real-world calendar", () => {
+  it("prefers world lore over real-world calendar deterministically", () => {
     const realWorld = environment({
       temporal: {
         calendarId: "calendar-1",
-        seasonId: "leafwhisper",
+        seasonId: "longnight",
         source: "real_world_soft",
       },
     });
@@ -75,15 +86,19 @@ describe("character genesis environment", () => {
       },
     });
 
-    const resolved = resolveGenesisEnvironment({
+    const input = {
       candidates: [
-        { source: "real_world_calendar", state: realWorld },
-        { source: "world_lore", state: lore },
+        { source: "real_world_calendar" as const, state: realWorld },
+        { source: "world_lore" as const, state: lore },
       ],
-    });
+    };
+    const first = resolveGenesisEnvironment(input);
+    const second = resolveGenesisEnvironment(input);
 
-    expect(resolved.temporal.source).toBe("world_lore");
-    expect(resolved.decisionTrace[0]).toMatchObject({
+    expect(first).toEqual(second);
+    expect(first.temporal.source).toBe("world_lore");
+    expect(first.temporal.seasonId).toBe("leafwhisper");
+    expect(first.decisionTrace[0]).toMatchObject({
       signal: "world_lore",
       accepted: true,
     });
@@ -95,6 +110,21 @@ describe("character genesis environment", () => {
     const projection = buildEnvironmentContextProjection(environment());
     expect(projection.temporal.seasonName).toBe("Leafwhisper");
     expect(projection.temporal.semantics?.temperatureTrend).toBe("decreasing");
+  });
+
+  it("rejects an active season that is not defined by the world calendar", () => {
+    const state = environment({
+      temporal: {
+        calendarId: "calendar-1",
+        seasonId: "invented-season",
+        source: "seeded_default",
+      },
+    });
+    const result = validateGenesisEnvironment(state);
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "ENVIRONMENT_UNKNOWN_SEASON",
+    );
   });
 
   it("rejects tropical heavy snow without an exception", () => {
@@ -149,6 +179,21 @@ describe("character genesis environment", () => {
     );
   });
 
+  it("rejects environmental exceptions without explanation", () => {
+    const state = environment({
+      local: {
+        weather: "light rain",
+        localConditions: [],
+        exceptions: [{ sourceType: "magic", explanation: "" }],
+      },
+    });
+    const result = validateGenesisEnvironment(state);
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "ENVIRONMENT_EXCEPTION_EXPLANATION_REQUIRED",
+    );
+  });
+
   it("rejects conflicting canonical home bindings", () => {
     const result = validateGenesisEnvironment(environment(), {
       expectedHomeId: "different-home",
@@ -165,5 +210,41 @@ describe("character genesis environment", () => {
     expect(projection.stable.habitat).toBe("temperate forest");
     expect(projection.temporal.seasonId).toBe("leafwhisper");
     expect(projection.ephemeral.weather).toBe("light rain");
+  });
+
+  it("allows season progression without mutating home habitat or climate", () => {
+    const storyOne = buildEnvironmentContextProjection(environment());
+    const storyTwo = buildEnvironmentContextProjection(
+      environment({
+        temporal: {
+          calendarId: "calendar-1",
+          seasonId: "longnight",
+          seasonPhase: "early",
+          source: "universe_calendar",
+        },
+      }),
+    );
+
+    expect(storyTwo.stable).toEqual(storyOne.stable);
+    expect(storyTwo.temporal.seasonId).toBe("longnight");
+    expect(storyOne.temporal.seasonId).toBe("leafwhisper");
+  });
+
+  it("allows weather and day phase changes without mutating stable environment", () => {
+    const storyOne = buildEnvironmentContextProjection(environment());
+    const storyTwo = buildEnvironmentContextProjection(
+      environment({
+        local: {
+          weather: "clear",
+          dayPhase: "night",
+          localConditions: ["paths drying"],
+          exceptions: [],
+        },
+      }),
+    );
+
+    expect(storyTwo.stable).toEqual(storyOne.stable);
+    expect(storyTwo.ephemeral.weather).toBe("clear");
+    expect(storyTwo.ephemeral.dayPhase).toBe("night");
   });
 });
