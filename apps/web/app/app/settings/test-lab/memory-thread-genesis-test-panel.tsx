@@ -115,7 +115,9 @@ export default function MemoryThreadGenesisTestPanel() {
   async function previewPrompt() {
     const context = sandboxContext();
     if (!context.sessionId || !context.branchId || !context.parentStateId) {
-      setMessage("Önce Inventory Genesis dahil önceki sandbox aşamalarını tamamlayın.");
+      setMessage(
+        "Önce Inventory Genesis dahil önceki sandbox aşamalarını tamamlayın.",
+      );
       return;
     }
     setBusy(true);
@@ -136,7 +138,9 @@ export default function MemoryThreadGenesisTestPanel() {
         system: payload.data.renderedPrompt.system,
         user: payload.data.renderedPrompt.user,
       });
-      setMessage("Memory Seeds & Origin Threads production promptu hazırlandı.");
+      setMessage(
+        "Memory Seeds & Origin Threads production promptu hazırlandı.",
+      );
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Prompt hazırlanamadı.",
@@ -216,7 +220,10 @@ export default function MemoryThreadGenesisTestPanel() {
   }
 
   return (
-    <section className={styles.shell} aria-label="Memory Seeds Origin Threads Test Lab">
+    <section
+      className={styles.shell}
+      aria-label="Memory Seeds Origin Threads Test Lab"
+    >
       <section className={styles.panel}>
         <p className={styles.eyebrow}>Character Genesis</p>
         <h2>Memory Seeds & Origin Threads</h2>
@@ -309,7 +316,9 @@ export default function MemoryThreadGenesisTestPanel() {
             </button>
           </div>
           {runs.length === 0 ? (
-            <div className={styles.emptyState}>Henüz Memory/Thread runı yok.</div>
+            <div className={styles.emptyState}>
+              Henüz Memory/Thread runı yok.
+            </div>
           ) : (
             <div className={styles.runList}>
               {[...runs].reverse().map((entry, index) => {
@@ -357,7 +366,9 @@ export default function MemoryThreadGenesisTestPanel() {
                           key={candidate.id}
                           className={styles.candidate}
                         >
-                          <strong>Memory/Thread aday {candidateIndex + 1}</strong>
+                          <strong>
+                            Memory/Thread aday {candidateIndex + 1}
+                          </strong>
                           <pre className={styles.payload}>
                             {JSON.stringify(candidate.payload, null, 2)}
                           </pre>

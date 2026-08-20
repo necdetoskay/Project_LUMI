@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  validateMemoryThreadGenesisSuggestion,
-} from "./memory-thread-genesis.service";
+import { validateMemoryThreadGenesisSuggestion } from "./memory-thread-genesis.service";
 import type { MemoryThreadGenesisSuggestion } from "../domain/memory-thread-genesis";
 
 function baseSuggestion(): MemoryThreadGenesisSuggestion {

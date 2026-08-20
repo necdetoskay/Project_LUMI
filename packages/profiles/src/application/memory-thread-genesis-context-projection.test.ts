@@ -154,7 +154,9 @@ describe("Memory Thread Genesis context projection", () => {
         ],
       },
     });
-    const threadA = manifest.threads.find((thread) => thread.key === "thread-a")!;
+    const threadA = manifest.threads.find(
+      (thread) => thread.key === "thread-a",
+    )!;
     const projection = projectMemoryThreadGenesisContext(manifest, [
       threadA.candidateId,
       threadA.candidateId,

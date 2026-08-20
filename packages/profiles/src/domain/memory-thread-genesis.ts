@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
-export const MEMORY_THREAD_GENESIS_REVISION = "memory-thread-genesis.v1" as const;
+export const MEMORY_THREAD_GENESIS_REVISION =
+  "memory-thread-genesis.v1" as const;
 
 export const MEMORY_SEED_KINDS = [
   "experience",
@@ -26,7 +27,8 @@ export const ORIGIN_THREAD_VISIBILITIES = [
   "unknown_to_character",
   "system_only",
 ] as const;
-export type OriginThreadVisibility = (typeof ORIGIN_THREAD_VISIBILITIES)[number];
+export type OriginThreadVisibility =
+  (typeof ORIGIN_THREAD_VISIBILITIES)[number];
 
 export const ORIGIN_THREAD_STATUSES = [
   "dormant",
@@ -38,7 +40,10 @@ export const ORIGIN_THREAD_STATUSES = [
 ] as const;
 export type OriginThreadStatus = (typeof ORIGIN_THREAD_STATUSES)[number];
 
-export const ORIGIN_THREAD_INITIAL_STATUSES = ["dormant", "unresolved"] as const;
+export const ORIGIN_THREAD_INITIAL_STATUSES = [
+  "dormant",
+  "unresolved",
+] as const;
 export type OriginThreadInitialStatus =
   (typeof ORIGIN_THREAD_INITIAL_STATUSES)[number];
 
@@ -393,7 +398,10 @@ export function validateMemoryThreadGenesisManifest(input: {
   const issues: MemoryThreadGenesisValidationIssue[] = [];
   const refs = materializeReferenceSets(input.references);
 
-  if (input.manifest.memories.length < 3 || input.manifest.memories.length > 5) {
+  if (
+    input.manifest.memories.length < 3 ||
+    input.manifest.memories.length > 5
+  ) {
     issues.push({
       code: "MEMORY_GENESIS_COUNT_OUT_OF_RANGE",
       message: "Memory Genesis must contain 3-5 meaningful memory seeds",
@@ -424,7 +432,11 @@ export function validateMemoryThreadGenesisManifest(input: {
   }
 
   for (const thread of input.manifest.threads) {
-    if (!ORIGIN_THREAD_INITIAL_STATUSES.includes(thread.status as OriginThreadInitialStatus)) {
+    if (
+      !ORIGIN_THREAD_INITIAL_STATUSES.includes(
+        thread.status as OriginThreadInitialStatus,
+      )
+    ) {
       issues.push({
         code: "ORIGIN_THREAD_INVALID_INITIAL_STATUS",
         message: `${thread.candidateId} must start dormant or unresolved`,
@@ -505,10 +517,15 @@ export function inspectMemoryThreadQuality(
     })),
   ];
   const duplicatePairs: MemoryThreadQualityInspection["duplicatePairs"] = [];
-  const contradictionCandidates: MemoryThreadQualityInspection["contradictionCandidates"] = [];
+  const contradictionCandidates: MemoryThreadQualityInspection["contradictionCandidates"] =
+    [];
 
   for (let leftIndex = 0; leftIndex < entries.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < entries.length; rightIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < entries.length;
+      rightIndex += 1
+    ) {
       const left = entries[leftIndex];
       const right = entries[rightIndex];
       if (!left || !right) continue;
@@ -738,7 +755,17 @@ function tokenSet(value: string): Set<string> {
   );
 }
 
-const NEGATIONS = new Set(["not", "never", "none", "değil", "degil", "asla", "yok", "hiç", "hic"]);
+const NEGATIONS = new Set([
+  "not",
+  "never",
+  "none",
+  "değil",
+  "degil",
+  "asla",
+  "yok",
+  "hiç",
+  "hic",
+]);
 
 function containsNegation(value: string): boolean {
   return [...tokenSet(value)].some((token) => NEGATIONS.has(token));

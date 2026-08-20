@@ -17,7 +17,8 @@ function suggestion(): MemoryThreadGenesisSuggestion {
     memories: [
       {
         key: "storm-path",
-        summary: "Miro once lost the path during a storm and found the bridge lights.",
+        summary:
+          "Miro once lost the path during a storm and found the bridge lights.",
         kind: "experience",
         visibility: "known_to_character",
         originFactIds: ["fact-storm"],
@@ -43,7 +44,8 @@ function suggestion(): MemoryThreadGenesisSuggestion {
       },
       {
         key: "river-friend",
-        summary: "Miro first met Lina while collecting smooth stones by the river.",
+        summary:
+          "Miro first met Lina while collecting smooth stones by the river.",
         kind: "experience",
         visibility: "user_visible",
         originFactIds: ["fact-lina"],
@@ -58,7 +60,8 @@ function suggestion(): MemoryThreadGenesisSuggestion {
     threads: [
       {
         key: "compass-north",
-        summary: "Why does the old compass sometimes point toward the northern mountains?",
+        summary:
+          "Why does the old compass sometimes point toward the northern mountains?",
         visibility: "known_to_character",
         initialStatus: "unresolved",
         storyPotential: "high",
@@ -74,7 +77,8 @@ function suggestion(): MemoryThreadGenesisSuggestion {
       },
       {
         key: "caregiver-secret",
-        summary: "The system knows there is a hidden reason the northern forest is forbidden.",
+        summary:
+          "The system knows there is a hidden reason the northern forest is forbidden.",
         visibility: "system_only",
         initialStatus: "dormant",
         storyPotential: "medium",
@@ -139,12 +143,20 @@ describe("MemoryThreadGenesis", () => {
       seed: "seed-1",
       suggestion: suggestion(),
     });
-    const issues = validateMemoryThreadGenesisManifest({ manifest, references });
+    const issues = validateMemoryThreadGenesisManifest({
+      manifest,
+      references,
+    });
     expect(issues.filter((issue) => issue.severity === "error")).toEqual([]);
 
     manifest.memories[0]!.relatedNpcIds = ["missing-npc"];
-    const broken = validateMemoryThreadGenesisManifest({ manifest, references });
-    expect(broken.some((issue) => issue.code === "MEMORY_THREAD_NPC_REF_MISSING")).toBe(true);
+    const broken = validateMemoryThreadGenesisManifest({
+      manifest,
+      references,
+    });
+    expect(
+      broken.some((issue) => issue.code === "MEMORY_THREAD_NPC_REF_MISSING"),
+    ).toBe(true);
   });
 
   it("throttles repeated thread use without making the thread mandatory", () => {
@@ -168,10 +180,12 @@ describe("MemoryThreadGenesis", () => {
       usedAt: "2026-08-20T00:00:00.000Z",
     });
     expect(used.usage.activationCount).toBe(1);
-    expect(recordOriginThreadUsage(used, {
-      storyId: "story-1",
-      usedAt: "2026-08-20T00:05:00.000Z",
-    })).toEqual(used);
+    expect(
+      recordOriginThreadUsage(used, {
+        storyId: "story-1",
+        usedAt: "2026-08-20T00:05:00.000Z",
+      }),
+    ).toEqual(used);
   });
 
   it("updates thread resolution from story outcome evidence and preserves history", () => {

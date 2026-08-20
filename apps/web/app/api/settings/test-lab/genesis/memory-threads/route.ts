@@ -86,7 +86,9 @@ export const POST = observeHandler(async (request: Request) => {
         return NextResponse.json({ data: preview });
       }
       if (action !== "run") {
-        throw new Error(`TEST_LAB_MEMORY_THREAD_GENESIS_UNKNOWN_ACTION:${action}`);
+        throw new Error(
+          `TEST_LAB_MEMORY_THREAD_GENESIS_UNKNOWN_ACTION:${action}`,
+        );
       }
 
       const generated = await generateMemoryThreadGenesis(
@@ -131,9 +133,10 @@ export const POST = observeHandler(async (request: Request) => {
             },
             quality,
             visibilityInspection: {
-              characterVisibleThreadIds: projection.characterVisible.threads.map(
-                (thread) => thread.candidateId,
-              ),
+              characterVisibleThreadIds:
+                projection.characterVisible.threads.map(
+                  (thread) => thread.candidateId,
+                ),
               hiddenPlannerThreadIds: projection.planner.threads
                 .map((entry) => entry.thread)
                 .filter(
@@ -224,7 +227,9 @@ function buildMemoryThreadStateDiff(
   const previousMemories = Array.isArray(previous.memories)
     ? previous.memories
     : [];
-  const previousThreads = Array.isArray(previous.threads) ? previous.threads : [];
+  const previousThreads = Array.isArray(previous.threads)
+    ? previous.threads
+    : [];
   return {
     memoryCountBefore: previousMemories.length,
     memoryCountAfter: manifest.memories.length,
