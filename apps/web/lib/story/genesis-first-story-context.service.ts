@@ -69,11 +69,12 @@ export function buildGenesisCanonicalSourceOverrides(
         ...(projection.characterState.origin.summary
           ? { startingHome: projection.characterState.origin.summary }
           : {}),
-        ...(npcNames.length > 0 ? { nearbyNpcSeeds: npcNames.slice(0, 6) } : {}),
+        ...(npcNames.length > 0
+          ? { nearbyNpcSeeds: npcNames.slice(0, 6) }
+          : {}),
         ...(projection.relevantMemories.storyHooks[0]?.summary
           ? {
-              firstMystery:
-                projection.relevantMemories.storyHooks[0].summary,
+              firstMystery: projection.relevantMemories.storyHooks[0].summary,
             }
           : {}),
       };

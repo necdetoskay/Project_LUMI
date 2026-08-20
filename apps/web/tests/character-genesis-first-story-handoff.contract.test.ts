@@ -45,7 +45,9 @@ describe("Character Genesis first-story production handoff contract", () => {
     expect(handoff).toContain("projection.relevantMemories.storyHooks");
     expect(handoff).toContain("projection.characterState.social.npcs");
     expect(handoff).toContain("projection.worldState.stable");
-    expect(domainProjection).toContain("buildCharacterVisibleOriginContext(origin)");
+    expect(domainProjection).toContain(
+      "buildCharacterVisibleOriginContext(origin)",
+    );
     expect(domainProjection).not.toContain("narrative: origin.narrative");
   });
 });
