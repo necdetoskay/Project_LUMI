@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
 
-const ROUTE = new URL(
-  "../app/api/settings/test-lab/genesis/migration/route.ts",
-  import.meta.url,
+const root = resolve(process.cwd());
+const ROUTE = resolve(
+  root,
+  "app/api/settings/test-lab/genesis/migration/route.ts",
 );
-const PAGE = new URL("../app/app/settings/test-lab/page.tsx", import.meta.url);
+const PAGE = resolve(root, "app/app/settings/test-lab/page.tsx");
 
 describe("existing-character migration Test Lab contract", () => {
   it("reuses the canonical migration policy and never mutates production state", async () => {
