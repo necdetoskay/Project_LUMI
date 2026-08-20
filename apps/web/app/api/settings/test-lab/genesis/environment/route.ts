@@ -272,17 +272,14 @@ function readCompatibilityContext(parentState: JsonObject) {
   const originSummary = optionalString(origin.summary);
   const existingEnvironment = asRecord(sections.environment);
   const binding = asRecord(existingEnvironment.binding);
+  const expectedWorldId = optionalString(binding.worldId);
+  const expectedRegionId = optionalString(binding.regionId);
+  const expectedHomeId = optionalString(binding.homeId);
   return {
     ...(originSummary ? { canonicalOriginHomeText: originSummary } : {}),
-    ...(optionalString(binding.worldId)
-      ? { expectedWorldId: optionalString(binding.worldId) }
-      : {}),
-    ...(optionalString(binding.regionId)
-      ? { expectedRegionId: optionalString(binding.regionId) }
-      : {}),
-    ...(optionalString(binding.homeId)
-      ? { expectedHomeId: optionalString(binding.homeId) }
-      : {}),
+    ...(expectedWorldId ? { expectedWorldId } : {}),
+    ...(expectedRegionId ? { expectedRegionId } : {}),
+    ...(expectedHomeId ? { expectedHomeId } : {}),
   };
 }
 
