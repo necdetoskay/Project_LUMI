@@ -26,6 +26,22 @@ export type {
 } from "./character-genesis.service";
 
 export {
+  ExistingCharacterMigrationCoordinator,
+  ExistingCharacterMigrationBlockedError,
+  ExistingCharacterMigrationValidationError,
+} from "./existing-character-migration.service";
+export type {
+  ExistingCharacterMigrationSourcePort,
+  ExistingCharacterMigrationRecord,
+  ExistingCharacterMigrationRepositoryPort,
+  ExistingCharacterMigrationUpgradeRequest,
+  ExistingCharacterMigrationUpgradeResult,
+  ExistingCharacterMigrationUpgradePort,
+  ExistingCharacterMigrationValidationContextPort,
+  ExistingCharacterMigrationInspection,
+} from "./existing-character-migration.service";
+
+export {
   moveCharacterToLocation,
   getCharacterCurrentLocation,
   getCharacterMovementHistory,
