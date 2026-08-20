@@ -21,6 +21,7 @@ export * from "./application/inventory-genesis-prompt-bootstrap.service";
 export * from "./application/inventory-genesis-context-projection";
 export * from "./application/memory-thread-genesis.service";
 export * from "./application/memory-thread-genesis-context-projection";
+export * from "./application/environment-genesis.service";
 export * from "./application/living-world-bootstrap.service";
 export * from "./application/living-world-bootstrap-manifest.store";
 export * from "./application/living-world-bootstrap-profile-materializer.service";
