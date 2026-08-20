@@ -12,15 +12,15 @@ describe("Character Genesis qualification Test Lab contract", () => {
     );
 
     const required = [
-      "DeepOriginTestPanel",
-      "character_genesis_origin_structure",
-      "CharacterDnaTestPanel",
-      "SocialGenesisTestPanel",
-      "InventoryGenesisTestPanel",
-      "EnvironmentGenesisTestPanel",
-      "character_genesis_validation",
-      "character_genesis_first_story_context",
-      "GenesisQualificationPanel",
+      "<DeepOriginTestPanel",
+      'phaseId="character_genesis_origin_structure"',
+      "<CharacterDnaTestPanel",
+      "<SocialGenesisTestPanel",
+      "<InventoryGenesisTestPanel",
+      "<EnvironmentGenesisTestPanel",
+      'phaseId="character_genesis_validation"',
+      'phaseId="character_genesis_first_story_context"',
+      "<GenesisQualificationPanel",
     ];
     let previous = -1;
     for (const marker of required) {
