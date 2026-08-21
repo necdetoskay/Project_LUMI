@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
+import { runLivingWorldBootstrapForCharacter } from "@/lib/character-onboarding/living-world-bootstrap.service";
 import {
   archiveCharacter,
   getCharacterById,
@@ -97,6 +98,98 @@ export const GET = observeHandler(
       }
     });
   },
+  "/api/characters/{id}",
+);
+
+export const POST = observeHandler(
+  (request: Request, ctx: { params: Promise<{ id: string }> }) =>
+    withParent(async (parent) => {
+      const { searchParams } = new URL(request.url);
+      const householdId = searchParams.get("householdId");
+      const bootstrap = searchParams.get("bootstrap");
+      const { id } = await ctx.params;
+
+      if (!householdId) {
+        return NextResponse.json(
+          {
+            error: "VALIDATION_ERROR",
+            message: "householdId query parameter is required",
+          },
+          { status: 400 },
+        );
+      }
+      if (bootstrap !== "retry") {
+        return NextResponse.json(
+          {
+            error: "VALIDATION_ERROR",
+            message: "bootstrap=retry query parameter is required",
+          },
+          { status: 400 },
+        );
+      }
+
+      try {
+        const character = await getCharacterById(parent.id, householdId, id);
+        if (!character) {
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
+        }
+        const foundation = await getCharacterFoundationByCharacterId(id);
+        if (!foundation?.bootstrapManifest) {
+          return NextResponse.json(
+            {
+              error: "BOOTSTRAP_MANIFEST_MISSING",
+              message: "Living World bootstrap manifest is required",
+            },
+            { status: 409 },
+          );
+        }
+
+        const result = await runLivingWorldBootstrapForCharacter(id);
+        const materializedByKind = result.manifest.materialized.reduce<
+          Record<string, number>
+        >((counts, ref) => {
+          counts[ref.kind] = (counts[ref.kind] ?? 0) + 1;
+          return counts;
+        }, {});
+
+        return NextResponse.json({
+          characterId: id,
+          bootstrap: {
+            status: result.manifest.status,
+            idempotencyKey: result.manifest.idempotencyKey,
+            worldId: result.manifest.worldId,
+            materializedCount: result.manifest.materialized.length,
+            materializedByKind,
+            updatedAt: result.manifest.updatedAt,
+          },
+        });
+      } catch (error) {
+        const err = error as Error & { code?: string };
+        const message = err.message ?? "Unknown error";
+        if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
+          return NextResponse.json(
+            { error: "NOT_FOUND", message: "Character not found" },
+            { status: 404 },
+          );
+        }
+        if (
+          err.name === "AuthorizationError" ||
+          message.includes("not a member")
+        ) {
+          return NextResponse.json(
+            { error: "FORBIDDEN", message },
+            { status: 403 },
+          );
+        }
+        return NextResponse.json(
+          { error: "BOOTSTRAP_RETRY_FAILED", message },
+          { status: 500 },
+        );
+      }
+    }),
   "/api/characters/{id}",
 );
 
