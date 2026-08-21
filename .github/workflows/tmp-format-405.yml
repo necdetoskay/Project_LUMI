@@ -1,0 +1,43 @@
+name: Temporary PR 405 Formatter
+
+on:
+  push:
+    branches:
+      - fix/250-production-character-foundation-migration
+    paths:
+      - .github/workflows/tmp-format-405.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/250-production-character-foundation-migration
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply canonical Prettier output and remove formatter
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec prettier --write apps/web/scripts/vercel-production-character-foundation-migrate.mjs
+          git rm .github/workflows/tmp-format-405.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/scripts/vercel-production-character-foundation-migrate.mjs
+          git commit -m "style(genesis): apply canonical Prettier output"
+          git push origin HEAD:fix/250-production-character-foundation-migration
