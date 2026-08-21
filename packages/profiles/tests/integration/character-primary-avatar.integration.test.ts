@@ -46,8 +46,8 @@ afterAll(async () => {
 
 const itIfDb = destructiveTestsEnabled ? it : it.skip;
 
-describe("DrizzleCharacterRepository primary avatar selection", () => {
-  itIfDb("ignores an older NPC for the same child profile", async () => {
+describe("DrizzleCharacterRepository child-avatar read contract", () => {
+  itIfDb("keeps primary-avatar reads isolated while preserving polymorphic NPC reads", async () => {
     const householdId = crypto.randomUUID();
     const childProfileId = crypto.randomUUID();
     const npcId = crypto.randomUUID();
@@ -133,12 +133,48 @@ describe("DrizzleCharacterRepository primary avatar selection", () => {
     );
 
     const repository = new DrizzleCharacterRepository(db! as never);
-    const selected = await repository.findByChildProfile(
+
+    const explicitPrimary = await repository.findPrimaryChildAvatarByChildProfile(
       childProfileId,
       householdId,
     );
+    expect(explicitPrimary?.id).toBe(avatarId);
+    expect(explicitPrimary?.characterSubtype).toBe("child_avatar");
 
-    expect(selected?.id).toBe(avatarId);
-    expect(selected?.characterSubtype).toBe("child_avatar");
+    const compatibilityPrimary = await repository.findByChildProfile(
+      childProfileId,
+      householdId,
+    );
+    expect(compatibilityPrimary?.id).toBe(avatarId);
+    expect(compatibilityPrimary?.characterSubtype).toBe("child_avatar");
+
+    const genericNpc = await repository.findById(npcId, householdId);
+    expect(genericNpc?.id).toBe(npcId);
+    expect(genericNpc?.characterSubtype).toBe("npc");
+
+    const avatarOnlyNpc = await repository.findChildAvatarById(
+      npcId,
+      householdId,
+    );
+    expect(avatarOnlyNpc).toBeNull();
+
+    const avatarById = await repository.findChildAvatarById(
+      avatarId,
+      householdId,
+    );
+    expect(avatarById?.id).toBe(avatarId);
+    expect(avatarById?.characterSubtype).toBe("child_avatar");
+
+    const allCharacters = await repository.listByHousehold(householdId);
+    expect(allCharacters.map((record) => record.id)).toEqual([
+      npcId,
+      avatarId,
+    ]);
+
+    const childAvatars = await repository.listChildAvatarsByHousehold(
+      householdId,
+    );
+    expect(childAvatars.map((record) => record.id)).toEqual([avatarId]);
+    expect(childAvatars.every((record) => record.characterSubtype === "child_avatar")).toBe(true);
   });
 });
