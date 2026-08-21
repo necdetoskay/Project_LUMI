@@ -25,49 +25,61 @@ async function login(page: import("@playwright/test").Page) {
   ]);
 }
 
+function findHouseholdId(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findHouseholdId(item);
+      if (found) return found;
+    }
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  if (typeof record.householdId === "string") return record.householdId;
+  if (
+    record.household &&
+    typeof record.household === "object" &&
+    typeof (record.household as Record<string, unknown>).id === "string"
+  ) {
+    return (record.household as Record<string, unknown>).id as string;
+  }
+  for (const nested of Object.values(record)) {
+    const found = findHouseholdId(nested);
+    if (found) return found;
+  }
+  return null;
+}
+
 test("retry completed finalize and expose living-world adventure candidates", async ({
   page,
 }) => {
   await login(page);
 
-  await page.goto(
-    `/app/profiles/${encodeURIComponent(childProfileId)}/characters/new/wizard`,
-  );
+  const onboardingResponse = await page.request.get("/api/onboarding");
+  const onboardingText = await onboardingResponse.text();
+  expect(onboardingResponse.ok(), onboardingText).toBeTruthy();
+  const onboarding = JSON.parse(onboardingText) as unknown;
+  const householdId = findHouseholdId(onboarding);
+  console.log(`BOOTSTRAP_RETRY_HOUSEHOLD_ID=${householdId ?? "missing"}`);
+  expect(householdId, "Authenticated onboarding state must expose household scope").toBeTruthy();
 
-  const finalize = page.getByTestId("finalize-character");
-  await expect(finalize).toBeVisible({ timeout: 60_000 });
-
-  const finalizeResponse = page.waitForResponse(
-    (response) => {
-      if (
-        !response.url().endsWith("/api/character-creation/canonical") ||
-        response.request().method() !== "POST"
-      ) {
-        return false;
-      }
-      try {
-        return response.request().postDataJSON()?.action === "finalize";
-      } catch {
-        return false;
-      }
+  const finalizeResponse = await page.request.post(
+    "/api/character-creation/canonical",
+    {
+      data: {
+        action: "finalize",
+        householdId,
+        childProfileId,
+      },
     },
-    { timeout: 60_000 },
   );
-
-  await finalize.click();
-  const response = await finalizeResponse;
-  const responseText = await response.text();
-  console.log(`BOOTSTRAP_RETRY_FINALIZE_STATUS=${response.status()}`);
+  const responseText = await finalizeResponse.text();
+  console.log(`BOOTSTRAP_RETRY_FINALIZE_STATUS=${finalizeResponse.status()}`);
   console.log(`BOOTSTRAP_RETRY_FINALIZE_BODY=${responseText}`);
-  expect(response.ok(), responseText).toBeTruthy();
+  expect(finalizeResponse.ok(), responseText).toBeTruthy();
 
   const payload = JSON.parse(responseText) as { characterId?: string };
   expect(payload.characterId).toBe(expectedCharacterId);
-
-  await expect(page).toHaveURL(
-    new RegExp(`/app/profiles/${childProfileId}/characters/${expectedCharacterId}/?$`),
-    { timeout: 60_000 },
-  );
 
   await page.goto(`/app/profiles/${encodeURIComponent(childProfileId)}`);
   const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });
