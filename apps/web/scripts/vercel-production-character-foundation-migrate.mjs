@@ -30,13 +30,21 @@ const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 
 try {
   console.warn("Applying production Character Foundation profile migration...");
-  const sql = readFileSync(resolve(migrationDirectory, migrationFile), "utf8");
+  const sql = readFileSync(
+    resolve(migrationDirectory, migrationFile),
+    "utf8",
+  );
   console.warn(`Applying profile migration: ${migrationFile}`);
   await pool.query(sql);
   console.warn(`Profile migration ${migrationFile} applied successfully.`);
-  console.warn("Production Character Foundation profile migration is up to date.");
+  console.warn(
+    "Production Character Foundation profile migration is up to date.",
+  );
 } catch (error) {
-  console.error("Production Character Foundation profile migration failed:", error);
+  console.error(
+    "Production Character Foundation profile migration failed:",
+    error,
+  );
   process.exitCode = 1;
 } finally {
   await pool.end();
