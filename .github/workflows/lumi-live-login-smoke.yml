@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - .github/workflows/lumi-live-login-smoke.yml
+      - apps/web/playwright.production-smoke.config.ts
       - apps/web/tests/e2e/long-horizon/login-smoke.live.spec.ts
       - apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts
       - apps/web/tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
@@ -39,10 +40,14 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
-      - name: Verify production login, Stories UX v2 and #250 bootstrap evidence
+      - name: Verify production login and Stories UX v2
         run: |
           pnpm --filter @lumi/web exec playwright test \
             --config playwright.long-horizon-live.config.ts \
             tests/e2e/long-horizon/login-smoke.live.spec.ts \
-            tests/e2e/long-horizon/stories-smoke.live.spec.ts \
+            tests/e2e/long-horizon/stories-smoke.live.spec.ts
+      - name: Verify #250 bootstrap and adventure evidence
+        run: |
+          pnpm --filter @lumi/web exec playwright test \
+            --config playwright.production-smoke.config.ts \
             tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
