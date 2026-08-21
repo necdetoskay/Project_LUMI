@@ -84,15 +84,12 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   const npcIds = new Set(npcs.flatMap((npc) => (npc.id ? [npc.id] : [])));
   const bootstrapRelationships = (
     domainBody.character?.relationships ?? []
-  ).filter(
-    (relationship) =>
-      Boolean(
-        relationship.targetCharacterId &&
-          npcIds.has(relationship.targetCharacterId) &&
-          relationship.customTypeLabel?.startsWith(
-            "living-world-bootstrap:v1:",
-          ),
-      ),
+  ).filter((relationship) =>
+    Boolean(
+      relationship.targetCharacterId &&
+        npcIds.has(relationship.targetCharacterId) &&
+        relationship.customTypeLabel?.startsWith("living-world-bootstrap:v1:"),
+    ),
   );
   expect(
     bootstrapRelationships.length,
@@ -100,12 +97,8 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   ).toBeGreaterThan(0);
 
   console.log(`LUMI_250_B_MANIFEST_STATUS=${bootstrap?.status}`);
-  console.log(
-    `LUMI_250_B_MATERIALIZED_COUNT=${bootstrap?.materializedCount}`,
-  );
-  console.log(
-    `LUMI_250_B_NPC_REFS=${bootstrap?.materializedByKind?.npc ?? 0}`,
-  );
+  console.log(`LUMI_250_B_MATERIALIZED_COUNT=${bootstrap?.materializedCount}`);
+  console.log(`LUMI_250_B_NPC_REFS=${bootstrap?.materializedByKind?.npc ?? 0}`);
   console.log(
     `LUMI_250_B_RELATIONSHIP_REFS=${bootstrap?.materializedByKind?.relationship ?? 0}`,
   );
