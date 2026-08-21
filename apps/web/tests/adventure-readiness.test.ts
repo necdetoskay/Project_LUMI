@@ -68,6 +68,32 @@ describe("adventure readiness", () => {
     ).toBe("preparing");
   });
 
+  it("keeps an empty candidate window preparing after a transient source-read failure", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "completed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "2026-08-21T11:50:00.000Z",
+        characterCreatedAt: "2026-08-21T11:50:00.000Z",
+        transientReadFailure: true,
+        now: new Date("2026-08-21T12:00:00.000Z"),
+      }),
+    ).toBe("preparing");
+  });
+
+  it("does not let a transient read failure hide an explicit failed bootstrap", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "failed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "2026-08-21T11:59:45.000Z",
+        characterCreatedAt: "2026-08-21T11:59:40.000Z",
+        transientReadFailure: true,
+        now: new Date("2026-08-21T12:00:00.000Z"),
+      }),
+    ).toBe("ready");
+  });
+
   it("does not use character freshness to hide an explicit failed bootstrap", () => {
     expect(
       adventureReadinessForCandidateWindow({
@@ -87,6 +113,7 @@ describe("adventure readiness", () => {
         candidateCount: 1,
         bootstrapUpdatedAt: new Date("2026-08-21T11:59:36.573Z"),
         characterCreatedAt: new Date("2026-08-21T11:59:40.000Z"),
+        transientReadFailure: true,
         now: new Date("2026-08-21T11:59:45.000Z"),
       }),
     ).toBe("ready");
