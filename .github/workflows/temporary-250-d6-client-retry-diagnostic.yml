@@ -1,0 +1,72 @@
+name: Temporary 250 D6 Client Retry Diagnostic
+
+on:
+  push:
+    branches:
+      - ops/250-d6-client-retry-diagnostic
+    paths:
+      - .github/workflows/temporary-250-d6-client-retry-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_stories_retry_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_stories_retry_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_retry_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_retry_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_retry_test
+      LUMI_SETTINGS_ENCRYPTION_KEY: lumi-stories-retry-diagnostic-key
+      NODE_ENV: test
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply auth migration
+        run: pnpm --filter @lumi/web auth:migrate
+      - name: Apply profile migrations
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Run preparing retry browser diagnostic
+        id: test
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter @lumi/web exec playwright test tests/e2e/stories-adventure-preparing-retry.spec.ts 2>&1 | tee "$RUNNER_TEMP/retry.log"
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Record result on issue 250
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          gh issue comment 250 --repo "$GH_REPO"
+          --body "Gate D6 client retry diagnostic run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — test exit code \`${{ steps.test.outputs.code }}\`. Scenario: first two candidate responses empty+preparing, third response contains a real candidate. Disposable DB/mock only; no production mutation or paid call."
+      - name: Enforce diagnostic result
+        run: test "${{ steps.test.outputs.code }}" = "0"
