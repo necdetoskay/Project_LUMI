@@ -1,0 +1,52 @@
+name: Temporary Phase 10 Gate D Completion Monitor
+
+on:
+  push:
+    branches:
+      - ops/250-gate-d-completion-rerun
+    paths:
+      - .ops/250-gate-d-completion-monitor.trigger
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Discover one-shot paid run
+        id: discover
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          runs="$(gh run list --repo "$REPO" --workflow temporary-phase10-gate-d-completion-rerun.yml --branch ops/250-gate-d-completion-rerun --event push --limit 10 --json databaseId,status,conclusion,headSha,createdAt,url)"
+          echo "$runs" | jq .
+          count="$(echo "$runs" | jq 'length')"
+          test "$count" -eq 1
+          run_id="$(echo "$runs" | jq -r '.[0].databaseId')"
+          status="$(echo "$runs" | jq -r '.[0].status')"
+          conclusion="$(echo "$runs" | jq -r '.[0].conclusion // ""')"
+          head_sha="$(echo "$runs" | jq -r '.[0].headSha')"
+          url="$(echo "$runs" | jq -r '.[0].url')"
+          test "$head_sha" = "4308235bbc39035a4fa87648838c6b47ae80b924"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "conclusion=$conclusion" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Record discovery on issue 250
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ steps.discover.outputs.run_id }}
+          STATUS: ${{ steps.discover.outputs.status }}
+          CONCLUSION: ${{ steps.discover.outputs.conclusion }}
+          RUN_URL: ${{ steps.discover.outputs.url }}
+        shell: bash
+        run: |
+          gh issue comment 250 --repo "$REPO" --body "Gate D3 one-shot discovery: exactly one paid fresh age-6 run exists. Run: $RUN_ID. Status: $STATUS. Conclusion: ${CONCLUSION:-pending}. URL: $RUN_URL. Head: 4308235bbc39035a4fa87648838c6b47ae80b924. No second paid trigger was used."
