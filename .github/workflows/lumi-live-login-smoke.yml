@@ -9,7 +9,7 @@ on:
       - .github/workflows/lumi-live-login-smoke.yml
       - apps/web/tests/e2e/long-horizon/login-smoke.live.spec.ts
       - apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts
-      - apps/web/tests/e2e/long-horizon/bootstrap-evidence.live.spec.ts
+      - apps/web/tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
 
 permissions:
   contents: read
@@ -45,4 +45,4 @@ jobs:
             --config playwright.long-horizon-live.config.ts \
             tests/e2e/long-horizon/login-smoke.live.spec.ts \
             tests/e2e/long-horizon/stories-smoke.live.spec.ts \
-            tests/e2e/long-horizon/bootstrap-evidence.live.spec.ts
+            tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
