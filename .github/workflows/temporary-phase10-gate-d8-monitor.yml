@@ -1,0 +1,32 @@
+name: Temporary Phase 10 Gate D8 Monitor
+
+on:
+  push:
+    branches:
+      - ops/250-gate-d8-single-run
+    paths:
+      - .github/workflows/temporary-phase10-gate-d8-monitor.yml
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Report exact D8 runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(gh run list --repo "$GITHUB_REPOSITORY" \
+            --workflow temporary-phase10-gate-d8-single-run.yml \
+            --branch ops/250-gate-d8-single-run \
+            --event push --limit 5 \
+            --json databaseId,status,conclusion,headSha,url)"
+          count="$(jq 'length' <<<"$result")"
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" \
+            --body "Gate D8 monitor: count=\`$count\`; runs=\`$result\`. Expected count is exactly 1. Monitor is read-only and cannot trigger the paid workflow."
