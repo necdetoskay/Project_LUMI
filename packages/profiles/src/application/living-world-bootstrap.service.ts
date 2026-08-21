@@ -43,6 +43,11 @@ export interface LivingWorldBootstrapMaterializer {
     foundation: CharacterFoundationRecord;
     idempotencyKey: string;
   }): Promise<BootstrapMaterializationRef[]>;
+  finalize?(input: {
+    foundation: CharacterFoundationRecord;
+    plan: LivingWorldBootstrapPlan;
+    manifest: LivingWorldBootstrapManifest;
+  }): Promise<void>;
 }
 
 export interface LivingWorldBootstrapManifestStore {
@@ -363,6 +368,12 @@ export class LivingWorldBootstrapService {
           updatedAt: this.now(),
         });
       }
+
+      await this.materializer.finalize?.({
+        foundation,
+        plan,
+        manifest,
+      });
 
       manifest = {
         ...clearFailureCode(manifest),

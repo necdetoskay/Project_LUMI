@@ -15,7 +15,9 @@ import {
   ensureBootstrapRelationship,
   getCharacterFoundationByCharacterId,
   type CharacterFoundationRecord,
+  type LivingWorldBootstrapManifest,
   type LivingWorldBootstrapMaterializer,
+  type LivingWorldBootstrapPlan,
   type LivingWorldBootstrapResult,
 } from "@lumi/profiles";
 import { getWorldDetail } from "@lumi/world/application";
@@ -150,6 +152,18 @@ class CanonicalLivingWorldBootstrapMaterializer
       relationshipReused: relationship.reused,
     };
   }
+
+  async finalize(input: {
+    foundation: CharacterFoundationRecord;
+    plan: LivingWorldBootstrapPlan;
+    manifest: LivingWorldBootstrapManifest;
+  }): Promise<void> {
+    await seedGenesisAdventureOpportunities(
+      input.foundation,
+      input.plan,
+      input.manifest,
+    );
+  }
 }
 
 export function buildGenesisOpportunityWindow(input: {
@@ -183,7 +197,8 @@ export function buildGenesisOpportunityWindow(input: {
 
 async function seedGenesisAdventureOpportunities(
   foundation: CharacterFoundationRecord,
-  result: LivingWorldBootstrapResult,
+  plan: LivingWorldBootstrapPlan,
+  manifest: LivingWorldBootstrapManifest,
 ): Promise<void> {
   const detail = await getWorldDetail(foundation.worldId);
   const location = detail.locations[0];
@@ -195,9 +210,9 @@ async function seedGenesisAdventureOpportunities(
   const generator = new InteractionOpportunityGenerator();
   const now = new Date();
 
-  for (const rolePlan of result.plan.roles) {
+  for (const rolePlan of plan.roles) {
     if (rolePlan.relationshipSeed <= 0) continue;
-    const npcRef = result.manifest.materialized.find(
+    const npcRef = manifest.materialized.find(
       (ref) => ref.kind === "npc" && ref.genesisRoleId === rolePlan.role.id,
     );
     if (!npcRef) continue;
@@ -222,7 +237,7 @@ async function seedGenesisAdventureOpportunities(
       forbiddenOpportunityTypes: [],
       firedCooldownKeys: new Set<string>(),
       expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-      seed: `${result.manifest.idempotencyKey}:${npcRef.entityId}:initial-opportunity`,
+      seed: `${manifest.idempotencyKey}:${npcRef.entityId}:initial-opportunity`,
       maxOpportunities: 1,
     });
 
@@ -231,7 +246,7 @@ async function seedGenesisAdventureOpportunities(
 
     await delivery.deliver({
       householdId: foundation.householdId,
-      idempotencyKey: `${result.manifest.idempotencyKey}:initial-opportunity:${npcRef.entityId}:${opportunity.opportunityType}`,
+      idempotencyKey: `${manifest.idempotencyKey}:initial-opportunity:${npcRef.entityId}:${opportunity.opportunityType}`,
       opportunity,
     });
   }
@@ -247,7 +262,5 @@ export async function runLivingWorldBootstrapForCharacter(
     new CanonicalLivingWorldBootstrapMaterializer(),
     new DrizzleLivingWorldBootstrapManifestStore(),
   );
-  const result = await service.run(foundation);
-  await seedGenesisAdventureOpportunities(foundation, result);
-  return result;
+  return service.run(foundation);
 }
