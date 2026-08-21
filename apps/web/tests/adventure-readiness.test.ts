@@ -33,6 +33,17 @@ describe("adventure readiness", () => {
     ).toBe("preparing");
   });
 
+  it("accepts a serialized persisted bootstrap timestamp", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "completed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "2026-08-21T11:59:36.573Z",
+        now: new Date("2026-08-21T11:59:45.000Z"),
+      }),
+    ).toBe("preparing");
+  });
+
   it("becomes ready immediately when a real candidate is visible", () => {
     expect(
       adventureReadinessForCandidateWindow({
@@ -49,8 +60,19 @@ describe("adventure readiness", () => {
       adventureReadinessForCandidateWindow({
         bootstrapStatus: "completed",
         candidateCount: 0,
-        bootstrapUpdatedAt: new Date("2026-08-21T11:59:36.573Z"),
+        bootstrapUpdatedAt: "2026-08-21T11:59:36.573Z",
         now: new Date("2026-08-21T12:01:36.573Z"),
+      }),
+    ).toBe("ready");
+  });
+
+  it("fails open for an invalid persisted bootstrap timestamp", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "completed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "not-a-timestamp",
+        now: new Date("2026-08-21T12:00:00.000Z"),
       }),
     ).toBe("ready");
   });
