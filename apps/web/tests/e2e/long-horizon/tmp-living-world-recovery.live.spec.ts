@@ -30,6 +30,15 @@ test("existing age-6 character exposes New Adventure candidates after 0074", asy
     { timeout: 60_000 },
   );
 
+  await page
+    .getByLabel("Karakter yolu")
+    .getByRole("link", { name: "Profil", exact: true })
+    .click({ timeout: 60_000 });
+  await expect(page).toHaveURL(
+    new RegExp(`/app/profiles/${childProfileId}/?$`),
+    { timeout: 60_000 },
+  );
+
   const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });
   await expect(storiesTab).toBeVisible({ timeout: 60_000 });
   await storiesTab.click();
