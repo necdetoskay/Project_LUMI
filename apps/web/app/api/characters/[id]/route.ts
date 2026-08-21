@@ -4,6 +4,7 @@ import {
   archiveCharacter,
   getCharacterById,
   getCharacterDomain,
+  getCharacterFoundationByCharacterId,
 } from "@lumi/profiles/application";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
@@ -13,6 +14,7 @@ export const GET = observeHandler(
       const { searchParams } = new URL(request.url);
       const householdId = searchParams.get("householdId");
       const domain = searchParams.get("domain") === "true";
+      const bootstrap = searchParams.get("bootstrap") === "true";
       const { id } = await ctx.params;
 
       if (!householdId) {
@@ -41,6 +43,34 @@ export const GET = observeHandler(
             { status: 404 },
           );
         }
+        if (bootstrap) {
+          const foundation = await getCharacterFoundationByCharacterId(id);
+          if (!foundation) {
+            return NextResponse.json({ character, bootstrap: null });
+          }
+          const manifest = foundation.bootstrapManifest;
+          const materializedByKind = (manifest?.materialized ?? []).reduce<
+            Record<string, number>
+          >((counts, ref) => {
+            counts[ref.kind] = (counts[ref.kind] ?? 0) + 1;
+            return counts;
+          }, {});
+          return NextResponse.json({
+            character,
+            bootstrap: manifest
+              ? {
+                  status: manifest.status,
+                  idempotencyKey: manifest.idempotencyKey,
+                  worldId: manifest.worldId,
+                  foundationVersion: manifest.foundationVersion,
+                  bootstrapVersion: manifest.bootstrapVersion,
+                  materializedCount: manifest.materialized.length,
+                  materializedByKind,
+                  updatedAt: manifest.updatedAt,
+                }
+              : null,
+          });
+        }
         return NextResponse.json({ character });
       } catch (error) {
         const err = error as Error & { code?: string };
@@ -58,12 +88,6 @@ export const GET = observeHandler(
           return NextResponse.json(
             { error: "FORBIDDEN", message },
             { status: 403 },
-          );
-        }
-        if (err.name === "NotFoundError" || err.code === "NOT_FOUND") {
-          return NextResponse.json(
-            { error: "NOT_FOUND", message: "Character not found" },
-            { status: 404 },
           );
         }
         return NextResponse.json(
