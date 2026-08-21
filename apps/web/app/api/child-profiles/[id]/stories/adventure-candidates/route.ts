@@ -165,31 +165,35 @@ export const GET = observeHandler(
       const bootstrapManifest = foundation?.bootstrapManifest ?? null;
       const bootstrapStatus = bootstrapManifest?.status ?? null;
 
-      const [continuityRead, opportunitiesRead, worldRead, currentLocationRead] =
-        await Promise.all([
-          readCandidateSource(
-            "continuity",
-            getCharacterContinuitySnapshot(
-              householdId,
-              childProfileId,
-              character.id,
-            ),
-            null,
+      const [
+        continuityRead,
+        opportunitiesRead,
+        worldRead,
+        currentLocationRead,
+      ] = await Promise.all([
+        readCandidateSource(
+          "continuity",
+          getCharacterContinuitySnapshot(
+            householdId,
+            childProfileId,
+            character.id,
           ),
-          readCandidateSource(
-            "opportunities",
-            new OpportunityDeliveryService(
-              new DrizzleOpportunityInboxRepository(getNpcDb()),
-            ).listProposedForChild(householdId, childProfileId),
-            [],
-          ),
-          readCandidateSource("world", getWorldForCharacter(character.id), null),
-          readCandidateSource(
-            "current-location",
-            getCharacterCurrentLocation(character.id),
-            null,
-          ),
-        ]);
+          null,
+        ),
+        readCandidateSource(
+          "opportunities",
+          new OpportunityDeliveryService(
+            new DrizzleOpportunityInboxRepository(getNpcDb()),
+          ).listProposedForChild(householdId, childProfileId),
+          [],
+        ),
+        readCandidateSource("world", getWorldForCharacter(character.id), null),
+        readCandidateSource(
+          "current-location",
+          getCharacterCurrentLocation(character.id),
+          null,
+        ),
+      ]);
 
       const continuity = continuityRead.value;
       const opportunities = opportunitiesRead.value;
