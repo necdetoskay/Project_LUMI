@@ -16,6 +16,7 @@ on:
       - .ops/250-bootstrap-evidence.trigger
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -28,6 +29,17 @@ jobs:
       LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
       LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
     steps:
+      - name: Discover existing Gate D push run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload="$(gh run list --repo "$GH_REPO" --workflow "Temporary Phase 10 Gate D Age-6 Acceptance" --branch ops/250-fresh-age6-d --limit 1 --json databaseId,status,conclusion,createdAt 2>/dev/null || echo '[]')"
+          echo "LUMI_250_D_DISCOVERY=$payload"
+          run_id="$(printf '%s' "$payload" | jq -r '.[0].databaseId // empty')"
+          echo "LUMI_250_D_PUSH_RUN_ID=$run_id"
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
