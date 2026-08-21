@@ -4,8 +4,8 @@ import {
   archiveCharacter,
   getCharacterById,
   getCharacterDomain,
-  getCharacterFoundationByCharacterId,
 } from "@lumi/profiles/application";
+import { getCharacterFoundationByCharacterId } from "@lumi/profiles";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const GET = observeHandler(
