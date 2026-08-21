@@ -41,6 +41,7 @@ export class DrizzleCharacterRepository implements CharacterRepository {
         and(
           eq(lumiCharacters.childProfileId, childProfileId),
           eq(lumiCharacters.householdId, householdId),
+          eq(lumiCharacters.characterSubtype, "child_avatar"),
           isNull(lumiCharacters.deletedAt),
         ),
       )
