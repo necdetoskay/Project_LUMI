@@ -1,0 +1,82 @@
+name: Temporary 250 Fresh Character Readiness Preflight
+
+on:
+  push:
+    branches:
+      - fix/250-fresh-character-adventure-readiness-fallback
+    paths:
+      - .github/workflows/temporary-250-fresh-character-readiness-preflight.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_stories_fresh_readiness_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_stories_fresh_readiness_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_fresh_readiness_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_fresh_readiness_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_fresh_readiness_test
+      LUMI_SETTINGS_ENCRYPTION_KEY: lumi-stories-fresh-readiness-key
+      NODE_ENV: test
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Record preflight identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY"
+          --body "Fresh-character readiness fallback preflight started: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID (head $GITHUB_SHA). Disposable DB/mock only; no production mutation or paid call."
+      - name: Check changed-file formatting
+        run: >-
+          pnpm exec prettier --check
+          apps/web/lib/stories/adventure-readiness.ts
+          'apps/web/app/api/child-profiles/[id]/stories/adventure-candidates/route.ts'
+          apps/web/tests/adventure-readiness.test.ts
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Run readiness regressions
+        run: pnpm --filter @lumi/web exec vitest run tests/adventure-readiness.test.ts
+      - name: Apply auth migration
+        run: pnpm --filter @lumi/web auth:migrate
+      - name: Apply profile migrations
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Run Stories UX browser journey
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/stories-ux-v2.spec.ts
+      - name: Record final preflight status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: >-
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY"
+          --body "Fresh-character readiness fallback preflight finished **$JOB_STATUS**: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
