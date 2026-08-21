@@ -29,13 +29,8 @@ const migrationDirectory = fileURLToPath(
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 
 try {
-  console.warn(
-    "Applying production Character Foundation profile migration...",
-  );
-  const sql = readFileSync(
-    resolve(migrationDirectory, migrationFile),
-    "utf8",
-  );
+  console.warn("Applying production Character Foundation profile migration...");
+  const sql = readFileSync(resolve(migrationDirectory, migrationFile), "utf8");
   console.warn(`Applying profile migration: ${migrationFile}`);
   await pool.query(sql);
   console.warn(`Profile migration ${migrationFile} applied successfully.`);
