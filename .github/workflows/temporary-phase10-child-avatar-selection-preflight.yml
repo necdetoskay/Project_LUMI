@@ -18,20 +18,24 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_USER: lumi
-          POSTGRES_PASSWORD: lumi
-          POSTGRES_DB: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_stories_ux_browser_test
         ports:
           - "5432:5432"
         options: >-
-          --health-cmd="pg_isready -U lumi -d lumi"
+          --health-cmd="pg_isready -U lumi -d lumi_stories_ux_browser_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
     env:
-      DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
-      PROFILE_DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
-      PROFILE_TEST_DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
+      DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_ux_browser_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_ux_browser_test
+      PROFILE_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_ux_browser_test
       PROFILE_TEST_ENABLE_DESTRUCTIVE: "true"
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_stories_ux_browser_test
+      LUMI_SETTINGS_ENCRYPTION_KEY: lumi-stories-playwright-encryption-key
+      NODE_ENV: test
+      CI: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,11 +69,14 @@ jobs:
       - name: Full unit test suite
         run: pnpm test
 
-      - name: Prepare Stories browser DB
+      - name: Apply auth migration
+        run: pnpm --filter @lumi/web auth:migrate
+
+      - name: Apply profile migrations
         run: pnpm --filter @lumi/profiles profile:migrate
 
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
 
       - name: Stories browser journey
-        run: pnpm --filter @lumi/web exec playwright test --config playwright.stories-ux-v2.config.ts
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/stories-ux-v2.spec.ts
