@@ -51,6 +51,8 @@ export function NewAdventureSheetLocalized({
   onClose,
 }: NewAdventureSheetProps) {
   const t = useTranslations("stories.sheet");
+  const translationRef = useRef(t);
+  translationRef.current = t;
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -80,7 +82,7 @@ export function NewAdventureSheetLocalized({
           if (generation !== loadGenerationRef.current) return;
 
           if (!response.ok) {
-            setError(t("loadFailed"));
+            setError(translationRef.current("loadFailed"));
             return;
           }
 
@@ -107,7 +109,7 @@ export function NewAdventureSheetLocalized({
           if (exhaustedPreparing) {
             setReadiness("ready");
             setCandidates([]);
-            setError(t("preparingTimeout"));
+            setError(translationRef.current("preparingTimeout"));
             return;
           }
 
@@ -117,7 +119,7 @@ export function NewAdventureSheetLocalized({
         }
       } catch {
         if (generation === loadGenerationRef.current) {
-          setError(t("loadUnexpected"));
+          setError(translationRef.current("loadUnexpected"));
         }
       } finally {
         if (generation === loadGenerationRef.current) {
@@ -125,7 +127,7 @@ export function NewAdventureSheetLocalized({
         }
       }
     },
-    [childProfileId, householdId, t],
+    [childProfileId, householdId],
   );
 
   useEffect(() => {
