@@ -1,0 +1,62 @@
+name: Temporary Phase 10 Gate D2 Readonly State
+
+on:
+  push:
+    branches:
+      - ops/250-gate-d2-readonly
+    paths:
+      - .github/workflows/temporary-phase10-gate-d2-readonly.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Inspect persisted Gate D2 state
+        id: inspect
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter @lumi/web exec playwright test \
+            --config playwright.production-smoke.config.ts \
+            tests/e2e/production-smoke/gate-d2-state.live.spec.ts 2>&1 | tee "$RUNNER_TEMP/d2-state.log"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          grep 'LUMI_250_D2_' "$RUNNER_TEMP/d2-state.log" > "$RUNNER_TEMP/d2-evidence.log" || true
+          exit 0
+      - name: Record evidence on issue 250
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          {
+            echo "## Phase 10 Gate D2 read-only persisted-state inspection"
+            echo
+            echo "- workflow run: https://github.com/$GH_REPO/actions/runs/$GITHUB_RUN_ID"
+            echo "- test exit status: \`${{ steps.inspect.outputs.status }}\`"
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/d2-evidence.log"
+            echo '```'
+          } > "$RUNNER_TEMP/comment.md"
+          gh issue comment 250 --repo "$GH_REPO" --body-file "$RUNNER_TEMP/comment.md"
