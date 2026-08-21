@@ -39,17 +39,19 @@ export function adventureReadinessForCandidateWindow(input: {
   candidateCount: number;
   bootstrapUpdatedAt: AdventureBootstrapTimestamp;
   characterCreatedAt?: AdventureBootstrapTimestamp;
+  transientReadFailure?: boolean;
   now: Date;
   visibilityGraceMs?: number;
 }): AdventureReadiness {
   if (input.candidateCount > 0) return "ready";
+  if (input.bootstrapStatus === "failed") return "ready";
+  if (input.transientReadFailure) return "preparing";
   if (
     input.bootstrapStatus === "planned" ||
     input.bootstrapStatus === "running"
   ) {
     return "preparing";
   }
-  if (input.bootstrapStatus === "failed") return "ready";
 
   const graceMs =
     input.visibilityGraceMs ?? INITIAL_ADVENTURE_VISIBILITY_GRACE_MS;

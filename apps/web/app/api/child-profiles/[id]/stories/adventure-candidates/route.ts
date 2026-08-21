@@ -34,6 +34,41 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(0).default(0),
 });
 
+const ADVENTURE_SOURCE_READ_TIMEOUT_MS = 8_000;
+
+type ReadResult<T> = {
+  value: T;
+  failed: boolean;
+};
+
+async function readCandidateSource<T>(
+  label: string,
+  read: Promise<T>,
+  fallback: T,
+): Promise<ReadResult<T>> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  try {
+    const value = await Promise.race([
+      read,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error(`ADVENTURE_SOURCE_READ_TIMEOUT:${label}`)),
+          ADVENTURE_SOURCE_READ_TIMEOUT_MS,
+        );
+      }),
+    ]);
+    return { value, failed: false };
+  } catch (error) {
+    console.warn("Adventure candidate source read failed", {
+      label,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { value: fallback, failed: true };
+  } finally {
+    if (timeout !== null) clearTimeout(timeout);
+  }
+}
+
 function payloadString(
   payload: Record<string, unknown>,
   ...keys: string[]
@@ -121,27 +156,55 @@ export const GET = observeHandler(
         });
       }
 
-      const foundation = await getCharacterFoundationByCharacterId(
-        character.id,
-      ).catch(() => null);
+      const foundationRead = await readCandidateSource(
+        "foundation",
+        getCharacterFoundationByCharacterId(character.id),
+        null,
+      );
+      const foundation = foundationRead.value;
       const bootstrapManifest = foundation?.bootstrapManifest ?? null;
       const bootstrapStatus = bootstrapManifest?.status ?? null;
 
-      const [continuity, opportunities, world, currentLocation] =
-        await Promise.all([
+      const [
+        continuityRead,
+        opportunitiesRead,
+        worldRead,
+        currentLocationRead,
+      ] = await Promise.all([
+        readCandidateSource(
+          "continuity",
           getCharacterContinuitySnapshot(
             householdId,
             childProfileId,
             character.id,
-          ).catch(() => null),
+          ),
+          null,
+        ),
+        readCandidateSource(
+          "opportunities",
           new OpportunityDeliveryService(
             new DrizzleOpportunityInboxRepository(getNpcDb()),
-          )
-            .listProposedForChild(householdId, childProfileId)
-            .catch(() => []),
-          getWorldForCharacter(character.id).catch(() => null),
-          getCharacterCurrentLocation(character.id).catch(() => null),
-        ]);
+          ).listProposedForChild(householdId, childProfileId),
+          [],
+        ),
+        readCandidateSource("world", getWorldForCharacter(character.id), null),
+        readCandidateSource(
+          "current-location",
+          getCharacterCurrentLocation(character.id),
+          null,
+        ),
+      ]);
+
+      const continuity = continuityRead.value;
+      const opportunities = opportunitiesRead.value;
+      const world = worldRead.value;
+      const currentLocation = currentLocationRead.value;
+      let transientReadFailure =
+        foundationRead.failed ||
+        continuityRead.failed ||
+        opportunitiesRead.failed ||
+        worldRead.failed ||
+        currentLocationRead.failed;
 
       const candidates: AdventureHookCandidate[] = opportunities.map(
         (entry) => {
@@ -167,9 +230,13 @@ export const GET = observeHandler(
 
       let worldEventsAvailable = false;
       if (world) {
-        const events = await new DrizzleWorldEventReader(getWorldDb())
-          .listRecent(world.id, 30)
-          .catch(() => []);
+        const eventsRead = await readCandidateSource(
+          "world-events",
+          new DrizzleWorldEventReader(getWorldDb()).listRecent(world.id, 30),
+          [],
+        );
+        const events = eventsRead.value;
+        transientReadFailure ||= eventsRead.failed;
         worldEventsAvailable = events.length > 0;
 
         for (const event of events) {
@@ -222,6 +289,7 @@ export const GET = observeHandler(
         candidateCount: selection.candidates.length,
         bootstrapUpdatedAt: bootstrapManifest?.updatedAt ?? null,
         characterCreatedAt: character.createdAt,
+        transientReadFailure,
         now: new Date(),
       });
 
