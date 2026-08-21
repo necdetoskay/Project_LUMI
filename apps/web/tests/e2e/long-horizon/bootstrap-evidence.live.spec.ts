@@ -81,14 +81,18 @@ test("age-6 production bootstrap is materialized before real adventure candidate
       }>;
     };
   };
-  const npcIds = new Set(npcs.map((npc) => npc.id).filter(Boolean));
+  const npcIds = new Set(npcs.flatMap((npc) => (npc.id ? [npc.id] : [])));
   const bootstrapRelationships = (
     domainBody.character?.relationships ?? []
   ).filter(
     (relationship) =>
-      Boolean(relationship.targetCharacterId) &&
-      npcIds.has(relationship.targetCharacterId) &&
-      relationship.customTypeLabel?.startsWith("living-world-bootstrap:v1:"),
+      Boolean(
+        relationship.targetCharacterId &&
+          npcIds.has(relationship.targetCharacterId) &&
+          relationship.customTypeLabel?.startsWith(
+            "living-world-bootstrap:v1:",
+          ),
+      ),
   );
   expect(
     bootstrapRelationships.length,
@@ -133,7 +137,9 @@ test("age-6 production bootstrap is materialized before real adventure candidate
 
   const sourceFamilies = [
     ...new Set(
-      candidates.map((candidate) => candidate.sourceFamily).filter(Boolean),
+      candidates.flatMap((candidate) =>
+        candidate.sourceFamily ? [candidate.sourceFamily] : [],
+      ),
     ),
   ];
   console.log(`LUMI_250_C_CANDIDATE_COUNT=${candidates.length}`);
