@@ -47,134 +47,142 @@ afterAll(async () => {
 const itIfDb = destructiveTestsEnabled ? it : it.skip;
 
 describe("DrizzleCharacterRepository child-avatar read contract", () => {
-  itIfDb("keeps primary-avatar reads isolated while preserving polymorphic NPC reads", async () => {
-    const householdId = crypto.randomUUID();
-    const childProfileId = crypto.randomUUID();
-    const npcId = crypto.randomUUID();
-    const avatarId = crypto.randomUUID();
-    const oldCreatedAt = new Date(Date.now() - 60_000).toISOString();
-    const freshCreatedAt = new Date().toISOString();
+  itIfDb(
+    "keeps primary-avatar reads isolated while preserving polymorphic NPC reads",
+    async () => {
+      const householdId = crypto.randomUUID();
+      const childProfileId = crypto.randomUUID();
+      const npcId = crypto.randomUUID();
+      const avatarId = crypto.randomUUID();
+      const oldCreatedAt = new Date(Date.now() - 60_000).toISOString();
+      const freshCreatedAt = new Date().toISOString();
 
-    await db!.execute(sql`
-      INSERT INTO profile.households (id, name, slug)
-      VALUES (${householdId}, 'Avatar Selection Family', ${`avatar-selection-${householdId}`})
-    `);
-
-    await db!.execute(sql`
-      INSERT INTO profile.child_profiles
-        (id, household_id, display_name, age_band, age_years, locale, metadata)
-      VALUES
-        (${childProfileId}, ${householdId}, 'D Child', '6-8', 6, 'tr-TR', '{}'::jsonb)
-    `);
-
-    const insertCharacter = async (
-      id: string,
-      name: string,
-      characterSubtype: "npc" | "child_avatar",
-      createdAt: string,
-    ) => {
       await db!.execute(sql`
-        INSERT INTO profile.lumi_characters (
-          id,
-          child_profile_id,
-          household_id,
-          name,
-          broad_kind,
-          character_type,
-          subtype,
-          origin_mode,
-          first_origin_package_id,
-          origin_concept,
-          starting_region_archetype,
-          starting_location,
-          home_archetype,
-          nearby_npc_seed,
-          first_mystery_seed,
-          universe_seed,
-          safety_bounds,
-          character_subtype,
-          lifecycle_stage,
-          version,
-          created_at,
-          updated_at
-        ) VALUES (
-          ${id},
-          ${childProfileId},
-          ${householdId},
-          ${name},
-          'human',
-          'explorer',
-          'Test subtype',
-          'auto',
-          ${crypto.randomUUID()},
-          'Test origin concept',
-          'test-region',
-          'test-location',
-          'test-home',
-          'test-npc-seed',
-          'test-mystery-seed',
-          'test-universe-seed',
-          '{"ageBand":"6-8","contentBoundary":"moderate","requireParentApprovalForAi":false}'::jsonb,
-          ${characterSubtype},
-          'childhood',
-          1,
-          ${createdAt},
-          ${createdAt}
-        )
+        INSERT INTO profile.households (id, name, slug)
+        VALUES (${householdId}, 'Avatar Selection Family', ${`avatar-selection-${householdId}`})
       `);
-    };
 
-    await insertCharacter(npcId, "Older Bootstrap NPC", "npc", oldCreatedAt);
-    await insertCharacter(
-      avatarId,
-      "Fresh Child Avatar",
-      "child_avatar",
-      freshCreatedAt,
-    );
+      await db!.execute(sql`
+        INSERT INTO profile.child_profiles
+          (id, household_id, display_name, age_band, age_years, locale, metadata)
+        VALUES
+          (${childProfileId}, ${householdId}, 'D Child', '6-8', 6, 'tr-TR', '{}'::jsonb)
+      `);
 
-    const repository = new DrizzleCharacterRepository(db! as never);
+      const insertCharacter = async (
+        id: string,
+        name: string,
+        characterSubtype: "npc" | "child_avatar",
+        createdAt: string,
+      ) => {
+        await db!.execute(sql`
+          INSERT INTO profile.lumi_characters (
+            id,
+            child_profile_id,
+            household_id,
+            name,
+            broad_kind,
+            character_type,
+            subtype,
+            origin_mode,
+            first_origin_package_id,
+            origin_concept,
+            starting_region_archetype,
+            starting_location,
+            home_archetype,
+            nearby_npc_seed,
+            first_mystery_seed,
+            universe_seed,
+            safety_bounds,
+            character_subtype,
+            lifecycle_stage,
+            version,
+            created_at,
+            updated_at
+          ) VALUES (
+            ${id},
+            ${childProfileId},
+            ${householdId},
+            ${name},
+            'human',
+            'explorer',
+            'Test subtype',
+            'auto',
+            ${crypto.randomUUID()},
+            'Test origin concept',
+            'test-region',
+            'test-location',
+            'test-home',
+            'test-npc-seed',
+            'test-mystery-seed',
+            'test-universe-seed',
+            '{"ageBand":"6-8","contentBoundary":"moderate","requireParentApprovalForAi":false}'::jsonb,
+            ${characterSubtype},
+            'childhood',
+            1,
+            ${createdAt},
+            ${createdAt}
+          )
+        `);
+      };
 
-    const explicitPrimary = await repository.findPrimaryChildAvatarByChildProfile(
-      childProfileId,
-      householdId,
-    );
-    expect(explicitPrimary?.id).toBe(avatarId);
-    expect(explicitPrimary?.characterSubtype).toBe("child_avatar");
+      await insertCharacter(npcId, "Older Bootstrap NPC", "npc", oldCreatedAt);
+      await insertCharacter(
+        avatarId,
+        "Fresh Child Avatar",
+        "child_avatar",
+        freshCreatedAt,
+      );
 
-    const compatibilityPrimary = await repository.findByChildProfile(
-      childProfileId,
-      householdId,
-    );
-    expect(compatibilityPrimary?.id).toBe(avatarId);
-    expect(compatibilityPrimary?.characterSubtype).toBe("child_avatar");
+      const repository = new DrizzleCharacterRepository(db! as never);
 
-    const genericNpc = await repository.findById(npcId, householdId);
-    expect(genericNpc?.id).toBe(npcId);
-    expect(genericNpc?.characterSubtype).toBe("npc");
+      const explicitPrimary =
+        await repository.findPrimaryChildAvatarByChildProfile(
+          childProfileId,
+          householdId,
+        );
+      expect(explicitPrimary?.id).toBe(avatarId);
+      expect(explicitPrimary?.characterSubtype).toBe("child_avatar");
 
-    const avatarOnlyNpc = await repository.findChildAvatarById(
-      npcId,
-      householdId,
-    );
-    expect(avatarOnlyNpc).toBeNull();
+      const compatibilityPrimary = await repository.findByChildProfile(
+        childProfileId,
+        householdId,
+      );
+      expect(compatibilityPrimary?.id).toBe(avatarId);
+      expect(compatibilityPrimary?.characterSubtype).toBe("child_avatar");
 
-    const avatarById = await repository.findChildAvatarById(
-      avatarId,
-      householdId,
-    );
-    expect(avatarById?.id).toBe(avatarId);
-    expect(avatarById?.characterSubtype).toBe("child_avatar");
+      const genericNpc = await repository.findById(npcId, householdId);
+      expect(genericNpc?.id).toBe(npcId);
+      expect(genericNpc?.characterSubtype).toBe("npc");
 
-    const allCharacters = await repository.listByHousehold(householdId);
-    expect(allCharacters.map((record) => record.id)).toEqual([
-      npcId,
-      avatarId,
-    ]);
+      const avatarOnlyNpc = await repository.findChildAvatarById(
+        npcId,
+        householdId,
+      );
+      expect(avatarOnlyNpc).toBeNull();
 
-    const childAvatars = await repository.listChildAvatarsByHousehold(
-      householdId,
-    );
-    expect(childAvatars.map((record) => record.id)).toEqual([avatarId]);
-    expect(childAvatars.every((record) => record.characterSubtype === "child_avatar")).toBe(true);
-  });
+      const avatarById = await repository.findChildAvatarById(
+        avatarId,
+        householdId,
+      );
+      expect(avatarById?.id).toBe(avatarId);
+      expect(avatarById?.characterSubtype).toBe("child_avatar");
+
+      const allCharacters = await repository.listByHousehold(householdId);
+      expect(allCharacters.map((record) => record.id)).toEqual([
+        npcId,
+        avatarId,
+      ]);
+
+      const childAvatars = await repository.listChildAvatarsByHousehold(
+        householdId,
+      );
+      expect(childAvatars.map((record) => record.id)).toEqual([avatarId]);
+      expect(
+        childAvatars.every(
+          (record) => record.characterSubtype === "child_avatar",
+        ),
+      ).toBe(true);
+    },
+  );
 });
