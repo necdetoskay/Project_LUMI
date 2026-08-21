@@ -32,7 +32,9 @@ const migrationDirectory = fileURLToPath(
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 
 try {
-  console.warn("Applying production Character Foundation profile migrations...");
+  console.warn(
+    "Applying production Character Foundation profile migrations...",
+  );
   for (const migrationFile of migrationFiles) {
     const sql = readFileSync(
       resolve(migrationDirectory, migrationFile),
