@@ -64,7 +64,10 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   const npcs = (charactersBody.characters ?? []).filter(
     (character) => character.characterSubtype === "npc",
   );
-  expect(npcs.length, "at least one active NPC must be visible").toBeGreaterThan(0);
+  expect(
+    npcs.length,
+    "at least one active NPC must be visible",
+  ).toBeGreaterThan(0);
 
   const domainResponse = await page.request.get(
     `/api/characters/${CHARACTER_ID}?householdId=${householdId}&domain=true`,
@@ -79,7 +82,9 @@ test("age-6 production bootstrap is materialized before real adventure candidate
     };
   };
   const npcIds = new Set(npcs.map((npc) => npc.id).filter(Boolean));
-  const bootstrapRelationships = (domainBody.character?.relationships ?? []).filter(
+  const bootstrapRelationships = (
+    domainBody.character?.relationships ?? []
+  ).filter(
     (relationship) =>
       Boolean(relationship.targetCharacterId) &&
       npcIds.has(relationship.targetCharacterId) &&
@@ -91,8 +96,12 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   ).toBeGreaterThan(0);
 
   console.log(`LUMI_250_B_MANIFEST_STATUS=${bootstrap?.status}`);
-  console.log(`LUMI_250_B_MATERIALIZED_COUNT=${bootstrap?.materializedCount}`);
-  console.log(`LUMI_250_B_NPC_REFS=${bootstrap?.materializedByKind?.npc ?? 0}`);
+  console.log(
+    `LUMI_250_B_MATERIALIZED_COUNT=${bootstrap?.materializedCount}`,
+  );
+  console.log(
+    `LUMI_250_B_NPC_REFS=${bootstrap?.materializedByKind?.npc ?? 0}`,
+  );
   console.log(
     `LUMI_250_B_RELATIONSHIP_REFS=${bootstrap?.materializedByKind?.relationship ?? 0}`,
   );
@@ -109,15 +118,24 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   };
   const candidates = candidatesBody.candidates ?? [];
   const realCandidates = candidates.filter((candidate) =>
-    candidate.sourceFamily ? REAL_SOURCE_FAMILIES.has(candidate.sourceFamily) : false,
+    candidate.sourceFamily
+      ? REAL_SOURCE_FAMILIES.has(candidate.sourceFamily)
+      : false,
   );
-  expect(candidates.length, "New Adventure must expose candidates").toBeGreaterThan(0);
+  expect(
+    candidates.length,
+    "New Adventure must expose candidates",
+  ).toBeGreaterThan(0);
   expect(
     realCandidates.length,
     "New Adventure must include at least one real NPC/world/opportunity source",
   ).toBeGreaterThan(0);
 
-  const sourceFamilies = [...new Set(candidates.map((candidate) => candidate.sourceFamily).filter(Boolean))];
+  const sourceFamilies = [
+    ...new Set(
+      candidates.map((candidate) => candidate.sourceFamily).filter(Boolean),
+    ),
+  ];
   console.log(`LUMI_250_C_CANDIDATE_COUNT=${candidates.length}`);
   console.log(`LUMI_250_C_REAL_SOURCE_COUNT=${realCandidates.length}`);
   console.log(`LUMI_250_C_SOURCE_FAMILIES=${sourceFamilies.join(",")}`);
