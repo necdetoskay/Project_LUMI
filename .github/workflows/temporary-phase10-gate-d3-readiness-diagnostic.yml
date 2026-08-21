@@ -20,6 +20,7 @@ jobs:
       VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
       VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
       BASE_URL: https://project-lumi-web.vercel.app
+      HOUSEHOLD_ID: 51000000-0000-4000-8000-000000000001
       PROFILE_ID: 2d0b396f-9a19-498a-ae35-c1e099906386
       CHARACTER_ID: 9a5793c0-c57a-4df3-a5aa-be3f2cccb987
       PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
@@ -55,7 +56,7 @@ jobs:
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install chromium
 
-      - name: Capture New Adventure response
+      - name: Capture bootstrap and New Adventure response
         env:
           BYPASS_SECRET: ${{ steps.bypass.outputs.secret }}
         shell: bash
@@ -83,6 +84,11 @@ jobs:
               form.locator('button[type="submit"]').click(),
             ]);
 
+            const bootstrapResponse = await context.request.get(
+              `/api/characters/${process.env.CHARACTER_ID}?householdId=${process.env.HOUSEHOLD_ID}&bootstrap=true`,
+            );
+            const bootstrapBody = await bootstrapResponse.json();
+
             await page.goto(`/app/profiles/${process.env.PROFILE_ID}`);
             const storiesTab = page.getByRole('button', { name: /Hikâyeler$/ });
             await storiesTab.waitFor({ state: 'visible', timeout: 60000 });
@@ -98,7 +104,10 @@ jobs:
             const response = await responsePromise;
             const body = await response.json();
             const output = {
-              httpStatus: response.status(),
+              capturedAt: new Date().toISOString(),
+              bootstrapHttpStatus: bootstrapResponse.status(),
+              bootstrap: bootstrapBody.bootstrap ?? null,
+              candidateHttpStatus: response.status(),
               requestUrl: response.url(),
               bootstrapStatus: body.bootstrapStatus ?? null,
               readiness: body.readiness ?? null,
@@ -125,7 +134,7 @@ jobs:
         run: |
           if [ -f /tmp/d3-diagnostic.json ]; then
             {
-              echo '## Gate D3 read-only readiness diagnostic'
+              echo '## Gate D3 read-only timing diagnostic'
               echo
               echo '```json'
               cat /tmp/d3-diagnostic.json
@@ -134,7 +143,7 @@ jobs:
               echo 'This diagnostic performs no persistent product mutation and does not trigger another paid acceptance run.'
             } > /tmp/comment.md
           else
-            echo 'Gate D3 read-only readiness diagnostic failed before producing JSON. No additional paid acceptance run was triggered.' > /tmp/comment.md
+            echo 'Gate D3 read-only timing diagnostic failed before producing JSON. No additional paid acceptance run was triggered.' > /tmp/comment.md
           fi
           gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.md
 
