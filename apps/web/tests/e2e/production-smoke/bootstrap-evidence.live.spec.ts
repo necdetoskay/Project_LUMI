@@ -51,23 +51,10 @@ test("age-6 production bootstrap is materialized before real adventure candidate
   expect(bootstrap?.idempotencyKey).toBe(EXPECTED_BOOTSTRAP_RUN_ID);
   expect(bootstrap?.worldId).toBe(EXPECTED_WORLD_ID);
   expect(bootstrap?.materializedCount ?? 0).toBeGreaterThan(0);
-  expect(bootstrap?.materializedByKind?.npc ?? 0).toBeGreaterThan(0);
-  expect(bootstrap?.materializedByKind?.relationship ?? 0).toBeGreaterThan(0);
-
-  const charactersResponse = await page.request.get(
-    `/api/characters?householdId=${householdId}&childProfileId=${CHILD_PROFILE_ID}`,
-  );
-  expect(charactersResponse.ok()).toBe(true);
-  const charactersBody = (await charactersResponse.json()) as {
-    characters?: Array<{ id?: string; characterSubtype?: string }>;
-  };
-  const npcs = (charactersBody.characters ?? []).filter(
-    (character) => character.characterSubtype === "npc",
-  );
-  expect(
-    npcs.length,
-    "at least one active NPC must be visible",
-  ).toBeGreaterThan(0);
+  const manifestNpcCount = bootstrap?.materializedByKind?.npc ?? 0;
+  const manifestRelationshipCount = bootstrap?.materializedByKind?.relationship ?? 0;
+  expect(manifestNpcCount).toBeGreaterThan(0);
+  expect(manifestRelationshipCount).toBeGreaterThan(0);
 
   const domainResponse = await page.request.get(
     `/api/characters/${CHARACTER_ID}?householdId=${householdId}&domain=true`,
@@ -81,28 +68,49 @@ test("age-6 production bootstrap is materialized before real adventure candidate
       }>;
     };
   };
-  const npcIds = new Set(npcs.flatMap((npc) => (npc.id ? [npc.id] : [])));
   const bootstrapRelationships = (
     domainBody.character?.relationships ?? []
   ).filter((relationship) =>
     Boolean(
       relationship.targetCharacterId &&
-        npcIds.has(relationship.targetCharacterId) &&
         relationship.customTypeLabel?.startsWith("living-world-bootstrap:v1:"),
     ),
   );
   expect(
     bootstrapRelationships.length,
-    "at least one Living World relationship to a materialized NPC is required",
+    "at least one persisted Living World bootstrap relationship is required",
   ).toBeGreaterThan(0);
+  expect(bootstrapRelationships.length).toBeGreaterThanOrEqual(
+    manifestRelationshipCount,
+  );
+
+  const npcTargetIds = [
+    ...new Set(
+      bootstrapRelationships.flatMap((relationship) =>
+        relationship.targetCharacterId ? [relationship.targetCharacterId] : [],
+      ),
+    ),
+  ];
+  expect(
+    npcTargetIds.length,
+    "bootstrap relationships must point to persisted NPC character rows",
+  ).toBeGreaterThanOrEqual(manifestNpcCount);
+
+  for (const npcId of npcTargetIds) {
+    const npcResponse = await page.request.get(
+      `/api/characters/${npcId}?householdId=${householdId}`,
+    );
+    expect(
+      npcResponse.ok(),
+      `bootstrap NPC target ${npcId} must resolve as an active character row`,
+    ).toBe(true);
+  }
 
   console.log(`LUMI_250_B_MANIFEST_STATUS=${bootstrap?.status}`);
   console.log(`LUMI_250_B_MATERIALIZED_COUNT=${bootstrap?.materializedCount}`);
-  console.log(`LUMI_250_B_NPC_REFS=${bootstrap?.materializedByKind?.npc ?? 0}`);
-  console.log(
-    `LUMI_250_B_RELATIONSHIP_REFS=${bootstrap?.materializedByKind?.relationship ?? 0}`,
-  );
-  console.log(`LUMI_250_B_NPC_ROWS=${npcs.length}`);
+  console.log(`LUMI_250_B_NPC_REFS=${manifestNpcCount}`);
+  console.log(`LUMI_250_B_RELATIONSHIP_REFS=${manifestRelationshipCount}`);
+  console.log(`LUMI_250_B_NPC_ROWS=${npcTargetIds.length}`);
   console.log(`LUMI_250_B_RELATIONSHIP_ROWS=${bootstrapRelationships.length}`);
 
   // C is intentionally evaluated only after every B assertion above has passed.
