@@ -113,7 +113,10 @@ export class DrizzleCharacterRepository implements CharacterRepository {
   async create(input: NewLumiCharacterRecord): Promise<LumiCharacterRecord> {
     const [record] = await this.db
       .insert(lumiCharacters)
-      .values(input)
+      .values({
+        ...input,
+        characterSubtype: input.characterSubtype ?? "child_avatar",
+      })
       .returning();
     if (!record) {
       throw new Error("Character creation returned no record");
