@@ -1,0 +1,183 @@
+name: Temporary Phase 10 Child Avatar Selection Preflight
+
+on:
+  push:
+    branches:
+      - fix/250-adventure-child-avatar-selection
+    paths:
+      - .github/workflows/temporary-phase10-child-avatar-selection-preflight.yml
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  patch-and-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi
+          POSTGRES_DB: lumi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
+      PROFILE_TEST_DATABASE_URL: postgresql://lumi:lumi@localhost:5432/lumi
+      PROFILE_TEST_ENABLE_DESTRUCTIVE: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/250-adventure-child-avatar-selection
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Patch deterministic child-avatar selection and regression
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          repo = Path('packages/profiles/src/db/repositories/drizzle/drizzle-character.repository.ts')
+          text = repo.read_text()
+          old = '''        and(\n          eq(lumiCharacters.childProfileId, childProfileId),\n          eq(lumiCharacters.householdId, householdId),\n          isNull(lumiCharacters.deletedAt),\n        ),\n      )\n      .orderBy(lumiCharacters.createdAt)\n      .limit(1);'''
+          new = '''        and(\n          eq(lumiCharacters.childProfileId, childProfileId),\n          eq(lumiCharacters.householdId, householdId),\n          eq(lumiCharacters.characterSubtype, "child_avatar"),\n          isNull(lumiCharacters.deletedAt),\n        ),\n      )\n      .orderBy(lumiCharacters.createdAt)\n      .limit(1);'''
+          if old not in text:
+              raise SystemExit('findByChildProfile query shape changed')
+          repo.write_text(text.replace(old, new, 1))
+
+          service = Path('packages/profiles/src/application/character-bootstrap.service.ts')
+          text = service.read_text()
+          old = '''      characterType: state.characterType,\n      subtype: state.subtype,\n      originMode: state.originMode,'''
+          new = '''      characterType: state.characterType,\n      subtype: state.subtype,\n      characterSubtype: state.characterSubtype,\n      originMode: state.originMode,'''
+          if old not in text:
+              raise SystemExit('character create mapping shape changed')
+          service.write_text(text.replace(old, new, 1))
+
+          test = Path('packages/profiles/tests/integration/character-bootstrap.integration.test.ts')
+          text = test.read_text()
+          import_anchor = 'import { DrizzleChildProfileRepository } from "../../src/db/repositories/drizzle/drizzle-child-profile.repository";\n'
+          import_line = 'import { DrizzleCharacterRepository } from "../../src/db/repositories/drizzle/drizzle-character.repository";\n'
+          if import_line not in text:
+              if import_anchor not in text:
+                  raise SystemExit('test import anchor changed')
+              text = text.replace(import_anchor, import_anchor + import_line, 1)
+          regression = r'''
+
+describe("CharacterRepository primary child-avatar selection regression", () => {
+  itIfDb(
+    "findByChildProfile ignores an older NPC and returns the active child avatar",
+    async () => {
+      const { household, profile } = await setupHouseholdAndProfileWithPolicy(
+        "PrimaryAvatar",
+        "6-8",
+      );
+      await setupLlmConfig(household.id);
+      const { batchId, archetypeId } = await setupArchetypeBatch(
+        household.id,
+        profile.id,
+      );
+      const handoff = await createOrReplaceFirstRunHandoff(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        characterType: "explorer",
+        originMode: "auto",
+        archetypeBatchId: batchId,
+        archetypeId,
+      });
+      const packages = await generateAndPersistOriginPackages(
+        TEST_USER_ID,
+        household.id,
+        profile.id,
+      );
+      const original = await consumeHandoffAndCreateCharacter(TEST_USER_ID, {
+        householdId: household.id,
+        childProfileId: profile.id,
+        handoffId: handoff.id,
+        originPackageId: packages.packages[0]!.id,
+      });
+
+      const d = db!;
+      const [originalRow] = await d
+        .select()
+        .from(lumiCharacters)
+        .where(eq(lumiCharacters.id, original.character.id))
+        .limit(1);
+      expect(originalRow).toBeTruthy();
+
+      await d
+        .update(lumiCharacters)
+        .set({
+          characterSubtype: "npc",
+          createdAt: new Date(Date.now() - 60_000),
+        })
+        .where(eq(lumiCharacters.id, original.character.id));
+
+      const freshAvatarId = crypto.randomUUID();
+      const now = new Date();
+      await d.insert(lumiCharacters).values({
+        ...originalRow!,
+        id: freshAvatarId,
+        name: "Fresh Child Avatar",
+        characterSubtype: "child_avatar",
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+      });
+
+      const repository = new DrizzleCharacterRepository(d as never);
+      const selected = await repository.findByChildProfile(
+        profile.id,
+        household.id,
+      );
+      expect(selected?.id).toBe(freshAvatarId);
+      expect(selected?.characterSubtype).toBe("child_avatar");
+    },
+  );
+});
+'''
+          if 'CharacterRepository primary child-avatar selection regression' not in text:
+              text += regression
+          test.write_text(text)
+          PY
+      - run: pnpm prettier --write packages/profiles/src/db/repositories/drizzle/drizzle-character.repository.ts packages/profiles/src/application/character-bootstrap.service.ts packages/profiles/tests/integration/character-bootstrap.integration.test.ts
+      - run: pnpm prettier --check packages/profiles/src/db/repositories/drizzle/drizzle-character.repository.ts packages/profiles/src/application/character-bootstrap.service.ts packages/profiles/tests/integration/character-bootstrap.integration.test.ts
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: Exact profile integration regression
+        run: pnpm --filter @lumi/profiles test:int -- character-bootstrap.integration.test.ts
+      - run: pnpm test
+      - name: Prepare Stories browser DB
+        run: pnpm --filter @lumi/profiles profile:migrate
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Stories browser journey
+        run: pnpm --filter @lumi/web exec playwright test --config playwright.stories-ux-v2.config.ts
+      - name: Commit validated product diff
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/profiles/src/db/repositories/drizzle/drizzle-character.repository.ts packages/profiles/src/application/character-bootstrap.service.ts packages/profiles/tests/integration/character-bootstrap.integration.test.ts
+          git commit -m "fix(profiles): resolve primary child avatar deterministically"
+          git push origin HEAD:fix/250-adventure-child-avatar-selection
+      - name: Record result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body "Child-avatar selection patch+preflight finished **$JOB_STATUS**: \`$GITHUB_RUN_ID\`. No paid Gate D run was started."
