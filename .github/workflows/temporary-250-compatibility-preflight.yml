@@ -5,7 +5,7 @@ on:
     branches:
       - fix/250-compatibility-progressable-suggestions
     paths:
-      - .ops/250-compatibility-preflight.trigger
+      - .github/workflows/temporary-250-compatibility-preflight.yml
 
 permissions:
   contents: read
