@@ -43,15 +43,19 @@ jobs:
           curl --fail-with-body --silent --show-error -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' --data-binary "@$RUNNER_TEMP/bypass.json" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" >/dev/null
           echo "secret=$secret" >> "$GITHUB_OUTPUT"
 
-      - name: Read masked production DATABASE_URL
+      - name: Pull masked production DATABASE_URL with Vercel CLI
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?decrypt=true&teamId=$VERCEL_ORG_ID" > "$RUNNER_TEMP/vercel-env.json"
-          database_url="$(jq -r '.envs[] | select(.key == "DATABASE_URL") | .target as $t | select(($t == "production") or (($t|type) == "array" and (($t|index("production")) != null))) | .value' "$RUNNER_TEMP/vercel-env.json" | head -n1)"
-          test -n "$database_url" && test "$database_url" != "null"
-          echo "::add-mask::$database_url"
-          printf '%s' "$database_url" > "$RUNNER_TEMP/database-url"
-          echo "Production DATABASE_URL resolved and masked."
+          mkdir -p .vercel
+          jq -n --arg orgId "$VERCEL_ORG_ID" --arg projectId "$VERCEL_PROJECT_ID" '{orgId:$orgId,projectId:$projectId}' > .vercel/project.json
+          npx --yes vercel@latest env pull "$RUNNER_TEMP/.env.production" --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null
+          set -a
+          source "$RUNNER_TEMP/.env.production"
+          set +a
+          test -n "${DATABASE_URL:-}"
+          echo "::add-mask::$DATABASE_URL"
+          printf '%s' "$DATABASE_URL" > "$RUNNER_TEMP/database-url"
+          echo "Production DATABASE_URL pulled and masked."
 
       - name: Ensure PostgreSQL client
         run: |
