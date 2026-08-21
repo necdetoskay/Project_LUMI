@@ -4,6 +4,7 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { selectAdventureCandidateWindow } from "@/lib/stories/adventure-candidate-policy";
+import { adventureReadinessForBootstrap } from "@/lib/stories/adventure-readiness";
 import {
   projectInventoryCandidate,
   projectOpportunityCandidate,
@@ -124,10 +125,7 @@ export const GET = observeHandler(
         character.id,
       ).catch(() => null);
       const bootstrapStatus = foundation?.bootstrapManifest?.status ?? null;
-      const readiness =
-        bootstrapStatus === "planned" || bootstrapStatus === "running"
-          ? "preparing"
-          : "ready";
+      const readiness = adventureReadinessForBootstrap(bootstrapStatus);
 
       const [continuity, opportunities, world, currentLocation] =
         await Promise.all([
