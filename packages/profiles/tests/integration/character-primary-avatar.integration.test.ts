@@ -52,8 +52,8 @@ describe("DrizzleCharacterRepository primary avatar selection", () => {
     const childProfileId = crypto.randomUUID();
     const npcId = crypto.randomUUID();
     const avatarId = crypto.randomUUID();
-    const oldCreatedAt = new Date(Date.now() - 60_000);
-    const freshCreatedAt = new Date();
+    const oldCreatedAt = new Date(Date.now() - 60_000).toISOString();
+    const freshCreatedAt = new Date().toISOString();
 
     await db!.execute(sql`
       INSERT INTO profile.households (id, name, slug)
@@ -71,7 +71,7 @@ describe("DrizzleCharacterRepository primary avatar selection", () => {
       id: string,
       name: string,
       characterSubtype: "npc" | "child_avatar",
-      createdAt: Date,
+      createdAt: string,
     ) => {
       await db!.execute(sql`
         INSERT INTO profile.lumi_characters (

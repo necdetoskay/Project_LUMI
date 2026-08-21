@@ -60,7 +60,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Primary avatar integration regression
-        run: pnpm --filter @lumi/profiles test:int -- character-primary-avatar.integration.test.ts
+        run: pnpm --filter @lumi/profiles exec vitest run --config vitest.integration.config.ts tests/integration/character-primary-avatar.integration.test.ts
 
       - name: Full unit test suite
         run: pnpm test
