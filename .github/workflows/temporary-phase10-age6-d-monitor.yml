@@ -1,0 +1,42 @@
+name: Temporary Phase 10 Gate D Monitor
+
+on:
+  push:
+    branches:
+      - ops/250-fresh-age6-d
+    paths:
+      - .github/workflows/temporary-phase10-age6-d-monitor.yml
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Find and monitor Gate D run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id=""
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list --repo "$GH_REPO" --workflow "Temporary Phase 10 Gate D Age-6 Acceptance" --branch ops/250-fresh-age6-d --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+            if [ -n "$run_id" ]; then break; fi
+            sleep 2
+          done
+          test -n "$run_id"
+          echo "Gate D run: $run_id"
+          gh issue comment 250 --repo "$GH_REPO" --body "## Phase 10 Gate D fresh age-6 run started\n\n- run: https://github.com/$GH_REPO/actions/runs/$run_id\n- branch: \`ops/250-fresh-age6-d\`\n- age: \`6\`\n- run label: \`epic-250-gate-d-age6-20260821\`\n\nThis is the fresh persistent paid acceptance run started only after B and C passed."
+          set +e
+          gh run watch "$run_id" --repo "$GH_REPO" --exit-status
+          watch_status=$?
+          set -e
+          conclusion="$(gh run view "$run_id" --repo "$GH_REPO" --json conclusion --jq '.conclusion')"
+          artifact_name="$(gh api "repos/$GH_REPO/actions/runs/$run_id/artifacts" --jq '.artifacts[0].name // ""')"
+          gh issue comment 250 --repo "$GH_REPO" --body "## Phase 10 Gate D fresh age-6 run completed\n\n- conclusion: **$conclusion**\n- run: https://github.com/$GH_REPO/actions/runs/$run_id\n- evidence artifact: \`$artifact_name\`\n\nGate E must not begin unless Gate D evidence is inspected and accepted."
+          exit "$watch_status"
