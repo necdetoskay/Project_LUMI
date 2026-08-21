@@ -460,14 +460,40 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await loginThroughUi(page, config.parentEmail, config.parentPassword);
       await checkpoint("login:completed");
 
-      const newChildLink = page
-        .locator('a[href="/app/onboarding?addProfile=1"]')
-        .first();
-      await expect(
-        newChildLink,
-        "The live parent account must already have a primary household before this persistent pack runs",
-      ).toBeVisible({ timeout: 60_000 });
-      await newChildLink.click();
+      const emptyDashboardAddProfile = page.getByRole("link", {
+        name: "Çocuk Profili Oluştur",
+        exact: true,
+      });
+
+      if (await emptyDashboardAddProfile.isVisible()) {
+        await emptyDashboardAddProfile.click();
+      } else {
+        const childAreaLink = page.getByRole("link", {
+          name: /Çocuğun alanını aç/,
+        });
+        await expect(
+          childAreaLink,
+          "The live parent account must already have a primary household and an accessible child-profile path before this persistent pack runs",
+        ).toBeVisible({ timeout: 60_000 });
+        await childAreaLink.click();
+
+        const profilesLink = page
+          .locator('a[href="/app/profiles"]')
+          .filter({ hasText: "LUMI" })
+          .first();
+        await expect(profilesLink).toBeVisible({ timeout: 60_000 });
+        await profilesLink.click();
+        await expect(page).toHaveURL(/\/app\/profiles\/?$/, {
+          timeout: 60_000,
+        });
+
+        const newChildLink = page.getByRole("link", {
+          name: "Yeni Profil Ekle",
+          exact: true,
+        });
+        await expect(newChildLink).toBeVisible({ timeout: 60_000 });
+        await newChildLink.click();
+      }
 
       const childForm = page
         .locator("form")
@@ -511,8 +537,11 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await checkpoint("child-profile:verified");
 
       await createdProfileCard
-        .getByRole("link", { name: "Profili aç" })
-        .click();
+        .getByRole("link", {
+          name: "Profili Görüntüle",
+          exact: true,
+        })
+        .click({ timeout: 60_000 });
       await expect(page).toHaveURL(
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },
@@ -617,9 +646,9 @@ test.describe.serial("LUMI live long-horizon baseline", () => {
       await checkpoint("onboarding:committed");
 
       await page
-        .getByLabel("Çocuk deneyimi")
+        .getByLabel("Karakter yolu")
         .getByRole("link", { name: "Profil", exact: true })
-        .click();
+        .click({ timeout: 60_000 });
       await expect(page).toHaveURL(
         new RegExp(`/app/profiles/${escapeRegExp(childProfileId)}/?$`),
         { timeout: 60_000 },

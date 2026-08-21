@@ -49,6 +49,7 @@ export default defineConfig({
   ...protectedPreviewConfig,
   use: {
     baseURL,
+    actionTimeout: 60_000,
     ...protectedPreviewUse,
     // Do not retain Playwright traces/video/screenshots for this live suite: they can
     // capture account identifiers, cookies, form values, or other live-session data.
