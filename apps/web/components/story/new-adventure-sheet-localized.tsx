@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import {
+  shouldRetryAdventureCandidates,
+  type AdventureReadiness,
+} from "@/lib/stories/adventure-readiness";
 import type {
   AdventureHookCandidate,
   AdventureSourceFamily,
@@ -17,6 +21,7 @@ type NewAdventureSheetProps = {
 
 type CandidatesResponse = {
   candidates?: AdventureHookCandidate[];
+  readiness?: AdventureReadiness;
 };
 
 type StartResponse = {
@@ -32,6 +37,12 @@ const FAMILY_ICONS: Record<AdventureSourceFamily, string> = {
 
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const PREPARING_RETRY_DELAY_MS = 1_000;
+const PREPARING_MAX_ATTEMPTS = 45;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 export function NewAdventureSheetLocalized({
   childProfileId,
@@ -43,39 +54,90 @@ export function NewAdventureSheetLocalized({
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const loadGenerationRef = useRef(0);
   const [page, setPage] = useState(0);
   const [candidates, setCandidates] = useState<AdventureHookCandidate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [readiness, setReadiness] = useState<AdventureReadiness>("ready");
   const [error, setError] = useState<string | null>(null);
   const [startingId, setStartingId] = useState<string | null>(null);
 
   const loadCandidates = useCallback(
     async (nextPage: number) => {
+      const generation = ++loadGenerationRef.current;
+      const maxAttempts = nextPage === 0 ? PREPARING_MAX_ATTEMPTS : 1;
       setLoading(true);
+      setReadiness("ready");
       setError(null);
+      if (nextPage === 0) setCandidates([]);
+
       try {
-        const response = await fetch(
-          `/api/child-profiles/${encodeURIComponent(childProfileId)}/stories/adventure-candidates?householdId=${encodeURIComponent(householdId)}&page=${nextPage}`,
-        );
-        const body = (await response.json()) as CandidatesResponse;
-        if (!response.ok) {
-          setError(t("loadFailed"));
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const response = await fetch(
+            `/api/child-profiles/${encodeURIComponent(childProfileId)}/stories/adventure-candidates?householdId=${encodeURIComponent(householdId)}&page=${nextPage}`,
+          );
+          const body = (await response.json()) as CandidatesResponse;
+          if (generation !== loadGenerationRef.current) return;
+
+          if (!response.ok) {
+            setError(t("loadFailed"));
+            return;
+          }
+
+          const nextCandidates = body.candidates ?? [];
+          const retryPreparing = shouldRetryAdventureCandidates({
+            page: nextPage,
+            candidateCount: nextCandidates.length,
+            readiness: body.readiness,
+            attempt,
+            maxAttempts,
+          });
+
+          if (retryPreparing) {
+            setReadiness("preparing");
+            await delay(PREPARING_RETRY_DELAY_MS);
+            if (generation !== loadGenerationRef.current) return;
+            continue;
+          }
+
+          const exhaustedPreparing =
+            nextPage === 0 &&
+            nextCandidates.length === 0 &&
+            body.readiness === "preparing";
+          if (exhaustedPreparing) {
+            setReadiness("ready");
+            setCandidates([]);
+            setError(t("preparingTimeout"));
+            return;
+          }
+
+          setReadiness(body.readiness ?? "ready");
+          setCandidates(nextCandidates);
           return;
         }
-        setCandidates(body.candidates ?? []);
       } catch {
-        setError(t("loadUnexpected"));
+        if (generation === loadGenerationRef.current) {
+          setError(t("loadUnexpected"));
+        }
       } finally {
-        setLoading(false);
+        if (generation === loadGenerationRef.current) {
+          setLoading(false);
+        }
       }
     },
     [childProfileId, householdId, t],
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      loadGenerationRef.current += 1;
+      return;
+    }
     setPage(0);
     void loadCandidates(0);
+    return () => {
+      loadGenerationRef.current += 1;
+    };
   }, [loadCandidates, open]);
 
   useEffect(() => {
@@ -212,13 +274,25 @@ export function NewAdventureSheetLocalized({
           ) : null}
 
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  className="h-44 animate-pulse rounded-3xl bg-surface-container"
-                  key={index}
-                />
-              ))}
+            <div aria-busy="true">
+              {readiness === "preparing" ? (
+                <div className="mb-4 rounded-2xl border border-primary/15 bg-primary-fixed/35 px-4 py-3">
+                  <div className="text-sm font-extrabold text-primary">
+                    {t("preparingTitle")}
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-on-surface-variant">
+                    {t("preparingText")}
+                  </p>
+                </div>
+              ) : null}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    className="h-44 animate-pulse rounded-3xl bg-surface-container"
+                    key={index}
+                  />
+                ))}
+              </div>
             </div>
           ) : groupedCandidates.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
