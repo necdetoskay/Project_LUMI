@@ -2,7 +2,11 @@ import { DrizzleCharacterRepository } from "../db/repositories/drizzle/drizzle-c
 import { DrizzleHouseholdRepository } from "../db/repositories/drizzle/drizzle-household.repository";
 import type { LumiCharacterRecord } from "../db";
 import { AuthorizationError } from "../domain";
-import type { BroadCharacterKind, CharacterType, OriginMode } from "../domain/types";
+import type {
+  BroadCharacterKind,
+  CharacterType,
+  OriginMode,
+} from "../domain/types";
 import type { CharacterSummary } from "./character-bootstrap.service";
 import { getProfileDb } from "./db";
 
@@ -54,7 +58,10 @@ export async function getPrimaryChildAvatarById(
 ): Promise<CharacterSummary | null> {
   await assertHouseholdAccess(userId, householdId);
   const repository = new DrizzleCharacterRepository(getProfileDb());
-  const record = await repository.findChildAvatarById(characterId, householdId);
+  const record = await repository.findChildAvatarById(
+    characterId,
+    householdId,
+  );
   return record ? toCharacterSummary(record) : null;
 }
 
@@ -65,7 +72,10 @@ export async function archivePrimaryChildAvatar(
 ): Promise<{ archived: boolean }> {
   await assertHouseholdAccess(userId, householdId);
   const repository = new DrizzleCharacterRepository(getProfileDb());
-  const record = await repository.findChildAvatarById(characterId, householdId);
+  const record = await repository.findChildAvatarById(
+    characterId,
+    householdId,
+  );
   if (!record) return { archived: false };
   await repository.softDelete(characterId, householdId);
   return { archived: true };
