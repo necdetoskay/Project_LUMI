@@ -4,7 +4,7 @@ import { z } from "zod";
 import { withParent } from "@/lib/auth/with-parent";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 import { selectAdventureCandidateWindow } from "@/lib/stories/adventure-candidate-policy";
-import { adventureReadinessForBootstrap } from "@/lib/stories/adventure-readiness";
+import { adventureReadinessForCandidateWindow } from "@/lib/stories/adventure-readiness";
 import {
   projectInventoryCandidate,
   projectOpportunityCandidate,
@@ -124,8 +124,8 @@ export const GET = observeHandler(
       const foundation = await getCharacterFoundationByCharacterId(
         character.id,
       ).catch(() => null);
-      const bootstrapStatus = foundation?.bootstrapManifest?.status ?? null;
-      const readiness = adventureReadinessForBootstrap(bootstrapStatus);
+      const bootstrapManifest = foundation?.bootstrapManifest ?? null;
+      const bootstrapStatus = bootstrapManifest?.status ?? null;
 
       const [continuity, opportunities, world, currentLocation] =
         await Promise.all([
@@ -216,6 +216,12 @@ export const GET = observeHandler(
           inventory_item:
             "No story-selectable inventory item is currently available.",
         },
+      });
+      const readiness = adventureReadinessForCandidateWindow({
+        bootstrapStatus,
+        candidateCount: selection.candidates.length,
+        bootstrapUpdatedAt: bootstrapManifest?.updatedAt ?? null,
+        now: new Date(),
       });
 
       return NextResponse.json({
