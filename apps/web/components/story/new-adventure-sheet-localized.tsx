@@ -74,6 +74,8 @@ export function NewAdventureSheetLocalized({
       if (nextPage === 0) setCandidates([]);
 
       try {
+        let observedPreparing = false;
+
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
           const response = await fetch(
             `/api/child-profiles/${encodeURIComponent(childProfileId)}/stories/adventure-candidates?householdId=${encodeURIComponent(householdId)}&page=${nextPage}`,
@@ -87,10 +89,17 @@ export function NewAdventureSheetLocalized({
           }
 
           const nextCandidates = body.candidates ?? [];
+          if (body.readiness === "preparing") observedPreparing = true;
+          const effectiveReadiness =
+            nextPage === 0 &&
+            nextCandidates.length === 0 &&
+            observedPreparing
+              ? "preparing"
+              : body.readiness;
           const retryPreparing = shouldRetryAdventureCandidates({
             page: nextPage,
             candidateCount: nextCandidates.length,
-            readiness: body.readiness,
+            readiness: effectiveReadiness,
             attempt,
             maxAttempts,
           });
@@ -105,7 +114,7 @@ export function NewAdventureSheetLocalized({
           const exhaustedPreparing =
             nextPage === 0 &&
             nextCandidates.length === 0 &&
-            body.readiness === "preparing";
+            effectiveReadiness === "preparing";
           if (exhaustedPreparing) {
             setReadiness("ready");
             setCandidates([]);
