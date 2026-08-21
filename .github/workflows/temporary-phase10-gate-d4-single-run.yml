@@ -1,0 +1,104 @@
+name: Temporary Phase 10 Gate D4 Single Fresh Age-6 Run
+
+on:
+  push:
+    branches:
+      - ops/250-gate-d4-single-run
+    paths:
+      - .github/workflows/temporary-phase10-gate-d4-single-run.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-playwright:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_pCUTUf6ShnPxUoJ0hcxWZjHw
+      VERCEL_PROJECT_ID: prj_Drfoxs3E6ioX234IVDCUMuHfgIOd
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_CHILD_AGE: "6"
+      LUMI_LONG_HORIZON_RNG_SEED: "2508211542"
+      LUMI_LONG_HORIZON_RUN_ID: epic-250-gate-d4-age6-20260821
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Record single-run identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body "## Gate D4 single fresh age-6 run started\n\n- run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\n- run id: \`$GITHUB_RUN_ID\`\n- branch: \`$GITHUB_REF_NAME\`\n- head: \`$GITHUB_SHA\`\n- product baseline: main cleanup head descended from #422 readiness fix\n- run label: \`$LUMI_LONG_HORIZON_RUN_ID\`\n\nNo PR or secondary paid trigger is used for this run."
+
+      - name: Guard live credentials
+        run: |
+          set -euo pipefail
+          test -n "$LUMI_LONG_HORIZON_BASE_URL"
+          test -n "$LUMI_LONG_HORIZON_PARENT_EMAIL"
+          test -n "$LUMI_LONG_HORIZON_PARENT_PASSWORD"
+          test -n "$VERCEL_TOKEN"
+
+      - name: Create temporary Vercel automation bypass
+        id: bypass
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret="$(openssl rand -hex 16)"
+          echo "::add-mask::$secret"
+          request="$RUNNER_TEMP/vercel-automation-bypass-generate.json"
+          response="$RUNNER_TEMP/vercel-automation-bypass-response.json"
+          jq -n --arg secret "$secret" '{generate:{secret:$secret,note:"Temporary Project LUMI Phase 10 Gate D4 single run"}}' > "$request"
+          curl --fail-with-body --silent --show-error --request PATCH --output "$response" --header "Authorization: Bearer $VERCEL_TOKEN" --header "Content-Type: application/json" --data-binary "@$request" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID"
+          echo "secret=$secret" >> "$GITHUB_OUTPUT"
+
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+
+      - name: Run browser-only persistent acceptance pack
+        env:
+          LUMI_LONG_HORIZON_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ steps.bypass.outputs.secret }}
+        run: pnpm --filter @lumi/web test:long-horizon:live
+
+      - name: Upload long-horizon evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: epic-250-gate-d4-age6-${{ github.run_id }}
+          path: apps/web/tests/e2e/long-horizon/evidence/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Record final run status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body "Gate D4 single fresh age-6 run finished at job level with status **$JOB_STATUS**. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Inspect the uploaded evidence artifact before declaring Gate D PASS. No automatic retry was started."
+
+      - name: Revoke temporary Vercel automation bypass
+        if: always() && steps.bypass.outputs.secret != ''
+        env:
+          AUTOMATION_SECRET: ${{ steps.bypass.outputs.secret }}
+        shell: bash
+        run: |
+          revoke="$RUNNER_TEMP/vercel-automation-bypass-revoke.json"
+          jq -n --arg secret "$AUTOMATION_SECRET" '{revoke:{secret:$secret,regenerate:false}}' > "$revoke"
+          curl --silent --show-error --request PATCH --output /dev/null --header "Authorization: Bearer $VERCEL_TOKEN" --header "Content-Type: application/json" --data-binary "@$revoke" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" || true
