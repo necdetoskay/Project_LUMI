@@ -44,12 +44,49 @@ describe("adventure readiness", () => {
     ).toBe("preparing");
   });
 
+  it("uses fresh character creation when a completed bootstrap timestamp is stale", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "completed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "2026-08-21T11:55:00.000Z",
+        characterCreatedAt: "2026-08-21T11:59:40.000Z",
+        now: new Date("2026-08-21T12:00:00.000Z"),
+      }),
+    ).toBe("preparing");
+  });
+
+  it("uses fresh character creation when bootstrap snapshot is temporarily absent", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: null,
+        candidateCount: 0,
+        bootstrapUpdatedAt: null,
+        characterCreatedAt: new Date("2026-08-21T11:59:40.000Z"),
+        now: new Date("2026-08-21T12:00:00.000Z"),
+      }),
+    ).toBe("preparing");
+  });
+
+  it("does not use character freshness to hide an explicit failed bootstrap", () => {
+    expect(
+      adventureReadinessForCandidateWindow({
+        bootstrapStatus: "failed",
+        candidateCount: 0,
+        bootstrapUpdatedAt: "2026-08-21T11:59:45.000Z",
+        characterCreatedAt: "2026-08-21T11:59:40.000Z",
+        now: new Date("2026-08-21T12:00:00.000Z"),
+      }),
+    ).toBe("ready");
+  });
+
   it("becomes ready immediately when a real candidate is visible", () => {
     expect(
       adventureReadinessForCandidateWindow({
         bootstrapStatus: "completed",
         candidateCount: 1,
         bootstrapUpdatedAt: new Date("2026-08-21T11:59:36.573Z"),
+        characterCreatedAt: new Date("2026-08-21T11:59:40.000Z"),
         now: new Date("2026-08-21T11:59:45.000Z"),
       }),
     ).toBe("ready");
@@ -61,12 +98,13 @@ describe("adventure readiness", () => {
         bootstrapStatus: "completed",
         candidateCount: 0,
         bootstrapUpdatedAt: "2026-08-21T11:59:36.573Z",
+        characterCreatedAt: "2026-08-21T11:59:30.000Z",
         now: new Date("2026-08-21T12:01:36.573Z"),
       }),
     ).toBe("ready");
   });
 
-  it("fails open for an invalid persisted bootstrap timestamp", () => {
+  it("fails open for an invalid persisted bootstrap timestamp without a fresh character fallback", () => {
     expect(
       adventureReadinessForCandidateWindow({
         bootstrapStatus: "completed",
@@ -78,7 +116,7 @@ describe("adventure readiness", () => {
   });
 
   it.each(["failed", null] as const)(
-    "does not hide stable empty state for %s bootstrap",
+    "does not hide stable empty state for %s bootstrap without fresh character evidence",
     (bootstrapStatus) => {
       expect(
         adventureReadinessForCandidateWindow({

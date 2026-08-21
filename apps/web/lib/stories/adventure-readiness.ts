@@ -24,10 +24,21 @@ function timestampMilliseconds(
   return Number.isFinite(milliseconds) ? milliseconds : null;
 }
 
+function isWithinVisibilityGrace(
+  timestampMs: number | null,
+  nowMs: number,
+  graceMs: number,
+): boolean {
+  if (timestampMs === null) return false;
+  const ageMs = nowMs - timestampMs;
+  return ageMs >= 0 && ageMs < graceMs;
+}
+
 export function adventureReadinessForCandidateWindow(input: {
   bootstrapStatus: AdventureBootstrapStatus;
   candidateCount: number;
   bootstrapUpdatedAt: AdventureBootstrapTimestamp;
+  characterCreatedAt?: AdventureBootstrapTimestamp;
   now: Date;
   visibilityGraceMs?: number;
 }): AdventureReadiness {
@@ -38,15 +49,34 @@ export function adventureReadinessForCandidateWindow(input: {
   ) {
     return "preparing";
   }
-  if (input.bootstrapStatus !== "completed") return "ready";
+  if (input.bootstrapStatus === "failed") return "ready";
 
-  const bootstrapUpdatedAtMs = timestampMilliseconds(input.bootstrapUpdatedAt);
-  if (bootstrapUpdatedAtMs === null) return "ready";
-
-  const ageMs = input.now.getTime() - bootstrapUpdatedAtMs;
   const graceMs =
     input.visibilityGraceMs ?? INITIAL_ADVENTURE_VISIBILITY_GRACE_MS;
-  return ageMs >= 0 && ageMs < graceMs ? "preparing" : "ready";
+  const nowMs = input.now.getTime();
+  const bootstrapUpdatedAtMs = timestampMilliseconds(input.bootstrapUpdatedAt);
+  const characterCreatedAtMs = timestampMilliseconds(
+    input.characterCreatedAt ?? null,
+  );
+
+  if (
+    input.bootstrapStatus === "completed" &&
+    isWithinVisibilityGrace(bootstrapUpdatedAtMs, nowMs, graceMs)
+  ) {
+    return "preparing";
+  }
+
+  // A freshly committed character is a bounded fallback freshness signal for
+  // the first empty adventure window. This covers transient or stale bootstrap
+  // snapshots without forcing old/stably-empty profiles to poll forever.
+  if (
+    (input.bootstrapStatus === "completed" || input.bootstrapStatus === null) &&
+    isWithinVisibilityGrace(characterCreatedAtMs, nowMs, graceMs)
+  ) {
+    return "preparing";
+  }
+
+  return "ready";
 }
 
 export function shouldRetryAdventureCandidates(input: {
