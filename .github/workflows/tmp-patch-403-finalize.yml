@@ -1,0 +1,83 @@
+name: Temporary PR 403 Finalize Fail-Fast Patch
+
+on:
+  push:
+    branches:
+      - fix/250-live-profile-navigation
+    paths:
+      - .github/workflows/tmp-patch-403-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/250-live-profile-navigation
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Patch finalize assertion, format, and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts")
+          text = path.read_text()
+          old = '''      await page.getByTestId("finalize-character").click();
+          await expect(page).toHaveURL(
+            /\\/app\\/profiles\\/[^/?#]+\\/characters\\/[^/?#]+\\/?$/,
+            { timeout: 120_000 },
+          );
+          '''
+          new = '''      await page.getByTestId("finalize-character").click();
+          const finalizeError = page.getByTestId("onboarding-error");
+          const committedCharacterUrl =
+            /\\/app\\/profiles\\/[^/?#]+\\/characters\\/[^/?#]+\\/?$/;
+          await expect
+            .poll(
+              async () => {
+                if (await finalizeError.isVisible()) return "error";
+                return committedCharacterUrl.test(new URL(page.url()).pathname)
+                  ? "committed"
+                  : "pending";
+              },
+              {
+                timeout: 120_000,
+                message: "character finalize should commit or expose a product error",
+              },
+            )
+            .not.toBe("pending");
+          if (await finalizeError.isVisible()) {
+            throw new Error(
+              `Canonical onboarding finalize failed: ${normalizeEvidenceText(await finalizeError.innerText(), 700)}`,
+            );
+          }
+          await expect(page).toHaveURL(committedCharacterUrl, { timeout: 5_000 });
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f"Expected exactly one finalize assertion block, found {text.count(old)}")
+          path.write_text(text.replace(old, new))
+          PY
+          pnpm exec prettier --write apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git rm .github/workflows/tmp-patch-403-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/tests/e2e/long-horizon/baseline-onboarding.live.spec.ts
+          git commit -m "test(live): fail fast on finalize product errors"
+          git push origin HEAD:fix/250-live-profile-navigation
