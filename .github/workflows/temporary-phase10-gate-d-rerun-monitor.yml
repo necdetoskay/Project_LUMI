@@ -12,6 +12,11 @@ permissions:
 jobs:
   monitor:
     runs-on: ubuntu-24.04
+    env:
+      LUMI_LONG_HORIZON_LIVE: "1"
+      LUMI_LONG_HORIZON_BASE_URL: https://project-lumi-web.vercel.app
+      LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
     steps:
       - name: Discover Gate D rerun
         env:
@@ -25,3 +30,19 @@ jobs:
           run_id="$(printf '%s' "$payload" | jq -r '.[0].databaseId // empty')"
           test -n "$run_id"
           echo "LUMI_250_D_RERUN_ID=$run_id"
+
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Inspect persisted Gate D rerun state
+        run: |
+          pnpm --filter @lumi/web exec playwright test \
+            --config playwright.production-smoke.config.ts \
+            tests/e2e/production-smoke/gate-d-rerun-state.live.spec.ts
