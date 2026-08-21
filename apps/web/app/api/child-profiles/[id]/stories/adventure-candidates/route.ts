@@ -124,7 +124,10 @@ export const GET = observeHandler(
         character.id,
       ).catch(() => null);
       const bootstrapStatus = foundation?.bootstrapManifest?.status ?? null;
-      const readiness = bootstrapStatus === "pending" ? "preparing" : "ready";
+      const readiness =
+        bootstrapStatus === "planned" || bootstrapStatus === "running"
+          ? "preparing"
+          : "ready";
 
       const [continuity, opportunities, world, currentLocation] =
         await Promise.all([
