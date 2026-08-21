@@ -1,0 +1,41 @@
+name: Temporary Phase 10 Run Monitor
+
+on:
+  push:
+    branches:
+      - ops/250-age6-current-acceptance
+    paths:
+      - .github/workflows/tmp-250-run-monitor.yml
+
+permissions:
+  actions: read
+  issues: write
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discover latest current-acceptance run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 5
+          runs="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --branch ops/250-age6-current-acceptance \
+            --limit 8 \
+            --json conclusion,createdAt,databaseId,event,headSha,name,status)"
+          body="$RUNNER_TEMP/body.md"
+          {
+            echo '## Phase 10 current acceptance rerun discovery'
+            echo
+            echo "Monitor run: \`${GITHUB_RUN_ID}\`"
+            echo
+            echo '```json'
+            echo "$runs"
+            echo '```'
+          } > "$body"
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body-file "$body"
