@@ -1,6 +1,10 @@
 import { after, NextResponse } from "next/server";
 
 import { withParent } from "@/lib/auth/with-parent";
+import {
+  MAX_COMPATIBILITY_GENERATION_ATTEMPTS,
+  progressableCompatibilitySuggestions,
+} from "@/lib/character-onboarding/compatibility-suggestions";
 import { finalizeCharacterOnboarding } from "@/lib/character-onboarding/finalize-character-foundation.service";
 import { runLivingWorldBootstrapForCharacter } from "@/lib/character-onboarding/living-world-bootstrap.service";
 import {
@@ -152,10 +156,25 @@ export async function POST(request: Request) {
               suggestion: body.suggestion as never,
             }),
           });
-        case "generate-compatibility":
-          return NextResponse.json(
-            await generateCompatibilitySuggestions(parent.id, input),
-          );
+        case "generate-compatibility": {
+          for (
+            let attempt = 1;
+            attempt <= MAX_COMPATIBILITY_GENERATION_ATTEMPTS;
+            attempt += 1
+          ) {
+            const generated = await generateCompatibilitySuggestions(
+              parent.id,
+              input,
+            );
+            const suggestions = progressableCompatibilitySuggestions(
+              generated.suggestions,
+            );
+            if (suggestions.length > 0) {
+              return NextResponse.json({ ...generated, suggestions });
+            }
+          }
+          throw new Error("NO_PROGRESSABLE_COMPATIBILITY_SUGGESTIONS");
+        }
         case "select-compatibility":
           return NextResponse.json({
             cycle: await chooseCompatibility(parent.id, {
