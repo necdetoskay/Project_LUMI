@@ -1,0 +1,24 @@
+name: Temporary Phase 10 Child Avatar Preflight Monitor V4
+
+"on":
+  push:
+    branches:
+      - ops/250-child-avatar-preflight-monitor
+    paths:
+      - .github/workflows/temporary-phase10-child-avatar-preflight-monitor-v4.yml
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read target preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          result="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow temporary-phase10-child-avatar-selection-preflight.yml --branch fix/250-adventure-child-avatar-selection --limit 2 --json databaseId,headSha,status,conclusion,url)"
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" --body "Aligned child-avatar preflight monitor: \`$result\`"
