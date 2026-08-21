@@ -111,7 +111,7 @@ function foundation(
 }
 
 function materializer(
-  finalize: LivingWorldBootstrapMaterializer["finalize"],
+  finalize: NonNullable<LivingWorldBootstrapMaterializer["finalize"]>,
 ): LivingWorldBootstrapMaterializer {
   return {
     resolveLocalContext: vi.fn(async () => []),
