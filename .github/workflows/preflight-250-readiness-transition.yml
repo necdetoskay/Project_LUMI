@@ -1,0 +1,76 @@
+name: Gate D readiness transition preflight
+
+on:
+  push:
+    branches:
+      - fix/250-readiness-transition-race
+
+permissions:
+  contents: read
+
+jobs:
+  stories-readiness-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumi
+          POSTGRES_PASSWORD: lumi_test_only
+          POSTGRES_DB: lumi_readiness_transition_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumi -d lumi_readiness_transition_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_readiness_transition_test
+      PROFILE_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_readiness_transition_test
+      STORY_TEST_DATABASE_URL: postgresql://lumi:lumi_test_only@127.0.0.1:5432/lumi_readiness_transition_test
+      LUMI_SETTINGS_ENCRYPTION_KEY: lumi-readiness-preflight-encryption-key
+      NODE_ENV: test
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Guard disposable database
+        run: |
+          node <<'NODE'
+          const db = new URL(process.env.DATABASE_URL);
+          const name = db.pathname.replace(/^\//, '').toLowerCase();
+          if (!name.includes('test') && !name.includes('review')) {
+            console.error(`Refusing browser E2E against non-test database: ${name}`);
+            process.exit(1);
+          }
+          console.log(`Disposable DB guard passed: ${name}`);
+          NODE
+      - name: Apply migrations
+        run: |
+          pnpm --filter @lumi/web auth:migrate
+          pnpm --filter @lumi/profiles profile:migrate
+          pnpm --filter @lumi/world world:migrate
+          pnpm --filter @lumi/story story:migrate
+          pnpm --filter @lumi/npc-intelligence npc:migrate
+      - name: Install Chromium
+        run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
+      - name: Run readiness transition browser regression
+        run: pnpm --filter @lumi/web exec playwright test tests/e2e/stories-ux-v2.spec.ts
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: readiness-transition-preflight-artifacts
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
