@@ -153,6 +153,49 @@ async function mockStoriesApis(
   };
 }
 
+async function mockPreparingThenReadyCandidates(
+  page: Page,
+  childProfileId: string,
+  householdId: string,
+) {
+  let candidateCalls = 0;
+
+  await page.route(
+    `**/api/child-profiles/${childProfileId}/stories?householdId=${householdId}`,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          adventureHub: {
+            character: { id: "character-poll-e2e", name: "Işıl" },
+            ongoingAdventure: null,
+            pastAdventures: [],
+          },
+        }),
+      });
+    },
+  );
+
+  await page.route(
+    `**/api/child-profiles/${childProfileId}/stories/adventure-candidates**`,
+    async (route) => {
+      candidateCalls += 1;
+      const body =
+        candidateCalls < 3
+          ? { candidates: [], readiness: "preparing" }
+          : { candidates: candidateSet(0), readiness: "ready" };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(body),
+      });
+    },
+  );
+
+  return { getCandidateCalls: () => candidateCalls };
+}
+
 async function assertNoHorizontalOverflow(page: Page) {
   const dimensions = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -215,6 +258,29 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
+  });
+
+  test("TR desktop: preparing candidate polling survives render updates until cards become ready", async ({
+    page,
+  }) => {
+    await setLocale(page, "tr");
+    const { childProfileId, householdId } = await createAuthenticatedProfile(
+      page,
+      "poll-lifecycle",
+    );
+    const mocked = await mockPreparingThenReadyCandidates(
+      page,
+      childProfileId,
+      householdId,
+    );
+
+    await openStoriesTab(page, childProfileId);
+    await page.getByRole("button", { name: "Yeni Macera" }).first().click();
+
+    await expect(page.getByText("Parlayan orman")).toBeVisible({
+      timeout: 10_000,
+    });
+    expect(mocked.getCandidateCalls()).toBeGreaterThanOrEqual(3);
   });
 
   test("EN 360px: no overflow, keyboard-operable sheet and world-event start payload", async ({
