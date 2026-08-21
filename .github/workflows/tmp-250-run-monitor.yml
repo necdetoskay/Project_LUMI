@@ -16,7 +16,7 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     steps:
-      - name: Discover latest current-acceptance run
+      - name: Discover latest finalize diagnostic run
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -30,7 +30,7 @@ jobs:
             --json conclusion,createdAt,databaseId,event,headSha,name,status)"
           body="$RUNNER_TEMP/body.md"
           {
-            echo '## Phase 10 current acceptance rerun discovery'
+            echo '## Phase 10 finalize diagnostic discovery'
             echo
             echo "Monitor run: \`${GITHUB_RUN_ID}\`"
             echo
