@@ -8,9 +8,12 @@ const mockArchiveCharacter = vi.fn();
 vi.mock("@lumi/profiles/application", () => ({
   getCharacterById: (...args: unknown[]) => mockGetCharacterById(...args),
   getCharacterDomain: (...args: unknown[]) => mockGetCharacterDomain(...args),
+  archiveCharacter: (...args: unknown[]) => mockArchiveCharacter(...args),
+}));
+
+vi.mock("@lumi/profiles", () => ({
   getCharacterFoundationByCharacterId: (...args: unknown[]) =>
     mockGetCharacterFoundationByCharacterId(...args),
-  archiveCharacter: (...args: unknown[]) => mockArchiveCharacter(...args),
 }));
 
 vi.mock("@/lib/auth/with-parent", () => ({
