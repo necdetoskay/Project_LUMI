@@ -182,9 +182,11 @@ async function mockPreparingThenReadyCandidates(
     async (route) => {
       candidateCalls += 1;
       const body =
-        candidateCalls < 3
+        candidateCalls === 1
           ? { candidates: [], readiness: "preparing" }
-          : { candidates: candidateSet(0), readiness: "ready" };
+          : candidateCalls === 2
+            ? { candidates: [], readiness: "ready" }
+            : { candidates: candidateSet(0), readiness: "ready" };
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -260,7 +262,7 @@ test.describe("Stories UX v2 governed browser coverage", () => {
     await expect(trigger).toBeFocused();
   });
 
-  test("TR desktop: preparing candidate polling survives render updates until cards become ready", async ({
+  test("TR desktop: candidate polling survives ready-empty transition until cards become visible", async ({
     page,
   }) => {
     await setLocale(page, "tr");
