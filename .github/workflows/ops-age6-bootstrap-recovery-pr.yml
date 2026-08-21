@@ -43,19 +43,18 @@ jobs:
           curl --fail-with-body --silent --show-error -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' --data-binary "@$RUNNER_TEMP/bypass.json" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" >/dev/null
           echo "secret=$secret" >> "$GITHUB_OUTPUT"
 
-      - name: Pull masked production DATABASE_URL with Vercel CLI
+      - name: Read masked production DATABASE_URL
         run: |
           set -euo pipefail
-          mkdir -p .vercel
-          jq -n --arg orgId "$VERCEL_ORG_ID" --arg projectId "$VERCEL_PROJECT_ID" '{orgId:$orgId,projectId:$projectId}' > .vercel/project.json
-          npx --yes vercel@latest env pull "$RUNNER_TEMP/.env.production" --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null
-          set -a
-          source "$RUNNER_TEMP/.env.production"
-          set +a
-          test -n "${DATABASE_URL:-}"
-          echo "::add-mask::$DATABASE_URL"
-          printf '%s' "$DATABASE_URL" > "$RUNNER_TEMP/database-url"
-          echo "Production DATABASE_URL pulled and masked."
+          curl --fail-with-body --silent --show-error -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?decrypt=true&teamId=$VERCEL_ORG_ID" > "$RUNNER_TEMP/vercel-env.json"
+          database_url="$(jq -r '.. | objects | select(.key? == "DATABASE_URL") | . as $e | ($e.target? // empty) as $t | select(($t == "production") or (($t|type) == "array" and (($t|index("production")) != null))) | ($e.value? // empty)' "$RUNNER_TEMP/vercel-env.json" | head -n1)"
+          if [ -z "$database_url" ]; then
+            database_url="$(jq -r '.. | objects | select(.key? == "DATABASE_URL") | (.value? // empty)' "$RUNNER_TEMP/vercel-env.json" | head -n1)"
+          fi
+          test -n "$database_url"
+          echo "::add-mask::$database_url"
+          printf '%s' "$database_url" > "$RUNNER_TEMP/database-url"
+          echo "Production DATABASE_URL resolved recursively and masked."
 
       - name: Ensure PostgreSQL client
         run: |
