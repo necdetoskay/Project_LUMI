@@ -1,0 +1,56 @@
+name: Temporary Phase 10 Gate D8 Read-only State
+
+on:
+  push:
+    branches:
+      - ops/250-gate-d8-single-run
+    paths:
+      - .github/workflows/temporary-phase10-gate-d8-readonly.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    env:
+      BASE_URL: https://project-lumi-web.vercel.app
+      CHILD_PROFILE_ID: 171d1f88-c5a6-4829-a007-5d8a2f5e180a
+      CHARACTER_ID: 6f7bb034-05d4-415d-a9ee-ee932a4ed6a9
+      PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
+      PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
+    steps:
+      - name: Authenticate and read candidate state only
+        id: inspect
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          jar="$RUNNER_TEMP/cookies.txt"
+          login="$RUNNER_TEMP/login.json"
+          onboard="$RUNNER_TEMP/onboarding.json"
+          candidates="$RUNNER_TEMP/candidates.json"
+
+          jq -n --arg email "$PARENT_EMAIL" --arg password "$PARENT_PASSWORD" \
+            '{email:$email,password:$password,rememberMe:true}' > "$login"
+          curl --fail-with-body --silent --show-error \
+            -c "$jar" -b "$jar" \
+            -H 'content-type: application/json' \
+            --data-binary "@$login" \
+            "$BASE_URL/api/auth/login" >/dev/null
+
+          curl --fail-with-body --silent --show-error \
+            -c "$jar" -b "$jar" \
+            "$BASE_URL/api/onboarding" > "$onboard"
+          household_id="$(jq -r '.onboarding.householdId // empty' "$onboard")"
+          test -n "$household_id"
+
+          curl --fail-with-body --silent --show-error \
+            -c "$jar" -b "$jar" \
+            "$BASE_URL/api/child-profiles/$CHILD_PROFILE_ID/stories/adventure-candidates?householdId=$household_id&page=0" > "$candidates"
+
+          compact="$(jq -c '{candidateCount:(.candidates|length),readiness,bootstrapStatus,sourceFamilies:[.candidates[].sourceFamily],diagnostics,candidates:[.candidates[]|{id,sourceFamily,title}]}' "$candidates")"
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY" \
+            --body "## Gate D8 read-only candidate state\n\nProfile: \`$CHILD_PROFILE_ID\`\nCharacter: \`$CHARACTER_ID\`\nGET-only domain inspection; no model call and no canonical mutation.\n\n\`\`\`json\n$compact\n\`\`\`"
