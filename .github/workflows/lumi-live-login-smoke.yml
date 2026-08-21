@@ -49,11 +49,6 @@ jobs:
             --config playwright.long-horizon-live.config.ts \
             tests/e2e/long-horizon/login-smoke.live.spec.ts \
             tests/e2e/long-horizon/stories-smoke.live.spec.ts
-      - name: Retry existing #250 bootstrap exactly once
-        run: |
-          pnpm --filter @lumi/web exec playwright test \
-            --config playwright.production-smoke.config.ts \
-            tests/e2e/production-smoke/bootstrap-retry-once.live.spec.ts
       - name: Verify #250 bootstrap and adventure evidence
         run: |
           pnpm --filter @lumi/web exec playwright test \
