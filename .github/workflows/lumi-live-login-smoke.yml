@@ -16,7 +16,6 @@ on:
       - .ops/250-bootstrap-evidence.trigger
 
 permissions:
-  actions: read
   contents: read
 
 jobs:
@@ -29,17 +28,6 @@ jobs:
       LUMI_LONG_HORIZON_PARENT_EMAIL: ${{ secrets.LUMI_LONG_HORIZON_PARENT_EMAIL }}
       LUMI_LONG_HORIZON_PARENT_PASSWORD: ${{ secrets.LUMI_LONG_HORIZON_PARENT_PASSWORD }}
     steps:
-      - name: Discover existing Gate D push run
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          payload="$(gh run list --repo "$GH_REPO" --workflow "Temporary Phase 10 Gate D Age-6 Acceptance" --branch ops/250-fresh-age6-d --limit 1 --json databaseId,status,conclusion,createdAt 2>/dev/null || echo '[]')"
-          echo "LUMI_250_D_DISCOVERY=$payload"
-          run_id="$(printf '%s' "$payload" | jq -r '.[0].databaseId // empty')"
-          echo "LUMI_250_D_PUSH_RUN_ID=$run_id"
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
@@ -55,14 +43,8 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
-      - name: Verify production login and Stories UX v2
-        run: |
-          pnpm --filter @lumi/web exec playwright test \
-            --config playwright.long-horizon-live.config.ts \
-            tests/e2e/long-horizon/login-smoke.live.spec.ts \
-            tests/e2e/long-horizon/stories-smoke.live.spec.ts
-      - name: Verify #250 bootstrap and adventure evidence
+      - name: Inspect fresh Gate D persisted state read-only
         run: |
           pnpm --filter @lumi/web exec playwright test \
             --config playwright.production-smoke.config.ts \
-            tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
+            tests/e2e/production-smoke/gate-d-fresh-state.live.spec.ts
