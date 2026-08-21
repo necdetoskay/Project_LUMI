@@ -221,6 +221,7 @@ export const GET = observeHandler(
         bootstrapStatus,
         candidateCount: selection.candidates.length,
         bootstrapUpdatedAt: bootstrapManifest?.updatedAt ?? null,
+        characterCreatedAt: character.createdAt,
         now: new Date(),
       });
 
