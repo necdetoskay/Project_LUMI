@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   recover-existing-age6:
@@ -117,6 +118,7 @@ jobs:
           echo "Deferred Living World bootstrap accepted: pending"
 
       - name: Capture post-recovery product evidence
+        id: evidence
         shell: bash
         env:
           HOUSEHOLD_ID: ${{ steps.scope.outputs.household_id }}
@@ -129,7 +131,6 @@ jobs:
           cp "$RUNNER_TEMP/cycle-before.json" "$RUNNER_TEMP/evidence/cycle-before.json"
           cp "$RUNNER_TEMP/characters-before.json" "$RUNNER_TEMP/evidence/characters-before.json"
 
-          # Give the Next.js after() bootstrap enough time to materialize living-world state.
           sleep 20
 
           curl --fail-with-body --silent --show-error \
@@ -147,11 +148,25 @@ jobs:
             "$BASE_URL/api/child-profiles/$CHILD_PROFILE_ID/stories/adventure-candidates?householdId=$HOUSEHOLD_ID" \
             > "$RUNNER_TEMP/evidence/adventure-candidates-after.json"
 
+          character_count="$(jq '.characters | length' "$RUNNER_TEMP/evidence/characters-after.json")"
+          candidate_count="$(jq '.candidates | length' "$RUNNER_TEMP/evidence/adventure-candidates-after.json")"
+          source_families="$(jq -r '[.candidates[].sourceFamily] | unique | join(",")' "$RUNNER_TEMP/evidence/adventure-candidates-after.json")"
+          world_id="$(jq -r '.world.id // empty' "$RUNNER_TEMP/evidence/world-after.json")"
+
+          echo "character_count=$character_count" >> "$GITHUB_OUTPUT"
+          echo "candidate_count=$candidate_count" >> "$GITHUB_OUTPUT"
+          echo "source_families=$source_families" >> "$GITHUB_OUTPUT"
+          echo "world_id=$world_id" >> "$GITHUB_OUTPUT"
+
           jq -n \
             --arg childProfileId "$CHILD_PROFILE_ID" \
             --arg householdId "$HOUSEHOLD_ID" \
             --arg characterId "$CHARACTER_ID" \
-            '{childProfileId:$childProfileId,householdId:$householdId,characterId:$characterId,recovery:"finalize-reused-existing-character",bootstrapTrigger:"accepted"}' \
+            --arg worldId "$world_id" \
+            --arg sourceFamilies "$source_families" \
+            --argjson candidateCount "$candidate_count" \
+            --argjson characterCount "$character_count" \
+            '{childProfileId:$childProfileId,householdId:$householdId,characterId:$characterId,worldId:$worldId,recovery:"finalize-reused-existing-character",bootstrapTrigger:"accepted",characterCount:$characterCount,candidateCount:$candidateCount,sourceFamilies:$sourceFamilies}' \
             > "$RUNNER_TEMP/evidence/recovery-summary.json"
 
       - name: Upload recovery evidence
@@ -162,3 +177,41 @@ jobs:
           path: ${{ runner.temp }}/evidence/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Report recovery result to issue 250
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          HOUSEHOLD_ID: ${{ steps.scope.outputs.household_id }}
+          EXISTING_CHARACTER_ID: ${{ steps.scope.outputs.existing_character_id }}
+          RECOVERED_CHARACTER_ID: ${{ steps.recover.outputs.character_id }}
+          WORLD_ID: ${{ steps.evidence.outputs.world_id }}
+          CHARACTER_COUNT: ${{ steps.evidence.outputs.character_count }}
+          CANDIDATE_COUNT: ${{ steps.evidence.outputs.candidate_count }}
+          SOURCE_FAMILIES: ${{ steps.evidence.outputs.source_families }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/issue-comment.json"
+          jq -n \
+            --arg status "$JOB_STATUS" \
+            --arg profile "$CHILD_PROFILE_ID" \
+            --arg household "$HOUSEHOLD_ID" \
+            --arg before "$EXISTING_CHARACTER_ID" \
+            --arg after "$RECOVERED_CHARACTER_ID" \
+            --arg world "$WORLD_ID" \
+            --arg characterCount "$CHARACTER_COUNT" \
+            --arg candidateCount "$CANDIDATE_COUNT" \
+            --arg sources "$SOURCE_FAMILIES" \
+            --arg runUrl "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{body:("## Age-6 production bootstrap recovery evidence\n\n- job: **"+$status+"**\n- profile: `"+$profile+"`\n- household: `"+$household+"`\n- character before finalize: `"+$before+"`\n- character returned by recovery finalize: `"+$after+"`\n- same-character recovery: **"+(if ($before != "" and $before == $after) then "PASS" else "FAIL/UNKNOWN" end)+"**\n- world after recovery: `"+$world+"`\n- characters visible after recovery: `"+$characterCount+"`\n- adventure candidates after recovery: `"+$candidateCount+"`\n- candidate source families: `"+$sources+"`\n- run: "+$runUrl+"\n\nThis run re-finalized the existing completed age-6 cycle only; it did not start a fresh paid onboarding run.")}' > "$body"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$body" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/250/comments" >/dev/null
