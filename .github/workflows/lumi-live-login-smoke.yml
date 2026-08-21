@@ -11,6 +11,9 @@ on:
       - apps/web/tests/e2e/long-horizon/login-smoke.live.spec.ts
       - apps/web/tests/e2e/long-horizon/stories-smoke.live.spec.ts
       - apps/web/tests/e2e/production-smoke/bootstrap-evidence.live.spec.ts
+  pull_request:
+    paths:
+      - .ops/250-bootstrap-evidence.trigger
 
 permissions:
   contents: read
