@@ -5,6 +5,7 @@ export type AdventureBootstrapStatus =
   | "completed"
   | "failed"
   | null;
+export type AdventureBootstrapTimestamp = Date | string | number | null;
 
 export const INITIAL_ADVENTURE_VISIBILITY_GRACE_MS = 120_000;
 
@@ -14,10 +15,19 @@ export function adventureReadinessForBootstrap(
   return status === "planned" || status === "running" ? "preparing" : "ready";
 }
 
+function timestampMilliseconds(
+  value: AdventureBootstrapTimestamp,
+): number | null {
+  if (value === null) return null;
+  const milliseconds =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(milliseconds) ? milliseconds : null;
+}
+
 export function adventureReadinessForCandidateWindow(input: {
   bootstrapStatus: AdventureBootstrapStatus;
   candidateCount: number;
-  bootstrapUpdatedAt: Date | null;
+  bootstrapUpdatedAt: AdventureBootstrapTimestamp;
   now: Date;
   visibilityGraceMs?: number;
 }): AdventureReadiness {
@@ -28,11 +38,12 @@ export function adventureReadinessForCandidateWindow(input: {
   ) {
     return "preparing";
   }
-  if (input.bootstrapStatus !== "completed" || !input.bootstrapUpdatedAt) {
-    return "ready";
-  }
+  if (input.bootstrapStatus !== "completed") return "ready";
 
-  const ageMs = input.now.getTime() - input.bootstrapUpdatedAt.getTime();
+  const bootstrapUpdatedAtMs = timestampMilliseconds(input.bootstrapUpdatedAt);
+  if (bootstrapUpdatedAtMs === null) return "ready";
+
+  const ageMs = input.now.getTime() - bootstrapUpdatedAtMs;
   const graceMs =
     input.visibilityGraceMs ?? INITIAL_ADVENTURE_VISIBILITY_GRACE_MS;
   return ageMs >= 0 && ageMs < graceMs ? "preparing" : "ready";
