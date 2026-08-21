@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import {
+  shouldRetryAdventureCandidates,
+  type AdventureReadiness,
+} from "@/lib/stories/adventure-readiness";
 import type {
   AdventureHookCandidate,
   AdventureSourceFamily,
@@ -14,8 +18,6 @@ type NewAdventureSheetProps = {
   open: boolean;
   onClose: () => void;
 };
-
-type AdventureReadiness = "preparing" | "ready";
 
 type CandidatesResponse = {
   candidates?: AdventureHookCandidate[];
@@ -83,19 +85,26 @@ export function NewAdventureSheetLocalized({
           }
 
           const nextCandidates = body.candidates ?? [];
-          const isPreparing =
-            nextPage === 0 &&
-            nextCandidates.length === 0 &&
-            body.readiness === "preparing";
+          const retryPreparing = shouldRetryAdventureCandidates({
+            page: nextPage,
+            candidateCount: nextCandidates.length,
+            readiness: body.readiness,
+            attempt,
+            maxAttempts,
+          });
 
-          if (isPreparing && attempt + 1 < maxAttempts) {
+          if (retryPreparing) {
             setReadiness("preparing");
             await delay(PREPARING_RETRY_DELAY_MS);
             if (generation !== loadGenerationRef.current) return;
             continue;
           }
 
-          if (isPreparing) {
+          const exhaustedPreparing =
+            nextPage === 0 &&
+            nextCandidates.length === 0 &&
+            body.readiness === "preparing";
+          if (exhaustedPreparing) {
             setReadiness("ready");
             setCandidates([]);
             setError(t("preparingTimeout"));
