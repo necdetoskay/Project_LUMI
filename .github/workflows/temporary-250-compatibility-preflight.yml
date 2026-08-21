@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   preflight:
@@ -45,6 +46,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Record preflight identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY"
+          --body "Compatibility preflight started: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID (head $GITHUB_SHA). No production or paid model call is used."
       - name: Check changed-file formatting
         run: >-
           pnpm exec prettier --check
@@ -73,3 +80,11 @@ jobs:
           pnpm --filter @lumi/web exec playwright test
           --config playwright.m7.config.ts
           tests/e2e/character-onboarding-m7.spec.ts
+      - name: Record final preflight status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: >-
+          gh issue comment 250 --repo "$GITHUB_REPOSITORY"
+          --body "Compatibility preflight finished **$JOB_STATUS**: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
