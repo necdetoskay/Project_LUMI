@@ -3,7 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = process.env.LUMI_LONG_HORIZON_BASE_URL;
 
 if (!baseURL) {
-  throw new Error("LUMI_LONG_HORIZON_BASE_URL is required for production smoke tests.");
+  throw new Error(
+    "LUMI_LONG_HORIZON_BASE_URL is required for production smoke tests.",
+  );
 }
 
 export default defineConfig({
