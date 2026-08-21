@@ -43,8 +43,8 @@ jobs:
           test -n "${LUMI_LONG_HORIZON_PARENT_PASSWORD}"
       - name: Install Chromium
         run: pnpm --filter @lumi/web exec playwright install --with-deps chromium
-      - name: Inspect fresh Gate D persisted state read-only
+      - name: Verify fresh Gate D New Adventure UI read-only
         run: |
           pnpm --filter @lumi/web exec playwright test \
             --config playwright.production-smoke.config.ts \
-            tests/e2e/production-smoke/gate-d-fresh-state.live.spec.ts
+            tests/e2e/production-smoke/gate-d-fresh-ui.live.spec.ts
