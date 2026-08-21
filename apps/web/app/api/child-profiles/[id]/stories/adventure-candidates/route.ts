@@ -9,6 +9,7 @@ import {
   projectOpportunityCandidate,
   type AdventureHookCandidate,
 } from "@/lib/stories/adventure-presentation";
+import { getCharacterFoundationByCharacterId } from "@lumi/profiles";
 import {
   findChildProfileForUser,
   getCharacterContinuitySnapshot,
@@ -90,6 +91,8 @@ export const GET = observeHandler(
           candidates: [],
           page,
           hasMoreUnseen: false,
+          readiness: "ready" as const,
+          bootstrapStatus: null,
           diagnostics: [
             {
               sourceFamily: "world_event",
@@ -116,6 +119,12 @@ export const GET = observeHandler(
           ],
         });
       }
+
+      const foundation = await getCharacterFoundationByCharacterId(
+        character.id,
+      ).catch(() => null);
+      const bootstrapStatus = foundation?.bootstrapManifest?.status ?? null;
+      const readiness = bootstrapStatus === "pending" ? "preparing" : "ready";
 
       const [continuity, opportunities, world, currentLocation] =
         await Promise.all([
@@ -212,6 +221,8 @@ export const GET = observeHandler(
         candidates: selection.candidates,
         page,
         hasMoreUnseen: selection.hasMoreUnseen,
+        readiness,
+        bootstrapStatus,
         diagnostics: selection.diagnostics,
       });
     }),
