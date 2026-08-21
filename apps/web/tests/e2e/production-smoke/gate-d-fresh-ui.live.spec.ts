@@ -15,8 +15,9 @@ test("fresh Gate D profile renders New Adventure candidates read-only", async ({
   await page.goto(`/app/profiles/${CHILD_PROFILE_ID}`);
   await expect(page).toHaveURL(new RegExp(`/app/profiles/${CHILD_PROFILE_ID}`));
 
-  const storiesTab = page.getByRole("button", { name: "Hikâyeler", exact: true });
-  if (await storiesTab.isVisible()) await storiesTab.click();
+  const storiesTab = page.getByRole("button", { name: /Hikâyeler$/ });
+  await expect(storiesTab).toBeVisible({ timeout: 60_000 });
+  await storiesTab.click();
 
   const newAdventure = page.getByRole("button", { name: "Yeni Macera", exact: true }).first();
   await expect(newAdventure).toBeVisible({ timeout: 60_000 });
