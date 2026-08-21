@@ -43,18 +43,67 @@ jobs:
           curl --fail-with-body --silent --show-error -X PATCH -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' --data-binary "@$RUNNER_TEMP/bypass.json" "https://api.vercel.com/v1/projects/$VERCEL_PROJECT_ID/protection-bypass?teamId=$VERCEL_ORG_ID" >/dev/null
           echo "secret=$secret" >> "$GITHUB_OUTPUT"
 
-      - name: Read masked production DATABASE_URL
+      - name: Resolve masked production PostgreSQL URI
         run: |
           set -euo pipefail
           curl --fail-with-body --silent --show-error -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/env?decrypt=true&teamId=$VERCEL_ORG_ID" > "$RUNNER_TEMP/vercel-env.json"
-          database_url="$(jq -r '.. | objects | select(.key? == "DATABASE_URL") | . as $e | ($e.target? // empty) as $t | select(($t == "production") or (($t|type) == "array" and (($t|index("production")) != null))) | ($e.value? // empty)' "$RUNNER_TEMP/vercel-env.json" | head -n1)"
-          if [ -z "$database_url" ]; then
-            database_url="$(jq -r '.. | objects | select(.key? == "DATABASE_URL") | (.value? // empty)' "$RUNNER_TEMP/vercel-env.json" | head -n1)"
-          fi
-          test -n "$database_url"
+          python3 - "$RUNNER_TEMP/vercel-env.json" "$RUNNER_TEMP/database-url" <<'PY'
+          import json, sys
+          src, out = sys.argv[1:]
+          data = json.load(open(src, encoding='utf-8'))
+
+          def walk(x):
+              if isinstance(x, dict):
+                  yield x
+                  for v in x.values():
+                      yield from walk(v)
+              elif isinstance(x, list):
+                  for v in x:
+                      yield from walk(v)
+
+          def strings(x, depth=0):
+              if depth > 5:
+                  return
+              if isinstance(x, str):
+                  s = x.strip()
+                  yield s
+                  if s[:1] in '[{"':
+                      try:
+                          parsed = json.loads(s)
+                      except Exception:
+                          return
+                      yield from strings(parsed, depth + 1)
+              elif isinstance(x, list):
+                  for v in x:
+                      yield from strings(v, depth + 1)
+              elif isinstance(x, dict):
+                  for v in x.values():
+                      yield from strings(v, depth + 1)
+
+          candidates = []
+          meta = []
+          for obj in walk(data):
+              if obj.get('key') != 'DATABASE_URL':
+                  continue
+              target = obj.get('target')
+              value = obj.get('value')
+              meta.append((type(value).__name__, type(target).__name__))
+              for s in strings(value):
+                  if s.startswith(('postgres://', 'postgresql://')):
+                      production = target == 'production' or (isinstance(target, list) and 'production' in target)
+                      candidates.append((production, s))
+          candidates.sort(key=lambda item: item[0], reverse=True)
+          if not candidates:
+              print('DATABASE_URL objects found:', len(meta))
+              print('Safe value/target types:', meta)
+              raise SystemExit('No PostgreSQL URI found in decrypted DATABASE_URL value')
+          uri = candidates[0][1]
+          with open(out, 'w', encoding='utf-8') as f:
+              f.write(uri)
+          print('PostgreSQL URI resolved; scheme valid; value remains masked.')
+          PY
+          database_url="$(cat "$RUNNER_TEMP/database-url")"
           echo "::add-mask::$database_url"
-          printf '%s' "$database_url" > "$RUNNER_TEMP/database-url"
-          echo "Production DATABASE_URL resolved recursively and masked."
 
       - name: Ensure PostgreSQL client
         run: |
