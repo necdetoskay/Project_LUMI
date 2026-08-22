@@ -52,7 +52,11 @@ export async function GET(request: Request) {
     const summary = await runProductionBackgroundLife();
     const ok = summary.failures === 0;
     return NextResponse.json(
-      { ok, code: ok ? "BACKGROUND_LIFE_COMPLETED" : "BACKGROUND_LIFE_PARTIAL", summary },
+      {
+        ok,
+        code: ok ? "BACKGROUND_LIFE_COMPLETED" : "BACKGROUND_LIFE_PARTIAL",
+        summary,
+      },
       { status: ok ? 200 : 207 },
     );
   } catch (error) {
