@@ -208,6 +208,7 @@ describe("media repository integration", () => {
     const manifestId = crypto.randomUUID();
     const assetSetId = crypto.randomUUID();
     const assetId = crypto.randomUUID();
+    const sceneId = crypto.randomUUID();
     const manifest: StoryVisualManifest = {
       schemaVersion: 1,
       storyId,
@@ -226,7 +227,7 @@ describe("media repository integration", () => {
           requiredStates: [],
           importance: "critical",
           reusable: true,
-          sceneIds: ["scene-1"],
+          sceneIds: [sceneId],
         },
       ],
       sceneBindings: [],
