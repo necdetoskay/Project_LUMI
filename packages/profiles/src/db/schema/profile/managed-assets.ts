@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -60,6 +61,13 @@ export const managedAssets = profileSchema.table(
       table.sourceSystem,
       table.sourceRecordId,
     ),
+    uniqueIndex("uq_managed_assets_canon_scope").on(
+      table.id,
+      table.householdId,
+      table.subjectType,
+      table.subjectId,
+      table.assetKind,
+    ),
     check(
       "managed_assets_subject_type_check",
       sql`${table.subjectType} IN ('character', 'npc', 'location', 'item', 'story_scene')`,
@@ -100,10 +108,7 @@ export const managedAssetCanons = profileSchema.table(
     subjectType: varchar("subject_type", { length: 32 }).notNull(),
     subjectId: uuid("subject_id").notNull(),
     assetKind: varchar("asset_kind", { length: 64 }).notNull(),
-    selectedAssetId: uuid("selected_asset_id").references(
-      () => managedAssets.id,
-      { onDelete: "set null" },
-    ),
+    selectedAssetId: uuid("selected_asset_id"),
     status: varchar("status", { length: 24 }).notNull().default("draft"),
     version: integer("version").notNull().default(1),
     selectedAt: timestamp("selected_at", { withTimezone: true }),
@@ -117,6 +122,23 @@ export const managedAssetCanons = profileSchema.table(
       table.assetKind,
     ),
     index("managed_asset_canons_household_idx").on(table.householdId),
+    foreignKey({
+      name: "managed_asset_canons_selected_asset_scope_fk",
+      columns: [
+        table.selectedAssetId,
+        table.householdId,
+        table.subjectType,
+        table.subjectId,
+        table.assetKind,
+      ],
+      foreignColumns: [
+        managedAssets.id,
+        managedAssets.householdId,
+        managedAssets.subjectType,
+        managedAssets.subjectId,
+        managedAssets.assetKind,
+      ],
+    }).onDelete("no action"),
     check(
       "managed_asset_canons_subject_type_check",
       sql`${table.subjectType} IN ('character', 'npc', 'location', 'item', 'story_scene')`,
@@ -124,6 +146,10 @@ export const managedAssetCanons = profileSchema.table(
     check(
       "managed_asset_canons_status_check",
       sql`${table.status} IN ('draft', 'selected', 'archived')`,
+    ),
+    check(
+      "managed_asset_canons_selected_pointer_check",
+      sql`${table.status} <> 'selected' OR ${table.selectedAssetId} IS NOT NULL`,
     ),
   ],
 );
