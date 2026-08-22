@@ -23,12 +23,7 @@ const avatarMigration = await readFile(
   "utf8",
 );
 const avatarSyncMigration = await readFile(
-  resolve(
-    __dirname,
-    "..",
-    "migrations",
-    "0080_child_avatar_registry_sync.sql",
-  ),
+  resolve(__dirname, "..", "migrations", "0080_child_avatar_registry_sync.sql"),
   "utf8",
 );
 const npcMigration = await readFile(
