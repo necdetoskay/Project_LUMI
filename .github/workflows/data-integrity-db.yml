@@ -48,3 +48,7 @@ jobs:
         env:
           INVENTORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:inventory-integrity-selftest
+      - name: Cross-domain privacy media AI prompt integrity
+        env:
+          CROSS_DOMAIN_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:cross-domain-selftest
