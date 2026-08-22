@@ -318,13 +318,17 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
       errors.push(`${label}.broadKind '${identity.broadKind}' is invalid`);
     }
     if (!characterTypes.has(identity.characterType)) {
-      errors.push(`${label}.characterType '${identity.characterType}' is invalid`);
+      errors.push(
+        `${label}.characterType '${identity.characterType}' is invalid`,
+      );
     }
     if (!identity.subtype || typeof identity.subtype !== "string") {
       errors.push(`${label}.subtype is required`);
     }
     if (!lifecycleStages.has(identity.lifecycleStage)) {
-      errors.push(`${label}.lifecycleStage '${identity.lifecycleStage}' is invalid`);
+      errors.push(
+        `${label}.lifecycleStage '${identity.lifecycleStage}' is invalid`,
+      );
     }
   };
 

@@ -100,7 +100,9 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!enabled || !destructive || !databaseUrl) return;
   __setTestPropagationDb(undefined);
-  await pool.query("DELETE FROM profile.households WHERE id = $1", [HOUSEHOLD_ID]);
+  await pool.query("DELETE FROM profile.households WHERE id = $1", [
+    HOUSEHOLD_ID,
+  ]);
   await pool.end();
 });
 

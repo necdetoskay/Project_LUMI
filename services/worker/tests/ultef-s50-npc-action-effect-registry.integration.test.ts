@@ -221,7 +221,9 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
         `DELETE FROM npc_intelligence.npc_snapshots WHERE world_id=$1`,
         [worldId],
       );
-      await pool.query(`DELETE FROM profile.households WHERE id=$1`, [householdId]);
+      await pool.query(`DELETE FROM profile.households WHERE id=$1`, [
+        householdId,
+      ]);
     }
   });
 });

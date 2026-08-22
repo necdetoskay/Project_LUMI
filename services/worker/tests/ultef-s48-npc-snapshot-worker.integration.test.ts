@@ -82,9 +82,10 @@ describe.skipIf(!enabled || !databaseUrl)(
     });
 
     afterAll(async () => {
-      await fixturePool.query(`DELETE FROM profile.households WHERE id = ANY($1::uuid[])`, [
-        [householdA, householdB],
-      ]);
+      await fixturePool.query(
+        `DELETE FROM profile.households WHERE id = ANY($1::uuid[])`,
+        [[householdA, householdB]],
+      );
       await fixturePool.end();
     });
 

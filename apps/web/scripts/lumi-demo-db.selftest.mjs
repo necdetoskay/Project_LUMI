@@ -204,7 +204,8 @@ try {
     replayStatus.counts?.characters !== 1 + LUMI_DEMO_MANIFEST.npcs.length ||
     replayStatus.counts?.childAvatars !== 1 ||
     replayStatus.counts?.npcIdentities !== LUMI_DEMO_MANIFEST.npcs.length ||
-    replayStatus.counts?.inventoryItems !== LUMI_DEMO_MANIFEST.inventory.length ||
+    replayStatus.counts?.inventoryItems !==
+      LUMI_DEMO_MANIFEST.inventory.length ||
     replayStatus.counts?.npcs !== LUMI_DEMO_MANIFEST.npcs.length ||
     replayStatus.counts?.memories !== LUMI_DEMO_MANIFEST.memories.length ||
     replayStatus.counts?.quests !== 1

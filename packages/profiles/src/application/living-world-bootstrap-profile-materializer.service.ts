@@ -142,10 +142,7 @@ export async function ensureBootstrapNpcIdentity(
           nearbyNpcSeed,
           firstMysterySeed: source.firstMysterySeed,
           toneVector: [],
-          noveltyMarkers: [
-            "living_world_bootstrap",
-            input.plan.role.roleType,
-          ],
+          noveltyMarkers: ["living_world_bootstrap", input.plan.role.roleType],
           safetyBounds: source.safetyBounds,
         },
         generationSource: "living_world_bootstrap_v1",
