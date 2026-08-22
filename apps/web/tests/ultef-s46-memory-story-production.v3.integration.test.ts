@@ -1,12 +1,13 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence/db";
 import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import type { CanonicalMemory } from "@lumi/npc-intelligence/domain";
 
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const SCENARIO_ID = "PX-LUMI-S46-MEMORY-STORY-PROD-001";
 const enabled = process.env.ULTEF_SCENARIO === SCENARIO_ID;
@@ -94,6 +95,15 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     });
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId: profileId,
+        characterId: ownerId,
+        worldId,
+        fixtureKey: `s46-${householdId}`,
+        npcs: [],
+      });
+
       await repo.save(
         makeMemory({
           id: memoryId,
@@ -224,6 +234,9 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
         "DELETE FROM npc_intelligence.memories WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   });
 });
