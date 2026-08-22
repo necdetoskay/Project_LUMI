@@ -65,6 +65,8 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
+      - name: Show Prettier output for story integrity self-test
+        run: pnpm exec prettier packages/profiles/scripts/story-integrity-db-selftest.mjs
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
