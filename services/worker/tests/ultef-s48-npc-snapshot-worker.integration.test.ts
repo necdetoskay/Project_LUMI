@@ -1,4 +1,6 @@
-import { afterAll, describe, expect, it } from "vitest";
+import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
 import { createLogger } from "@lumi/logger";
 import { MemoryAwareDecisionService } from "@lumi/npc-intelligence/application";
 import {
@@ -11,6 +13,7 @@ import type { CanonicalMemory } from "@lumi/npc-intelligence/domain";
 import type { CanonicalMemoryPort } from "@lumi/npc-intelligence/ports";
 import { RepositoryNpcSourceAdapter } from "../src/adapters";
 import { NpcDecisionJobRunner } from "../src/npc-decision-runner";
+import { seedWorkerCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled =
   process.env.ULTEF_SCENARIO === "PX-LUMI-S48-NPC-SNAPSHOT-WORKER-001";
@@ -46,26 +49,52 @@ describe.skipIf(!enabled || !databaseUrl)(
 
     const householdA = crypto.randomUUID();
     const householdB = crypto.randomUUID();
-    const worldId = crypto.randomUUID();
+    const worldA = crypto.randomUUID();
+    const worldB = crypto.randomUUID();
     const profileA = crypto.randomUUID();
     const profileB = crypto.randomUUID();
-    const characterId = crypto.randomUUID();
+    const characterA = crypto.randomUUID();
+    const characterB = crypto.randomUUID();
     const npcA = crypto.randomUUID();
     const npcB = crypto.randomUUID();
     const memoryId = crypto.randomUUID();
     const now = new Date("2026-08-10T03:30:00.000Z");
+    let fixturePool: pg.Pool;
+
+    beforeAll(async () => {
+      fixturePool = new pg.Pool({ connectionString: databaseUrl! });
+      await seedWorkerCanonicalNpcFixture(fixturePool, {
+        householdId: householdA,
+        childProfileId: profileA,
+        characterId: characterA,
+        worldId: worldA,
+        fixtureKey: `s48-a-${householdA}`,
+        npcs: [{ id: npcA, name: "S48 NPC A" }],
+      });
+      await seedWorkerCanonicalNpcFixture(fixturePool, {
+        householdId: householdB,
+        childProfileId: profileB,
+        characterId: characterB,
+        worldId: worldB,
+        fixtureKey: `s48-b-${householdB}`,
+        npcs: [{ id: npcB, name: "S48 NPC B" }],
+      });
+    });
 
     afterAll(async () => {
-      // Disposable CI database owns cleanup.
+      await fixturePool.query(`DELETE FROM profile.households WHERE id = ANY($1::uuid[])`, [
+        [householdA, householdB],
+      ]);
+      await fixturePool.end();
     });
 
     it("returns only exact household/world snapshots in deterministic order", async () => {
       await repo.upsert({
         npcId: npcA,
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
-        characterId,
+        characterId: characterA,
         locationId: null,
         needTypes: ["belonging"],
         relationshipToCharacter: 0.4,
@@ -75,9 +104,9 @@ describe.skipIf(!enabled || !databaseUrl)(
       await repo.upsert({
         npcId: npcB,
         householdId: householdB,
-        worldId,
+        worldId: worldB,
         childProfileId: profileB,
-        characterId,
+        characterId: characterB,
         locationId: null,
         needTypes: ["rest"],
         relationshipToCharacter: -0.1,
@@ -85,7 +114,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         updatedAt: now,
       });
 
-      const snapshots = await adapter.fetchSnapshots(worldId, householdA);
+      const snapshots = await adapter.fetchSnapshots(worldA, householdA);
       expect(snapshots).toHaveLength(1);
       expect(snapshots[0]?.npcId).toBe(npcA);
       expect(snapshots[0]?.householdId).toBe(householdA);
@@ -95,9 +124,9 @@ describe.skipIf(!enabled || !databaseUrl)(
       await repo.upsert({
         npcId: npcA,
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
-        characterId,
+        characterId: characterA,
         locationId: null,
         needTypes: ["rest", "belonging"],
         relationshipToCharacter: 0.6,
@@ -105,7 +134,7 @@ describe.skipIf(!enabled || !databaseUrl)(
         updatedAt: new Date(now.getTime() + 1000),
       });
 
-      const snapshots = await adapter.fetchSnapshots(worldId, householdA);
+      const snapshots = await adapter.fetchSnapshots(worldA, householdA);
       expect(snapshots).toHaveLength(1);
       expect(snapshots[0]?.needTypes).toEqual(["rest", "belonging"]);
       expect(snapshots[0]?.relationshipToCharacter).toBe(0.6);
@@ -116,9 +145,9 @@ describe.skipIf(!enabled || !databaseUrl)(
       await repo.upsert({
         npcId: npcA,
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
-        characterId,
+        characterId: characterA,
         locationId: null,
         needTypes: ["belonging"],
         relationshipToCharacter: 0.6,
@@ -195,9 +224,9 @@ describe.skipIf(!enabled || !databaseUrl)(
       await repo.upsert({
         npcId: npcA,
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
-        characterId,
+        characterId: characterA,
         locationId: null,
         needTypes: ["belonging", "rest"],
         relationshipToCharacter: 0.7,
@@ -206,7 +235,7 @@ describe.skipIf(!enabled || !databaseUrl)(
       });
       const decisionReady = await repo.listDecisionReady(
         householdA,
-        worldId,
+        worldA,
         profileA,
         8,
       );
@@ -216,7 +245,7 @@ describe.skipIf(!enabled || !databaseUrl)(
       const memory: CanonicalMemory = {
         id: memoryId,
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
         ownerType: "npc",
         ownerId: npcA,
@@ -235,7 +264,7 @@ describe.skipIf(!enabled || !databaseUrl)(
 
       const first = await decisionRunner.runForWorld({
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
         now,
       });
@@ -244,7 +273,7 @@ describe.skipIf(!enabled || !databaseUrl)(
 
       const evidence = await decisionLedger.get(
         householdA,
-        worldId,
+        worldA,
         profileA,
         npcA,
         decisionKey,
@@ -255,7 +284,7 @@ describe.skipIf(!enabled || !databaseUrl)(
 
       const replay = await decisionRunner.runForWorld({
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileA,
         now: new Date(now.getTime() + 5000),
       });
@@ -264,7 +293,7 @@ describe.skipIf(!enabled || !databaseUrl)(
 
       const replayEvidence = await decisionLedger.get(
         householdA,
-        worldId,
+        worldA,
         profileA,
         npcA,
         decisionKey,
@@ -273,7 +302,7 @@ describe.skipIf(!enabled || !databaseUrl)(
 
       const wrongProfile = await decisionRunner.runForWorld({
         householdId: householdA,
-        worldId,
+        worldId: worldA,
         childProfileId: profileB,
         now,
       });
@@ -282,7 +311,7 @@ describe.skipIf(!enabled || !databaseUrl)(
       expect(
         await decisionLedger.get(
           householdA,
-          worldId,
+          worldA,
           profileB,
           npcA,
           decisionKey,
