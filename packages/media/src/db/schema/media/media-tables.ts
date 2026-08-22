@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -49,6 +50,13 @@ export const mediaAssets = mediaSchema.table(
       table.fingerprint,
     ),
     index("media_assets_lifecycle_idx").on(table.lifecycleStatus),
+    unique("uq_media_assets_cache_scope").on(
+      table.id,
+      table.householdId,
+      table.childProfileId,
+      table.worldId,
+      table.fingerprint,
+    ),
     check("chk_media_kind", sql`${table.kind} IN ('image', 'audio')`),
     check(
       "chk_media_lifecycle",
@@ -122,9 +130,7 @@ export const mediaFingerprintCache = mediaSchema.table(
     householdId: uuid("household_id").notNull(),
     childProfileId: uuid("child_profile_id").notNull(),
     worldId: uuid("world_id").notNull(),
-    assetId: uuid("asset_id")
-      .notNull()
-      .references(() => mediaAssets.id, { onDelete: "cascade" }),
+    assetId: uuid("asset_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -135,6 +141,23 @@ export const mediaFingerprintCache = mediaSchema.table(
       table.childProfileId,
       table.fingerprint,
     ),
+    foreignKey({
+      columns: [
+        table.assetId,
+        table.householdId,
+        table.childProfileId,
+        table.worldId,
+        table.fingerprint,
+      ],
+      foreignColumns: [
+        mediaAssets.id,
+        mediaAssets.householdId,
+        mediaAssets.childProfileId,
+        mediaAssets.worldId,
+        mediaAssets.fingerprint,
+      ],
+      name: "media_fingerprint_cache_asset_scope_fk",
+    }).onDelete("cascade"),
   ],
 );
 
