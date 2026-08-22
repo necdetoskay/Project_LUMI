@@ -3,6 +3,7 @@ import {
   index,
   integer,
   jsonb,
+  uniqueIndex,
   varchar,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -34,6 +35,10 @@ export const childProfiles = profileSchema.table(
   },
   (table) => [
     index("child_profiles_household_idx").on(table.householdId),
+    uniqueIndex("child_profiles_id_household_unique").on(
+      table.id,
+      table.householdId,
+    ),
     check(
       "child_profiles_age_band_check",
       sql`${table.ageBand} IN ('3-5', '6-8', '9-12', '13+')`,
