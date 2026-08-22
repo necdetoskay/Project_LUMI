@@ -1,4 +1,5 @@
 -- PR-6 / Data Integrity Hardening
+-- Rebuilt on merged PR-5 to validate the story integrity contract against main.
 -- Enforce session graph scope and typed character participation.
 
 CREATE UNIQUE INDEX IF NOT EXISTS story_definitions_id_household_unique
