@@ -158,6 +158,19 @@ try {
   assert.equal(typed.rows.filter((row) => row.child_avatar_id).length, 1);
   assert.equal(typed.rows.filter((row) => row.npc_id).length, 1);
 
+  await client.query(
+    "DELETE FROM story.story_session_characters WHERE story_session_id = $1",
+    [session],
+  );
+  await client.query(insertParticipantsSql, [session, avatar, npc]);
+  const resolvedOnWrite = await client.query(selectParticipantsSql);
+  assert.equal(resolvedOnWrite.rowCount, 2);
+  assert.equal(
+    resolvedOnWrite.rows.filter((row) => row.child_avatar_id).length,
+    1,
+  );
+  assert.equal(resolvedOnWrite.rows.filter((row) => row.npc_id).length, 1);
+
   await assert.rejects(
     client.query(insertSessionSql, [
       badSession,
