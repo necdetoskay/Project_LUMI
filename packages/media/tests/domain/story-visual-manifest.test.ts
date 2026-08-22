@@ -8,6 +8,8 @@ import {
   type StoryVisualManifest,
 } from "../../src/domain";
 
+const SCENE_ID = "10000000-0000-4000-8000-000000000001";
+
 function compass(
   entityId: string,
   traits: readonly string[],
@@ -51,7 +53,7 @@ describe("story visual manifest", () => {
           ],
           importance: "critical",
           reusable: true,
-          sceneIds: ["scene-1"],
+          sceneIds: [SCENE_ID],
         },
         {
           manifestEntityId: "story-compass-b",
@@ -60,12 +62,12 @@ describe("story visual manifest", () => {
           requiredStates: [{ id: "open", label: "Open" }],
           importance: "important",
           reusable: true,
-          sceneIds: ["scene-1"],
+          sceneIds: [SCENE_ID],
         },
       ],
       sceneBindings: [
         {
-          sceneId: "scene-1",
+          sceneId: SCENE_ID,
           usages: [
             {
               manifestEntityId: "story-compass-a",
@@ -149,12 +151,12 @@ describe("story visual manifest", () => {
           requiredStates: [],
           importance: "critical",
           reusable: true,
-          sceneIds: ["scene-1"],
+          sceneIds: [SCENE_ID],
         },
       ],
       sceneBindings: [
         {
-          sceneId: "scene-1",
+          sceneId: SCENE_ID,
           usages: [
             { manifestEntityId: "mira", variantId: "winter", role: "primary" },
           ],
@@ -165,6 +167,28 @@ describe("story visual manifest", () => {
 
     expect(() => validateStoryVisualManifest(manifest)).toThrow(
       "STORY_VISUAL_SCENE_VARIANT_UNKNOWN",
+    );
+  });
+
+  it("rejects source slugs in a final manifest", () => {
+    const manifest: StoryVisualManifest = {
+      schemaVersion: 1,
+      storyId: "story-3",
+      source: "story-generation",
+      entities: [],
+      sceneBindings: [],
+      storyIllustrations: [
+        {
+          id: "illustration-1",
+          sceneId: "provider-scene-17",
+          importance: "critical",
+          compositionBrief: "Mira enters the library",
+        },
+      ],
+    };
+
+    expect(() => validateStoryVisualManifest(manifest)).toThrow(
+      "STORY_VISUAL_CANONICAL_SCENE_ID_REQUIRED",
     );
   });
 });

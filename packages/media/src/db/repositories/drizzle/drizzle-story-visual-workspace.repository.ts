@@ -1,6 +1,9 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 
-import type { StoryVisualAssetSet } from "../../../domain/story-visual-manifest";
+import {
+  validateStoryVisualManifest,
+  type StoryVisualAssetSet,
+} from "../../../domain/story-visual-manifest";
 import type {
   PersistedStoryVisualAssetSet,
   PersistedStoryVisualManifest,
@@ -22,6 +25,8 @@ export class DrizzleStoryVisualWorkspaceRepository
   async createManifest(
     input: Parameters<StoryVisualWorkspaceRepositoryPort["createManifest"]>[0],
   ): Promise<PersistedStoryVisualManifest> {
+    validateStoryVisualManifest(input.manifest);
+
     const [row] = await this.db
       .insert(storyVisualManifests)
       .values({

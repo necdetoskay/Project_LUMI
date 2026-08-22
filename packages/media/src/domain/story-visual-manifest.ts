@@ -77,6 +77,19 @@ export type StoryVisualAssetSet = {
   createdAt: string;
 };
 
+const STORY_SCENE_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isCanonicalStorySceneId(value: string): boolean {
+  return STORY_SCENE_ID_PATTERN.test(value);
+}
+
+function assertCanonicalStorySceneId(sceneId: string): void {
+  if (!isCanonicalStorySceneId(sceneId)) {
+    throw new Error("STORY_VISUAL_CANONICAL_SCENE_ID_REQUIRED");
+  }
+}
+
 function normalize(values: readonly string[]): readonly string[] {
   return values
     .map((value) => value.trim().toLowerCase())
@@ -154,9 +167,14 @@ export function validateStoryVisualManifest(
       }
       variantIds.add(variant.id);
     }
+
+    for (const sceneId of requirement.sceneIds) {
+      assertCanonicalStorySceneId(sceneId);
+    }
   }
 
   for (const binding of manifest.sceneBindings) {
+    assertCanonicalStorySceneId(binding.sceneId);
     for (const usage of binding.usages) {
       const requirement = manifest.entities.find(
         (entry) => entry.manifestEntityId === usage.manifestEntityId,
@@ -177,5 +195,9 @@ export function validateStoryVisualManifest(
         throw new Error("STORY_VISUAL_SCENE_STATE_UNKNOWN");
       }
     }
+  }
+
+  for (const illustration of manifest.storyIllustrations) {
+    assertCanonicalStorySceneId(illustration.sceneId);
   }
 }

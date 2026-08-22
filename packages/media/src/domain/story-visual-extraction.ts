@@ -1,12 +1,14 @@
 import { getItemVisualStates } from "./item-visual-state";
-import type {
-  StoryIllustrationRequirement,
-  StorySceneVisualBinding,
-  StoryVisualEntityKind,
-  StoryVisualEntityRequirement,
-  StoryVisualManifest,
-  StoryVisualStateRef,
-  StoryVisualVariant,
+import {
+  isCanonicalStorySceneId,
+  validateStoryVisualManifest,
+  type StoryIllustrationRequirement,
+  type StorySceneVisualBinding,
+  type StoryVisualEntityKind,
+  type StoryVisualEntityRequirement,
+  type StoryVisualManifest,
+  type StoryVisualStateRef,
+  type StoryVisualVariant,
 } from "./story-visual-manifest";
 
 export type StoryVisualExtractionEntity = {
@@ -31,6 +33,10 @@ export type StoryVisualExtraction = {
   sceneBindings: readonly StorySceneVisualBinding[];
   storyIllustrations: readonly StoryIllustrationRequirement[];
 };
+
+export type StoryVisualSceneIdResolver = (
+  sourceSceneRef: string,
+) => string | null | undefined;
 
 export type StoryVisualExtractionReconciliation = {
   manifest: StoryVisualManifest;
@@ -73,8 +79,27 @@ function reconcileItemStates(
   return registryStates.map((state) => ({ id: state.id, label: state.label }));
 }
 
+function resolveCanonicalSceneId(
+  sourceSceneRef: string,
+  resolveSceneId: StoryVisualSceneIdResolver,
+): string {
+  const canonicalSceneId = resolveSceneId(sourceSceneRef);
+  if (!canonicalSceneId) {
+    throw new Error(
+      `STORY_VISUAL_SCENE_REFERENCE_UNRESOLVED:${sourceSceneRef}`,
+    );
+  }
+  if (!isCanonicalStorySceneId(canonicalSceneId)) {
+    throw new Error(
+      `STORY_VISUAL_CANONICAL_SCENE_ID_REQUIRED:${sourceSceneRef}`,
+    );
+  }
+  return canonicalSceneId;
+}
+
 export function reconcileStoryVisualExtraction(
   extraction: StoryVisualExtraction,
+  resolveSceneId: StoryVisualSceneIdResolver,
 ): StoryVisualExtractionReconciliation {
   const warnings: string[] = [];
   const entityIds = new Set<string>();
@@ -112,20 +137,32 @@ export function reconcileStoryVisualExtraction(
         requiredStates,
         importance: entity.importance,
         reusable: entity.reusable,
-        sceneIds: entity.sceneIds,
+        sceneIds: entity.sceneIds.map((sceneId) =>
+          resolveCanonicalSceneId(sceneId, resolveSceneId),
+        ),
       };
     },
   );
 
+  const manifest: StoryVisualManifest = {
+    schemaVersion: 1,
+    storyId: extraction.storyId,
+    source: extraction.source,
+    entities,
+    sceneBindings: extraction.sceneBindings.map((binding) => ({
+      ...binding,
+      sceneId: resolveCanonicalSceneId(binding.sceneId, resolveSceneId),
+    })),
+    storyIllustrations: extraction.storyIllustrations.map((illustration) => ({
+      ...illustration,
+      sceneId: resolveCanonicalSceneId(illustration.sceneId, resolveSceneId),
+    })),
+  };
+
+  validateStoryVisualManifest(manifest);
+
   return {
-    manifest: {
-      schemaVersion: 1,
-      storyId: extraction.storyId,
-      source: extraction.source,
-      entities,
-      sceneBindings: extraction.sceneBindings,
-      storyIllustrations: extraction.storyIllustrations,
-    },
+    manifest,
     warnings,
   };
 }
