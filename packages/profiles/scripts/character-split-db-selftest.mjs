@@ -22,6 +22,10 @@ const avatarMigration = await readFile(
   ),
   "utf8",
 );
+const avatarSyncMigration = await readFile(
+  resolve(__dirname, "..", "migrations", "0080_child_avatar_registry_sync.sql"),
+  "utf8",
+);
 const npcMigration = await readFile(
   resolve(
     __dirname,
@@ -41,6 +45,7 @@ const npc = "10000000-0000-4000-8000-000000000004";
 const world = "10000000-0000-4000-8000-000000000005";
 const world2 = "10000000-0000-4000-8000-000000000006";
 const secondChild = "10000000-0000-4000-8000-000000000007";
+const secondAvatar = "10000000-0000-4000-8000-000000000008";
 
 const client = new Client({ connectionString: databaseUrl });
 
@@ -106,6 +111,7 @@ await client.connect();
 try {
   await resetFixture();
   await client.query(avatarMigration);
+  await client.query(avatarSyncMigration);
   await client.query(npcMigration);
 
   const avatarRows = await client.query(
@@ -122,6 +128,18 @@ try {
     { character_id: npc, character_subtype: "npc", world_id: world },
   ]);
 
+  await client.query(
+    `INSERT INTO profile.lumi_characters
+      (id, child_profile_id, household_id, character_subtype)
+     VALUES ($1, $2, $3, 'child_avatar')`,
+    [secondAvatar, secondChild, household],
+  );
+  const mirrored = await client.query(
+    "SELECT character_id FROM profile.child_avatars WHERE child_profile_id = $1",
+    [secondChild],
+  );
+  assert.deepEqual(mirrored.rows, [{ character_id: secondAvatar }]);
+
   await assert.rejects(
     client.query(
       `INSERT INTO profile.child_avatars
@@ -129,7 +147,7 @@ try {
        VALUES ($1, 'child_avatar', $2, $3)`,
       [npc, secondChild, household],
     ),
-    /foreign key constraint/,
+    /foreign key constraint|unique constraint/,
   );
 
   await assert.rejects(
