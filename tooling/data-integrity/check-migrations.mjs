@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -22,8 +27,20 @@ const FROZEN_LEGACY_DUPLICATES = new Map([
   [
     "packages/profiles/migrations",
     new Map([
-      ["0061", new Set(["0061_ai_generation_trace_cost.sql", "0061_onboarding_llm_task.sql"])],
-      ["0062", new Set(["0062_ai_generation_traces.sql", "0062_prompt_management_audit.sql"])],
+      [
+        "0061",
+        new Set([
+          "0061_ai_generation_trace_cost.sql",
+          "0061_onboarding_llm_task.sql",
+        ]),
+      ],
+      [
+        "0062",
+        new Set([
+          "0062_ai_generation_traces.sql",
+          "0062_prompt_management_audit.sql",
+        ]),
+      ],
     ]),
   ],
 ]);
@@ -41,7 +58,13 @@ export function discoverMigrationDirectories(rootDir) {
   function walk(current) {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      if (["node_modules", ".next", "dist", "build", "coverage"].includes(entry.name)) continue;
+      if (
+        ["node_modules", ".next", "dist", "build", "coverage"].includes(
+          entry.name,
+        )
+      ) {
+        continue;
+      }
 
       const fullPath = join(current, entry.name);
       if (entry.name === "migrations") {
@@ -99,7 +122,9 @@ export function validateMigrationManifest(scope, migrations) {
     }
     seenFiles.add(migration.file);
 
-    if (migration.sequence === null || migration.sequence === undefined) continue;
+    if (migration.sequence === null || migration.sequence === undefined) {
+      continue;
+    }
 
     const files = bySequence.get(migration.sequence) ?? [];
     files.push(migration.file);
@@ -142,7 +167,10 @@ export function validateRepositoryMigrations(rootDir) {
 }
 
 function isMainModule() {
-  return process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+  return (
+    process.argv[1] &&
+    pathToFileURL(resolve(process.argv[1])).href === import.meta.url
+  );
 }
 
 if (isMainModule()) {
@@ -151,10 +179,15 @@ if (isMainModule()) {
 
   try {
     const manifests = validateRepositoryMigrations(rootDir);
-    const migrationCount = manifests.reduce((sum, manifest) => sum + manifest.migrations.length, 0);
+    const migrationCount = manifests.reduce(
+      (sum, manifest) => sum + manifest.migrations.length,
+      0,
+    );
     const legacyFilenameCount = manifests.reduce(
       (sum, manifest) =>
-        sum + manifest.migrations.filter((migration) => migration.legacyFilename).length,
+        sum +
+        manifest.migrations.filter((migration) => migration.legacyFilename)
+          .length,
       0,
     );
     console.log(
