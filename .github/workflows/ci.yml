@@ -23,6 +23,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Validate migration integrity policy
+        run: node tooling/data-integrity/check-migrations.mjs
+      - name: Self-test migration integrity policy
+        run: node tooling/data-integrity/migration-integrity-selftest.mjs
       - name: Validate ULTEF L8 scenario evaluators
         run: pnpm ultef:l8-scenario-selftest
       - name: Validate ULTEF L8 semantic rubric parser
