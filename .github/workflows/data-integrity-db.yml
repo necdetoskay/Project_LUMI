@@ -52,3 +52,7 @@ jobs:
         env:
           CROSS_DOMAIN_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:cross-domain-selftest
+      - name: Full clean DB integrity lab
+        env:
+          FULL_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:full-integrity-lab
