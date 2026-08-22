@@ -389,7 +389,7 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
     eventType: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    console.info(
+    console.warn(
       "LUMI_BACKGROUND_LIFE_WORLD_EVENT",
       JSON.stringify({ worldId, eventType, payload }),
     );
@@ -515,6 +515,6 @@ export async function runProductionBackgroundLife(input?: {
     }
   }
 
-  console.info("LUMI_BACKGROUND_LIFE_RUN", JSON.stringify(summary));
+  console.warn("LUMI_BACKGROUND_LIFE_RUN", JSON.stringify(summary));
   return summary;
 }
