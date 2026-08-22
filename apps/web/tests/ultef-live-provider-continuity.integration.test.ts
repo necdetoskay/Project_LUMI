@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { callOpenRouter } from "@lumi/profiles/application";
 import {
@@ -10,8 +10,9 @@ import {
 import type { StoryHookState } from "@lumi/story/domain";
 
 import { NpcBeliefStoryContinuityContextAdapter } from "@/lib/story-continuity-context-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled = process.env.ULTEF_REAL_PROVIDER_ENABLED === "true";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
@@ -86,6 +87,7 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
   it("uses the production OpenRouter client and recalls persisted continuity in child-safe generated prose", async () => {
     const householdId = crypto.randomUUID();
     const childProfileId = crypto.randomUUID();
+    const childAvatarId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
     const boraNpcId = crypto.randomUUID();
     let usage: LiveUsage | null = null;
@@ -99,6 +101,15 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
     });
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId,
+        fixtureKey: `live-provider-continuity-${householdId}`,
+        npcs: [{ id: boraNpcId, name: "Bora" }],
+      });
+
       await pool.query(
         `INSERT INTO npc_intelligence.beliefs
             (id, npc_id, household_id, world_id, fact_id, claim, confidence, source, provenance, status)
@@ -141,10 +152,15 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
       };
 
       scenario.setup("Live provider", { model: modelId });
-      scenario.setup("Child", { ageBand: "6-8", childProfileId });
+      scenario.setup("Child", {
+        ageBand: "6-8",
+        childProfileId,
+        characterId: childAvatarId,
+      });
       scenario.setup("Persisted continuity", {
         worldId,
         npc: "Bora",
+        npcId: boraNpcId,
         claim: CLAIM,
       });
 
@@ -160,7 +176,7 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
         }),
         settingsPort,
         continuityPort: adapter,
-        characterId: "Arin",
+        characterId: childAvatarId,
         callOpenRouter: liveCaller,
         maxAttempts: 1,
       });
@@ -252,6 +268,9 @@ ultefDescribe("ULTEF L7-LIVE-CONTINUITY-001", () => {
         "DELETE FROM npc_intelligence.beliefs WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   }, 30_000);
 });
