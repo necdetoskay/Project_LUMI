@@ -1,12 +1,13 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { DrizzleCanonicalMemoryRepository } from "@lumi/npc-intelligence/db";
 import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import type { CanonicalMemory } from "@lumi/npc-intelligence/domain";
 
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const SCENARIO_ID = "PX-LUMI-S45-MEMORY-LIFECYCLE-001";
 const enabled = process.env.ULTEF_SCENARIO === SCENARIO_ID;
@@ -77,6 +78,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     const worldId = crypto.randomUUID();
     const profileId = crypto.randomUUID();
     const otherProfileId = crypto.randomUUID();
+    const characterId = crypto.randomUUID();
     const ownerId = crypto.randomUUID();
     const repo = new DrizzleCanonicalMemoryRepository(
       createNpcDatabase(databaseUrl!),
@@ -95,6 +97,15 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     const now = new Date("2026-08-09T20:00:00.000Z");
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId: profileId,
+        characterId,
+        worldId,
+        fixtureKey: `s45-${householdId}`,
+        npcs: [{ id: ownerId, name: "S45 Memory NPC" }],
+      });
+
       await repo.save(
         makeMemory({
           id: oldId,
@@ -235,6 +246,9 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
         "DELETE FROM npc_intelligence.memories WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   });
 });
