@@ -192,6 +192,21 @@ function createRunner(
   return new SimulationRunner(store, worldSource, npcSource, budgetPlanner);
 }
 
+function effectSemantics(effect: SimulationEffect) {
+  return {
+    worldId: effect.worldId,
+    householdId: effect.householdId,
+    npcId: effect.npcId,
+    entityId: effect.entityId,
+    effectType: effect.effectType,
+    severity: effect.severity,
+    payload: effect.payload,
+    evidence: effect.evidence,
+    status: effect.status,
+    idempotencyKey: effect.idempotencyKey,
+  };
+}
+
 describe("SimulationRunner", () => {
   it("freezes and produces no effects for 14-day absence", async () => {
     const store = new InMemoryStore();
@@ -376,5 +391,76 @@ describe("SimulationRunner", () => {
 
     expect(store.events[0]!.resolved).toBe(false);
     expect(store.events[1]!.resolved).toBe(true);
+  });
+
+  it("retries the same logical run deterministically without duplicate side effects", async () => {
+    const store = new InMemoryStore();
+    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+    worldSource.npcs = [
+      makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
+    ];
+    worldSource.events = [];
+    const npcSource = new InMemoryNpcSource();
+    npcSource.npcs = worldSource.npcs;
+    const runner = createRunner(store, worldSource, npcSource);
+    const input = {
+      worldId: WORLD_ID,
+      householdId: HOUSEHOLD_ID,
+      childProfileId: "child-1",
+      childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
+      now: new Date("2026-08-03T12:00:00Z"),
+      seed: "retry-seed-0",
+    };
+
+    const first = await runner.run(input);
+    const persistedAfterFirst = store.effects.length;
+    const worldEventsAfterFirst = worldSource.recordedEvents.length;
+    const second = await runner.run(input);
+
+    expect(first.effects.length).toBeGreaterThan(0);
+    expect(second.effects.map(effectSemantics)).toEqual(
+      first.effects.map(effectSemantics),
+    );
+    expect(second.runState.runHash).toBe(first.runState.runHash);
+    expect(store.effects).toHaveLength(persistedAfterFirst);
+    expect(worldSource.recordedEvents).toHaveLength(worldEventsAfterFirst);
+    expect(second.committedCount).toBe(0);
+  });
+
+  it("allows a changed logical world state to persist new effects", async () => {
+    const store = new InMemoryStore();
+    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+    worldSource.npcs = [
+      makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
+    ];
+    worldSource.events = [];
+    const npcSource = new InMemoryNpcSource();
+    npcSource.npcs = worldSource.npcs;
+    const runner = createRunner(store, worldSource, npcSource);
+    const input = {
+      worldId: WORLD_ID,
+      householdId: HOUSEHOLD_ID,
+      childProfileId: "child-1",
+      childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
+      now: new Date("2026-08-03T12:00:00Z"),
+      seed: "retry-seed-0",
+    };
+
+    const first = await runner.run(input);
+    const persistedAfterFirst = store.effects.length;
+
+    worldSource.clock = makeClockSnapshot({ clockHash: "clock-next", version: 2 });
+    worldSource.events = [
+      makeScheduledEvent({
+        id: "55555555-5555-5555-5555-555555555555",
+        resolved: false,
+      }),
+    ];
+
+    const second = await runner.run(input);
+
+    expect(second.runState.runHash).not.toBe(first.runState.runHash);
+    expect(store.effects.length).toBeGreaterThan(persistedAfterFirst);
+    expect(second.committedCount).toBeGreaterThan(0);
   });
 });
