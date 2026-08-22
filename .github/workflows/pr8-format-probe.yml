@@ -1,0 +1,27 @@
+name: PR-8 Format Probe
+
+on:
+  push:
+    branches:
+      - fix/pr8-production-dependency-migrations
+
+permissions:
+  contents: read
+
+jobs:
+  format-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Print exact Prettier patch
+        run: |
+          pnpm exec prettier --write apps/web/scripts/vercel-production-data-integrity-migrate.mjs
+          git diff -- apps/web/scripts/vercel-production-data-integrity-migrate.mjs
