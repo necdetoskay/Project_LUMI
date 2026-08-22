@@ -56,6 +56,10 @@ jobs:
         env:
           MEDIA_FINGERPRINT_CACHE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/media media:fingerprint-cache-selftest
+      - name: Story visual asset set manifest integrity
+        env:
+          STORY_VISUAL_ASSET_SET_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/media media:story-visual-asset-set-selftest
       - name: Cross-domain privacy media AI prompt integrity
         env:
           CROSS_DOMAIN_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity

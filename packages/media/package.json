@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "media:migrate": "node scripts/media-migrate.mjs",
-    "media:fingerprint-cache-selftest": "node scripts/media-fingerprint-cache-db-selftest.mjs"
+    "media:fingerprint-cache-selftest": "node scripts/media-fingerprint-cache-db-selftest.mjs",
+    "media:story-visual-asset-set-selftest": "node scripts/story-visual-asset-set-manifest-db-selftest.mjs"
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",

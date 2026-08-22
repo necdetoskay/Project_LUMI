@@ -8,6 +8,7 @@ import {
   numeric,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -185,6 +186,14 @@ export const storyVisualManifests = mediaSchema.table(
       table.storyId,
       table.manifestFingerprint,
     ),
+    unique("uq_story_visual_manifest_asset_set_identity").on(
+      table.id,
+      table.householdId,
+      table.childProfileId,
+      table.worldId,
+      table.storyId,
+      table.manifestFingerprint,
+    ),
     index("story_visual_manifest_story_idx").on(
       table.householdId,
       table.storyId,
@@ -201,9 +210,7 @@ export const storyVisualAssetSets = mediaSchema.table(
   "story_visual_asset_sets",
   {
     id: primaryId(),
-    manifestId: uuid("manifest_id")
-      .notNull()
-      .references(() => storyVisualManifests.id, { onDelete: "cascade" }),
+    manifestId: uuid("manifest_id").notNull(),
     householdId: uuid("household_id").notNull(),
     childProfileId: uuid("child_profile_id").notNull(),
     worldId: uuid("world_id").notNull(),
@@ -225,6 +232,28 @@ export const storyVisualAssetSets = mediaSchema.table(
       table.storyId,
       table.createdAt,
     ),
+    uniqueIndex("uq_story_visual_active_asset_set")
+      .on(table.householdId, table.storyId)
+      .where(sql`${table.active} = true`),
+    foreignKey({
+      columns: [
+        table.manifestId,
+        table.householdId,
+        table.childProfileId,
+        table.worldId,
+        table.storyId,
+        table.manifestFingerprint,
+      ],
+      foreignColumns: [
+        storyVisualManifests.id,
+        storyVisualManifests.householdId,
+        storyVisualManifests.childProfileId,
+        storyVisualManifests.worldId,
+        storyVisualManifests.storyId,
+        storyVisualManifests.manifestFingerprint,
+      ],
+      name: "story_visual_asset_sets_manifest_identity_fk",
+    }).onDelete("cascade"),
     check(
       "chk_story_visual_asset_set_status",
       sql`${table.status} IN ('planned', 'generating', 'ready', 'partial', 'failed')`,
