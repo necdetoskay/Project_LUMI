@@ -13,7 +13,7 @@ try {
   const manifest = summarizeManifest(migrations);
   const latest = manifest.at(-1);
 
-  console.log(
+  console.warn(
     `Profile migration integrity OK: ${manifest.length} files` +
       (latest ? `, latest=${latest.file}` : ""),
   );
