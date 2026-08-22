@@ -33,6 +33,7 @@ const ids = {
   wrongHouseholdCanon: "82000000-0000-4000-8000-000000000008",
   wrongSubjectCanon: "82000000-0000-4000-8000-000000000009",
   wrongKindCanon: "82000000-0000-4000-8000-000000000010",
+  invalidSelectedCanon: "82000000-0000-4000-8000-000000000011",
 };
 
 const resetSchemaSql = `
@@ -57,7 +58,9 @@ const resetSchemaSql = `
     subject_type varchar(32) NOT NULL,
     subject_id uuid NOT NULL,
     asset_kind varchar(64) NOT NULL,
-    selected_asset_id uuid REFERENCES profile.managed_assets(id) ON DELETE SET NULL
+    selected_asset_id uuid REFERENCES profile.managed_assets(id) ON DELETE SET NULL,
+    status varchar(32) NOT NULL DEFAULT 'draft',
+    selected_at timestamptz
   );
 `;
 
@@ -83,8 +86,8 @@ try {
   await seedBase();
   await client.query(
     `INSERT INTO profile.managed_asset_canons
-      (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id)
-     VALUES ($1, $2, 'character', $3, 'character_portrait', $4)`,
+      (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id, status, selected_at)
+     VALUES ($1, $2, 'character', $3, 'character_portrait', $4, 'selected', now())`,
     [ids.dirtyCanon, ids.household2, ids.subject1, ids.asset],
   );
 
@@ -108,8 +111,8 @@ try {
 
   await client.query(
     `INSERT INTO profile.managed_asset_canons
-      (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id)
-     VALUES ($1, $2, 'character', $3, 'character_portrait', $4)`,
+      (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id, status, selected_at)
+     VALUES ($1, $2, 'character', $3, 'character_portrait', $4, 'selected', now())`,
     [ids.validCanon, ids.household1, ids.subject1, ids.asset],
   );
 
@@ -143,15 +146,31 @@ try {
     /managed_asset_canons_selected_asset_scope_fk/,
   );
 
-  // Preserve the legacy physical-delete behavior: only the nullable pointer clears.
+  // SQL/alternate writers cannot advertise selected state without a pointer.
+  await assert.rejects(
+    client.query(
+      `INSERT INTO profile.managed_asset_canons
+        (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id, status, selected_at)
+       VALUES ($1, $2, 'character', $3, 'character_portrait', NULL, 'selected', now())`,
+      [ids.invalidSelectedCanon, ids.household1, ids.subject1],
+    ),
+    /managed_asset_canons_selected_requires_asset/,
+  );
+
+  // Physical deletion clears only the pointer identity columns at FK level,
+  // while the trigger normalizes the active canon state in the same UPDATE.
   await client.query("DELETE FROM profile.managed_assets WHERE id = $1", [
     ids.asset,
   ]);
   const afterDelete = await client.query(
-    "SELECT selected_asset_id FROM profile.managed_asset_canons WHERE id = $1",
+    `SELECT selected_asset_id, status, selected_at
+     FROM profile.managed_asset_canons
+     WHERE id = $1`,
     [ids.validCanon],
   );
   assert.equal(afterDelete.rows[0].selected_asset_id, null);
+  assert.equal(afterDelete.rows[0].status, "draft");
+  assert.equal(afterDelete.rows[0].selected_at, null);
 
   console.warn("Managed asset canon integrity database self-test OK");
 } finally {
