@@ -4,9 +4,10 @@ import pg from "pg";
 import { createLogger } from "@lumi/logger";
 import { DrizzleNpcSnapshotRepository } from "@lumi/npc-intelligence/db";
 import { enqueueNpcActionRelationshipIntent } from "@lumi/story/application";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { OutboxJobRunner } from "../src/outbox-runner";
+import { seedWorkerCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled =
   process.env.ULTEF_SCENARIO === "PX-LUMI-S50-NPC-ACTION-EFFECT-REGISTRY-001";
@@ -54,6 +55,15 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
     const evidenceId = crypto.randomUUID();
     const selectedCandidateId = "trust-child";
     const relationshipToCharacter = 0.75;
+
+    await seedWorkerCanonicalNpcFixture(pool, {
+      householdId,
+      childProfileId,
+      characterId,
+      worldId,
+      fixtureKey: `s50-${householdId}`,
+      npcs: [{ id: npcId, name: "S50 NPC" }],
+    });
 
     const snapshots = new DrizzleNpcSnapshotRepository();
     await snapshots.upsert({
@@ -211,6 +221,7 @@ describeDb("ULTEF S50 — typed NPC action effect registry", () => {
         `DELETE FROM npc_intelligence.npc_snapshots WHERE world_id=$1`,
         [worldId],
       );
+      await pool.query(`DELETE FROM profile.households WHERE id=$1`, [householdId]);
     }
   });
 });
