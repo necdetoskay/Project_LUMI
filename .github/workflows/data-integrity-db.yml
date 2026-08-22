@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  world-simulation-integrity:
+  integrity:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -40,3 +40,7 @@ jobs:
         env:
           WORLD_SIM_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:world-sim-selftest
+      - name: Story integrity
+        env:
+          STORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:story-integrity-selftest
