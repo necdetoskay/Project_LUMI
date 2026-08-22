@@ -65,7 +65,10 @@ async function reset() {
       UNIQUE (household_id, subject_type, subject_id, asset_kind)
     );
   `);
-  await client.query("INSERT INTO profile.households VALUES ($1),($2)", [h1, h2]);
+  await client.query("INSERT INTO profile.households VALUES ($1),($2)", [
+    h1,
+    h2,
+  ]);
 }
 
 async function seedAssets() {
@@ -142,7 +145,9 @@ try {
     /managed_asset_canons_selected_pointer_check/,
   );
   await assert.rejects(
-    client.query("DELETE FROM profile.managed_assets WHERE id = $1", [asset1]),
+    client.query("DELETE FROM profile.managed_assets WHERE id = $1", [
+      asset1,
+    ]),
     /managed_asset_canons_selected_asset_scope_fk/,
   );
 
@@ -152,7 +157,9 @@ try {
      WHERE id = $1`,
     [canon1],
   );
-  await client.query("DELETE FROM profile.managed_assets WHERE id = $1", [asset1]);
+  await client.query("DELETE FROM profile.managed_assets WHERE id = $1", [
+    asset1,
+  ]);
   const { rows } = await client.query(
     "SELECT status, selected_asset_id FROM profile.managed_asset_canons WHERE id = $1",
     [canon1],
