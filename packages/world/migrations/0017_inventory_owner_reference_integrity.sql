@@ -6,14 +6,24 @@
 -- one canonical typed reference registry plus write-through triggers so every
 -- future owner reference is validated transactionally against the typed owner
 -- identity in the same household scope.
+--
+-- Canonical domain owner types are household, child_profile, character and
+-- location. The historical child_avatar/npc aliases remain accepted for
+-- forward compatibility with pre-domain rows, but new application writes use
+-- the canonical four-value contract.
 
 BEGIN;
 
+CREATE UNIQUE INDEX IF NOT EXISTS child_profiles_id_household_unique
+  ON profile.child_profiles (id, household_id);
 CREATE UNIQUE INDEX IF NOT EXISTS child_avatars_id_household_unique
   ON profile.child_avatars (character_id, household_id);
-
 CREATE UNIQUE INDEX IF NOT EXISTS world_npcs_id_household_unique
   ON profile.world_npcs (character_id, household_id);
+CREATE UNIQUE INDEX IF NOT EXISTS worlds_id_household_unique
+  ON profile.worlds (id, household_id);
+CREATE UNIQUE INDEX IF NOT EXISTS world_locations_id_world_unique
+  ON profile.world_locations (id, world_id);
 
 CREATE TABLE IF NOT EXISTS profile.inventory_typed_owner_references (
   reference_kind VARCHAR(32) NOT NULL,
@@ -21,9 +31,12 @@ CREATE TABLE IF NOT EXISTS profile.inventory_typed_owner_references (
   owner_type VARCHAR(40) NOT NULL,
   owner_id UUID NOT NULL,
   scope_household_id UUID NOT NULL,
+  child_profile_id UUID,
   child_avatar_id UUID,
   npc_id UUID,
   household_id UUID,
+  location_id UUID,
+  location_world_id UUID,
   PRIMARY KEY (reference_kind, reference_id),
   CONSTRAINT inventory_typed_owner_reference_kind_check CHECK (
     reference_kind IN (
@@ -39,6 +52,9 @@ CREATE TABLE IF NOT EXISTS profile.inventory_typed_owner_references (
   CONSTRAINT inventory_typed_owner_reference_scope_household_fk
     FOREIGN KEY (scope_household_id)
     REFERENCES profile.households (id),
+  CONSTRAINT inventory_typed_owner_reference_child_profile_scope_fk
+    FOREIGN KEY (child_profile_id, scope_household_id)
+    REFERENCES profile.child_profiles (id, household_id),
   CONSTRAINT inventory_typed_owner_reference_avatar_scope_fk
     FOREIGN KEY (child_avatar_id, scope_household_id)
     REFERENCES profile.child_avatars (character_id, household_id),
@@ -48,19 +64,38 @@ CREATE TABLE IF NOT EXISTS profile.inventory_typed_owner_references (
   CONSTRAINT inventory_typed_owner_reference_household_fk
     FOREIGN KEY (household_id)
     REFERENCES profile.households (id),
+  CONSTRAINT inventory_typed_owner_reference_location_fk
+    FOREIGN KEY (location_id, location_world_id)
+    REFERENCES profile.world_locations (id, world_id),
+  CONSTRAINT inventory_typed_owner_reference_location_world_scope_fk
+    FOREIGN KEY (location_world_id, scope_household_id)
+    REFERENCES profile.worlds (id, household_id),
+  CONSTRAINT inventory_typed_owner_reference_location_pair_check CHECK (
+    (location_id IS NULL) = (location_world_id IS NULL)
+  ),
   CONSTRAINT inventory_typed_owner_reference_one_owner_check CHECK (
-    ((child_avatar_id IS NOT NULL)::integer +
+    ((child_profile_id IS NOT NULL)::integer +
+     (child_avatar_id IS NOT NULL)::integer +
      (npc_id IS NOT NULL)::integer +
-     (household_id IS NOT NULL)::integer) = 1
-    AND owner_id = COALESCE(child_avatar_id, npc_id, household_id)
+     (household_id IS NOT NULL)::integer +
+     (location_id IS NOT NULL)::integer) = 1
+    AND owner_id = COALESCE(
+      child_profile_id,
+      child_avatar_id,
+      npc_id,
+      household_id,
+      location_id
+    )
     AND (
-      (owner_type IN ('character', 'child_avatar') AND child_avatar_id IS NOT NULL)
+      (owner_type = 'child_profile' AND child_profile_id IS NOT NULL)
+      OR (owner_type IN ('character', 'child_avatar') AND child_avatar_id IS NOT NULL)
       OR (owner_type IN ('character', 'npc') AND npc_id IS NOT NULL)
       OR (
         owner_type = 'household'
         AND household_id IS NOT NULL
         AND household_id = scope_household_id
       )
+      OR (owner_type = 'location' AND location_id IS NOT NULL)
     )
   )
 );
@@ -69,6 +104,35 @@ CREATE INDEX IF NOT EXISTS inventory_typed_owner_reference_owner_idx
   ON profile.inventory_typed_owner_references (owner_type, owner_id);
 CREATE INDEX IF NOT EXISTS inventory_typed_owner_reference_scope_idx
   ON profile.inventory_typed_owner_references (scope_household_id, reference_kind);
+
+CREATE OR REPLACE FUNCTION profile.__inventory_assert_item_household(
+  p_item_instance_id UUID,
+  p_scope_household_id UUID
+)
+RETURNS VOID AS $$
+DECLARE
+  item_household_id UUID;
+BEGIN
+  SELECT item.household_id
+  INTO item_household_id
+  FROM profile.inventory_item_instances AS item
+  WHERE item.id = p_item_instance_id;
+
+  IF item_household_id IS NULL THEN
+    RAISE EXCEPTION
+      'Inventory owner reference cannot resolve item household for %',
+      p_item_instance_id;
+  END IF;
+
+  IF item_household_id <> p_scope_household_id THEN
+    RAISE EXCEPTION
+      'Inventory item % belongs to household %, not actor household %',
+      p_item_instance_id,
+      item_household_id,
+      p_scope_household_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION profile.__inventory_sync_typed_owner_reference(
   p_reference_kind VARCHAR,
@@ -79,9 +143,12 @@ CREATE OR REPLACE FUNCTION profile.__inventory_sync_typed_owner_reference(
 )
 RETURNS VOID AS $$
 DECLARE
+  child_profile_match BOOLEAN := FALSE;
   avatar_match BOOLEAN := FALSE;
   npc_match BOOLEAN := FALSE;
   household_match BOOLEAN := FALSE;
+  location_match BOOLEAN := FALSE;
+  resolved_location_world_id UUID;
   match_count INTEGER := 0;
 BEGIN
   IF p_reference_id IS NULL
@@ -104,8 +171,24 @@ BEGIN
     RAISE EXCEPTION 'Unsupported inventory owner reference kind: %', p_reference_kind;
   END IF;
 
-  IF p_owner_type NOT IN ('character', 'child_avatar', 'npc', 'household') THEN
+  IF p_owner_type NOT IN (
+    'household',
+    'child_profile',
+    'character',
+    'location',
+    'child_avatar',
+    'npc'
+  ) THEN
     RAISE EXCEPTION 'Unsupported inventory owner type: %', p_owner_type;
+  END IF;
+
+  IF p_owner_type = 'child_profile' THEN
+    SELECT EXISTS (
+      SELECT 1
+      FROM profile.child_profiles AS child_profile
+      WHERE child_profile.id = p_owner_id
+        AND child_profile.household_id = p_scope_household_id
+    ) INTO child_profile_match;
   END IF;
 
   IF p_owner_type IN ('character', 'child_avatar') THEN
@@ -136,8 +219,24 @@ BEGIN
     INTO household_match;
   END IF;
 
+  IF p_owner_type = 'location' THEN
+    SELECT location.world_id
+    INTO resolved_location_world_id
+    FROM profile.world_locations AS location
+    INNER JOIN profile.worlds AS world
+      ON world.id = location.world_id
+    WHERE location.id = p_owner_id
+      AND world.household_id = p_scope_household_id;
+
+    location_match := resolved_location_world_id IS NOT NULL;
+  END IF;
+
   match_count :=
-    avatar_match::integer + npc_match::integer + household_match::integer;
+    child_profile_match::integer +
+    avatar_match::integer +
+    npc_match::integer +
+    household_match::integer +
+    location_match::integer;
 
   IF match_count <> 1 THEN
     RAISE EXCEPTION
@@ -154,26 +253,35 @@ BEGIN
     owner_type,
     owner_id,
     scope_household_id,
+    child_profile_id,
     child_avatar_id,
     npc_id,
-    household_id
+    household_id,
+    location_id,
+    location_world_id
   ) VALUES (
     p_reference_kind,
     p_reference_id,
     p_owner_type,
     p_owner_id,
     p_scope_household_id,
+    CASE WHEN child_profile_match THEN p_owner_id END,
     CASE WHEN avatar_match THEN p_owner_id END,
     CASE WHEN npc_match THEN p_owner_id END,
-    CASE WHEN household_match THEN p_owner_id END
+    CASE WHEN household_match THEN p_owner_id END,
+    CASE WHEN location_match THEN p_owner_id END,
+    CASE WHEN location_match THEN resolved_location_world_id END
   )
   ON CONFLICT (reference_kind, reference_id) DO UPDATE
   SET owner_type = EXCLUDED.owner_type,
       owner_id = EXCLUDED.owner_id,
       scope_household_id = EXCLUDED.scope_household_id,
+      child_profile_id = EXCLUDED.child_profile_id,
       child_avatar_id = EXCLUDED.child_avatar_id,
       npc_id = EXCLUDED.npc_id,
-      household_id = EXCLUDED.household_id;
+      household_id = EXCLUDED.household_id,
+      location_id = EXCLUDED.location_id,
+      location_world_id = EXCLUDED.location_world_id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -224,6 +332,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION profile.__inventory_history_owner_reference_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
+  PERFORM profile.__inventory_assert_item_household(
+    NEW.item_instance_id,
+    NEW.actor_household_id
+  );
+
   IF (NEW.from_owner_type IS NULL) <> (NEW.from_owner_id IS NULL) THEN
     RAISE EXCEPTION
       'Inventory ownership history % requires from_owner_type/from_owner_id together',
@@ -264,6 +377,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION profile.__inventory_transfer_owner_reference_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
+  PERFORM profile.__inventory_assert_item_household(
+    NEW.item_instance_id,
+    NEW.actor_household_id
+  );
+
   IF TG_OP = 'UPDATE' AND OLD.id IS DISTINCT FROM NEW.id THEN
     DELETE FROM profile.inventory_typed_owner_references
     WHERE reference_id = OLD.id
@@ -291,6 +409,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION profile.__inventory_usage_owner_reference_trigger()
 RETURNS TRIGGER AS $$
 BEGIN
+  PERFORM profile.__inventory_assert_item_household(
+    NEW.item_instance_id,
+    NEW.actor_household_id
+  );
+
   IF TG_OP = 'UPDATE' AND OLD.id IS DISTINCT FROM NEW.id THEN
     DELETE FROM profile.inventory_typed_owner_references
     WHERE reference_kind = 'usage' AND reference_id = OLD.id;
@@ -351,7 +474,7 @@ EXECUTE FUNCTION profile.__inventory_container_owner_reference_trigger();
 DROP TRIGGER IF EXISTS inventory_history_owner_reference_sync
   ON profile.inventory_ownership_history;
 CREATE TRIGGER inventory_history_owner_reference_sync
-BEFORE INSERT OR UPDATE OF id, from_owner_type, from_owner_id, to_owner_type, to_owner_id, actor_household_id
+BEFORE INSERT OR UPDATE OF id, item_instance_id, from_owner_type, from_owner_id, to_owner_type, to_owner_id, actor_household_id
 ON profile.inventory_ownership_history
 FOR EACH ROW
 EXECUTE FUNCTION profile.__inventory_history_owner_reference_trigger();
@@ -359,7 +482,7 @@ EXECUTE FUNCTION profile.__inventory_history_owner_reference_trigger();
 DROP TRIGGER IF EXISTS inventory_transfer_owner_reference_sync
   ON profile.inventory_transfers;
 CREATE TRIGGER inventory_transfer_owner_reference_sync
-BEFORE INSERT OR UPDATE OF id, from_owner_type, from_owner_id, to_owner_type, to_owner_id, actor_household_id
+BEFORE INSERT OR UPDATE OF id, item_instance_id, from_owner_type, from_owner_id, to_owner_type, to_owner_id, actor_household_id
 ON profile.inventory_transfers
 FOR EACH ROW
 EXECUTE FUNCTION profile.__inventory_transfer_owner_reference_trigger();
@@ -367,7 +490,7 @@ EXECUTE FUNCTION profile.__inventory_transfer_owner_reference_trigger();
 DROP TRIGGER IF EXISTS inventory_usage_owner_reference_sync
   ON profile.inventory_usages;
 CREATE TRIGGER inventory_usage_owner_reference_sync
-BEFORE INSERT OR UPDATE OF id, used_by_owner_type, used_by_owner_id, actor_household_id
+BEFORE INSERT OR UPDATE OF id, item_instance_id, used_by_owner_type, used_by_owner_id, actor_household_id
 ON profile.inventory_usages
 FOR EACH ROW
 EXECUTE FUNCTION profile.__inventory_usage_owner_reference_trigger();
@@ -447,6 +570,11 @@ BEGIN
   FOR row_record IN
     SELECT * FROM profile.inventory_ownership_history
   LOOP
+    PERFORM profile.__inventory_assert_item_household(
+      row_record.item_instance_id,
+      row_record.actor_household_id
+    );
+
     IF (row_record.from_owner_type IS NULL) <> (row_record.from_owner_id IS NULL) THEN
       RAISE EXCEPTION
         'Inventory ownership history % has partial from-owner identity',
@@ -475,6 +603,10 @@ BEGIN
   FOR row_record IN
     SELECT * FROM profile.inventory_transfers
   LOOP
+    PERFORM profile.__inventory_assert_item_household(
+      row_record.item_instance_id,
+      row_record.actor_household_id
+    );
     PERFORM profile.__inventory_sync_typed_owner_reference(
       'transfer_from',
       row_record.id,
@@ -494,6 +626,10 @@ BEGIN
   FOR row_record IN
     SELECT * FROM profile.inventory_usages
   LOOP
+    PERFORM profile.__inventory_assert_item_household(
+      row_record.item_instance_id,
+      row_record.actor_household_id
+    );
     PERFORM profile.__inventory_sync_typed_owner_reference(
       'usage',
       row_record.id,
