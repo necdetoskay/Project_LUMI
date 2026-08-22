@@ -27,6 +27,8 @@ jobs:
         run: node tooling/data-integrity/check-migrations.mjs
       - name: Self-test migration integrity policy
         run: node tooling/data-integrity/migration-integrity-selftest.mjs
+      - name: Self-test profile migration ledger
+        run: node packages/profiles/scripts/profile-ledger-selftest.mjs
       - name: Validate ULTEF L8 scenario evaluators
         run: pnpm ultef:l8-scenario-selftest
       - name: Validate ULTEF L8 semantic rubric parser
