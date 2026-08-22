@@ -1,19 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { isBackgroundLifeCronAuthorized } from "@/app/api/internal/background-life/route";
+import { isBackgroundLifeCronAuthorized } from "@/lib/background-life/cron-auth";
 import { isBackgroundLifeDue } from "@/lib/background-life/worker";
 
 describe("background life production boundary", () => {
   it("fails closed when the cron secret is missing", () => {
-    const isAuthorized = isBackgroundLifeCronAuthorized;
-    expect(isAuthorized("Bearer anything", undefined)).toBe(false);
+    expect(isBackgroundLifeCronAuthorized("Bearer anything", undefined)).toBe(
+      false,
+    );
   });
 
   it("requires an exact bearer secret", () => {
-    const isAuthorized = isBackgroundLifeCronAuthorized;
-    expect(isAuthorized("Bearer secret", "secret")).toBe(true);
-    expect(isAuthorized("Bearer wrong", "secret")).toBe(false);
-    expect(isAuthorized(null, "secret")).toBe(false);
+    expect(isBackgroundLifeCronAuthorized("Bearer secret", "secret")).toBe(
+      true,
+    );
+    expect(isBackgroundLifeCronAuthorized("Bearer wrong", "secret")).toBe(
+      false,
+    );
+    expect(isBackgroundLifeCronAuthorized(null, "secret")).toBe(false);
   });
 
   it("does not immediately rerun a world with a recent simulation run", () => {
