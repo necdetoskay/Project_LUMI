@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const packageJsonPath = fileURLToPath(new URL("../package.json", import.meta.url));
-const runnerPath = fileURLToPath(
-  new URL("../scripts/vercel-production-data-integrity-migrate.mjs", import.meta.url),
+const packageJsonPath = resolve(process.cwd(), "package.json");
+const runnerPath = resolve(
+  process.cwd(),
+  "scripts/vercel-production-data-integrity-migrate.mjs",
 );
 
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
@@ -46,7 +47,7 @@ describe("production data-integrity migration contract", () => {
 
     let previousIndex = -1;
     for (const migration of expectedMigrations) {
-      const migrationIndex = runnerSource.indexOf(`filename: \"${migration}\"`);
+      const migrationIndex = runnerSource.indexOf(`filename: "${migration}"`);
       expect(migrationIndex).toBeGreaterThan(previousIndex);
       previousIndex = migrationIndex;
     }
