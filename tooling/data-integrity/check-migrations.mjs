@@ -1,10 +1,5 @@
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-} from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -118,7 +113,9 @@ export function validateMigrationManifest(scope, migrations) {
 
   for (const migration of migrations) {
     if (seenFiles.has(migration.file)) {
-      throw new Error(`[${scope}] duplicate migration filename ${migration.file}`);
+      throw new Error(
+        `[${scope}] duplicate migration filename ${migration.file}`,
+      );
     }
     seenFiles.add(migration.file);
 
@@ -155,7 +152,9 @@ export function validateMigrationManifest(scope, migrations) {
 export function validateRepositoryMigrations(rootDir) {
   const directories = discoverMigrationDirectories(rootDir);
   if (directories.length === 0) {
-    throw new Error("No migration directories discovered under apps/ or packages/.");
+    throw new Error(
+      "No migration directories discovered under apps/ or packages/.",
+    );
   }
 
   const manifests = directories.map((migrationDir) => ({
@@ -186,7 +185,8 @@ if (isMainModule()) {
     const legacyFilenameCount = manifests.reduce(
       (sum, manifest) =>
         sum +
-        manifest.migrations.filter((migration) => migration.legacyFilename).length,
+        manifest.migrations.filter((migration) => migration.legacyFilename)
+          .length,
       0,
     );
     console.log(
