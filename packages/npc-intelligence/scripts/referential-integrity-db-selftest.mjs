@@ -317,7 +317,7 @@ try {
        id, household_id, child_profile_id, character_id, universe_seed,
        origin_seed, accepted_candidate_seed, generator_version, vector_version
      ) VALUES ($1, $2, $3, $4, 'invalid-world', 'invalid-origin', 'invalid-candidate', 'test', 'v1')`,
-    [invalidWorld, h2, child1, avatar2],
+    [invalidWorld, h2, child1, npc3],
     "worlds_child_scope_fk",
   );
 
