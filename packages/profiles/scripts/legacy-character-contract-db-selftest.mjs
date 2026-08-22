@@ -27,8 +27,10 @@ const [splitAvatar, childSync, subtypeLock, splitNpc, registryContract] =
     readMigration("world", "0015_legacy_character_registry_contract.sql"),
   ]);
 
-const ids = Array.from({ length: 12 }, (_, index) =>
-  `60000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+const ids = Array.from(
+  { length: 12 },
+  (_, index) =>
+    `60000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
 );
 const [
   household,
