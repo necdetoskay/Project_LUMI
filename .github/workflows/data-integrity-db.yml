@@ -44,3 +44,7 @@ jobs:
         env:
           STORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:story-integrity-selftest
+      - name: Inventory typed ownership integrity
+        env:
+          INVENTORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:inventory-integrity-selftest
