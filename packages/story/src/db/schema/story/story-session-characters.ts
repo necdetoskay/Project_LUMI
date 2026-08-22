@@ -15,6 +15,8 @@ export const storySessionCharacters = storySchema.table(
   {
     storySessionId: uuid("story_session_id").notNull(),
     characterId: uuid("character_id").notNull(),
+    childAvatarId: uuid("child_avatar_id"),
+    npcId: uuid("npc_id"),
     participationRole: varchar("participation_role", { length: 20 }).notNull(),
     joinedAt: timestamp("joined_at", { withTimezone: true, mode: "date" })
       .notNull()
