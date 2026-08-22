@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
 
+# PR-5: isolate world and simulation scope invariants in a real PostgreSQL gate.
 jobs:
   world-simulation-integrity:
     runs-on: ubuntu-latest
