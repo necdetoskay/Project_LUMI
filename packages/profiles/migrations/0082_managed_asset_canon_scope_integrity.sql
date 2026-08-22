@@ -43,16 +43,20 @@ BEGIN
 END;
 $$;
 
+-- Drop the dependent FK before replacing the referenced unique identity so the
+-- migration remains safe to replay directly in regression tests and recovery
+-- tooling.
+ALTER TABLE profile.managed_asset_canons
+  DROP CONSTRAINT IF EXISTS managed_asset_canons_selected_asset_id_fkey;
+ALTER TABLE profile.managed_asset_canons
+  DROP CONSTRAINT IF EXISTS managed_asset_canons_selected_asset_scope_fk;
+
 ALTER TABLE profile.managed_assets
   DROP CONSTRAINT IF EXISTS uq_managed_assets_canon_scope;
 ALTER TABLE profile.managed_assets
   ADD CONSTRAINT uq_managed_assets_canon_scope
   UNIQUE (id, household_id, subject_type, subject_id, asset_kind);
 
-ALTER TABLE profile.managed_asset_canons
-  DROP CONSTRAINT IF EXISTS managed_asset_canons_selected_asset_id_fkey;
-ALTER TABLE profile.managed_asset_canons
-  DROP CONSTRAINT IF EXISTS managed_asset_canons_selected_asset_scope_fk;
 ALTER TABLE profile.managed_asset_canons
   ADD CONSTRAINT managed_asset_canons_selected_asset_scope_fk
   FOREIGN KEY (
