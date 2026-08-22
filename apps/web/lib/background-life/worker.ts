@@ -43,11 +43,11 @@ function toDate(value: Date | string | null): Date | null {
 }
 
 export function isBackgroundLifeDue(
-  lastAdvancedAt: Date | null,
+  lastRunAt: Date | null,
   now: Date,
 ): boolean {
-  if (!lastAdvancedAt) return true;
-  return now.getTime() - lastAdvancedAt.getTime() >= MIN_RUN_INTERVAL_MS;
+  if (!lastRunAt) return true;
+  return now.getTime() - lastRunAt.getTime() >= MIN_RUN_INTERVAL_MS;
 }
 
 async function discoverTargets(
@@ -68,9 +68,9 @@ async function discoverTargets(
         w.child_profile_id,
         COALESCE(
           MAX(s.last_interacted_at),
-          cp.updated_at,
+          MAX(s.completed_at),
+          MAX(s.started_at),
           cp.created_at,
-          w.updated_at,
           w.created_at
         ) AS child_last_seen_at
       FROM profile.worlds w
@@ -82,24 +82,27 @@ async function discoverTargets(
         ON s.world_id = w.id
        AND s.household_id = w.household_id
        AND s.child_profile_id = w.child_profile_id
-      LEFT JOIN simulation.world_clocks c
-        ON c.world_id = w.id
-       AND c.household_id = w.household_id
+      LEFT JOIN LATERAL (
+        SELECT r.created_at
+        FROM simulation.simulation_runs r
+        WHERE r.world_id = w.id
+          AND r.household_id = w.household_id
+        ORDER BY r.created_at DESC
+        LIMIT 1
+      ) last_run ON true
       WHERE w.lifecycle_status = 'active'
         AND (
-          c.last_advanced_at IS NULL
-          OR c.last_advanced_at <= $1::timestamptz - INTERVAL '1 hour'
+          last_run.created_at IS NULL
+          OR last_run.created_at <= $1::timestamptz - INTERVAL '1 hour'
         )
       GROUP BY
         w.id,
         w.household_id,
         w.child_profile_id,
-        cp.updated_at,
         cp.created_at,
-        w.updated_at,
         w.created_at,
-        c.last_advanced_at
-      ORDER BY COALESCE(c.last_advanced_at, '-infinity'::timestamptz), w.id
+        last_run.created_at
+      ORDER BY COALESCE(last_run.created_at, '-infinity'::timestamptz), w.id
       LIMIT $2
     `,
     [now, limit],
@@ -111,6 +114,26 @@ async function discoverTargets(
     childProfileId: row.child_profile_id,
     childLastSeenAt: toDate(row.child_last_seen_at) ?? now,
   }));
+}
+
+async function fetchLatestRunAt(
+  pool: Pool,
+  worldId: string,
+  householdId: string,
+): Promise<Date | null> {
+  const result = await pool.query<{ created_at: Date | string }>(
+    `
+      SELECT created_at
+      FROM simulation.simulation_runs
+      WHERE world_id = $1
+        AND household_id = $2
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [worldId, householdId],
+  );
+
+  return toDate(result.rows[0]?.created_at ?? null);
 }
 
 class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
@@ -210,7 +233,9 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
       characterId: row.character_id,
       locationId: row.location_id,
       needTypes: Array.isArray(row.need_types)
-        ? row.need_types.filter((value): value is string => typeof value === "string")
+        ? row.need_types.filter(
+            (value): value is string => typeof value === "string",
+          )
         : [],
       relationshipToCharacter: Number(row.relationship_to_character),
       lastInteractionAt: toDate(row.last_interaction_at) ?? new Date(0),
@@ -232,8 +257,10 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
       `
         SELECT COALESCE(
           MAX(s.last_interacted_at),
-          cp.updated_at,
-          cp.created_at
+          MAX(s.completed_at),
+          MAX(s.started_at),
+          cp.created_at,
+          w.created_at
         ) AS last_seen_at
         FROM profile.worlds w
         JOIN profile.child_profiles cp
@@ -246,10 +273,11 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
          AND s.child_profile_id = w.child_profile_id
         WHERE w.id = $1
           AND w.child_profile_id = $2
-        GROUP BY cp.updated_at, cp.created_at
+        GROUP BY cp.created_at, w.created_at
       `,
       [worldId, childProfileId],
     );
+
     return toDate(result.rows[0]?.last_seen_at ?? null);
   }
 
@@ -368,7 +396,8 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
       `
         UPDATE profile.worlds
         SET lifecycle_status = 'frozen', updated_at = NOW()
-        WHERE id = $1 AND lifecycle_status = 'active'
+        WHERE id = $1
+          AND lifecycle_status = 'active'
       `,
       [worldId],
     );
@@ -383,6 +412,7 @@ async function tryAcquireWorldLock(
     "SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked",
     [`lumi:background-life:${worldId}`],
   );
+
   return result.rows[0]?.locked === true;
 }
 
@@ -400,7 +430,10 @@ export async function runProductionBackgroundLife(input?: {
   limit?: number;
 }): Promise<BackgroundLifeRunSummary> {
   const now = input?.now ?? new Date();
-  const limit = Math.max(1, Math.min(input?.limit ?? DEFAULT_TARGET_LIMIT, 25));
+  const limit = Math.max(
+    1,
+    Math.min(input?.limit ?? DEFAULT_TARGET_LIMIT, 25),
+  );
   const pool = getAuthPool();
   const targets = await discoverTargets(pool, now, limit);
   const source = new ProductionSimulationSource(pool);
@@ -421,6 +454,7 @@ export async function runProductionBackgroundLife(input?: {
   for (const target of targets) {
     const lockClient = await pool.connect();
     let locked = false;
+
     try {
       locked = await tryAcquireWorldLock(lockClient, target.worldId);
       if (!locked) {
@@ -428,41 +462,32 @@ export async function runProductionBackgroundLife(input?: {
         continue;
       }
 
-      const clockBefore = await source.fetchClock(
+      const latestRunAt = await fetchLatestRunAt(
+        pool,
         target.worldId,
         target.householdId,
       );
-      if (
-        clockBefore?.lastAdvancedAt &&
-        !isBackgroundLifeDue(clockBefore.lastAdvancedAt, now)
-      ) {
+      if (!isBackgroundLifeDue(latestRunAt, now)) {
         summary.skipped += 1;
         continue;
       }
+
+      await clockService.ensureClock(target.worldId, target.householdId);
+
+      const childLastSeenAt =
+        (await source.fetchChildLastSeen(
+          target.worldId,
+          target.childProfileId,
+        )) ?? target.childLastSeenAt;
 
       const result = await runner.run({
         worldId: target.worldId,
         householdId: target.householdId,
         childProfileId: target.childProfileId,
-        childLastSeenAt: target.childLastSeenAt,
+        childLastSeenAt,
         now,
         seed: WORKER_SEED,
       });
-
-      await clockService.ensureClock(target.worldId, target.householdId);
-      const realElapsedSeconds = clockBefore?.lastAdvancedAt
-        ? Math.max(
-            0,
-            Math.floor(
-              (now.getTime() - clockBefore.lastAdvancedAt.getTime()) / 1000,
-            ),
-          )
-        : 0;
-      await clockService.tickClock(
-        target.worldId,
-        target.householdId,
-        realElapsedSeconds,
-      );
 
       summary.processed += 1;
       summary.committedEffects += result.committedCount;
