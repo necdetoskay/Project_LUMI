@@ -57,7 +57,9 @@ describe("production schema migration contract", () => {
     expect(runner).toContain("DROP SCHEMA IF EXISTS npc_intelligence CASCADE");
     expect(runner).toContain("DROP SCHEMA IF EXISTS story CASCADE");
     expect(runner).toContain("DROP SCHEMA IF EXISTS simulation CASCADE");
-    expect(runner).toContain("DROP TABLE IF EXISTS public.parent_accounts CASCADE");
+    expect(runner).toContain(
+      "DROP TABLE IF EXISTS public.parent_accounts CASCADE",
+    );
   });
 
   it("marks the database managed only after migration verification", () => {
