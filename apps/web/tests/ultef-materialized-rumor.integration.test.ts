@@ -1,18 +1,19 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import pg from "pg";
 import { sql } from "drizzle-orm";
+import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
+import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import { __setTestPropagationDb } from "@lumi/story/application";
 import { createDatabase as createStoryDatabase } from "@lumi/story/db/client";
 import { storyOutbox } from "@lumi/story/db/schema/story";
-import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
-import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
 
 import { createRumorMaterializationRuntime } from "@/lib/rumor-materialization-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled = process.env.ULTEF_SCENARIO === "PX-LUMI-09-002";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
@@ -21,6 +22,8 @@ const ultefDescribe =
   enabled && destructive && databaseUrl ? describe : describe.skip;
 
 const HOUSEHOLD_ID = "20000000-0000-4000-8000-000000000091";
+const CHILD_PROFILE_ID = "21000000-0000-4000-8000-000000000091";
+const CHARACTER_ID = "22000000-0000-4000-8000-000000000091";
 const WORLD_ID = "30000000-0000-4000-8000-000000000091";
 const COMMIT_ID = "50000000-0000-4000-8000-000000000091";
 const SOURCE_NPC = "60000000-0000-4000-8000-000000000091";
@@ -98,6 +101,18 @@ beforeAll(async () => {
     );
   `);
 
+  await seedCanonicalNpcFixture(pool, {
+    householdId: HOUSEHOLD_ID,
+    childProfileId: CHILD_PROFILE_ID,
+    characterId: CHARACTER_ID,
+    worldId: WORLD_ID,
+    fixtureKey: "ultef-materialized-rumor-091",
+    npcs: [
+      { id: SOURCE_NPC, name: "Mira" },
+      { id: TARGET_NPC, name: "Bora" },
+    ],
+  });
+
   await pool.query(
     "DELETE FROM story.story_event_store WHERE actor_household_id = $1",
     [HOUSEHOLD_ID],
@@ -132,7 +147,7 @@ ultefDescribe("ULTEF PX-LUMI-09-002 — materialized rumor propagation", () => {
     scenario.setup("Rumor", { factId: FACT_ID, claim: CLAIM, confidence: 0.8 });
     scenario.setup(
       "Persistence",
-      "real disposable PostgreSQL: story outbox + npc_intelligence beliefs",
+      "real disposable PostgreSQL: canonical NPC registry + story outbox + npc_intelligence beliefs",
     );
 
     await storyDb.insert(storyOutbox).values({
