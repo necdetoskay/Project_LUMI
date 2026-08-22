@@ -4,11 +4,20 @@ const mockGetCharacterById = vi.fn();
 const mockGetCharacterDomain = vi.fn();
 const mockGetCharacterFoundationByCharacterId = vi.fn();
 const mockArchiveCharacter = vi.fn();
+const mockGetPrimaryChildAvatarById = vi.fn();
+const mockArchivePrimaryChildAvatar = vi.fn();
 
 vi.mock("@lumi/profiles/application", () => ({
   getCharacterById: (...args: unknown[]) => mockGetCharacterById(...args),
   getCharacterDomain: (...args: unknown[]) => mockGetCharacterDomain(...args),
   archiveCharacter: (...args: unknown[]) => mockArchiveCharacter(...args),
+}));
+
+vi.mock("@lumi/profiles/child-avatar", () => ({
+  getPrimaryChildAvatarById: (...args: unknown[]) =>
+    mockGetPrimaryChildAvatarById(...args),
+  archivePrimaryChildAvatar: (...args: unknown[]) =>
+    mockArchivePrimaryChildAvatar(...args),
 }));
 
 vi.mock("@lumi/profiles", () => ({
@@ -38,7 +47,7 @@ describe("GET /api/characters/[id]?bootstrap=true", () => {
   });
 
   it("returns only the scoped Living World bootstrap summary", async () => {
-    mockGetCharacterById.mockResolvedValueOnce({
+    mockGetPrimaryChildAvatarById.mockResolvedValueOnce({
       id: CHARACTER_ID,
       householdId: HOUSEHOLD_ID,
       name: "Kaan",
@@ -66,7 +75,7 @@ describe("GET /api/characters/[id]?bootstrap=true", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(mockGetCharacterById).toHaveBeenCalledWith(
+    expect(mockGetPrimaryChildAvatarById).toHaveBeenCalledWith(
       "parent-user-id",
       HOUSEHOLD_ID,
       CHARACTER_ID,
@@ -90,7 +99,7 @@ describe("GET /api/characters/[id]?bootstrap=true", () => {
   });
 
   it("does not read foundation data when household scope is rejected", async () => {
-    mockGetCharacterById.mockRejectedValueOnce(
+    mockGetPrimaryChildAvatarById.mockRejectedValueOnce(
       new AuthorizationError("User is not a member of this household"),
     );
 
