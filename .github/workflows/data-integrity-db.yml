@@ -52,6 +52,12 @@ jobs:
         env:
           CROSS_DOMAIN_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:cross-domain-selftest
+      - name: Legacy character registry contract
+        env:
+          LEGACY_CHARACTER_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:legacy-character-selftest
+      - name: Typed character consumer contract
+        run: node tooling/data-integrity/character-consumer-contract.mjs
       - name: Production schema bootstrap contract
         run: pnpm --filter @lumi/web exec vitest run tests/production-schema-migrations.contract.test.ts
       - name: Production schema bootstrap from unmarked database
