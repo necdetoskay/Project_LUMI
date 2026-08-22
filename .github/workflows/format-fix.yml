@@ -7,6 +7,9 @@ on:
         description: Branch to format
         required: true
         default: feat/onboarding-world-first-next
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -18,7 +21,7 @@ jobs:
       - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || inputs.branch }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -48,7 +51,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: format repository with prettier"
-          git push origin HEAD:${{ inputs.branch }}
+          git push origin HEAD:${{ github.event_name == 'pull_request' && github.head_ref || inputs.branch }}
 
       - name: Verify formatting
         run: pnpm format:check
