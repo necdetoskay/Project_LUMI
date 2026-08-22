@@ -1,0 +1,146 @@
+name: NPC Production Demo Repair Diagnostic
+
+on:
+  push:
+    branches:
+      - fix/npc-integrity-production-demo-backfill
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lumi_demo_repair
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lumi_demo_repair"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_demo_repair
+      DATABASE_DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_demo_repair
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Reproduce and report transition
+        shell: bash
+        run: |
+          set +e
+          : > /tmp/npc-demo-repair.log
+          baseline_bootstrap=99
+          legacy_seed=99
+          orphan_proof=99
+          repair_migrate=99
+          second_pass=99
+
+          echo '=== BASELINE CHECKOUT ===' | tee -a /tmp/npc-demo-repair.log
+          git checkout --detach 2c7bd2810f2082c54bc7bb9551ee3eebe14a2877 >>/tmp/npc-demo-repair.log 2>&1
+          pnpm install --frozen-lockfile >>/tmp/npc-demo-repair.log 2>&1
+
+          echo '=== BASELINE BOOTSTRAP ===' | tee -a /tmp/npc-demo-repair.log
+          VERCEL_ENV=production node apps/web/scripts/vercel-production-schema-migrate.mjs >>/tmp/npc-demo-repair.log 2>&1
+          baseline_bootstrap=$?
+
+          if [ "$baseline_bootstrap" -eq 0 ]; then
+            echo '=== LEGACY DEMO SEED ===' | tee -a /tmp/npc-demo-repair.log
+            NODE_ENV=test \
+            LUMI_DEMO_CONFIRM=lumi-demo-v1 \
+            LUMI_DEMO_PARENT_PASSWORD='LumiDemoRepair-123!' \
+            pnpm demo:seed >>/tmp/npc-demo-repair.log 2>&1
+            legacy_seed=$?
+          fi
+
+          snapshots='n/a'
+          registries='n/a'
+          if [ "$legacy_seed" -eq 0 ]; then
+            snapshots=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM npc_intelligence.npc_snapshots WHERE household_id='51000000-0000-4000-8000-000000000001'::uuid AND world_id='51000000-0000-4000-8000-000000000004'::uuid AND npc_id IN ('51000000-0000-4000-8000-000000000030'::uuid,'51000000-0000-4000-8000-000000000031'::uuid,'51000000-0000-4000-8000-000000000032'::uuid)" 2>>/tmp/npc-demo-repair.log)
+            registries=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM profile.world_npcs WHERE character_id IN ('51000000-0000-4000-8000-000000000030'::uuid,'51000000-0000-4000-8000-000000000031'::uuid,'51000000-0000-4000-8000-000000000032'::uuid)" 2>>/tmp/npc-demo-repair.log)
+            if [ "$snapshots" = '3' ] && [ "$registries" = '0' ]; then
+              orphan_proof=0
+            else
+              orphan_proof=1
+            fi
+            echo "legacy_snapshots=$snapshots legacy_registries=$registries" | tee -a /tmp/npc-demo-repair.log
+          fi
+
+          echo '=== REPAIR BRANCH CHECKOUT ===' | tee -a /tmp/npc-demo-repair.log
+          git fetch origin fix/npc-integrity-production-demo-backfill >>/tmp/npc-demo-repair.log 2>&1
+          git checkout --detach origin/fix/npc-integrity-production-demo-backfill >>/tmp/npc-demo-repair.log 2>&1
+          pnpm install --frozen-lockfile >>/tmp/npc-demo-repair.log 2>&1
+
+          if [ "$orphan_proof" -eq 0 ]; then
+            echo '=== MANAGED REPAIR MIGRATION ===' | tee -a /tmp/npc-demo-repair.log
+            VERCEL_ENV=production node apps/web/scripts/vercel-production-schema-migrate.mjs >>/tmp/npc-demo-repair.log 2>&1
+            repair_migrate=$?
+          fi
+
+          repaired_characters='n/a'
+          repaired_registries='n/a'
+          repaired_origins='n/a'
+          generation='n/a'
+          if [ "$repair_migrate" -eq 0 ]; then
+            repaired_characters=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM profile.lumi_characters WHERE id IN ('51000000-0000-4000-8000-000000000030'::uuid,'51000000-0000-4000-8000-000000000031'::uuid,'51000000-0000-4000-8000-000000000032'::uuid) AND character_subtype='npc' AND household_id='51000000-0000-4000-8000-000000000001'::uuid AND child_profile_id='51000000-0000-4000-8000-000000000002'::uuid")
+            repaired_registries=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM profile.world_npcs WHERE character_id IN ('51000000-0000-4000-8000-000000000030'::uuid,'51000000-0000-4000-8000-000000000031'::uuid,'51000000-0000-4000-8000-000000000032'::uuid) AND world_id='51000000-0000-4000-8000-000000000004'::uuid AND household_id='51000000-0000-4000-8000-000000000001'::uuid AND child_profile_id='51000000-0000-4000-8000-000000000002'::uuid")
+            repaired_origins=$(psql "$DATABASE_URL" -X -Atc "SELECT count(*) FROM profile.character_origin_packages WHERE id IN ('51000000-0000-4000-8000-000000000033'::uuid,'51000000-0000-4000-8000-000000000034'::uuid,'51000000-0000-4000-8000-000000000035'::uuid) AND household_id='51000000-0000-4000-8000-000000000001'::uuid AND child_profile_id='51000000-0000-4000-8000-000000000002'::uuid")
+            generation=$(psql "$DATABASE_URL" -X -Atc "SELECT generation FROM public.lumi_schema_generation WHERE singleton=TRUE")
+            echo "repaired_characters=$repaired_characters repaired_registries=$repaired_registries repaired_origins=$repaired_origins generation=$generation" | tee -a /tmp/npc-demo-repair.log
+
+            echo '=== SECOND MANAGED PASS ===' | tee -a /tmp/npc-demo-repair.log
+            VERCEL_ENV=production node apps/web/scripts/vercel-production-schema-migrate.mjs >>/tmp/npc-demo-repair.log 2>&1
+            second_pass=$?
+          fi
+
+          overall=failure
+          if [ "$baseline_bootstrap" -eq 0 ] && \
+             [ "$legacy_seed" -eq 0 ] && \
+             [ "$orphan_proof" -eq 0 ] && \
+             [ "$repair_migrate" -eq 0 ] && \
+             [ "$repaired_characters" = '3' ] && \
+             [ "$repaired_registries" = '3' ] && \
+             [ "$repaired_origins" = '3' ] && \
+             [ "$generation" = '1' ] && \
+             [ "$second_pass" -eq 0 ]; then
+            overall=success
+          fi
+
+          git fetch origin fix/npc-integrity-production-demo-backfill >>/tmp/npc-demo-repair.log 2>&1
+          git checkout -B diagnostic-report origin/fix/npc-integrity-production-demo-backfill >>/tmp/npc-demo-repair.log 2>&1
+          mkdir -p .preflight
+          {
+            echo "status=$overall"
+            echo "baseline_bootstrap=$baseline_bootstrap"
+            echo "legacy_seed=$legacy_seed"
+            echo "orphan_proof=$orphan_proof"
+            echo "legacy_snapshots=$snapshots"
+            echo "legacy_registries=$registries"
+            echo "repair_migrate=$repair_migrate"
+            echo "repaired_characters=$repaired_characters"
+            echo "repaired_registries=$repaired_registries"
+            echo "repaired_origins=$repaired_origins"
+            echo "generation=$generation"
+            echo "second_pass=$second_pass"
+            echo '--- log tail ---'
+            tail -n 120 /tmp/npc-demo-repair.log
+          } > .preflight/npc-production-demo-repair.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .preflight/npc-production-demo-repair.txt
+          git commit -m 'ci: record NPC production demo repair diagnostic' || exit 0
+          git push origin HEAD:fix/npc-integrity-production-demo-backfill
