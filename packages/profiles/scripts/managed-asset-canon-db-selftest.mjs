@@ -144,7 +144,9 @@ try {
   );
 
   // Preserve the legacy physical-delete behavior: only the nullable pointer clears.
-  await client.query("DELETE FROM profile.managed_assets WHERE id = $1", [ids.asset]);
+  await client.query("DELETE FROM profile.managed_assets WHERE id = $1", [
+    ids.asset,
+  ]);
   const afterDelete = await client.query(
     "SELECT selected_asset_id FROM profile.managed_asset_canons WHERE id = $1",
     [ids.validCanon],
