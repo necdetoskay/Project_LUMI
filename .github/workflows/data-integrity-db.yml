@@ -84,3 +84,8 @@ jobs:
         env:
           NPC_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/npc-intelligence test:db:referential-integrity
+      - name: Simulation runtime PostgreSQL integration
+        env:
+          SIM_TEST_ENABLE_DESTRUCTIVE: "true"
+          SIM_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/simulation test:int
