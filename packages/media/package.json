@@ -19,7 +19,8 @@
     "test:int": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "media:migrate": "node scripts/media-migrate.mjs"
+    "media:migrate": "node scripts/media-migrate.mjs",
+    "media:fingerprint-cache-selftest": "node scripts/media-fingerprint-cache-db-selftest.mjs"
   },
   "dependencies": {
     "@lumi/logger": "workspace:*",
