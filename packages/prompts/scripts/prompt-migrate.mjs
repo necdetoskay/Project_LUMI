@@ -32,6 +32,7 @@ const DATABASE_URL =
 const MIGRATION_DIR = resolve(__dirname, "..", "migrations");
 
 async function ensureLedger(pool) {
+  await pool.query("CREATE SCHEMA IF NOT EXISTS prompts;");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS prompts._prompt_migration_ledger (
       id SERIAL PRIMARY KEY,
