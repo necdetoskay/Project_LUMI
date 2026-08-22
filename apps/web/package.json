@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/vercel-production-ai-migrate.mjs && node scripts/vercel-production-character-foundation-migrate.mjs && node scripts/vercel-production-context-migrate.mjs && next build --webpack",
+    "build": "node scripts/vercel-production-ai-migrate.mjs && node scripts/vercel-production-character-foundation-migrate.mjs && node scripts/vercel-production-context-migrate.mjs && node scripts/vercel-production-cross-domain-migrate.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
@@ -53,14 +53,14 @@
   "devDependencies": {
     "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "4.1.14",
-    "@testing-library/react": "16.3.0",
+    "@testing-library/react": "^16.3.0",
     "@types/pg": "^8.20.0",
-    "@types/pngjs": "^6.0.5",
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
-    "@vitejs/plugin-react": "5.1.1",
-    "jsdom": "27.2.0",
-    "tailwindcss": "4.1.14",
-    "vitest": "4.0.14"
+    "@types/pngjs": "^7.0.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.1",
+    "jsdom": "^27.2.0",
+    "tailwindcss": "^4.1.14",
+    "vitest": "^4.0.14"
   }
 }
