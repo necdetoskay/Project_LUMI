@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/npc-referential-integrity-hardening
+  pull_request:
 
 permissions:
   contents: read
