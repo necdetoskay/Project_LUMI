@@ -122,6 +122,17 @@ async function insertAssetSet({
   );
 }
 
+async function expectMigrationRejected(pattern) {
+  try {
+    await assert.rejects(client.query(migration), pattern);
+  } finally {
+    // The migration owns an explicit transaction. An expected preflight failure
+    // leaves that transaction aborted, so restore the session before the next
+    // isolated legacy-data scenario.
+    await client.query("ROLLBACK");
+  }
+}
+
 try {
   for (const invalidIdentity of [
     { householdId: householdB },
@@ -133,8 +144,7 @@ try {
     await reset();
     await seedManifest();
     await insertAssetSet(invalidIdentity);
-    await assert.rejects(
-      client.query(migration),
+    await expectMigrationRejected(
       /Story visual asset set manifest identity mismatch: 1 invalid row\(s\)/,
     );
   }
