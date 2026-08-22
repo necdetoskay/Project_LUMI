@@ -28,6 +28,10 @@ const currentCompanionMigration = await readFile(
   ),
   "utf8",
 );
+const stateActivationMigration = await readFile(
+  resolve(worldMigrationDir, "0019_inventory_owner_state_activation_guard.sql"),
+  "utf8",
+);
 
 function fixtureId(index) {
   const suffix = String(index + 1).padStart(12, "0");
@@ -59,6 +63,7 @@ const [
   usageA,
   post0014ChildProfileOwnership,
   post0014LocationContainer,
+  legacyReleasedOwnership,
   futureCharacterOwnership,
   futureChildProfileContainer,
   futureLocationUsage,
@@ -263,14 +268,19 @@ try {
     "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'location',$3,'active')",
     [post0014LocationContainer, householdA, locationA],
   );
+  await client.query(
+    "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'location',$3,'released')",
+    [legacyReleasedOwnership, itemA4, locationA],
+  );
 
   await client.query(ownerReferenceMigration);
   await client.query(currentCompanionMigration);
+  await client.query(stateActivationMigration);
 
   const typedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
   );
-  assert.equal(typedReferenceCount.rows[0].count, 9);
+  assert.equal(typedReferenceCount.rows[0].count, 10);
 
   const ownershipReference = await client.query(
     `SELECT child_avatar_id, npc_id, household_id, scope_household_id
@@ -317,6 +327,32 @@ try {
   assert.equal(locationCanonical.rows[0].location_id, locationA);
   assert.equal(locationCanonical.rows[0].location_world_id, worldA);
   assert.equal(locationCanonical.rows[0].scope_household_id, householdA);
+
+  // 0019 must backfill historical current-owner rows and status-only updates
+  // must pass through canonical validation rather than bypassing it.
+  const releasedCompanion = await client.query(
+    `SELECT location_id
+       FROM profile.inventory_ownership_typed_owners
+      WHERE ownership_id = $1`,
+    [legacyReleasedOwnership],
+  );
+  assert.equal(releasedCompanion.rows[0].location_id, locationA);
+  await client.query(
+    `DELETE FROM profile.inventory_typed_owner_references
+      WHERE reference_kind = 'ownership' AND reference_id = $1`,
+    [legacyReleasedOwnership],
+  );
+  await client.query(
+    "UPDATE profile.inventory_ownerships SET status = 'active' WHERE id = $1",
+    [legacyReleasedOwnership],
+  );
+  const reactivatedReference = await client.query(
+    `SELECT location_id
+       FROM profile.inventory_typed_owner_references
+      WHERE reference_kind = 'ownership' AND reference_id = $1`,
+    [legacyReleasedOwnership],
+  );
+  assert.equal(reactivatedReference.rows[0].location_id, locationA);
 
   // Future current ownership writes can no longer bypass typed identity, and
   // the original PR-7 companion remains synchronized.
@@ -403,7 +439,7 @@ try {
     client.query(
       `INSERT INTO profile.inventory_transfers
         VALUES ($1,$2,'character',$3,'household',$4,$5)`,
-      [invalidTransfer, itemA, avatarA, householdB, householdB],
+      [invalidTransfer, itemB, avatarA, householdB, householdB],
     ),
     /0 typed owner match|foreign key constraint/,
   );
@@ -471,13 +507,14 @@ try {
   );
   assert.equal(deletedReference.rows[0].count, 0);
 
-  // Both forward-only migrations remain safe if replayed directly.
+  // All forward-only migrations remain safe if replayed directly.
   await client.query(ownerReferenceMigration);
   await client.query(currentCompanionMigration);
+  await client.query(stateActivationMigration);
   const replayedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
   );
-  assert.equal(replayedReferenceCount.rows[0].count, 13);
+  assert.equal(replayedReferenceCount.rows[0].count, 14);
 
   console.warn("Inventory typed owner reference database self-test OK");
 } finally {
