@@ -1,5 +1,7 @@
 export function verifyLedgerAgainstRepository(appliedRows, migrations) {
-  const repoByFile = new Map(migrations.map((migration) => [migration.file, migration]));
+  const repoByFile = new Map(
+    migrations.map((migration) => [migration.file, migration]),
+  );
 
   for (const row of appliedRows) {
     const migration = repoByFile.get(row.migration_file);
