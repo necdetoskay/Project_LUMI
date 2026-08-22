@@ -4,6 +4,9 @@ export { primaryId, timestampColumns, softDeleteColumn } from "./common";
 export { worlds } from "./worlds";
 export type { WorldRecord, NewWorldRecord } from "./worlds";
 
+export { worldNpcs } from "./npcs";
+export type { WorldNpcRecord, NewWorldNpcRecord } from "./npcs";
+
 export { worldRegions } from "./regions";
 export type { WorldRegionRecord, NewWorldRegionRecord } from "./regions";
 
