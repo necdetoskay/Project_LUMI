@@ -132,6 +132,10 @@ export const managedAssetCanons = profileSchema.table(
       "managed_asset_canons_status_check",
       sql`${table.status} IN ('draft', 'selected', 'archived')`,
     ),
+    check(
+      "managed_asset_canons_selected_requires_asset",
+      sql`${table.status} <> 'selected' OR ${table.selectedAssetId} IS NOT NULL`,
+    ),
   ],
 );
 
