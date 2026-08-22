@@ -8,7 +8,6 @@ const CONNECTION_IDS = [
   "51000000-0000-4000-8000-000000000027",
   "51000000-0000-4000-8000-000000000028",
 ];
-const FIRST_ORIGIN_PACKAGE_ID = "51000000-0000-4000-8000-000000000005";
 const INVENTORY_ID = "51000000-0000-4000-8000-000000000042";
 const INVENTORY_DEFINITION_IDS = [
   "51000000-0000-4000-8000-000000000043",
@@ -41,6 +40,76 @@ function npcByKey(manifest, key) {
   return npc;
 }
 
+async function insertOriginPackage(client, manifest, identity, accepted) {
+  await client.query(
+    `INSERT INTO profile.character_origin_packages
+      (id, child_profile_id, household_id, broad_kind, character_type, subtype,
+       origin_mode, universe_seed, created_by, accepted, payload)
+     VALUES ($1,$2,$3,$4,$5,$6,'auto',$7,'system',$8,$9::jsonb)`,
+    [
+      identity.originPackageId,
+      manifest.childProfile.id,
+      manifest.household.id,
+      identity.broadKind,
+      identity.characterType,
+      identity.subtype,
+      `${manifest.world.universeSeed}:${identity.key}`,
+      accepted,
+      JSON.stringify({
+        lumiDemo: true,
+        identityKey: identity.key,
+        characterSubtype: accepted ? "child_avatar" : "npc",
+      }),
+    ],
+  );
+}
+
+async function insertCanonicalCharacter(
+  client,
+  manifest,
+  identity,
+  characterSubtype,
+) {
+  await client.query(
+    `INSERT INTO profile.lumi_characters
+      (id, child_profile_id, household_id, name, broad_kind, character_type,
+       subtype, origin_mode, first_origin_package_id, origin_concept,
+       starting_region_archetype, starting_location, home_archetype,
+       nearby_npc_seed, first_mystery_seed, universe_seed, safety_bounds,
+       character_subtype, lifecycle_stage, version)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'auto',$8,$9,'forest',$10,$11,$12,$13,$14,
+             $15::jsonb,$16,$17,1)`,
+    [
+      identity.id,
+      manifest.childProfile.id,
+      manifest.household.id,
+      identity.displayName,
+      identity.broadKind,
+      identity.characterType,
+      identity.subtype,
+      identity.originPackageId,
+      characterSubtype === "child_avatar"
+        ? manifest.character.originKey
+        : `lumi-demo-npc:${identity.key}`,
+      characterSubtype === "child_avatar"
+        ? manifest.world.startLocationKey
+        : identity.locationKey,
+      characterSubtype === "child_avatar" ? "cottage" : "world-resident",
+      characterSubtype === "child_avatar" ? "mira" : manifest.character.key,
+      manifest.quest.key,
+      `${manifest.world.universeSeed}:${identity.key}`,
+      JSON.stringify({
+        lumiDemo: true,
+        role: identity.role ?? null,
+        traits: identity.traits ?? [],
+        visualCanonStatus: identity.visualCanonStatus ?? null,
+      }),
+      characterSubtype,
+      identity.lifecycleStage,
+    ],
+  );
+}
+
 export function createLumiDemoPostgresAdapter(databaseUrl) {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
 
@@ -71,6 +140,8 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
               FROM profile.child_profiles WHERE id = $1) AS manifest_version,
            (SELECT count(*)::int FROM profile.child_profiles WHERE household_id = $2) AS profiles,
            (SELECT count(*)::int FROM profile.lumi_characters WHERE household_id = $2) AS characters,
+           (SELECT count(*)::int FROM profile.child_avatars WHERE household_id = $2) AS child_avatars,
+           (SELECT count(*)::int FROM profile.world_npcs WHERE household_id = $2 AND world_id = $4) AS npc_identities,
            (SELECT count(*)::int FROM profile.worlds WHERE household_id = $2) AS worlds,
            (SELECT count(*)::int FROM profile.inventory_item_instances WHERE household_id = $2) AS inventory_items,
            (SELECT count(*)::int FROM npc_intelligence.npc_snapshots WHERE household_id = $2 AND world_id = $4) AS npcs,
@@ -96,6 +167,8 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
         counts: {
           profiles: Number(detail.profiles ?? 0),
           characters: Number(detail.characters ?? 0),
+          childAvatars: Number(detail.child_avatars ?? 0),
+          npcIdentities: Number(detail.npc_identities ?? 0),
           worlds: Number(detail.worlds ?? 0),
           inventoryItems: Number(detail.inventory_items ?? 0),
           npcs: Number(detail.npcs ?? 0),
@@ -149,32 +222,15 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
            VALUES ($1,5,'strict',false,true,true,$2::jsonb)`,
           [manifest.household.id, JSON.stringify({ lumiDemo: true })],
         );
-        await client.query(
-          `INSERT INTO profile.lumi_characters
-            (id, child_profile_id, household_id, name, broad_kind, character_type,
-             subtype, origin_mode, first_origin_package_id, origin_concept,
-             starting_region_archetype, starting_location, home_archetype,
-             nearby_npc_seed, first_mystery_seed, universe_seed, safety_bounds,
-             character_subtype, lifecycle_stage, version)
-           VALUES
-            ($1,$2,$3,$4,'human','explorer','child','auto',$5,$6,
-             'forest',$7,'cottage','mira','kayip-isik-izi',$8,
-             $9::jsonb,'child_avatar','childhood',1)`,
-          [
-            manifest.character.id,
-            manifest.childProfile.id,
-            manifest.household.id,
-            manifest.character.displayName,
-            FIRST_ORIGIN_PACKAGE_ID,
-            manifest.character.originKey,
-            manifest.world.startLocationKey,
-            manifest.world.universeSeed,
-            JSON.stringify({
-              lumiDemo: true,
-              visualCanonStatus: manifest.character.visualCanonStatus,
-            }),
-          ],
+
+        await insertOriginPackage(client, manifest, manifest.character, true);
+        await insertCanonicalCharacter(
+          client,
+          manifest,
+          manifest.character,
+          "child_avatar",
         );
+
         await client.query(
           `INSERT INTO profile.worlds
             (id, household_id, child_profile_id, character_id, universe_seed, origin_seed,
@@ -192,6 +248,22 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
             manifest.world.vectorVersion,
           ],
         );
+
+        for (const npc of manifest.npcs) {
+          await insertOriginPackage(client, manifest, npc, false);
+          await insertCanonicalCharacter(client, manifest, npc, "npc");
+          await client.query(
+            `INSERT INTO profile.world_npcs
+              (character_id, character_subtype, world_id, child_profile_id, household_id)
+             VALUES ($1,'npc',$2,$3,$4)`,
+            [
+              npc.id,
+              manifest.world.id,
+              manifest.childProfile.id,
+              manifest.household.id,
+            ],
+          );
+        }
 
         for (const region of manifest.regions) {
           await client.query(
@@ -440,8 +512,25 @@ export function createLumiDemoPostgresAdapter(databaseUrl) {
           [manifest.world.id, manifest.household.id],
         );
         await client.query(
-          `DELETE FROM profile.lumi_characters WHERE id = $1 AND household_id = $2`,
-          [manifest.character.id, manifest.household.id],
+          `DELETE FROM profile.lumi_characters
+            WHERE household_id = $1
+              AND id = ANY($2::uuid[])`,
+          [
+            manifest.household.id,
+            [manifest.character.id, ...manifest.npcs.map((npc) => npc.id)],
+          ],
+        );
+        await client.query(
+          `DELETE FROM profile.character_origin_packages
+            WHERE household_id = $1
+              AND id = ANY($2::uuid[])`,
+          [
+            manifest.household.id,
+            [
+              manifest.character.originPackageId,
+              ...manifest.npcs.map((npc) => npc.originPackageId),
+            ],
+          ],
         );
         await client.query(
           `DELETE FROM profile.child_profiles WHERE id = $1 AND household_id = $2`,
