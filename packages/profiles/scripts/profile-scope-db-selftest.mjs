@@ -105,7 +105,9 @@ try {
     /violates foreign key constraint/,
   );
 
-  await client.query("DELETE FROM profile.child_profiles WHERE id = $1", [childA]);
+  await client.query("DELETE FROM profile.child_profiles WHERE id = $1", [
+    childA,
+  ]);
   const preserved = await client.query(
     "SELECT child_profile_id, household_id FROM profile.scope_probe WHERE id = $1",
     [probeValid],
