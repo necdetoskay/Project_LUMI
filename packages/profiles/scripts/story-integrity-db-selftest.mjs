@@ -127,9 +127,7 @@ try {
     h1,
   ]);
   await client.query("INSERT INTO profile.worlds VALUES ($1,$2)", [world, h1]);
-  await client.query("INSERT INTO profile.child_avatars VALUES ($1)", [
-    avatar,
-  ]);
+  await client.query("INSERT INTO profile.child_avatars VALUES ($1)", [avatar]);
   await client.query("INSERT INTO profile.world_npcs VALUES ($1)", [npc]);
   await client.query("INSERT INTO story.story_definitions VALUES ($1,$2)", [
     definition,
