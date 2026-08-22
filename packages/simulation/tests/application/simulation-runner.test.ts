@@ -389,109 +389,118 @@ describe("SimulationRunner", () => {
     expect(store.events[1]!.resolved).toBe(true);
   });
 
-  it("does not resolve a scheduled event before its effect persists", async () => {
-    const store = new InMemoryStore();
-    store.failScheduledEffectSave = true;
-    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
-    const event = makeScheduledEvent({
-      id: "55555555-5555-5555-5555-555555555555",
-      critical: false,
-      playerPreserved: false,
-      resolved: false,
-    });
-    worldSource.events = [event];
-    const npcSource = new InMemoryNpcSource();
-    npcSource.npcs = [];
-    const runner = createRunner(store, worldSource, npcSource);
+  it(
+    "does not resolve a scheduled event before its effect persists",
+    async () => {
+      const store = new InMemoryStore();
+      store.failScheduledEffectSave = true;
+      const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+      const event = makeScheduledEvent({
+        id: "55555555-5555-5555-5555-555555555555",
+        critical: false,
+        playerPreserved: false,
+        resolved: false,
+      });
+      worldSource.events = [event];
+      const npcSource = new InMemoryNpcSource();
+      npcSource.npcs = [];
+      const runner = createRunner(store, worldSource, npcSource);
 
-    await expect(
-      runner.run({
+      await expect(
+        runner.run({
+          worldId: WORLD_ID,
+          householdId: HOUSEHOLD_ID,
+          childProfileId: "child-1",
+          childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
+          now: new Date("2026-08-03T12:00:00Z"),
+          seed: "scheduled-persistence-order",
+        }),
+      ).rejects.toThrow("scheduled effect persistence failed");
+
+      expect(store.events).toHaveLength(1);
+      expect(store.events[0]!.resolved).toBe(false);
+      expect(store.events[0]!.resolvedAt).toBeNull();
+    },
+  );
+
+  it(
+    "retries the same logical run deterministically without duplicate runs or side effects",
+    async () => {
+      const store = new InMemoryStore();
+      const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+      worldSource.npcs = [
+        makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
+      ];
+      worldSource.events = [];
+      const npcSource = new InMemoryNpcSource();
+      npcSource.npcs = worldSource.npcs;
+      const runner = createRunner(store, worldSource, npcSource);
+      const input = {
         worldId: WORLD_ID,
         householdId: HOUSEHOLD_ID,
         childProfileId: "child-1",
         childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
         now: new Date("2026-08-03T12:00:00Z"),
-        seed: "scheduled-persistence-order",
-      }),
-    ).rejects.toThrow("scheduled effect persistence failed");
+        seed: "retry-seed-1",
+      };
 
-    expect(store.events).toHaveLength(1);
-    expect(store.events[0]!.resolved).toBe(false);
-    expect(store.events[0]!.resolvedAt).toBeNull();
-  });
+      const first = await runner.run(input);
+      const persistedAfterFirst = store.effects.length;
+      const worldEventsAfterFirst = worldSource.recordedEvents.length;
+      const runsAfterFirst = store.runs.length;
+      const second = await runner.run(input);
 
-  it("retries the same logical run deterministically without duplicate runs or side effects", async () => {
-    const store = new InMemoryStore();
-    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
-    worldSource.npcs = [
-      makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
-    ];
-    worldSource.events = [];
-    const npcSource = new InMemoryNpcSource();
-    npcSource.npcs = worldSource.npcs;
-    const runner = createRunner(store, worldSource, npcSource);
-    const input = {
-      worldId: WORLD_ID,
-      householdId: HOUSEHOLD_ID,
-      childProfileId: "child-1",
-      childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
-      now: new Date("2026-08-03T12:00:00Z"),
-      seed: "retry-seed-1",
-    };
+      expect(first.effects.length).toBeGreaterThan(0);
+      expect(second.effects).toEqual(first.effects);
+      expect(second.runState).toEqual(first.runState);
+      expect(store.runs).toHaveLength(runsAfterFirst);
+      expect(store.effects).toHaveLength(persistedAfterFirst);
+      expect(worldSource.recordedEvents).toHaveLength(worldEventsAfterFirst);
+      expect(second.committedCount).toBe(0);
+    },
+  );
 
-    const first = await runner.run(input);
-    const persistedAfterFirst = store.effects.length;
-    const worldEventsAfterFirst = worldSource.recordedEvents.length;
-    const runsAfterFirst = store.runs.length;
-    const second = await runner.run(input);
+  it(
+    "allows a changed logical world state to persist new effects",
+    async () => {
+      const store = new InMemoryStore();
+      const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+      worldSource.npcs = [
+        makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
+      ];
+      worldSource.events = [];
+      const npcSource = new InMemoryNpcSource();
+      npcSource.npcs = worldSource.npcs;
+      const runner = createRunner(store, worldSource, npcSource);
+      const input = {
+        worldId: WORLD_ID,
+        householdId: HOUSEHOLD_ID,
+        childProfileId: "child-1",
+        childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
+        now: new Date("2026-08-03T12:00:00Z"),
+        seed: "retry-seed-1",
+      };
 
-    expect(first.effects.length).toBeGreaterThan(0);
-    expect(second.effects).toEqual(first.effects);
-    expect(second.runState).toEqual(first.runState);
-    expect(store.runs).toHaveLength(runsAfterFirst);
-    expect(store.effects).toHaveLength(persistedAfterFirst);
-    expect(worldSource.recordedEvents).toHaveLength(worldEventsAfterFirst);
-    expect(second.committedCount).toBe(0);
-  });
+      const first = await runner.run(input);
+      const persistedAfterFirst = store.effects.length;
 
-  it("allows a changed logical world state to persist new effects", async () => {
-    const store = new InMemoryStore();
-    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
-    worldSource.npcs = [
-      makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
-    ];
-    worldSource.events = [];
-    const npcSource = new InMemoryNpcSource();
-    npcSource.npcs = worldSource.npcs;
-    const runner = createRunner(store, worldSource, npcSource);
-    const input = {
-      worldId: WORLD_ID,
-      householdId: HOUSEHOLD_ID,
-      childProfileId: "child-1",
-      childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
-      now: new Date("2026-08-03T12:00:00Z"),
-      seed: "retry-seed-1",
-    };
+      worldSource.clock = makeClockSnapshot({
+        clockHash: "clock-next",
+        version: 2,
+      });
+      worldSource.events = [
+        makeScheduledEvent({
+          id: "55555555-5555-5555-5555-555555555555",
+          resolved: false,
+        }),
+      ];
 
-    const first = await runner.run(input);
-    const persistedAfterFirst = store.effects.length;
+      const second = await runner.run(input);
 
-    worldSource.clock = makeClockSnapshot({
-      clockHash: "clock-next",
-      version: 2,
-    });
-    worldSource.events = [
-      makeScheduledEvent({
-        id: "55555555-5555-5555-5555-555555555555",
-        resolved: false,
-      }),
-    ];
-
-    const second = await runner.run(input);
-
-    expect(second.runState.runHash).not.toBe(first.runState.runHash);
-    expect(second.runState.id).not.toBe(first.runState.id);
-    expect(store.effects.length).toBeGreaterThan(persistedAfterFirst);
-    expect(second.committedCount).toBeGreaterThan(0);
-  });
+      expect(second.runState.runHash).not.toBe(first.runState.runHash);
+      expect(second.runState.id).not.toBe(first.runState.id);
+      expect(store.effects.length).toBeGreaterThan(persistedAfterFirst);
+      expect(second.committedCount).toBeGreaterThan(0);
+    },
+  );
 });
