@@ -42,7 +42,7 @@ const [
   usage1,
   snapshot1,
   invalidWorld,
-  invalidWorldNpc,
+  ,
   invalidTrace,
   invalidEvent,
   invalidOpportunity,
