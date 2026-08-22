@@ -265,6 +265,7 @@ export async function startSession(input: StartSessionInput) {
     await repo.createSessionCharacter(tx, {
       storySessionId: record.id,
       characterId: input.characterId,
+      childAvatarId: input.characterId,
       participationRole: input.participationRole ?? "protagonist",
       joinedAt: new Date(),
       initialStateSnapshot: {},
