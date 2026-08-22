@@ -123,7 +123,7 @@ try {
     `INSERT INTO profile.lumi_characters
       (id, child_profile_id, household_id, character_subtype)
      VALUES ($1, $2, $3, 'child_avatar')`,
-    [newAvatar, child, household],
+    [newAvatar, childWithoutWorld, household],
   );
   const avatarRow = await client.query(
     "SELECT character_id FROM profile.child_avatars WHERE character_id = $1",
