@@ -40,6 +40,7 @@ const avatar = "10000000-0000-4000-8000-000000000003";
 const npc = "10000000-0000-4000-8000-000000000004";
 const world = "10000000-0000-4000-8000-000000000005";
 const world2 = "10000000-0000-4000-8000-000000000006";
+const secondChild = "10000000-0000-4000-8000-000000000007";
 
 const client = new Client({ connectionString: databaseUrl });
 
@@ -77,8 +78,9 @@ async function resetFixture({ secondWorld = false } = {}) {
     household,
   ]);
   await client.query(
-    "INSERT INTO profile.child_profiles (id, household_id) VALUES ($1, $2)",
-    [child, household],
+    `INSERT INTO profile.child_profiles (id, household_id)
+     VALUES ($1, $3), ($2, $3)`,
+    [child, secondChild, household],
   );
   await client.query(
     `INSERT INTO profile.lumi_characters
@@ -125,7 +127,7 @@ try {
       `INSERT INTO profile.child_avatars
         (character_id, character_subtype, child_profile_id, household_id)
        VALUES ($1, 'child_avatar', $2, $3)`,
-      [npc, child, household],
+      [npc, secondChild, household],
     ),
     /foreign key constraint/,
   );
