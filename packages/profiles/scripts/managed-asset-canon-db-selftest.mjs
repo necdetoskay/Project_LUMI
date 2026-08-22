@@ -168,7 +168,7 @@ try {
   // Direct replay is idempotent.
   await client.query(migration);
 
-  console.log("Managed asset canon DB integrity self-test passed");
+  console.warn("Managed asset canon DB integrity self-test passed");
 } finally {
   await client.end();
 }
