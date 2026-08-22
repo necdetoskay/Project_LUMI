@@ -14,8 +14,10 @@ const migration = await readFile(
   resolve(
     __dirname,
     "..",
+    "..",
+    "world",
     "migrations",
-    "0081_inventory_typed_ownership.sql",
+    "0014_inventory_typed_ownership.sql",
   ),
   "utf8",
 );
