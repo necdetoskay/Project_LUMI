@@ -42,7 +42,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: node apps/web/scripts/vercel-production-schema-migrate.mjs
 
-      - name: PostgreSQL PK FK UNIQUE inventory
+      - name: Classify FK-less UUID relation candidates
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: |
@@ -51,190 +51,162 @@ jobs:
           \pset border 0
           \pset footer off
 
-          \echo '=== AUDIT_SUMMARY ==='
-          WITH user_tables AS (
-            SELECT c.oid, n.nspname AS schema_name, c.relname AS table_name
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE c.relkind = 'r'
-              AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-              AND n.nspname !~ '^pg_toast'
-          ), relation_columns AS (
-            SELECT t.oid, t.schema_name, t.table_name, a.attnum, a.attname AS column_name
-            FROM user_tables t
-            JOIN pg_attribute a ON a.attrelid = t.oid
-            WHERE a.attnum > 0
-              AND NOT a.attisdropped
-              AND a.attname ~ '_id$'
-          )
-          SELECT jsonb_pretty(jsonb_build_object(
-            'tables', (SELECT count(*) FROM user_tables),
-            'tables_without_pk', (
-              SELECT count(*) FROM user_tables t
-              WHERE NOT EXISTS (
-                SELECT 1 FROM pg_constraint c
-                WHERE c.conrelid = t.oid AND c.contype = 'p'
-              )
-            ),
-            'relation_like_id_columns', (SELECT count(*) FROM relation_columns),
-            'relation_like_id_columns_without_fk', (
-              SELECT count(*) FROM relation_columns r
-              WHERE NOT EXISTS (
-                SELECT 1 FROM pg_constraint c
-                WHERE c.conrelid = r.oid
-                  AND c.contype = 'f'
-                  AND r.attnum = ANY(c.conkey)
-              )
-            )
-          ));
-
-          \echo '=== TABLES_WITHOUT_PRIMARY_KEY ==='
-          WITH user_tables AS (
-            SELECT c.oid, n.nspname AS schema_name, c.relname AS table_name
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE c.relkind = 'r'
-              AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-              AND n.nspname !~ '^pg_toast'
-          )
-          SELECT schema_name || '.' || table_name AS table_name
-          FROM user_tables t
-          WHERE NOT EXISTS (
-            SELECT 1 FROM pg_constraint c
-            WHERE c.conrelid = t.oid AND c.contype = 'p'
-          )
-          ORDER BY 1;
-
-          \echo '=== RELATION_LIKE_ID_COLUMNS_WITHOUT_FK ==='
-          WITH user_tables AS (
-            SELECT c.oid, n.nspname AS schema_name, c.relname AS table_name
-            FROM pg_class c
-            JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE c.relkind = 'r'
-              AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-              AND n.nspname !~ '^pg_toast'
-          ), relation_columns AS (
-            SELECT
-              t.oid,
-              t.schema_name,
-              t.table_name,
-              a.attnum,
-              a.attname AS column_name,
-              format_type(a.atttypid, a.atttypmod) AS data_type,
-              NOT a.attnotnull AS nullable
-            FROM user_tables t
-            JOIN pg_attribute a ON a.attrelid = t.oid
-            WHERE a.attnum > 0
-              AND NOT a.attisdropped
-              AND a.attname ~ '_id$'
-          )
-          SELECT
-            r.schema_name || '.' || r.table_name AS table_name,
-            r.column_name,
-            r.data_type,
-            r.nullable,
-            EXISTS (
-              SELECT 1 FROM pg_index i
-              WHERE i.indrelid = r.oid
-                AND r.attnum = ANY(i.indkey::smallint[])
-            ) AS indexed
-          FROM relation_columns r
-          WHERE NOT EXISTS (
-            SELECT 1 FROM pg_constraint c
-            WHERE c.conrelid = r.oid
-              AND c.contype = 'f'
-              AND r.attnum = ANY(c.conkey)
-          )
-          ORDER BY 1, 2;
-
-          \echo '=== ALL_FOREIGN_KEYS ==='
-          SELECT
-            n.nspname || '.' || cl.relname AS table_name,
-            c.conname AS constraint_name,
-            pg_get_constraintdef(c.oid, true) AS definition
-          FROM pg_constraint c
-          JOIN pg_class cl ON cl.oid = c.conrelid
-          JOIN pg_namespace n ON n.oid = cl.relnamespace
-          WHERE c.contype = 'f'
-            AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-          ORDER BY 1, 2;
-
-          \echo '=== UNIQUE_AND_PRIMARY_INDEXES ==='
-          SELECT
-            n.nspname || '.' || t.relname AS table_name,
-            i.relname AS index_name,
-            ix.indisprimary AS is_primary,
-            pg_get_indexdef(ix.indexrelid) AS definition
-          FROM pg_index ix
-          JOIN pg_class t ON t.oid = ix.indrelid
-          JOIN pg_class i ON i.oid = ix.indexrelid
-          JOIN pg_namespace n ON n.oid = t.relnamespace
-          WHERE ix.indisunique
-            AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-            AND n.nspname !~ '^pg_toast'
-          ORDER BY 1, 2;
-
-          \echo '=== MULTI_SCOPE_TABLES_WITHOUT_COMPOSITE_FK ==='
-          WITH scope_columns(column_name) AS (
-            VALUES
-              ('household_id'),
-              ('child_profile_id'),
-              ('world_id'),
-              ('npc_id'),
-              ('character_id'),
-              ('region_id'),
-              ('location_id'),
-              ('story_session_id')
-          ), table_scope_columns AS (
+          \echo '=== UUID_MISSING_FK_BY_SCHEMA ==='
+          WITH missing AS (
             SELECT
               c.oid AS table_oid,
               n.nspname AS schema_name,
               c.relname AS table_name,
               a.attnum,
-              a.attname AS column_name
+              a.attname AS column_name,
+              regexp_replace(a.attname, '_id$', '') AS base_name
             FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
             JOIN pg_attribute a ON a.attrelid = c.oid
-            JOIN scope_columns s ON s.column_name = a.attname
             WHERE c.relkind = 'r'
-              AND a.attnum > 0
-              AND NOT a.attisdropped
               AND n.nspname NOT IN ('pg_catalog', 'information_schema')
               AND n.nspname !~ '^pg_toast'
-          ), pairs AS (
-            SELECT
-              a.table_oid,
-              a.schema_name,
-              a.table_name,
-              a.attnum AS left_attnum,
-              b.attnum AS right_attnum,
-              a.column_name AS left_column,
-              b.column_name AS right_column
-            FROM table_scope_columns a
-            JOIN table_scope_columns b
-              ON b.table_oid = a.table_oid
-             AND b.attnum > a.attnum
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND a.atttypid = 'uuid'::regtype
+              AND a.attname ~ '_id$'
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_constraint fk
+                WHERE fk.conrelid = c.oid
+                  AND fk.contype = 'f'
+                  AND a.attnum = ANY(fk.conkey)
+              )
+          ), classified AS (
+            SELECT m.*,
+              EXISTS (
+                SELECT 1 FROM pg_attribute d
+                WHERE d.attrelid = m.table_oid
+                  AND d.attnum > 0
+                  AND NOT d.attisdropped
+                  AND d.attname IN (m.base_name || '_type', m.base_name || '_kind')
+              ) AS has_discriminator
+            FROM missing m
           )
           SELECT
-            p.schema_name || '.' || p.table_name AS table_name,
-            p.left_column,
-            p.right_column,
-            EXISTS (
-              SELECT 1
-              FROM pg_constraint c
-              WHERE c.conrelid = p.table_oid
-                AND c.contype = 'f'
-                AND p.left_attnum = ANY(c.conkey)
-                AND p.right_attnum = ANY(c.conkey)
-            ) AS protected_by_same_fk
-          FROM pairs p
-          WHERE NOT EXISTS (
-            SELECT 1
-            FROM pg_constraint c
-            WHERE c.conrelid = p.table_oid
-              AND c.contype = 'f'
-              AND p.left_attnum = ANY(c.conkey)
-              AND p.right_attnum = ANY(c.conkey)
+            schema_name,
+            count(*) AS uuid_columns_without_fk,
+            count(*) FILTER (WHERE has_discriminator) AS polymorphic_with_discriminator,
+            count(*) FILTER (WHERE NOT has_discriminator) AS direct_or_unclassified
+          FROM classified
+          GROUP BY schema_name
+          ORDER BY uuid_columns_without_fk DESC, schema_name;
+
+          \echo '=== UUID_MISSING_FK_CANDIDATES ==='
+          WITH missing AS (
+            SELECT
+              c.oid AS table_oid,
+              n.nspname AS schema_name,
+              c.relname AS table_name,
+              a.attnum,
+              a.attname AS column_name,
+              NOT a.attnotnull AS nullable,
+              regexp_replace(a.attname, '_id$', '') AS base_name
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_attribute a ON a.attrelid = c.oid
+            WHERE c.relkind = 'r'
+              AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+              AND n.nspname !~ '^pg_toast'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND a.atttypid = 'uuid'::regtype
+              AND a.attname ~ '_id$'
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_constraint fk
+                WHERE fk.conrelid = c.oid
+                  AND fk.contype = 'f'
+                  AND a.attnum = ANY(fk.conkey)
+              )
           )
-          ORDER BY 1, 2, 3;
+          SELECT
+            m.schema_name || '.' || m.table_name AS table_name,
+            m.column_name,
+            m.nullable,
+            EXISTS (
+              SELECT 1 FROM pg_index i
+              WHERE i.indrelid = m.table_oid
+                AND m.attnum = ANY(i.indkey::smallint[])
+            ) AS indexed,
+            EXISTS (
+              SELECT 1 FROM pg_attribute d
+              WHERE d.attrelid = m.table_oid
+                AND d.attnum > 0
+                AND NOT d.attisdropped
+                AND d.attname IN (m.base_name || '_type', m.base_name || '_kind')
+            ) AS has_discriminator
+          FROM missing m
+          ORDER BY 1, 2;
+
+          \echo '=== LIKELY_DIRECT_INTERNAL_RELATIONS_WITHOUT_FK ==='
+          WITH missing AS (
+            SELECT
+              c.oid AS table_oid,
+              n.nspname AS schema_name,
+              c.relname AS table_name,
+              a.attnum,
+              a.attname AS column_name,
+              NOT a.attnotnull AS nullable
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_attribute a ON a.attrelid = c.oid
+            WHERE c.relkind = 'r'
+              AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+              AND n.nspname !~ '^pg_toast'
+              AND a.attnum > 0
+              AND NOT a.attisdropped
+              AND a.atttypid = 'uuid'::regtype
+              AND a.attname IN (
+                'household_id', 'actor_household_id',
+                'child_profile_id',
+                'world_id',
+                'npc_id', 'source_npc_id', 'target_npc_id',
+                'character_id',
+                'location_id', 'from_location_id', 'to_location_id', 'active_location_id',
+                'home_id',
+                'story_session_id',
+                'scene_id', 'evidence_scene_id', 'generated_scene_id',
+                'current_published_version_id',
+                'supersedes_memory_id', 'memory_id',
+                'trace_id',
+                'user_id', 'consumed_by_user_id', 'actor_user_id',
+                'source_hook_id',
+                'active_branch_id', 'created_by_run_id'
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_constraint fk
+                WHERE fk.conrelid = c.oid
+                  AND fk.contype = 'f'
+                  AND a.attnum = ANY(fk.conkey)
+              )
+          )
+          SELECT
+            schema_name || '.' || table_name AS table_name,
+            column_name,
+            nullable,
+            CASE
+              WHEN column_name IN ('household_id', 'actor_household_id') THEN 'profile.households(id)'
+              WHEN column_name = 'child_profile_id' THEN 'profile.child_profiles(id)'
+              WHEN column_name = 'world_id' THEN 'profile.worlds(id)'
+              WHEN column_name IN ('npc_id', 'source_npc_id', 'target_npc_id') THEN 'profile.world_npcs(character_id)'
+              WHEN column_name = 'character_id' THEN 'profile.lumi_characters(id)'
+              WHEN column_name IN ('location_id', 'from_location_id', 'to_location_id', 'active_location_id') THEN 'profile.world_locations(id)'
+              WHEN column_name = 'home_id' THEN 'profile.world_homes(id)'
+              WHEN column_name = 'story_session_id' THEN 'story.story_sessions(id)'
+              WHEN column_name IN ('scene_id', 'evidence_scene_id', 'generated_scene_id') THEN 'story.story_scenes(id)'
+              WHEN column_name = 'current_published_version_id' THEN 'story.story_versions(id)'
+              WHEN column_name IN ('supersedes_memory_id', 'memory_id') THEN 'npc_intelligence.memories(id)'
+              WHEN column_name = 'trace_id' THEN 'npc_intelligence.decision_traces(id)'
+              WHEN column_name IN ('user_id', 'consumed_by_user_id', 'actor_user_id') THEN 'public.parent_accounts(id)'
+              WHEN column_name = 'source_hook_id' THEN 'story.story_hooks(id)'
+              WHEN column_name = 'active_branch_id' THEN 'ai.test_lab_branches(id)'
+              WHEN column_name = 'created_by_run_id' THEN 'ai.test_lab_runs(id)'
+              ELSE '?'
+            END AS likely_target
+          FROM missing
+          ORDER BY 1, 2;
           SQL
