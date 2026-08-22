@@ -26,6 +26,7 @@
     "profile:story-integrity-selftest": "node scripts/story-integrity-db-selftest.mjs",
     "profile:inventory-integrity-selftest": "node scripts/inventory-ownership-db-selftest.mjs",
     "profile:cross-domain-selftest": "node scripts/cross-domain-integrity-db-selftest.mjs",
+    "profile:legacy-character-selftest": "node scripts/legacy-character-contract-db-selftest.mjs",
     "test:int": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
