@@ -35,6 +35,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Format target and print exact patch
+        run: |
+          pnpm exec prettier --write packages/profiles/scripts/cross-domain-integrity-db-selftest.mjs
+          git diff -- packages/profiles/scripts/cross-domain-integrity-db-selftest.mjs
       - name: Validate migration integrity policy
         run: node tooling/data-integrity/check-migrations.mjs
       - name: Self-test migration integrity policy
