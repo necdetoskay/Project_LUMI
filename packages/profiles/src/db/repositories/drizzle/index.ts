@@ -3,6 +3,7 @@ export { DrizzleChildProfileRepository } from "./drizzle-child-profile.repositor
 export { DrizzleParentPolicyRepository } from "./drizzle-parent-policy.repository";
 export { DrizzleFirstRunHandoffRepository } from "./drizzle-first-run-handoff.repository";
 export { DrizzleCharacterRepository } from "./drizzle-character.repository";
+export { DrizzleChildAvatarRepository } from "./drizzle-child-avatar.repository";
 export { DrizzleCharacterOriginPackageRepository } from "./drizzle-character-origin-package.repository";
 export { DrizzleHandoffConsumptionRepository } from "./drizzle-handoff-consumption.repository";
 export { DrizzleCharacterDomainRepository } from "./drizzle-character-domain.repository";
