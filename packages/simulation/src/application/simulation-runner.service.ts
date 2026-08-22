@@ -197,7 +197,7 @@ export class SimulationRunner {
     checkpointId: string | null,
     budgetRunHash?: string,
   ): string {
-    return hashStable({
+    const identity = {
       worldId: input.worldId,
       householdId: input.householdId,
       childProfileId: input.childProfileId,
@@ -208,7 +208,15 @@ export class SimulationRunner {
       budgetRunHash: budgetRunHash ?? null,
       seed: input.seed,
       simulationDate: input.now.toISOString().slice(0, 10),
-    });
+    };
+    return ["a", "b", "c", "d"]
+      .map((namespace) =>
+        hashStable({
+          namespace: `simulation-run:v1:${namespace}`,
+          ...identity,
+        }),
+      )
+      .join("");
   }
 
   private computeAbsentDays(childLastSeenAt: Date, now: Date): number {
