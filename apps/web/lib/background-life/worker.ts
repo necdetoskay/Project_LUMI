@@ -37,6 +37,10 @@ export interface BackgroundLifeRunSummary {
   failures: number;
 }
 
+interface ChildLastSeenRow {
+  last_seen_at: Date | string | null;
+}
+
 function toDate(value: Date | string | null): Date | null {
   if (value === null) return null;
   return value instanceof Date ? value : new Date(value);
@@ -253,7 +257,7 @@ class ProductionSimulationSource implements WorldSourcePort, NpcSourcePort {
     worldId: string,
     childProfileId: string,
   ): Promise<Date | null> {
-    const result = await this.pool.query<{ last_seen_at: Date | string | null }>(
+    const result = await this.pool.query<ChildLastSeenRow>(
       `
         SELECT COALESCE(
           MAX(s.last_interacted_at),
@@ -430,16 +434,18 @@ export async function runProductionBackgroundLife(input?: {
   limit?: number;
 }): Promise<BackgroundLifeRunSummary> {
   const now = input?.now ?? new Date();
-  const limit = Math.max(
-    1,
-    Math.min(input?.limit ?? DEFAULT_TARGET_LIMIT, 25),
-  );
+  const limit = Math.max(1, Math.min(input?.limit ?? DEFAULT_TARGET_LIMIT, 25));
   const pool = getAuthPool();
   const targets = await discoverTargets(pool, now, limit);
   const source = new ProductionSimulationSource(pool);
   const repository = new DrizzleSimulationRepository(getSimulationDb());
   const store = new SimulationStoreAdapter(repository);
-  const runner = new SimulationRunner(store, source, source, new BudgetPlanner());
+  const runner = new SimulationRunner(
+    store,
+    source,
+    source,
+    new BudgetPlanner(),
+  );
   const clockService = new WorldClockService(source);
 
   const summary: BackgroundLifeRunSummary = {
@@ -501,7 +507,9 @@ export async function runProductionBackgroundLife(input?: {
       });
     } finally {
       if (locked) {
-        await releaseWorldLock(lockClient, target.worldId).catch(() => undefined);
+        await releaseWorldLock(lockClient, target.worldId).catch(
+          () => undefined,
+        );
       }
       lockClient.release();
     }
