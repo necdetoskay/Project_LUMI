@@ -7,7 +7,9 @@ import pg from "pg";
 
 const { Client } = pg;
 const databaseUrl = process.env.WORLD_SIM_TEST_DATABASE_URL;
-if (!databaseUrl) throw new Error("WORLD_SIM_TEST_DATABASE_URL is required");
+if (!databaseUrl) {
+  throw new Error("WORLD_SIM_TEST_DATABASE_URL is required");
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const worldMigration = await readFile(
@@ -71,7 +73,10 @@ try {
     "INSERT INTO profile.world_locations (id, world_id, region_id) VALUES ($1,$2,$3)",
     [l1, w2, r1],
   );
-  await assert.rejects(client.query(worldMigration), /World hierarchy mismatch/);
+  await assert.rejects(
+    client.query(worldMigration),
+    /World hierarchy mismatch/,
+  );
   await client.query(
     "UPDATE profile.world_locations SET world_id=$1 WHERE id=$2",
     [w1, l1],
