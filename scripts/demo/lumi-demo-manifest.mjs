@@ -22,6 +22,11 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
     key: "lina",
     displayName: "Lina",
     originKey: "isik-vadisi-gezgini",
+    originPackageId: "51000000-0000-4000-8000-000000000005",
+    broadKind: "human",
+    characterType: "explorer",
+    subtype: "child",
+    lifecycleStage: "childhood",
     visualCanonStatus: "not_generated",
   },
   world: {
@@ -110,6 +115,11 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       key: "mira",
       displayName: "Mira",
       role: "orman-rehberi",
+      originPackageId: "51000000-0000-4000-8000-000000000033",
+      broadKind: "human",
+      characterType: "helper",
+      subtype: "forest-guide",
+      lifecycleStage: "adulthood",
       locationKey: "fisildayan-orman",
       relationshipToCharacter: 0.35,
       traits: ["meraklı", "sakin", "yardımsever"],
@@ -119,6 +129,11 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       key: "tiko",
       displayName: "Tiko",
       role: "tilki",
+      originPackageId: "51000000-0000-4000-8000-000000000034",
+      broadKind: "animal",
+      characterType: "explorer",
+      subtype: "fox",
+      lifecycleStage: "childhood",
       locationKey: "atesbocekleri-korusu",
       relationshipToCharacter: 0.2,
       traits: ["hareketli", "oyuncu", "dikkatli"],
@@ -128,6 +143,11 @@ export const LUMI_DEMO_MANIFEST = Object.freeze({
       key: "yasli-mese",
       displayName: "Yaşlı Meşe",
       role: "hafiza-koruyucusu",
+      originPackageId: "51000000-0000-4000-8000-000000000035",
+      broadKind: "fantasy",
+      characterType: "storyteller",
+      subtype: "ancient-tree",
+      lifecycleStage: "elder",
       locationKey: "eski-tas-kopru",
       relationshipToCharacter: 0.1,
       traits: ["bilge", "sabırlı", "gözlemci"],
@@ -193,6 +213,28 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   const errors = [];
   const uuidPattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const broadKinds = new Set([
+    "human",
+    "animal",
+    "fantasy",
+    "robot",
+    "sea_creature",
+    "sky_creature",
+  ]);
+  const characterTypes = new Set([
+    "explorer",
+    "inventor",
+    "storyteller",
+    "helper",
+    "dreamer",
+  ]);
+  const lifecycleStages = new Set([
+    "newborn",
+    "childhood",
+    "adolescence",
+    "adulthood",
+    "elder",
+  ]);
 
   if (manifest.manifestVersion !== LUMI_DEMO_MANIFEST_VERSION) {
     errors.push("manifestVersion must match LUMI_DEMO_MANIFEST_VERSION");
@@ -211,12 +253,16 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   collectId("household", manifest.household.id);
   collectId("childProfile", manifest.childProfile.id);
   collectId("character", manifest.character.id);
+  collectId("character.originPackage", manifest.character.originPackageId);
   collectId("world", manifest.world.id);
   for (const region of manifest.regions)
     collectId(`region:${region.key}`, region.id);
   for (const location of manifest.locations)
     collectId(`location:${location.key}`, location.id);
-  for (const npc of manifest.npcs) collectId(`npc:${npc.key}`, npc.id);
+  for (const npc of manifest.npcs) {
+    collectId(`npc:${npc.key}`, npc.id);
+    collectId(`npc:${npc.key}.originPackage`, npc.originPackageId);
+  }
   for (const item of manifest.inventory)
     collectId(`inventory:${item.key}`, item.id);
   for (const memory of manifest.memories)
@@ -267,6 +313,23 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
   const locationKeys = new Set(manifest.locations.map((entry) => entry.key));
   const npcKeys = new Set(manifest.npcs.map((entry) => entry.key));
 
+  const validateCharacterIdentity = (label, identity) => {
+    if (!broadKinds.has(identity.broadKind)) {
+      errors.push(`${label}.broadKind '${identity.broadKind}' is invalid`);
+    }
+    if (!characterTypes.has(identity.characterType)) {
+      errors.push(`${label}.characterType '${identity.characterType}' is invalid`);
+    }
+    if (!identity.subtype || typeof identity.subtype !== "string") {
+      errors.push(`${label}.subtype is required`);
+    }
+    if (!lifecycleStages.has(identity.lifecycleStage)) {
+      errors.push(`${label}.lifecycleStage '${identity.lifecycleStage}' is invalid`);
+    }
+  };
+
+  validateCharacterIdentity("character", manifest.character);
+
   if (!locationKeys.has(manifest.world.startLocationKey)) {
     errors.push(
       `world.startLocationKey '${manifest.world.startLocationKey}' does not exist`,
@@ -302,6 +365,7 @@ export function validateLumiDemoManifest(manifest = LUMI_DEMO_MANIFEST) {
     }
   }
   for (const npc of manifest.npcs) {
+    validateCharacterIdentity(`npc '${npc.key}'`, npc);
     if (!locationKeys.has(npc.locationKey)) {
       errors.push(
         `npc '${npc.key}' references missing location '${npc.locationKey}'`,
