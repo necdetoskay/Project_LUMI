@@ -27,11 +27,29 @@ const childA = "00000000-0000-4000-8000-000000000003";
 const probeValid = "00000000-0000-4000-8000-000000000004";
 const probeMismatch = "00000000-0000-4000-8000-000000000005";
 
+const dropSchemaSql = "DROP SCHEMA IF EXISTS profile CASCADE";
+const createSchemaSql = "CREATE SCHEMA profile";
+const insertHouseholdsSql =
+  "INSERT INTO profile.households (id) VALUES ($1), ($2)";
+const insertChildSql =
+  "INSERT INTO profile.child_profiles (id, household_id) VALUES ($1, $2)";
+const insertProbeSql = `
+  INSERT INTO profile.scope_probe (id, child_profile_id, household_id)
+  VALUES ($1, $2, $3)
+`;
+const deleteProbeSql = "DELETE FROM profile.scope_probe";
+const deleteChildSql = "DELETE FROM profile.child_profiles WHERE id = $1";
+const selectProbeSql = `
+  SELECT child_profile_id, household_id
+  FROM profile.scope_probe
+  WHERE id = $1
+`;
+
 const client = new Client({ connectionString: databaseUrl });
 
 async function resetFixture() {
-  await client.query("DROP SCHEMA IF EXISTS profile CASCADE");
-  await client.query("CREATE SCHEMA profile");
+  await client.query(dropSchemaSql);
+  await client.query(createSchemaSql);
   await client.query(`
     CREATE TABLE profile.households (
       id uuid PRIMARY KEY
@@ -50,14 +68,8 @@ async function resetFixture() {
       household_id uuid NOT NULL REFERENCES profile.households(id) ON DELETE CASCADE
     )
   `);
-  await client.query(
-    "INSERT INTO profile.households (id) VALUES ($1), ($2)",
-    [householdA, householdB],
-  );
-  await client.query(
-    "INSERT INTO profile.child_profiles (id, household_id) VALUES ($1, $2)",
-    [childA, householdA],
-  );
+  await client.query(insertHouseholdsSql, [householdA, householdB]);
+  await client.query(insertChildSql, [childA, householdA]);
 }
 
 await client.connect();
@@ -65,11 +77,7 @@ await client.connect();
 try {
   await resetFixture();
 
-  await client.query(
-    `INSERT INTO profile.scope_probe (id, child_profile_id, household_id)
-     VALUES ($1, $2, $3)`,
-    [probeMismatch, childA, householdB],
-  );
+  await client.query(insertProbeSql, [probeMismatch, childA, householdB]);
 
   await client.query("BEGIN");
   await assert.rejects(
@@ -78,7 +86,7 @@ try {
   );
   await client.query("ROLLBACK");
 
-  await client.query("DELETE FROM profile.scope_probe");
+  await client.query(deleteProbeSql);
   await client.query(migrationSql);
 
   const constraints = await client.query(`
@@ -90,34 +98,21 @@ try {
   `);
   assert.equal(constraints.rowCount, 1);
 
-  await client.query(
-    `INSERT INTO profile.scope_probe (id, child_profile_id, household_id)
-     VALUES ($1, $2, $3)`,
-    [probeValid, childA, householdA],
-  );
+  await client.query(insertProbeSql, [probeValid, childA, householdA]);
 
   await assert.rejects(
-    client.query(
-      `INSERT INTO profile.scope_probe (id, child_profile_id, household_id)
-       VALUES ($1, $2, $3)`,
-      [probeMismatch, childA, householdB],
-    ),
+    client.query(insertProbeSql, [probeMismatch, childA, householdB]),
     /violates foreign key constraint/,
   );
 
-  await client.query("DELETE FROM profile.child_profiles WHERE id = $1", [
-    childA,
-  ]);
-  const preserved = await client.query(
-    "SELECT child_profile_id, household_id FROM profile.scope_probe WHERE id = $1",
-    [probeValid],
-  );
+  await client.query(deleteChildSql, [childA]);
+  const preserved = await client.query(selectProbeSql, [probeValid]);
   assert.equal(preserved.rowCount, 1);
   assert.equal(preserved.rows[0].child_profile_id, null);
   assert.equal(preserved.rows[0].household_id, householdA);
 
   console.warn("Profile household scope database self-test OK");
 } finally {
-  await client.query("DROP SCHEMA IF EXISTS profile CASCADE").catch(() => {});
+  await client.query(dropSchemaSql).catch(() => {});
   await client.end();
 }
