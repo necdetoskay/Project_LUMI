@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  isBackgroundLifeCronAuthorized,
-} from "@/app/api/internal/background-life/route";
+import { isBackgroundLifeCronAuthorized } from "@/app/api/internal/background-life/route";
 import { isBackgroundLifeDue } from "@/lib/background-life/worker";
 
 describe("background life production boundary", () => {
