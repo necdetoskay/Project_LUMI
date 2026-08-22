@@ -70,4 +70,4 @@ assert.throws(
   /Checksum drift detected/,
 );
 
-console.log("Profile migration ledger self-test OK");
+console.warn("Profile migration ledger self-test OK");
