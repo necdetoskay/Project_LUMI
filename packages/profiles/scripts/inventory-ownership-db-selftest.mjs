@@ -7,7 +7,8 @@ import pg from "pg";
 
 const { Client } = pg;
 const databaseUrl = process.env.INVENTORY_INTEGRITY_TEST_DATABASE_URL;
-if (!databaseUrl) throw new Error("INVENTORY_INTEGRITY_TEST_DATABASE_URL is required");
+if (!databaseUrl)
+  throw new Error("INVENTORY_INTEGRITY_TEST_DATABASE_URL is required");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migration = await readFile(
