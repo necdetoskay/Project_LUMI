@@ -82,6 +82,46 @@ BEGIN
 END
 $$;
 
+CREATE OR REPLACE FUNCTION story.resolve_story_participant_identity()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  is_child_avatar BOOLEAN;
+  is_npc BOOLEAN;
+BEGIN
+  IF NEW.child_avatar_id IS NULL AND NEW.npc_id IS NULL THEN
+    SELECT EXISTS (
+      SELECT 1
+      FROM profile.child_avatars AS avatar
+      WHERE avatar.character_id = NEW.character_id
+    ) INTO is_child_avatar;
+
+    SELECT EXISTS (
+      SELECT 1
+      FROM profile.world_npcs AS npc
+      WHERE npc.character_id = NEW.character_id
+    ) INTO is_npc;
+
+    IF is_child_avatar AND NOT is_npc THEN
+      NEW.child_avatar_id := NEW.character_id;
+    ELSIF is_npc AND NOT is_child_avatar THEN
+      NEW.npc_id := NEW.character_id;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END
+$$;
+
+DROP TRIGGER IF EXISTS story_participants_resolve_identity
+  ON story.story_session_characters;
+CREATE TRIGGER story_participants_resolve_identity
+BEFORE INSERT OR UPDATE OF character_id, child_avatar_id, npc_id
+ON story.story_session_characters
+FOR EACH ROW
+EXECUTE FUNCTION story.resolve_story_participant_identity();
+
 DO $$
 BEGIN
   IF NOT EXISTS (
