@@ -6,9 +6,12 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const { Client } = pg;
-const databaseUrl = process.env.STORY_VISUAL_RENDER_ASSET_SCOPE_TEST_DATABASE_URL;
+const databaseUrl =
+  process.env.STORY_VISUAL_RENDER_ASSET_SCOPE_TEST_DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("STORY_VISUAL_RENDER_ASSET_SCOPE_TEST_DATABASE_URL is required");
+  throw new Error(
+    "STORY_VISUAL_RENDER_ASSET_SCOPE_TEST_DATABASE_URL is required",
+  );
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
