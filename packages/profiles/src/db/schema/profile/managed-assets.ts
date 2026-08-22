@@ -60,6 +60,13 @@ export const managedAssets = profileSchema.table(
       table.sourceSystem,
       table.sourceRecordId,
     ),
+    uniqueIndex("uq_managed_assets_canon_selection_scope").on(
+      table.id,
+      table.householdId,
+      table.subjectType,
+      table.subjectId,
+      table.assetKind,
+    ),
     check(
       "managed_assets_subject_type_check",
       sql`${table.subjectType} IN ('character', 'npc', 'location', 'item', 'story_scene')`,
