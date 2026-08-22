@@ -121,7 +121,9 @@ function runMigrationStep([label, packageName, script]) {
   });
 
   if (result.error) {
-    throw new Error(`Failed to start ${label} migration`, { cause: result.error });
+    throw new Error(`Failed to start ${label} migration`, {
+      cause: result.error,
+    });
   }
 
   if (result.status !== 0) {
@@ -141,18 +143,21 @@ async function verifySchema(client) {
     }
   }
 
-  const profileIntegrity = await client.query(`
+  const profileIntegrity = await client.query(
+    `
     SELECT migration_file
     FROM public.lumi_schema_migrations
     WHERE scope = 'profiles'
       AND migration_file = ANY($1::text[])
-  `, [
+  `,
     [
-      "0078_household_scope_constraints.sql",
-      "0079_child_avatar_identity_split.sql",
-      "0080_child_avatar_registry_sync.sql",
+      [
+        "0078_household_scope_constraints.sql",
+        "0079_child_avatar_identity_split.sql",
+        "0080_child_avatar_registry_sync.sql",
+      ],
     ],
-  ]);
+  );
 
   if (profileIntegrity.rowCount !== 3) {
     throw new Error(
@@ -221,7 +226,10 @@ try {
     await client
       .query("SELECT pg_advisory_unlock(hashtext($1))", [LOCK_KEY])
       .catch((error) => {
-        console.error("Failed to release production schema migration lock:", error);
+        console.error(
+          "Failed to release production schema migration lock:",
+          error,
+        );
         process.exitCode = 1;
       });
   }
