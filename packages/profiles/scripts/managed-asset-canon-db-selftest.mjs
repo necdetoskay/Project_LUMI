@@ -145,9 +145,7 @@ try {
     /managed_asset_canons_selected_pointer_check/,
   );
   await assert.rejects(
-    client.query("DELETE FROM profile.managed_assets WHERE id = $1", [
-      asset1,
-    ]),
+    client.query("DELETE FROM profile.managed_assets WHERE id = $1", [asset1]),
     /managed_asset_canons_selected_asset_scope_fk/,
   );
 
