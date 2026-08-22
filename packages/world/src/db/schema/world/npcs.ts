@@ -25,10 +25,7 @@ export const worldNpcs = profileSchema.table(
     index("world_npcs_world_idx").on(table.worldId),
     index("world_npcs_household_idx").on(table.householdId),
     index("world_npcs_child_profile_idx").on(table.childProfileId),
-    check(
-      "world_npcs_subtype_check",
-      sql`${table.characterSubtype} = 'npc'`,
-    ),
+    check("world_npcs_subtype_check", sql`${table.characterSubtype} = 'npc'`),
   ],
 );
 
