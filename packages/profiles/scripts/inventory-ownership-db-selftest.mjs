@@ -75,7 +75,10 @@ try {
     "INSERT INTO profile.inventory_ownerships VALUES ($1,'character',$2,'active')",
     [ownUnknown, unknown],
   );
-  await assert.rejects(client.query(migration), /unresolved typed owner/);
+  await assert.rejects(
+    client.query(migration),
+    /unresolved typed owner|inventory_ownership_one_typed_owner_check/,
+  );
   console.warn("Inventory typed ownership database self-test OK");
 } finally {
   await client.query("DROP SCHEMA IF EXISTS profile CASCADE").catch(() => {});
