@@ -65,6 +65,16 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
+      - name: Diagnose child avatar formatting
+        shell: bash
+        run: |
+          cp packages/profiles/src/application/child-avatar.service.ts /tmp/child-avatar.service.ts.before
+          cp packages/profiles/tests/integration/character-primary-avatar.integration.test.ts /tmp/character-primary-avatar.integration.test.ts.before
+          pnpm exec prettier --write packages/profiles/src/application/child-avatar.service.ts packages/profiles/tests/integration/character-primary-avatar.integration.test.ts
+          diff -u /tmp/child-avatar.service.ts.before packages/profiles/src/application/child-avatar.service.ts || true
+          diff -u /tmp/character-primary-avatar.integration.test.ts.before packages/profiles/tests/integration/character-primary-avatar.integration.test.ts || true
+          cp /tmp/child-avatar.service.ts.before packages/profiles/src/application/child-avatar.service.ts
+          cp /tmp/character-primary-avatar.integration.test.ts.before packages/profiles/tests/integration/character-primary-avatar.integration.test.ts
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
