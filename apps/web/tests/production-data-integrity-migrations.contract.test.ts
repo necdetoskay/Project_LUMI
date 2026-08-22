@@ -54,9 +54,7 @@ describe("production data-integrity migration contract", () => {
   });
 
   it("fails closed for production builds without a database connection", () => {
-    expect(runnerSource).toContain(
-      'process.env.VERCEL_ENV === "production"',
-    );
+    expect(runnerSource).toContain('process.env.VERCEL_ENV === "production"');
     expect(runnerSource).toContain("process.env.DATABASE_DIRECT_URL");
     expect(runnerSource).toContain("process.env.DATABASE_URL");
     expect(runnerSource).toContain("process.exit(1)");
