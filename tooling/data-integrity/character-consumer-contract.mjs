@@ -15,7 +15,9 @@ const [legacyRepository, avatarRepository, npcRepository, bootstrapService] =
     read(
       "packages/profiles/src/db/repositories/drizzle/drizzle-child-avatar.repository.ts",
     ),
-    read("packages/world/src/db/repositories/drizzle/drizzle-npc.repository.ts"),
+    read(
+      "packages/world/src/db/repositories/drizzle/drizzle-npc.repository.ts",
+    ),
     read("packages/profiles/src/application/character-bootstrap.service.ts"),
   ]);
 
