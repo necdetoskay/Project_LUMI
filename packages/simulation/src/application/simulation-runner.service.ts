@@ -11,8 +11,7 @@ import type {
 } from "../domain";
 import type { BudgetPlan, BudgetPlanner } from "./budget-planner.service";
 import type { NpcSnapshot } from "../ports";
-import { computeAbsencePolicy } from "../domain";
-import { hashStable } from "../domain";
+import { computeAbsencePolicy, hashStable } from "../domain";
 
 export interface SimulationRunInput {
   worldId: string;
@@ -77,27 +76,30 @@ export class SimulationRunner {
       input.householdId,
     );
     const clockHash = clockSnapshot?.clockHash ?? "";
+    const checkpointId = clockSnapshot?.checkpointId ?? null;
 
     if (frozen) {
+      const logicalRunKey = this.computeLogicalRunKey(
+        input,
+        phase,
+        clockHash,
+        checkpointId,
+      );
+      const logicalRunId = this.stableUuid(`simulation-run:${logicalRunKey}`);
       const runState: SimulationRunState = {
-        id: crypto.randomUUID(),
+        id: logicalRunId,
         worldId: input.worldId,
         householdId: input.householdId,
         childLastSeenAt: input.childLastSeenAt,
         childAbsentDays: absence.absentDays,
         timePhase: phase,
         budgetTokens: 0,
-        runHash: hashStable({
-          worldId: input.worldId,
-          phase,
-          seed: input.seed,
-          clockHash,
-        }),
+        runHash: logicalRunKey,
         status: "completed",
         startedAt: input.now,
         completedAt: input.now,
-        checkpointId: clockSnapshot?.checkpointId ?? null,
-        createdAt: new Date(),
+        checkpointId,
+        createdAt: input.now,
       };
 
       await this.store.saveRun(runState);
@@ -116,12 +118,41 @@ export class SimulationRunner {
       npcs,
       input.now,
     );
+    const logicalRunKey = this.computeLogicalRunKey(
+      input,
+      phase,
+      clockHash,
+      checkpointId,
+      budgetPlan.runHash,
+    );
+    const logicalRunId = this.stableUuid(`simulation-run:${logicalRunKey}`);
 
-    const effects = await this.generateEffects(input, policy, budgetPlan, npcs);
+    const effects = await this.generateEffects(
+      input,
+      policy,
+      budgetPlan,
+      npcs,
+      logicalRunKey,
+      logicalRunId,
+    );
 
     const committedEffects = effects.filter((e) => e.status === "committed");
+    let committedCount = 0;
     for (const effect of committedEffects) {
-      await this.store.saveEffect(effect);
+      const inserted = await this.store.saveEffect(effect);
+
+      if (effect.effectType === "scheduled_event_trigger") {
+        const eventId = effect.payload.eventId;
+        if (typeof eventId === "string") {
+          await this.store.updateScheduledEventResolved(eventId, input.now);
+        }
+      }
+
+      if (!inserted) {
+        continue;
+      }
+
+      committedCount += 1;
       await this.worldSource.recordWorldEvent(
         input.worldId,
         "SIMULATION_EFFECT_COMMITTED",
@@ -146,19 +177,19 @@ export class SimulationRunner {
     }
 
     const runState: SimulationRunState = {
-      id: crypto.randomUUID(),
+      id: logicalRunId,
       worldId: input.worldId,
       householdId: input.householdId,
       childLastSeenAt: input.childLastSeenAt,
       childAbsentDays: absence.absentDays,
       timePhase: phase,
       budgetTokens: budgetPlan.totalBudget,
-      runHash: budgetPlan.runHash,
+      runHash: logicalRunKey,
       status: "completed",
       startedAt: input.now,
-      completedAt: new Date(),
-      checkpointId: clockSnapshot?.checkpointId ?? null,
-      createdAt: new Date(),
+      completedAt: input.now,
+      checkpointId,
+      createdAt: input.now,
     };
 
     await this.store.saveRun(runState);
@@ -166,9 +197,47 @@ export class SimulationRunner {
     return {
       runState,
       effects,
-      committedCount: committedEffects.length,
+      committedCount,
       frozen: false,
     };
+  }
+
+  private computeLogicalRunKey(
+    input: SimulationRunInput,
+    phase: string,
+    clockHash: string,
+    checkpointId: string | null,
+    budgetRunHash?: string,
+  ): string {
+    const identity = {
+      worldId: input.worldId,
+      householdId: input.householdId,
+      childProfileId: input.childProfileId,
+      childLastSeenAt: input.childLastSeenAt.toISOString(),
+      phase,
+      clockHash,
+      checkpointId,
+      budgetRunHash: budgetRunHash ?? null,
+      seed: input.seed,
+      simulationDate: input.now.toISOString().slice(0, 10),
+    };
+    return ["a", "b", "c", "d"]
+      .map((namespace) =>
+        hashStable({
+          namespace: `simulation-run:v1:${namespace}`,
+          ...identity,
+        }),
+      )
+      .join("");
+  }
+
+  private stableUuid(key: string): string {
+    const hex = ["a", "b", "c", "d"]
+      .map((namespace) =>
+        hashStable({ namespace: `simulation-uuid:v1:${namespace}`, key }),
+      )
+      .join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
   }
 
   private computeAbsentDays(childLastSeenAt: Date, now: Date): number {
@@ -181,11 +250,11 @@ export class SimulationRunner {
     policy: AbsencePolicyResult,
     budgetPlan: BudgetPlan,
     npcs: NpcSnapshot[],
+    logicalRunKey: string,
+    logicalRunId: string,
   ): Promise<SimulationEffect[]> {
     const effects: SimulationEffect[] = [];
-    const runId = crypto.randomUUID();
-    const rng = createSeededRng(input.seed + runId + input.now.toISOString());
-    const today = input.now.toISOString().slice(0, 10);
+    const rng = createSeededRng(logicalRunKey);
 
     const { phase, segment } = policy;
 
@@ -200,9 +269,10 @@ export class SimulationRunner {
       const shouldDecide =
         segment.allowNpcDecisions && alloc.tokens > 0 && rng.random() < 0.4;
       if (shouldDecide) {
+        const idempotencyKey = `${logicalRunKey}:effect:npc:${npc.npcId}`;
         effects.push({
-          id: crypto.randomUUID(),
-          runId,
+          id: this.stableUuid(idempotencyKey),
+          runId: logicalRunId,
           worldId: input.worldId,
           householdId: input.householdId,
           npcId: npc.npcId,
@@ -218,20 +288,21 @@ export class SimulationRunner {
             ruleId: "background-routine",
             source: "simulation-runner",
             confidence: 0.85,
-            traceRef: `${runId}:npc:${npc.npcId}`,
+            traceRef: `${logicalRunKey}:npc:${npc.npcId}`,
           },
           status: "committed",
-          idempotencyKey: `${runId}:effect:${npc.npcId}:${today}`,
-          committedAt: new Date(),
-          createdAt: new Date(),
+          idempotencyKey,
+          committedAt: input.now,
+          createdAt: input.now,
         });
       }
     }
 
     if (segment.allowEnvironmentChanges && rng.random() < 0.2) {
+      const idempotencyKey = `${logicalRunKey}:effect:env`;
       effects.push({
-        id: crypto.randomUUID(),
-        runId,
+        id: this.stableUuid(idempotencyKey),
+        runId: logicalRunId,
         worldId: input.worldId,
         householdId: input.householdId,
         npcId: null,
@@ -246,19 +317,19 @@ export class SimulationRunner {
           ruleId: "environment-cycle",
           source: "simulation-runner",
           confidence: 0.9,
-          traceRef: `${runId}:env`,
+          traceRef: `${logicalRunKey}:env`,
         },
         status: "committed",
-        idempotencyKey: `${runId}:effect:env:${today}`,
-        committedAt: new Date(),
-        createdAt: new Date(),
+        idempotencyKey,
+        committedAt: input.now,
+        createdAt: input.now,
       });
     }
 
     const scheduledEvents = await this.worldSource.fetchScheduledEvents(
       input.worldId,
       input.householdId,
-      false,
+      true,
     );
     for (const event of scheduledEvents) {
       await this.store.saveScheduledEvent(event);
@@ -270,9 +341,10 @@ export class SimulationRunner {
       if (!segment.allowNewEvents) {
         continue;
       }
+      const idempotencyKey = `${logicalRunKey}:effect:event:${event.id}`;
       effects.push({
-        id: crypto.randomUUID(),
-        runId,
+        id: this.stableUuid(idempotencyKey),
+        runId: logicalRunId,
         worldId: input.worldId,
         householdId: input.householdId,
         npcId: null,
@@ -288,15 +360,13 @@ export class SimulationRunner {
           ruleId: "scheduled-event-trigger",
           source: "simulation-runner",
           confidence: 0.95,
-          traceRef: `${runId}:event:${event.id}`,
+          traceRef: `${logicalRunKey}:event:${event.id}`,
         },
         status: "committed",
-        idempotencyKey: `${runId}:effect:event:${event.id}`,
-        committedAt: new Date(),
-        createdAt: new Date(),
+        idempotencyKey,
+        committedAt: input.now,
+        createdAt: input.now,
       });
-
-      await this.store.updateScheduledEventResolved(event.id, new Date());
     }
 
     return effects;
