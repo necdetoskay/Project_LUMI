@@ -58,10 +58,7 @@ export async function getPrimaryChildAvatarById(
 ): Promise<CharacterSummary | null> {
   await assertHouseholdAccess(userId, householdId);
   const repository = new DrizzleCharacterRepository(getProfileDb());
-  const record = await repository.findChildAvatarById(
-    characterId,
-    householdId,
-  );
+  const record = await repository.findChildAvatarById(characterId, householdId);
   return record ? toCharacterSummary(record) : null;
 }
 
@@ -72,10 +69,7 @@ export async function archivePrimaryChildAvatar(
 ): Promise<{ archived: boolean }> {
   await assertHouseholdAccess(userId, householdId);
   const repository = new DrizzleCharacterRepository(getProfileDb());
-  const record = await repository.findChildAvatarById(
-    characterId,
-    householdId,
-  );
+  const record = await repository.findChildAvatarById(characterId, householdId);
   if (!record) return { archived: false };
   await repository.softDelete(characterId, householdId);
   return { archived: true };
