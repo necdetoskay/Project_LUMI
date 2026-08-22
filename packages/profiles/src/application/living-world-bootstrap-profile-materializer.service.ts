@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
-import { characterRelationships, lumiCharacters } from "../db/schema/profile";
+import {
+  characterOriginPackages,
+  characterRelationships,
+  lumiCharacters,
+} from "../db/schema/profile";
 import type { SocialEcologyRoleType } from "../domain/character-genesis";
 import type { BroadCharacterKind, CharacterType } from "../domain/types";
 import { getProfileDb } from "./db";
@@ -83,31 +87,6 @@ function relationshipStrength(seed: number): number {
   return Math.max(0, Math.min(1, (seed + 1) / 2));
 }
 
-async function validateExistingNpc(
-  npcId: string,
-  householdId: string,
-  childProfileId: string,
-): Promise<void> {
-  const db = getProfileDb();
-  const [existing] = await db
-    .select({
-      householdId: lumiCharacters.householdId,
-      childProfileId: lumiCharacters.childProfileId,
-      characterSubtype: lumiCharacters.characterSubtype,
-    })
-    .from(lumiCharacters)
-    .where(eq(lumiCharacters.id, npcId))
-    .limit(1);
-  if (
-    !existing ||
-    existing.householdId !== householdId ||
-    existing.childProfileId !== childProfileId ||
-    existing.characterSubtype !== "npc"
-  ) {
-    throw new Error("BOOTSTRAP_NPC_IDEMPOTENCY_SCOPE_CONFLICT");
-  }
-}
-
 export async function ensureBootstrapNpcIdentity(
   input: EnsureBootstrapNpcIdentityInput,
 ): Promise<EnsureBootstrapNpcIdentityResult> {
@@ -115,56 +94,174 @@ export async function ensureBootstrapNpcIdentity(
   const npcId = stableBootstrapUuid(
     `${input.idempotencyKey}:npc:${input.plan.role.id}`,
   );
-  const [source] = await db
-    .select()
-    .from(lumiCharacters)
-    .where(
-      and(
-        eq(lumiCharacters.id, input.characterId),
-        eq(lumiCharacters.householdId, input.householdId),
-        eq(lumiCharacters.childProfileId, input.childProfileId),
-      ),
-    )
-    .limit(1);
-  if (!source) throw new Error("BOOTSTRAP_SOURCE_CHARACTER_MISSING");
-
   const firstOriginPackageId = stableBootstrapUuid(
     `${input.idempotencyKey}:origin:${input.plan.role.id}`,
   );
-  const inserted = await db
-    .insert(lumiCharacters)
-    .values({
-      id: npcId,
-      childProfileId: input.childProfileId,
-      householdId: input.householdId,
-      name: displayName(input.plan),
-      broadKind: broadKindForRole(
-        input.plan.role.roleType,
-        source.broadKind as BroadCharacterKind,
-      ),
-      characterType: characterTypeForRole(input.plan.role.roleType),
-      subtype: input.plan.identityHint.slice(0, 80),
-      originMode: "auto",
-      firstOriginPackageId,
-      originConcept: input.plan.role.purpose.slice(0, 500),
-      startingRegionArchetype: source.startingRegionArchetype,
-      startingLocation: source.startingLocation,
-      homeArchetype: source.homeArchetype,
-      nearbyNpcSeed: input.plan.support.join(" | ").slice(0, 500),
-      firstMysterySeed: source.firstMysterySeed,
-      universeSeed: source.universeSeed,
-      safetyBounds: source.safetyBounds,
-      characterSubtype: "npc",
-      lifecycleStage: "adulthood",
-    })
-    .onConflictDoNothing({ target: lumiCharacters.id })
-    .returning({ id: lumiCharacters.id });
 
-  const reused = inserted.length === 0;
-  if (reused) {
-    await validateExistingNpc(npcId, input.householdId, input.childProfileId);
-  }
-  return { npcId, reused };
+  return db.transaction(async (tx) => {
+    const [source] = await tx
+      .select()
+      .from(lumiCharacters)
+      .where(
+        and(
+          eq(lumiCharacters.id, input.characterId),
+          eq(lumiCharacters.householdId, input.householdId),
+          eq(lumiCharacters.childProfileId, input.childProfileId),
+        ),
+      )
+      .limit(1);
+    if (!source) throw new Error("BOOTSTRAP_SOURCE_CHARACTER_MISSING");
+
+    const broadKind = broadKindForRole(
+      input.plan.role.roleType,
+      source.broadKind as BroadCharacterKind,
+    );
+    const characterType = characterTypeForRole(input.plan.role.roleType);
+    const subtype = input.plan.identityHint.slice(0, 80);
+    const originConcept = input.plan.role.purpose.slice(0, 500);
+    const nearbyNpcSeed = input.plan.support.join(" | ").slice(0, 500);
+
+    await tx
+      .insert(characterOriginPackages)
+      .values({
+        id: firstOriginPackageId,
+        childProfileId: input.childProfileId,
+        householdId: input.householdId,
+        broadKind,
+        characterType,
+        subtype,
+        originMode: "auto",
+        universeSeed: source.universeSeed,
+        createdBy: "system",
+        accepted: false,
+        payload: {
+          originConcept,
+          startingRegionArchetype: source.startingRegionArchetype,
+          startingLocation: source.startingLocation,
+          homeArchetype: source.homeArchetype,
+          nearbyNpcSeed,
+          firstMysterySeed: source.firstMysterySeed,
+          toneVector: [],
+          noveltyMarkers: [
+            "living_world_bootstrap",
+            input.plan.role.roleType,
+          ],
+          safetyBounds: source.safetyBounds,
+        },
+        generationSource: "living_world_bootstrap_v1",
+      })
+      .onConflictDoNothing({ target: characterOriginPackages.id });
+
+    const [originPackage] = await tx
+      .select({
+        childProfileId: characterOriginPackages.childProfileId,
+        householdId: characterOriginPackages.householdId,
+      })
+      .from(characterOriginPackages)
+      .where(eq(characterOriginPackages.id, firstOriginPackageId))
+      .limit(1);
+    if (
+      !originPackage ||
+      originPackage.childProfileId !== input.childProfileId ||
+      originPackage.householdId !== input.householdId
+    ) {
+      throw new Error("BOOTSTRAP_NPC_ORIGIN_SCOPE_CONFLICT");
+    }
+
+    const inserted = await tx
+      .insert(lumiCharacters)
+      .values({
+        id: npcId,
+        childProfileId: input.childProfileId,
+        householdId: input.householdId,
+        name: displayName(input.plan),
+        broadKind,
+        characterType,
+        subtype,
+        originMode: "auto",
+        firstOriginPackageId,
+        originConcept,
+        startingRegionArchetype: source.startingRegionArchetype,
+        startingLocation: source.startingLocation,
+        homeArchetype: source.homeArchetype,
+        nearbyNpcSeed,
+        firstMysterySeed: source.firstMysterySeed,
+        universeSeed: source.universeSeed,
+        safetyBounds: source.safetyBounds,
+        characterSubtype: "npc",
+        lifecycleStage: "adulthood",
+      })
+      .onConflictDoNothing({ target: lumiCharacters.id })
+      .returning({ id: lumiCharacters.id });
+
+    const reused = inserted.length === 0;
+    const [existing] = await tx
+      .select({
+        householdId: lumiCharacters.householdId,
+        childProfileId: lumiCharacters.childProfileId,
+        characterSubtype: lumiCharacters.characterSubtype,
+        firstOriginPackageId: lumiCharacters.firstOriginPackageId,
+      })
+      .from(lumiCharacters)
+      .where(eq(lumiCharacters.id, npcId))
+      .limit(1);
+    if (
+      !existing ||
+      existing.householdId !== input.householdId ||
+      existing.childProfileId !== input.childProfileId ||
+      existing.characterSubtype !== "npc" ||
+      existing.firstOriginPackageId !== firstOriginPackageId
+    ) {
+      throw new Error("BOOTSTRAP_NPC_IDEMPOTENCY_SCOPE_CONFLICT");
+    }
+
+    await tx.execute(sql`
+      INSERT INTO profile.world_npcs (
+        character_id,
+        character_subtype,
+        world_id,
+        child_profile_id,
+        household_id
+      ) VALUES (
+        ${npcId}::uuid,
+        'npc',
+        ${input.worldId}::uuid,
+        ${input.childProfileId}::uuid,
+        ${input.householdId}::uuid
+      )
+      ON CONFLICT (character_id) DO NOTHING
+    `);
+
+    const registryRows = await tx.execute<{
+      character_id: string;
+      character_subtype: string;
+      world_id: string;
+      child_profile_id: string;
+      household_id: string;
+    }>(sql`
+      SELECT
+        character_id::text,
+        character_subtype,
+        world_id::text,
+        child_profile_id::text,
+        household_id::text
+      FROM profile.world_npcs
+      WHERE character_id = ${npcId}::uuid
+      LIMIT 1
+    `);
+    const registry = registryRows[0];
+    if (
+      !registry ||
+      registry.character_subtype !== "npc" ||
+      registry.world_id !== input.worldId ||
+      registry.child_profile_id !== input.childProfileId ||
+      registry.household_id !== input.householdId
+    ) {
+      throw new Error("BOOTSTRAP_NPC_WORLD_SCOPE_CONFLICT");
+    }
+
+    return { npcId, reused };
+  });
 }
 
 export async function ensureBootstrapRelationship(
