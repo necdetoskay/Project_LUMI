@@ -409,7 +409,7 @@ describe("SimulationRunner", () => {
       childProfileId: "child-1",
       childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
       now: new Date("2026-08-03T12:00:00Z"),
-      seed: "retry-seed-0",
+      seed: "retry-seed-1",
     };
 
     const first = await runner.run(input);
@@ -443,7 +443,7 @@ describe("SimulationRunner", () => {
       childProfileId: "child-1",
       childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
       now: new Date("2026-08-03T12:00:00Z"),
-      seed: "retry-seed-0",
+      seed: "retry-seed-1",
     };
 
     const first = await runner.run(input);
