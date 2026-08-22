@@ -83,6 +83,11 @@ describe("persistGeneratedSceneAndAdvance", () => {
 
     expect(mockRepo.createScene).toHaveBeenCalledTimes(1);
     const persisted = mockRepo.createScene.mock.calls[0]![1];
+    expect(persisted.id).toBe(result.generatedSceneId);
+    expect(persisted.id).not.toBe(generatedScene.sceneId);
+    expect(persisted.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     expect(persisted.storyVersionId).toBe(VERSION_ID);
     expect(persisted.sequenceNumber).toBe(4);
     expect(persisted.sceneType).toBe("narrative");
