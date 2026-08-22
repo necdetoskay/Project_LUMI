@@ -71,3 +71,40 @@ ALTER TABLE profile.managed_asset_canons
 
 ALTER TABLE profile.managed_asset_canons
   VALIDATE CONSTRAINT managed_asset_canons_selected_asset_scope_fk;
+
+-- Historical rows may already have lost their selected asset through the
+-- legacy ON DELETE SET NULL FK while still claiming to be selected. Normalize
+-- that stale state before installing the invariant below.
+UPDATE profile.managed_asset_canons
+SET status = 'draft',
+    selected_at = NULL
+WHERE selected_asset_id IS NULL
+  AND status = 'selected';
+
+-- PostgreSQL implements FK ON DELETE SET NULL as an UPDATE of the referencing
+-- row. Normalize the canon state in that same UPDATE so physical asset deletion
+-- keeps the row internally consistent instead of leaving selected + NULL.
+CREATE OR REPLACE FUNCTION profile.normalize_managed_asset_canon_selection_state()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.selected_asset_id IS NULL AND NEW.status = 'selected' THEN
+    NEW.status := 'draft';
+    NEW.selected_at := NULL;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER managed_asset_canons_normalize_selection_state
+BEFORE UPDATE OF selected_asset_id ON profile.managed_asset_canons
+FOR EACH ROW
+EXECUTE FUNCTION profile.normalize_managed_asset_canon_selection_state();
+
+-- Defense in depth for SQL/alternate writers: a canon cannot advertise an
+-- active selection without a selected asset pointer.
+ALTER TABLE profile.managed_asset_canons
+  ADD CONSTRAINT managed_asset_canons_selected_requires_asset
+  CHECK (status <> 'selected' OR selected_asset_id IS NOT NULL);
