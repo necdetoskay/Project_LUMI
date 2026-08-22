@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
 import { runLivingWorldBootstrapForCharacter } from "@/lib/character-onboarding/living-world-bootstrap.service";
+import { getCharacterDomain } from "@lumi/profiles/application";
 import {
-  archiveCharacter,
-  getCharacterById,
-  getCharacterDomain,
-} from "@lumi/profiles/application";
+  archivePrimaryChildAvatar,
+  getPrimaryChildAvatarById,
+} from "@lumi/profiles/child-avatar";
 import { getCharacterFoundationByCharacterId } from "@lumi/profiles";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
@@ -37,7 +37,11 @@ export const GET = observeHandler(
           );
           return NextResponse.json({ character });
         }
-        const character = await getCharacterById(parent.id, householdId, id);
+        const character = await getPrimaryChildAvatarById(
+          parent.id,
+          householdId,
+          id,
+        );
         if (!character) {
           return NextResponse.json(
             { error: "NOT_FOUND", message: "Character not found" },
@@ -129,7 +133,11 @@ export const POST = observeHandler(
       }
 
       try {
-        const character = await getCharacterById(parent.id, householdId, id);
+        const character = await getPrimaryChildAvatarById(
+          parent.id,
+          householdId,
+          id,
+        );
         if (!character) {
           return NextResponse.json(
             { error: "NOT_FOUND", message: "Character not found" },
@@ -207,7 +215,7 @@ export const DELETE = observeHandler(
           { status: 400 },
         );
       try {
-        await archiveCharacter(parent.id, householdId, id);
+        await archivePrimaryChildAvatar(parent.id, householdId, id);
         return new NextResponse(null, { status: 204 });
       } catch (error) {
         const err = error as Error;

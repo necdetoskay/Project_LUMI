@@ -31,7 +31,26 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     return (record as LumiCharacterRecord) ?? null;
   }
 
-  async findByChildProfile(
+  async findChildAvatarById(
+    id: string,
+    householdId: string,
+  ): Promise<LumiCharacterRecord | null> {
+    const [record] = await this.db
+      .select()
+      .from(lumiCharacters)
+      .where(
+        and(
+          eq(lumiCharacters.id, id),
+          eq(lumiCharacters.householdId, householdId),
+          eq(lumiCharacters.characterSubtype, "child_avatar"),
+          isNull(lumiCharacters.deletedAt),
+        ),
+      )
+      .limit(1);
+    return (record as LumiCharacterRecord) ?? null;
+  }
+
+  async findPrimaryChildAvatarByChildProfile(
     childProfileId: string,
     householdId: string,
   ): Promise<LumiCharacterRecord | null> {
@@ -54,6 +73,16 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     return row?.character ?? null;
   }
 
+  async findByChildProfile(
+    childProfileId: string,
+    householdId: string,
+  ): Promise<LumiCharacterRecord | null> {
+    return this.findPrimaryChildAvatarByChildProfile(
+      childProfileId,
+      householdId,
+    );
+  }
+
   async listByHousehold(householdId: string): Promise<LumiCharacterRecord[]> {
     const rows = await this.db
       .select()
@@ -68,10 +97,30 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     return rows as LumiCharacterRecord[];
   }
 
+  async listChildAvatarsByHousehold(
+    householdId: string,
+  ): Promise<LumiCharacterRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(lumiCharacters)
+      .where(
+        and(
+          eq(lumiCharacters.householdId, householdId),
+          eq(lumiCharacters.characterSubtype, "child_avatar"),
+          isNull(lumiCharacters.deletedAt),
+        ),
+      )
+      .orderBy(lumiCharacters.createdAt);
+    return rows as LumiCharacterRecord[];
+  }
+
   async create(input: NewLumiCharacterRecord): Promise<LumiCharacterRecord> {
     const [record] = await this.db
       .insert(lumiCharacters)
-      .values(input)
+      .values({
+        ...input,
+        characterSubtype: input.characterSubtype ?? "child_avatar",
+      })
       .returning();
     if (!record) {
       throw new Error("Character creation returned no record");

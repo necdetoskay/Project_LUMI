@@ -6,12 +6,26 @@ export interface CharacterRepository {
     householdId: string,
   ): Promise<LumiCharacterRecord | null>;
 
+  findChildAvatarById(
+    id: string,
+    householdId: string,
+  ): Promise<LumiCharacterRecord | null>;
+
+  findPrimaryChildAvatarByChildProfile(
+    childProfileId: string,
+    householdId: string,
+  ): Promise<LumiCharacterRecord | null>;
+
   findByChildProfile(
     childProfileId: string,
     householdId: string,
   ): Promise<LumiCharacterRecord | null>;
 
   listByHousehold(householdId: string): Promise<LumiCharacterRecord[]>;
+
+  listChildAvatarsByHousehold(
+    householdId: string,
+  ): Promise<LumiCharacterRecord[]>;
 
   create(input: NewLumiCharacterRecord): Promise<LumiCharacterRecord>;
 

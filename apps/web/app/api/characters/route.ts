@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { withParent } from "@/lib/auth/with-parent";
-import {
-  listCharactersByHousehold,
-  listCharactersByChildProfile,
-} from "@lumi/profiles/application";
+import { listCharactersByChildProfile } from "@lumi/profiles/application";
+import { listPrimaryChildAvatarsByHousehold } from "@lumi/profiles/child-avatar";
 import { observeHandler } from "@/lib/observability/observed-api-route";
 
 export const GET = observeHandler(async (request: Request) => {
@@ -32,7 +30,7 @@ export const GET = observeHandler(async (request: Request) => {
         return NextResponse.json({ characters });
       }
 
-      const characters = await listCharactersByHousehold(
+      const characters = await listPrimaryChildAvatarsByHousehold(
         parent.id,
         householdId,
       );

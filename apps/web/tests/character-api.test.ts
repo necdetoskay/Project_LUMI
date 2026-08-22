@@ -14,6 +14,9 @@ const mockUpdateLocation = vi.fn();
 const mockGetCharacterEvents = vi.fn();
 const mockListCharactersByChildProfile = vi.fn();
 const mockListCharactersByHousehold = vi.fn();
+const mockGetPrimaryChildAvatarById = vi.fn();
+const mockArchivePrimaryChildAvatar = vi.fn();
+const mockListPrimaryChildAvatarsByHousehold = vi.fn();
 
 vi.mock("@lumi/profiles/application", () => ({
   getCharacterDomain: (...args: unknown[]) => mockGetCharacterDomain(...args),
@@ -32,6 +35,15 @@ vi.mock("@lumi/profiles/application", () => ({
     mockListCharactersByChildProfile(...args),
   listCharactersByHousehold: (...args: unknown[]) =>
     mockListCharactersByHousehold(...args),
+}));
+
+vi.mock("@lumi/profiles/child-avatar", () => ({
+  getPrimaryChildAvatarById: (...args: unknown[]) =>
+    mockGetPrimaryChildAvatarById(...args),
+  archivePrimaryChildAvatar: (...args: unknown[]) =>
+    mockArchivePrimaryChildAvatar(...args),
+  listPrimaryChildAvatarsByHousehold: (...args: unknown[]) =>
+    mockListPrimaryChildAvatarsByHousehold(...args),
 }));
 
 vi.mock("@/lib/auth/with-parent", () => ({
@@ -124,7 +136,7 @@ describe("S06 - Character API Contract", () => {
 
   describe("DELETE /api/characters/[id]", () => {
     it("archives idempotently", async () => {
-      mockArchiveCharacter.mockResolvedValueOnce({ archived: true });
+      mockArchivePrimaryChildAvatar.mockResolvedValueOnce({ archived: true });
       const route = (await import(
         "@/app/api/characters/[id]/route"
       )) as RouteModule;
@@ -135,7 +147,7 @@ describe("S06 - Character API Contract", () => {
       const ctx = { params: Promise.resolve({ id: CHARACTER_ID }) };
       const res = await route.DELETE!(req, ctx);
       expect(res.status).toBe(204);
-      expect(mockArchiveCharacter).toHaveBeenCalledWith(
+      expect(mockArchivePrimaryChildAvatar).toHaveBeenCalledWith(
         "parent-user-id",
         "h1",
         CHARACTER_ID,
