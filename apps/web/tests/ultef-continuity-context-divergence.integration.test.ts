@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   StorySceneGenerationService,
@@ -9,8 +9,9 @@ import {
 import type { StoryHookState } from "@lumi/story/domain";
 
 import { NpcBeliefStoryContinuityContextAdapter } from "@/lib/story-continuity-context-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled = process.env.ULTEF_SCENARIO === "L5-CONTEXT-DIVERGENCE-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
@@ -104,9 +105,12 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
   it("keeps persisted NPC continuity isolated by world and injects only the correct branch into story prompts", async () => {
     const householdId = crypto.randomUUID();
     const childProfileId = crypto.randomUUID();
-    const npcId = crypto.randomUUID();
+    const childAvatarId = crypto.randomUUID();
+    const npcAId = crypto.randomUUID();
+    const npcBId = crypto.randomUUID();
     const worldA = crypto.randomUUID();
     const worldB = crypto.randomUUID();
+    const fixtureKey = `context-divergence-${householdId}`;
     const claimA =
       "Bora, World A'da kopru isiklarinin firtinadan once yandigini biliyor.";
     const claimB =
@@ -121,21 +125,39 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
     });
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId: worldA,
+        fixtureKey,
+        npcs: [{ id: npcAId, name: "Bora" }],
+      });
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId: worldB,
+        fixtureKey,
+        npcs: [{ id: npcBId, name: "Bora" }],
+      });
+
       await pool.query(
         `INSERT INTO npc_intelligence.beliefs
           (id, npc_id, household_id, world_id, fact_id, claim, confidence, source, provenance, status)
          VALUES
           ($1,$2,$3,$4,$5,$6,'0.90','hearsay',$7::jsonb,'active'),
-          ($8,$2,$3,$9,$10,$11,'0.90','hearsay',$12::jsonb,'active')`,
+          ($8,$9,$3,$10,$11,$12,'0.90','hearsay',$13::jsonb,'active')`,
         [
           crypto.randomUUID(),
-          npcId,
+          npcAId,
           householdId,
           worldA,
           "bridge-lights",
           claimA,
           JSON.stringify(["Mira-A"]),
           crypto.randomUUID(),
+          npcBId,
           worldB,
           "hidden-map",
           claimB,
@@ -144,7 +166,8 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
       );
 
       scenario.setup("Household", { id: householdId });
-      scenario.setup("NPC", { id: npcId, name: "Bora" });
+      scenario.setup("World A NPC", { id: npcAId, name: "Bora" });
+      scenario.setup("World B NPC", { id: npcBId, name: "Bora" });
       scenario.setup("World A continuity", { worldId: worldA, claim: claimA });
       scenario.setup("World B continuity", { worldId: worldB, claim: claimB });
 
@@ -158,12 +181,12 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
           householdId,
           childProfileId,
           worldId: worldA,
-          sourceNpcId: npcId,
+          sourceNpcId: npcAId,
           storySessionId: crypto.randomUUID(),
         }),
         settingsPort,
         continuityPort: adapter,
-        characterId: "Arin",
+        characterId: childAvatarId,
         callOpenRouter: capturingCaller(promptsA),
       });
 
@@ -172,12 +195,12 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
           householdId,
           childProfileId,
           worldId: worldB,
-          sourceNpcId: npcId,
+          sourceNpcId: npcBId,
           storySessionId: crypto.randomUUID(),
         }),
         settingsPort,
         continuityPort: adapter,
-        characterId: "Arin",
+        characterId: childAvatarId,
         callOpenRouter: capturingCaller(promptsB),
       });
 
@@ -226,7 +249,7 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
       const report = scenario.finish({
         result: passed ? "PASS" : "FAIL",
         reason: passed
-          ? "The same NPC retained different persisted knowledge in two worlds, and each later story-generation prompt received only its own world-scoped continuity."
+          ? "Two world-scoped canonical NPC identities with the same display name retained different persisted knowledge, and each later story-generation prompt received only its own world continuity."
           : "Continuity context leaked across world boundaries or failed to reach the story prompt.",
       });
       await writeScenarioArtifacts(report, {
@@ -238,6 +261,9 @@ ultefDescribe("ULTEF L5-CONTEXT-DIVERGENCE-001", () => {
         "DELETE FROM npc_intelligence.beliefs WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   });
 });
