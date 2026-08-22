@@ -393,39 +393,42 @@ describe("SimulationRunner", () => {
     expect(store.events[1]!.resolved).toBe(true);
   });
 
-  it("retries the same logical run deterministically without duplicate side effects", async () => {
-    const store = new InMemoryStore();
-    const worldSource = new InMemoryWorldSource(makeClockSnapshot());
-    worldSource.npcs = [
-      makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
-    ];
-    worldSource.events = [];
-    const npcSource = new InMemoryNpcSource();
-    npcSource.npcs = worldSource.npcs;
-    const runner = createRunner(store, worldSource, npcSource);
-    const input = {
-      worldId: WORLD_ID,
-      householdId: HOUSEHOLD_ID,
-      childProfileId: "child-1",
-      childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
-      now: new Date("2026-08-03T12:00:00Z"),
-      seed: "retry-seed-1",
-    };
+  it(
+    "retries the same logical run deterministically without duplicate side effects",
+    async () => {
+      const store = new InMemoryStore();
+      const worldSource = new InMemoryWorldSource(makeClockSnapshot());
+      worldSource.npcs = [
+        makeNpcSnapshot({ npcId: NPC_A, relationshipToCharacter: 0.9 }),
+      ];
+      worldSource.events = [];
+      const npcSource = new InMemoryNpcSource();
+      npcSource.npcs = worldSource.npcs;
+      const runner = createRunner(store, worldSource, npcSource);
+      const input = {
+        worldId: WORLD_ID,
+        householdId: HOUSEHOLD_ID,
+        childProfileId: "child-1",
+        childLastSeenAt: new Date("2026-08-02T08:00:00Z"),
+        now: new Date("2026-08-03T12:00:00Z"),
+        seed: "retry-seed-1",
+      };
 
-    const first = await runner.run(input);
-    const persistedAfterFirst = store.effects.length;
-    const worldEventsAfterFirst = worldSource.recordedEvents.length;
-    const second = await runner.run(input);
+      const first = await runner.run(input);
+      const persistedAfterFirst = store.effects.length;
+      const worldEventsAfterFirst = worldSource.recordedEvents.length;
+      const second = await runner.run(input);
 
-    expect(first.effects.length).toBeGreaterThan(0);
-    expect(second.effects.map(effectSemantics)).toEqual(
-      first.effects.map(effectSemantics),
-    );
-    expect(second.runState.runHash).toBe(first.runState.runHash);
-    expect(store.effects).toHaveLength(persistedAfterFirst);
-    expect(worldSource.recordedEvents).toHaveLength(worldEventsAfterFirst);
-    expect(second.committedCount).toBe(0);
-  });
+      expect(first.effects.length).toBeGreaterThan(0);
+      expect(second.effects.map(effectSemantics)).toEqual(
+        first.effects.map(effectSemantics),
+      );
+      expect(second.runState.runHash).toBe(first.runState.runHash);
+      expect(store.effects).toHaveLength(persistedAfterFirst);
+      expect(worldSource.recordedEvents).toHaveLength(worldEventsAfterFirst);
+      expect(second.committedCount).toBe(0);
+    },
+  );
 
   it("allows a changed logical world state to persist new effects", async () => {
     const store = new InMemoryStore();
@@ -449,7 +452,10 @@ describe("SimulationRunner", () => {
     const first = await runner.run(input);
     const persistedAfterFirst = store.effects.length;
 
-    worldSource.clock = makeClockSnapshot({ clockHash: "clock-next", version: 2 });
+    worldSource.clock = makeClockSnapshot({
+      clockHash: "clock-next",
+      version: 2,
+    });
     worldSource.events = [
       makeScheduledEvent({
         id: "55555555-5555-5555-5555-555555555555",
