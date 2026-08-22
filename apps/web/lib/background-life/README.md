@@ -10,8 +10,10 @@ Vercel Cron calls `GET /api/internal/background-life` once per day. The route is
 
 - Active worlds only.
 - At most 10 worlds per invocation by default (hard cap 25).
-- A world is eligible only when its simulation clock has not advanced for at least one hour, or when it has no clock yet.
+- A world is eligible only when it has no prior simulation run or its latest run is at least one hour old.
 - A PostgreSQL advisory lock prevents concurrent processing of the same world.
+- The worker ensures a canonical simulation clock exists before running the simulation.
+- Cron wall-clock elapsed time is deliberately not translated into world-clock progression. The runtime currently has a 120x real-to-game-time clock multiplier, and #465 does not define an autonomous gameplay time-rate contract.
 - Runtime retry/idempotency semantics remain owned by `@lumi/simulation`.
 - The existing absence policy remains authoritative, including the >10 day frozen simulation phase.
 
