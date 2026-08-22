@@ -15,7 +15,10 @@ export class DrizzleChildAvatarRepository implements ChildAvatarRepository {
     const [row] = await this.db
       .select({ character: lumiCharacters })
       .from(childAvatars)
-      .innerJoin(lumiCharacters, eq(lumiCharacters.id, childAvatars.characterId))
+      .innerJoin(
+        lumiCharacters,
+        eq(lumiCharacters.id, childAvatars.characterId),
+      )
       .where(
         and(
           eq(childAvatars.characterId, id),
@@ -36,7 +39,10 @@ export class DrizzleChildAvatarRepository implements ChildAvatarRepository {
     const [row] = await this.db
       .select({ character: lumiCharacters })
       .from(childAvatars)
-      .innerJoin(lumiCharacters, eq(lumiCharacters.id, childAvatars.characterId))
+      .innerJoin(
+        lumiCharacters,
+        eq(lumiCharacters.id, childAvatars.characterId),
+      )
       .where(
         and(
           eq(childAvatars.childProfileId, childProfileId),
@@ -54,7 +60,10 @@ export class DrizzleChildAvatarRepository implements ChildAvatarRepository {
     const rows = await this.db
       .select({ character: lumiCharacters })
       .from(childAvatars)
-      .innerJoin(lumiCharacters, eq(lumiCharacters.id, childAvatars.characterId))
+      .innerJoin(
+        lumiCharacters,
+        eq(lumiCharacters.id, childAvatars.characterId),
+      )
       .where(
         and(
           eq(childAvatars.householdId, householdId),
