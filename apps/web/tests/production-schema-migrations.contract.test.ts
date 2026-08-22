@@ -32,6 +32,7 @@ describe("production schema migration contract", () => {
       '["auth", "@lumi/web", "auth:migrate"]',
       '["profiles", "@lumi/profiles", "profile:migrate"]',
       '["world", "@lumi/world", "world:migrate"]',
+      '["npc-intelligence", "@lumi/npc-intelligence", "npc:migrate"]',
       '["story", "@lumi/story", "story:migrate"]',
       '["simulation", "@lumi/simulation", "simulation:migrate"]',
       '["privacy", "@lumi/privacy", "privacy:migrate"]',
@@ -53,6 +54,7 @@ describe("production schema migration contract", () => {
     expect(runner).toContain('generationState.kind === "unmarked"');
     expect(runner).toContain("Unsupported production schema generation");
     expect(runner).toContain("DROP SCHEMA IF EXISTS profile CASCADE");
+    expect(runner).toContain("DROP SCHEMA IF EXISTS npc_intelligence CASCADE");
     expect(runner).toContain("DROP SCHEMA IF EXISTS story CASCADE");
     expect(runner).toContain("DROP SCHEMA IF EXISTS simulation CASCADE");
     expect(runner).toContain("DROP TABLE IF EXISTS public.parent_accounts CASCADE");
@@ -64,6 +66,7 @@ describe("production schema migration contract", () => {
 
     expect(verifyIndex).toBeGreaterThan(-1);
     expect(markerIndex).toBeGreaterThan(verifyIndex);
+    expect(runner).toContain("npc_intelligence.decision_traces");
     expect(runner).toContain(
       "Production profile migration ledger is missing required integrity migrations.",
     );
