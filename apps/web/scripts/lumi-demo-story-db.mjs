@@ -324,8 +324,8 @@ export function createLumiDemoStoryPostgresAdapter(databaseUrl) {
         );
         await client.query(
           `INSERT INTO story.story_session_characters
-            (story_session_id, character_id, participation_role, initial_state_snapshot, version)
-           VALUES ($1,$2,'protagonist',$3::jsonb,1)
+            (story_session_id, character_id, child_avatar_id, participation_role, initial_state_snapshot, version)
+           VALUES ($1,$2,$2,'protagonist',$3::jsonb,1)
            ON CONFLICT (story_session_id, character_id) DO NOTHING`,
           [
             manifest.story.sessionId,
