@@ -1,5 +1,12 @@
-import { check, index, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import {
+  check,
+  index,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { profileSchema } from "../schemas";
 
