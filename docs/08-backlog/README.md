@@ -16,3 +16,4 @@ Backlog maddeleri:
 - [Story Reader Follow-ups](lumi/story-reader-follow-ups.md)
 - [Story Outcome & World State Commit System](LUMI_Backlog_Story_Outcome_Commit_System.md)
 - [Story Outcome and World State Validation Test Plan](story-outcome-world-state-validation-test-plan.md)
+- [Narrative Backdrop, Saga Breadcrumb & Future Opportunity System](narrative-backdrop-saga-breadcrumb-future-opportunity-system.md)
