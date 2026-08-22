@@ -14,7 +14,7 @@ function fixtureId(index) {
   return `70000000-0000-4000-8000-${suffix}`;
 }
 
-const ids = Array.from({ length: 40 }, (_, index) => fixtureId(index));
+const ids = Array.from({ length: 50 }, (_, index) => fixtureId(index));
 const [
   h1,
   h2,
@@ -36,14 +36,13 @@ const [
   event1,
   opportunity1,
   opportunity2,
-  belief1,
   memory1,
   memory2,
   memory3,
   usage1,
   snapshot1,
-  workerDecision1,
   invalidWorld,
+  invalidWorldNpc,
   invalidTrace,
   invalidEvent,
   invalidOpportunity,
@@ -51,11 +50,12 @@ const [
   invalidMemory,
   invalidUsage,
   invalidSnapshot,
-  invalidSnapshotLocation,
   invalidWorkerDecision,
-  invalidWorldNpc,
   originPackage1,
   originPackage2,
+  originPackage3,
+  originPackage4,
+  originPackage5,
 ] = ids;
 
 const client = new Client({ connectionString: databaseUrl });
@@ -147,7 +147,15 @@ async function insertWorld({ id, householdId, childProfileId, characterId, seed 
         vector_version
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'integrity-test', 'v1')
     `,
-    [id, householdId, childProfileId, characterId, seed, `${seed}-origin`, `${seed}-candidate`],
+    [
+      id,
+      householdId,
+      childProfileId,
+      characterId,
+      seed,
+      `${seed}-origin`,
+      `${seed}-candidate`,
+    ],
   );
 }
 
@@ -192,7 +200,7 @@ try {
     householdId: h1,
     name: "NPC A",
     characterSubtype: "npc",
-    originPackageId: fixtureId(40),
+    originPackageId: originPackage3,
     universeSeed: "npc-a-seed",
   });
   await insertCharacter({
@@ -201,7 +209,7 @@ try {
     householdId: h2,
     name: "NPC B",
     characterSubtype: "npc",
-    originPackageId: fixtureId(41),
+    originPackageId: originPackage4,
     universeSeed: "npc-b-seed",
   });
   await insertCharacter({
@@ -210,7 +218,7 @@ try {
     householdId: h1,
     name: "NPC C",
     characterSubtype: "npc",
-    originPackageId: fixtureId(42),
+    originPackageId: originPackage5,
     universeSeed: "npc-c-seed",
   });
 
@@ -278,13 +286,6 @@ try {
   );
 
   await client.query(
-    `INSERT INTO npc_intelligence.beliefs (
-       id, npc_id, household_id, fact_id, claim, confidence, source, world_id
-     ) VALUES ($1, $2, $3, 'fact-a', 'A scoped belief', 0.8, 'observation', NULL)`,
-    [belief1, npc1, h1],
-  );
-
-  await client.query(
     `INSERT INTO npc_intelligence.memories (
        id, household_id, world_id, child_profile_id, owner_type, owner_id,
        kind, summary, salience, confidence, source_type, source_id, effect_key
@@ -299,7 +300,7 @@ try {
        id, household_id, world_id, child_profile_id, owner_type, owner_id,
        memory_id, scene_id
      ) VALUES ($1, $2, $3, $4, 'npc', $5, $6, $7)`,
-    [usage1, h1, world1, child1, npc1, memory1, fixtureId(43)],
+    [usage1, h1, world1, child1, npc1, memory1, fixtureId(45)],
   );
 
   await client.query(
@@ -310,21 +311,13 @@ try {
     [snapshot1, npc1, h1, world1, child1, avatar1, location1],
   );
 
-  await client.query(
-    `INSERT INTO npc_intelligence.worker_npc_decisions (
-       id, household_id, world_id, child_profile_id, npc_id,
-       decision_key, result_json, decided_at
-     ) VALUES ($1, $2, $3, $4, $5, 'decision-a', '{}', now())`,
-    [workerDecision1, h1, world1, child1, npc1],
-  );
-
   await expectConstraintViolation(
     "world child/household scope",
     `INSERT INTO profile.worlds (
        id, household_id, child_profile_id, character_id, universe_seed,
        origin_seed, accepted_candidate_seed, generator_version, vector_version
      ) VALUES ($1, $2, $3, $4, 'invalid-world', 'invalid-origin', 'invalid-candidate', 'test', 'v1')`,
-    [invalidWorld, h2, child1, npc2],
+    [invalidWorld, h2, child1, avatar2],
     "worlds_child_scope_fk",
   );
 
@@ -400,7 +393,7 @@ try {
        id, household_id, world_id, child_profile_id, owner_type, owner_id,
        memory_id, scene_id
      ) VALUES ($1, $2, $3, $4, 'npc', $5, $6, $7)`,
-    [invalidUsage, h2, world2, child2, npc2, memory1, fixtureId(44)],
+    [invalidUsage, h2, world2, child2, npc2, memory1, fixtureId(46)],
     "npc_memory_usages_memory_scope_fk",
   );
 
@@ -416,11 +409,10 @@ try {
 
   await expectConstraintViolation(
     "NPC snapshot location/world scope",
-    `INSERT INTO npc_intelligence.npc_snapshots (
-       id, npc_id, household_id, world_id, child_profile_id, character_id,
-       location_id, last_interaction_at
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, now())`,
-    [invalidSnapshotLocation, npc1, h1, world1, child1, avatar1, location2],
+    `UPDATE npc_intelligence.npc_snapshots
+     SET location_id = $1
+     WHERE id = $2`,
+    [location2, snapshot1],
     "npc_snapshots_location_world_fk",
   );
 
