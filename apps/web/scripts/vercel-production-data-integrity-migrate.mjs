@@ -57,7 +57,9 @@ try {
     );
   }
 
-  console.warn("Production Data Integrity dependency migrations are up to date.");
+  console.warn(
+    "Production Data Integrity dependency migrations are up to date.",
+  );
 } catch (error) {
   console.error("Production Data Integrity dependency migration failed:", error);
   process.exitCode = 1;
