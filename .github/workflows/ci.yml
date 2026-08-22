@@ -47,6 +47,10 @@ jobs:
         env:
           PROFILE_SCOPE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
         run: pnpm --filter @lumi/profiles profile:scope-selftest
+      - name: Self-test typed character identity split
+        env:
+          CHARACTER_SPLIT_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: pnpm --filter @lumi/profiles profile:character-split-selftest
       - name: Validate ULTEF L8 scenario evaluators
         run: pnpm ultef:l8-scenario-selftest
       - name: Validate ULTEF L8 semantic rubric parser
