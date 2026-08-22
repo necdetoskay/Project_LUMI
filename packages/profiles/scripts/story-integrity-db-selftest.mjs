@@ -7,22 +7,45 @@ import pg from "pg";
 
 const { Client } = pg;
 const databaseUrl = process.env.STORY_INTEGRITY_TEST_DATABASE_URL;
-if (!databaseUrl) throw new Error("STORY_INTEGRITY_TEST_DATABASE_URL is required");
+if (!databaseUrl)
+  throw new Error("STORY_INTEGRITY_TEST_DATABASE_URL is required");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migration = await readFile(
-  resolve(__dirname, "..", "..", "story", "migrations", "0010_story_integrity.sql"),
+  resolve(
+    __dirname,
+    "..",
+    "..",
+    "story",
+    "migrations",
+    "0010_story_integrity.sql",
+  ),
   "utf8",
 );
 
 const ids = Array.from({ length: 12 }, (_, i) =>
   `30000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`,
 );
-const [h1, h2, child, world, definition, version, scene, session, avatar, npc, badSession, unknown] = ids;
+const [
+  h1,
+  h2,
+  child,
+  world,
+  definition,
+  version,
+  scene,
+  session,
+  avatar,
+  npc,
+  badSession,
+  unknown,
+] = ids;
 const client = new Client({ connectionString: databaseUrl });
 await client.connect();
 try {
-  await client.query("DROP SCHEMA IF EXISTS story CASCADE; DROP SCHEMA IF EXISTS profile CASCADE");
+  await client.query(
+    "DROP SCHEMA IF EXISTS story CASCADE; DROP SCHEMA IF EXISTS profile CASCADE",
+  );
   await client.query("CREATE SCHEMA profile; CREATE SCHEMA story");
   await client.query(`
     CREATE TABLE profile.child_profiles (id uuid PRIMARY KEY, household_id uuid NOT NULL, UNIQUE(id, household_id));
@@ -42,13 +65,27 @@ try {
       participation_role varchar(20) NOT NULL, PRIMARY KEY(story_session_id, character_id)
     );
   `);
-  await client.query("INSERT INTO profile.child_profiles VALUES ($1,$2)", [child, h1]);
+  await client.query("INSERT INTO profile.child_profiles VALUES ($1,$2)", [
+    child,
+    h1,
+  ]);
   await client.query("INSERT INTO profile.worlds VALUES ($1,$2)", [world, h1]);
-  await client.query("INSERT INTO profile.child_avatars VALUES ($1)", [avatar]);
+  await client.query("INSERT INTO profile.child_avatars VALUES ($1)", [
+    avatar,
+  ]);
   await client.query("INSERT INTO profile.world_npcs VALUES ($1)", [npc]);
-  await client.query("INSERT INTO story.story_definitions VALUES ($1,$2)", [definition, h1]);
-  await client.query("INSERT INTO story.story_versions VALUES ($1,$2)", [version, definition]);
-  await client.query("INSERT INTO story.story_scenes VALUES ($1,$2)", [scene, version]);
+  await client.query("INSERT INTO story.story_definitions VALUES ($1,$2)", [
+    definition,
+    h1,
+  ]);
+  await client.query("INSERT INTO story.story_versions VALUES ($1,$2)", [
+    version,
+    definition,
+  ]);
+  await client.query("INSERT INTO story.story_scenes VALUES ($1,$2)", [
+    scene,
+    version,
+  ]);
   await client.query(
     "INSERT INTO story.story_sessions VALUES ($1,$2,$3,$4,$5,$6,$7)",
     [session, h1, child, world, definition, version, scene],
@@ -82,6 +119,10 @@ try {
   );
   console.warn("Story integrity database self-test OK");
 } finally {
-  await client.query("DROP SCHEMA IF EXISTS story CASCADE; DROP SCHEMA IF EXISTS profile CASCADE").catch(() => {});
+  await client
+    .query(
+      "DROP SCHEMA IF EXISTS story CASCADE; DROP SCHEMA IF EXISTS profile CASCADE",
+    )
+    .catch(() => {});
   await client.end();
 }
