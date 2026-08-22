@@ -186,8 +186,7 @@ if (isMainModule()) {
     const legacyFilenameCount = manifests.reduce(
       (sum, manifest) =>
         sum +
-        manifest.migrations.filter((migration) => migration.legacyFilename)
-          .length,
+        manifest.migrations.filter((migration) => migration.legacyFilename).length,
       0,
     );
     console.log(
