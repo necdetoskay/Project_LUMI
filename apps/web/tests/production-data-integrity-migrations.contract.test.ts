@@ -14,23 +14,21 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
 const runnerSource = readFileSync(runnerPath, "utf8");
 
 describe("production data-integrity migration contract", () => {
-  it("runs integrity prerequisites before cross-domain migrations and the Next build", () => {
+  it("delegates production integrity to the unified schema orchestrator before the Next build", () => {
     const build = packageJson.scripts.build;
-    const contextIndex = build.indexOf(
-      "node scripts/vercel-production-context-migrate.mjs",
-    );
-    const integrityIndex = build.indexOf(
-      "node scripts/vercel-production-data-integrity-migrate.mjs",
-    );
-    const crossDomainIndex = build.indexOf(
-      "node scripts/vercel-production-cross-domain-migrate.mjs",
+    const orchestratorIndex = build.indexOf(
+      "node scripts/vercel-production-schema-migrate.mjs",
     );
     const nextBuildIndex = build.indexOf("next build --webpack");
 
-    expect(contextIndex).toBeGreaterThanOrEqual(0);
-    expect(integrityIndex).toBeGreaterThan(contextIndex);
-    expect(crossDomainIndex).toBeGreaterThan(integrityIndex);
-    expect(nextBuildIndex).toBeGreaterThan(crossDomainIndex);
+    expect(orchestratorIndex).toBeGreaterThanOrEqual(0);
+    expect(nextBuildIndex).toBeGreaterThan(orchestratorIndex);
+    expect(build).not.toContain(
+      "node scripts/vercel-production-data-integrity-migrate.mjs",
+    );
+    expect(build).not.toContain(
+      "node scripts/vercel-production-cross-domain-migrate.mjs",
+    );
   });
 
   it("keeps the PR-2 through PR-7 integrity migrations in dependency order", () => {
