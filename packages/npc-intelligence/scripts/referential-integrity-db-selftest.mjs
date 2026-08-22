@@ -132,7 +132,13 @@ async function insertCharacter({
   );
 }
 
-async function insertWorld({ id, householdId, childProfileId, characterId, seed }) {
+async function insertWorld({
+  id,
+  householdId,
+  childProfileId,
+  characterId,
+  seed,
+}) {
   await client.query(
     `
       INSERT INTO profile.worlds (
