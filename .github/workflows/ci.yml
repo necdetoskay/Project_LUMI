@@ -65,6 +65,12 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
+      - name: Diagnose simulation prettier output
+        shell: bash
+        run: |
+          pnpm exec prettier --write packages/simulation/tests/application/simulation-runner.test.ts
+          git diff -- packages/simulation/tests/application/simulation-runner.test.ts
+          exit 1
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
