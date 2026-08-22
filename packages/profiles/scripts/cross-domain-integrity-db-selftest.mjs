@@ -14,14 +14,7 @@ if (!databaseUrl) {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function migrationPath(packageName, filename) {
-  return resolve(
-    __dirname,
-    "..",
-    "..",
-    packageName,
-    "migrations",
-    filename,
-  );
+  return resolve(__dirname, "..", "..", packageName, "migrations", filename);
 }
 
 async function readMigration(packageName, filename) {
@@ -168,11 +161,10 @@ try {
     [consent, h1, child],
   );
   await assert.rejects(
-    client.query("INSERT INTO privacy.data_export_records VALUES ($1, $2, $3)", [
-      exportRecord,
-      h2,
-      child,
-    ]),
+    client.query(
+      "INSERT INTO privacy.data_export_records VALUES ($1, $2, $3)",
+      [exportRecord, h2, child],
+    ),
     /foreign key constraint/,
   );
 
