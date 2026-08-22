@@ -1,0 +1,56 @@
+name: NPC Integrity Format Fix
+
+on:
+  push:
+    branches:
+      - fix/npc-referential-integrity-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/npc-referential-integrity-hardening
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply exact Prettier output
+        run: >-
+          pnpm exec prettier --write
+          apps/web/scripts/lumi-demo-db.selftest.mjs
+          apps/web/tests/ultef-indirect-propagation-retry.integration.test.ts
+          apps/web/tests/ultef-indirect-propagation-terminal-failure.integration.test.ts
+          packages/profiles/src/application/living-world-bootstrap-profile-materializer.service.ts
+          scripts/demo/lumi-demo-manifest.mjs
+          services/worker/tests/ultef-s48-npc-snapshot-worker.integration.test.ts
+          services/worker/tests/ultef-s50-npc-action-effect-registry.integration.test.ts
+      - name: Commit formatter output only
+        shell: bash
+        run: |
+          git status --short
+          git add -- \
+            apps/web/scripts/lumi-demo-db.selftest.mjs \
+            apps/web/tests/ultef-indirect-propagation-retry.integration.test.ts \
+            apps/web/tests/ultef-indirect-propagation-terminal-failure.integration.test.ts \
+            packages/profiles/src/application/living-world-bootstrap-profile-materializer.service.ts \
+            scripts/demo/lumi-demo-manifest.mjs \
+            services/worker/tests/ultef-s48-npc-snapshot-worker.integration.test.ts \
+            services/worker/tests/ultef-s50-npc-action-effect-registry.integration.test.ts
+          if git diff --cached --quiet; then
+            echo 'No formatter changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style: format NPC integrity compatibility fixtures'
+          git push origin HEAD:fix/npc-referential-integrity-hardening
