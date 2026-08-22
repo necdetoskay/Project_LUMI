@@ -5,6 +5,19 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const MIGRATION_FILE_PATTERN = /^(\d{4})_([a-z0-9_]+)\.sql$/;
 
+const FROZEN_LEGACY_FILENAMES = new Map([
+  [
+    "packages/npc-intelligence/migrations",
+    new Set([
+      "20260808_ultef_belief_world_scope.sql",
+      "20260809_s44_canonical_memories.sql",
+      "20260809_s46_memory_usages.sql",
+      "20260810_s48_npc_snapshots.sql",
+      "20260810_s48_worker_npc_decisions.sql",
+    ]),
+  ],
+]);
+
 const FROZEN_LEGACY_DUPLICATES = new Map([
   [
     "packages/profiles/migrations",
@@ -49,17 +62,27 @@ export function readMigrationManifest(migrationDir, rootDir) {
     .filter((file) => statSync(join(migrationDir, file)).isFile())
     .filter((file) => file.endsWith(".sql"))
     .sort();
+  const frozenLegacyNames = FROZEN_LEGACY_FILENAMES.get(scope) ?? new Set();
 
   const migrations = files.map((file) => {
     const match = MIGRATION_FILE_PATTERN.exec(file);
-    if (!match) {
+    const isFrozenLegacyName = frozenLegacyNames.has(file);
+
+    if (!match && !isFrozenLegacyName) {
       throw new Error(
-        `[${scope}] invalid migration filename ${file}; expected NNNN_snake_case.sql`,
+        `[${scope}] invalid migration filename ${file}; expected NNNN_snake_case.sql. ` +
+          "Only explicitly frozen historical filenames may use another convention.",
       );
     }
 
     const sql = readFileSync(join(migrationDir, file), "utf8");
-    return { scope, file, sequence: match[1], checksum: checksumSql(sql) };
+    return {
+      scope,
+      file,
+      sequence: match?.[1] ?? null,
+      checksum: checksumSql(sql),
+      legacyFilename: isFrozenLegacyName,
+    };
   });
 
   validateMigrationManifest(scope, migrations);
@@ -75,6 +98,8 @@ export function validateMigrationManifest(scope, migrations) {
       throw new Error(`[${scope}] duplicate migration filename ${migration.file}`);
     }
     seenFiles.add(migration.file);
+
+    if (migration.sequence === null || migration.sequence === undefined) continue;
 
     const files = bySequence.get(migration.sequence) ?? [];
     files.push(migration.file);
@@ -127,8 +152,14 @@ if (isMainModule()) {
   try {
     const manifests = validateRepositoryMigrations(rootDir);
     const migrationCount = manifests.reduce((sum, manifest) => sum + manifest.migrations.length, 0);
+    const legacyFilenameCount = manifests.reduce(
+      (sum, manifest) =>
+        sum + manifest.migrations.filter((migration) => migration.legacyFilename).length,
+      0,
+    );
     console.log(
-      `Migration integrity OK: ${manifests.length} scopes, ${migrationCount} SQL migrations checked.`,
+      `Migration integrity OK: ${manifests.length} scopes, ${migrationCount} SQL migrations checked, ` +
+        `${legacyFilenameCount} frozen legacy filenames.`,
     );
     for (const manifest of manifests) {
       console.log(` - ${manifest.directory}: ${manifest.migrations.length}`);
