@@ -127,7 +127,10 @@ async function main() {
 
     const appliedRows = await loadAppliedMigrations(client);
 
-    if (appliedRows.length === 0 && (await profileSchemaAlreadyExists(client))) {
+    if (
+      appliedRows.length === 0 &&
+      (await profileSchemaAlreadyExists(client))
+    ) {
       throw new Error(
         "The profile schema already contains tables, but the migration ledger is empty. " +
           "Refusing to guess which migrations were previously applied. " +
@@ -138,7 +141,9 @@ async function main() {
     verifyLedgerAgainstRepository(appliedRows, migrations);
 
     const appliedFiles = new Set(appliedRows.map((row) => row.migration_file));
-    const pending = migrations.filter((migration) => !appliedFiles.has(migration.file));
+    const pending = migrations.filter(
+      (migration) => !appliedFiles.has(migration.file),
+    );
 
     for (const migration of pending) {
       await applyMigration(client, migration);
@@ -155,7 +160,10 @@ async function main() {
     try {
       await client.query("SELECT pg_advisory_unlock(hashtext($1))", [LOCK_KEY]);
     } catch (unlockError) {
-      console.error("Failed to release profile migration advisory lock:", unlockError);
+      console.error(
+        "Failed to release profile migration advisory lock:",
+        unlockError,
+      );
       process.exitCode = 1;
     }
 
