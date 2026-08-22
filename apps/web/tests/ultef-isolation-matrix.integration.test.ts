@@ -1,19 +1,21 @@
+import pg from "pg";
 import { describe, expect, it } from "vitest";
 
+import {
+  BeliefService,
+  RumorBeliefWriterService,
+} from "@lumi/npc-intelligence/application";
+import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
+import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import {
   createChildProfile,
   createHousehold,
   findChildProfileForUser,
 } from "@lumi/profiles/application";
-import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
-import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
-import {
-  BeliefService,
-  RumorBeliefWriterService,
-} from "@lumi/npc-intelligence/application";
 
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const databaseUrl =
   process.env.STORY_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -166,9 +168,29 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
     const npcDb = createNpcDatabase(databaseUrl);
     const repository = new DrizzleBeliefSourceRepository(npcDb);
     const writer = new RumorBeliefWriterService(new BeliefService(repository));
+    const childProfileId = crypto.randomUUID();
+    const childAvatarId = crypto.randomUUID();
+    const worldId = crypto.randomUUID();
     const sourceNpcId = crypto.randomUUID();
     const targetNpcId = crypto.randomUUID();
     const factId = `ultef-isolation-${crypto.randomUUID()}`;
+
+    const fixturePool = new pg.Pool({ connectionString: databaseUrl });
+    try {
+      await seedCanonicalNpcFixture(fixturePool, {
+        householdId: householdA.id,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId,
+        fixtureKey: `isolation-${householdA.id}`,
+        npcs: [
+          { id: sourceNpcId, name: "Mira" },
+          { id: targetNpcId, name: "Bora" },
+        ],
+      });
+    } finally {
+      await fixturePool.end();
+    }
 
     await writer.writeHearsay({
       householdId: householdA.id,
@@ -194,7 +216,12 @@ ultefDescribe("ULTEF Sprint 01 — household isolation matrix", () => {
       id: householdB.id,
       alias: "Household B",
     });
-    scenario.setup("Target NPC", { id: targetNpcId, alias: "Bora" });
+    scenario.setup("Target NPC", {
+      id: targetNpcId,
+      alias: "Bora",
+      worldId,
+      childProfileId,
+    });
     scenario.event(
       "belief.persisted",
       "Bora learned one hearsay fact inside Household A.",
