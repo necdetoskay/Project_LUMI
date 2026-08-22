@@ -29,6 +29,7 @@ const migrationSteps = [
   ["auth", "@lumi/web", "auth:migrate"],
   ["profiles", "@lumi/profiles", "profile:migrate"],
   ["world", "@lumi/world", "world:migrate"],
+  ["npc-intelligence", "@lumi/npc-intelligence", "npc:migrate"],
   ["story", "@lumi/story", "story:migrate"],
   ["simulation", "@lumi/simulation", "simulation:migrate"],
   ["privacy", "@lumi/privacy", "privacy:migrate"],
@@ -43,6 +44,7 @@ const requiredRelations = [
   "profile.child_avatars",
   "profile.worlds",
   "profile.world_npcs",
+  "npc_intelligence.decision_traces",
   "story.story_sessions",
   "simulation.simulation_runs",
   "privacy.consent_records",
@@ -94,6 +96,7 @@ async function resetUnmarkedLegacyDatabase(client) {
       DROP SCHEMA IF EXISTS ai CASCADE;
       DROP SCHEMA IF EXISTS simulation CASCADE;
       DROP SCHEMA IF EXISTS story CASCADE;
+      DROP SCHEMA IF EXISTS npc_intelligence CASCADE;
       DROP SCHEMA IF EXISTS profile CASCADE;
 
       DROP TABLE IF EXISTS public.parent_password_reset_tokens CASCADE;
@@ -133,7 +136,7 @@ async function verifySchema(client) {
     const result = await client.query("SELECT to_regclass($1) AS relation", [
       relationName,
     ]);
-    if (result.rows[0]?.relation !== relationName) {
+    if (!result.rows[0]?.relation) {
       throw new Error(`Production schema verification failed: ${relationName}`);
     }
   }
