@@ -102,8 +102,6 @@ try {
   );
   console.warn("Inventory typed ownership database self-test OK");
 } finally {
-  await client
-    .query("DROP SCHEMA IF EXISTS profile CASCADE")
-    .catch(() => {});
+  await client.query("DROP SCHEMA IF EXISTS profile CASCADE").catch(() => {});
   await client.end();
 }
