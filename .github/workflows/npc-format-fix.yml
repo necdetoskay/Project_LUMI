@@ -1,0 +1,38 @@
+name: NPC Format Fix
+
+on:
+  push:
+    branches:
+      - fix/npc-referential-integrity-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  prettier:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format NPC integrity self-test
+        run: pnpm exec prettier --write packages/npc-intelligence/scripts/referential-integrity-db-selftest.mjs
+      - name: Commit formatter output
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/npc-intelligence/scripts/referential-integrity-db-selftest.mjs
+          git commit -m "chore: format NPC integrity self-test"
+          git push origin HEAD:fix/npc-referential-integrity-hardening
