@@ -25,6 +25,7 @@
     "profile:world-sim-selftest": "node scripts/world-simulation-db-selftest.mjs",
     "profile:story-integrity-selftest": "node scripts/story-integrity-db-selftest.mjs",
     "profile:inventory-integrity-selftest": "node scripts/inventory-ownership-db-selftest.mjs",
+    "profile:managed-asset-canon-selftest": "node scripts/managed-asset-canon-db-selftest.mjs",
     "profile:cross-domain-selftest": "node scripts/cross-domain-integrity-db-selftest.mjs",
     "test:int": "vitest run --config vitest.integration.config.ts"
   },
