@@ -38,7 +38,10 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     const [row] = await this.db
       .select({ character: lumiCharacters })
       .from(childAvatars)
-      .innerJoin(lumiCharacters, eq(lumiCharacters.id, childAvatars.characterId))
+      .innerJoin(
+        lumiCharacters,
+        eq(lumiCharacters.id, childAvatars.characterId),
+      )
       .where(
         and(
           eq(childAvatars.childProfileId, childProfileId),
