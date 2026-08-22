@@ -34,32 +34,45 @@ function fixtureId(index) {
   return `40000000-0000-4000-8000-${suffix}`;
 }
 
-const ids = Array.from({ length: 24 }, (_, index) => fixtureId(index));
+const ids = Array.from({ length: 40 }, (_, index) => fixtureId(index));
 const [
   householdA,
   householdB,
+  childProfileA,
+  childProfileB,
   avatarA,
   avatarB,
   npcA,
+  worldA,
+  worldB,
+  locationA,
+  locationB,
   itemA,
   itemB,
   itemA2,
+  itemA3,
+  itemA4,
   ownershipA,
   containerA,
   historyA,
   transferA,
   usageA,
-  futureOwnership,
-  futureContainer,
-  futureUsage,
+  post0014ChildProfileOwnership,
+  post0014LocationContainer,
+  futureCharacterOwnership,
+  futureChildProfileContainer,
+  futureLocationUsage,
   unknownOwner,
   invalidOwnership,
   invalidContainer,
   invalidHistory,
   invalidTransfer,
   invalidUsage,
+  invalidLocationUsage,
+  invalidItemScopeUsage,
   cleanupUsage,
   legacyUnknownOwnership,
+  nullableHistory,
 ] = ids;
 
 const resetSchemaSql = `
@@ -72,6 +85,11 @@ const fixtureSchemaSql = `
     id uuid PRIMARY KEY
   );
 
+  CREATE TABLE profile.child_profiles (
+    id uuid PRIMARY KEY,
+    household_id uuid NOT NULL
+  );
+
   CREATE TABLE profile.child_avatars (
     character_id uuid PRIMARY KEY,
     household_id uuid NOT NULL
@@ -80,6 +98,16 @@ const fixtureSchemaSql = `
   CREATE TABLE profile.world_npcs (
     character_id uuid PRIMARY KEY,
     household_id uuid NOT NULL
+  );
+
+  CREATE TABLE profile.worlds (
+    id uuid PRIMARY KEY,
+    household_id uuid NOT NULL
+  );
+
+  CREATE TABLE profile.world_locations (
+    id uuid PRIMARY KEY,
+    world_id uuid NOT NULL
   );
 
   CREATE TABLE profile.inventory_item_instances (
@@ -153,13 +181,18 @@ try {
     /unresolved typed owner|inventory_ownership_one_typed_owner_check/,
   );
 
-  // Rebuild a valid pre-hardening shape containing all owner-reference kinds.
+  // Rebuild a valid pre-hardening shape containing every canonical owner
+  // family and every remaining polymorphic owner-reference table.
   await client.query(resetSchemaSql);
   await client.query(fixtureSchemaSql);
   await client.query("INSERT INTO profile.households VALUES ($1),($2)", [
     householdA,
     householdB,
   ]);
+  await client.query(
+    "INSERT INTO profile.child_profiles VALUES ($1,$2),($3,$4)",
+    [childProfileA, householdA, childProfileB, householdB],
+  );
   await client.query(
     "INSERT INTO profile.child_avatars VALUES ($1,$2),($3,$4)",
     [avatarA, householdA, avatarB, householdB],
@@ -168,9 +201,31 @@ try {
     npcA,
     householdA,
   ]);
+  await client.query("INSERT INTO profile.worlds VALUES ($1,$2),($3,$4)", [
+    worldA,
+    householdA,
+    worldB,
+    householdB,
+  ]);
   await client.query(
-    "INSERT INTO profile.inventory_item_instances VALUES ($1,$2),($3,$4),($5,$6)",
-    [itemA, householdA, itemB, householdB, itemA2, householdA],
+    "INSERT INTO profile.world_locations VALUES ($1,$2),($3,$4)",
+    [locationA, worldA, locationB, worldB],
+  );
+  await client.query(
+    `INSERT INTO profile.inventory_item_instances
+      VALUES ($1,$2),($3,$4),($5,$6),($7,$8),($9,$10)`,
+    [
+      itemA,
+      householdA,
+      itemB,
+      householdB,
+      itemA2,
+      householdA,
+      itemA3,
+      householdA,
+      itemA4,
+      householdA,
+    ],
   );
   await client.query(
     "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'character',$3,'active')",
@@ -187,7 +242,7 @@ try {
   );
   await client.query(
     `INSERT INTO profile.inventory_transfers
-      VALUES ($1,$2,'npc',$3,'household',$4,$4)`,
+      VALUES ($1,$2,'character',$3,'household',$4,$4)`,
     [transferA, itemA, npcA, householdA],
   );
   await client.query(
@@ -196,14 +251,26 @@ try {
     [usageA, itemA, avatarA, householdA],
   );
 
+  // Reproduce the real upgrade shape: 0014 has already run in production, but
+  // its lack of write-through enforcement allows canonical child_profile and
+  // location current owners to be written afterwards without PR-7 companions.
   await client.query(typedOwnershipMigration);
+  await client.query(
+    "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'child_profile',$3,'active')",
+    [post0014ChildProfileOwnership, itemA2, childProfileA],
+  );
+  await client.query(
+    "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'location',$3,'active')",
+    [post0014LocationContainer, householdA, locationA],
+  );
+
   await client.query(ownerReferenceMigration);
   await client.query(currentCompanionMigration);
 
   const typedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
   );
-  assert.equal(typedReferenceCount.rows[0].count, 7);
+  assert.equal(typedReferenceCount.rows[0].count, 9);
 
   const ownershipReference = await client.query(
     `SELECT child_avatar_id, npc_id, household_id, scope_household_id
@@ -224,57 +291,95 @@ try {
   );
   assert.equal(historyToReference.rows[0].npc_id, npcA);
 
+  // 0018 must repair the two current owner types that 0014 could not represent.
+  const childProfileCompanion = await client.query(
+    `SELECT child_profile_id
+       FROM profile.inventory_ownership_typed_owners
+      WHERE ownership_id = $1`,
+    [post0014ChildProfileOwnership],
+  );
+  assert.equal(childProfileCompanion.rows[0].child_profile_id, childProfileA);
+
+  const locationCompanion = await client.query(
+    `SELECT location_id
+       FROM profile.inventory_container_typed_owners
+      WHERE inventory_id = $1`,
+    [post0014LocationContainer],
+  );
+  assert.equal(locationCompanion.rows[0].location_id, locationA);
+
+  const locationCanonical = await client.query(
+    `SELECT location_id, location_world_id, scope_household_id
+       FROM profile.inventory_typed_owner_references
+      WHERE reference_kind = 'inventory' AND reference_id = $1`,
+    [post0014LocationContainer],
+  );
+  assert.equal(locationCanonical.rows[0].location_id, locationA);
+  assert.equal(locationCanonical.rows[0].location_world_id, worldA);
+  assert.equal(locationCanonical.rows[0].scope_household_id, householdA);
+
   // Future current ownership writes can no longer bypass typed identity, and
   // the original PR-7 companion remains synchronized.
   await client.query(
     "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'character',$3,'active')",
-    [futureOwnership, itemA2, npcA],
+    [futureCharacterOwnership, itemA3, npcA],
   );
   const futureOwnershipReference = await client.query(
     `SELECT npc_id
        FROM profile.inventory_typed_owner_references
       WHERE reference_kind = 'ownership' AND reference_id = $1`,
-    [futureOwnership],
+    [futureCharacterOwnership],
   );
   assert.equal(futureOwnershipReference.rows[0].npc_id, npcA);
   const futureOwnershipCompanion = await client.query(
     `SELECT npc_id
        FROM profile.inventory_ownership_typed_owners
       WHERE ownership_id = $1`,
-    [futureOwnership],
+    [futureCharacterOwnership],
   );
   assert.equal(futureOwnershipCompanion.rows[0].npc_id, npcA);
 
-  // Future container and usage writes are synchronized in the same transaction.
   await client.query(
-    "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'child_avatar',$3,'active')",
-    [futureContainer, householdA, avatarA],
+    "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'child_profile',$3,'active')",
+    [futureChildProfileContainer, householdA, childProfileA],
   );
-  const futureContainerCompanion = await client.query(
-    `SELECT child_avatar_id
+  const futureChildProfileCompanion = await client.query(
+    `SELECT child_profile_id
        FROM profile.inventory_container_typed_owners
       WHERE inventory_id = $1`,
-    [futureContainer],
+    [futureChildProfileContainer],
   );
-  assert.equal(futureContainerCompanion.rows[0].child_avatar_id, avatarA);
-  await client.query(
-    `INSERT INTO profile.inventory_usages
-      VALUES ($1,$2,'household',$3,$3)`,
-    [futureUsage, itemA, householdA],
+  assert.equal(
+    futureChildProfileCompanion.rows[0].child_profile_id,
+    childProfileA,
   );
 
-  // Cross-household and wrong-subtype identities fail closed.
+  await client.query(
+    `INSERT INTO profile.inventory_usages
+      VALUES ($1,$2,'location',$3,$4)`,
+    [futureLocationUsage, itemA, locationA, householdA],
+  );
+  const futureLocationReference = await client.query(
+    `SELECT location_id, location_world_id
+       FROM profile.inventory_typed_owner_references
+      WHERE reference_kind = 'usage' AND reference_id = $1`,
+    [futureLocationUsage],
+  );
+  assert.equal(futureLocationReference.rows[0].location_id, locationA);
+  assert.equal(futureLocationReference.rows[0].location_world_id, worldA);
+
+  // Cross-household, wrong-subtype and unknown identities fail closed.
   await assert.rejects(
     client.query(
-      "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'npc',$3,'active')",
+      "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'character',$3,'active')",
       [invalidOwnership, itemB, npcA],
     ),
     /0 typed owner match|foreign key constraint/,
   );
   await assert.rejects(
     client.query(
-      "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'character',$3,'active')",
-      [invalidContainer, householdB, avatarA],
+      "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'child_profile',$3,'active')",
+      [invalidContainer, householdB, childProfileA],
     ),
     /0 typed owner match|foreign key constraint/,
   );
@@ -288,14 +393,20 @@ try {
   );
   await assert.rejects(
     client.query(
+      `INSERT INTO profile.inventory_usages
+        VALUES ($1,$2,'location',$3,$4)`,
+      [invalidLocationUsage, itemA, locationB, householdA],
+    ),
+    /0 typed owner match|foreign key constraint/,
+  );
+  await assert.rejects(
+    client.query(
       `INSERT INTO profile.inventory_transfers
         VALUES ($1,$2,'character',$3,'household',$4,$5)`,
       [invalidTransfer, itemA, avatarA, householdB, householdB],
     ),
     /0 typed owner match|foreign key constraint/,
   );
-
-  // Unknown UUIDs and half-populated nullable history-from references are rejected.
   await assert.rejects(
     client.query(
       `INSERT INTO profile.inventory_usages
@@ -304,6 +415,18 @@ try {
     ),
     /0 typed owner match|foreign key constraint/,
   );
+
+  // Actor scope itself is also bound to the item's household.
+  await assert.rejects(
+    client.query(
+      `INSERT INTO profile.inventory_usages
+        VALUES ($1,$2,'character',$3,$4)`,
+      [invalidItemScopeUsage, itemB, avatarA, householdA],
+    ),
+    /belongs to household .* not actor household/,
+  );
+
+  // Half-populated nullable history-from references are rejected.
   await assert.rejects(
     client.query(
       `INSERT INTO profile.inventory_ownership_history
@@ -316,15 +439,15 @@ try {
   // A nullable from-owner is valid only when both legacy fields are null.
   await client.query(
     `INSERT INTO profile.inventory_ownership_history
-      VALUES ($1,$2,NULL,NULL,'child_avatar',$3,$4)`,
-    [invalidHistory, itemA, avatarA, householdA],
+      VALUES ($1,$2,NULL,NULL,'child_profile',$3,$4)`,
+    [nullableHistory, itemA, childProfileA, householdA],
   );
   const nullableFromRefs = await client.query(
     `SELECT reference_kind
        FROM profile.inventory_typed_owner_references
       WHERE reference_id = $1
       ORDER BY reference_kind`,
-    [invalidHistory],
+    [nullableHistory],
   );
   assert.deepEqual(
     nullableFromRefs.rows.map((row) => row.reference_kind),
@@ -334,8 +457,8 @@ try {
   // Delete cleanup prevents generic typed-reference orphans.
   await client.query(
     `INSERT INTO profile.inventory_usages
-      VALUES ($1,$2,'child_avatar',$3,$4)`,
-    [cleanupUsage, itemA, avatarA, householdA],
+      VALUES ($1,$2,'child_profile',$3,$4)`,
+    [cleanupUsage, itemA, childProfileA, householdA],
   );
   await client.query("DELETE FROM profile.inventory_usages WHERE id = $1", [
     cleanupUsage,
@@ -354,7 +477,7 @@ try {
   const replayedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
   );
-  assert.equal(replayedReferenceCount.rows[0].count, 11);
+  assert.equal(replayedReferenceCount.rows[0].count, 13);
 
   console.warn("Inventory typed owner reference database self-test OK");
 } finally {
