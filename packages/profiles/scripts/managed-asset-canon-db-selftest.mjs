@@ -34,6 +34,8 @@ const ids = {
   wrongSubjectCanon: "82000000-0000-4000-8000-000000000009",
   wrongKindCanon: "82000000-0000-4000-8000-000000000010",
   invalidSelectedCanon: "82000000-0000-4000-8000-000000000011",
+  subject3: "82000000-0000-4000-8000-000000000012",
+  staleSelectedCanon: "82000000-0000-4000-8000-000000000013",
 };
 
 const resetSchemaSql = `
@@ -97,8 +99,25 @@ try {
   );
 
   // Clean generation-1-compatible state migrates and validates the new FK.
+  // It may also contain stale legacy selected state left by the old SET NULL FK.
   await seedBase();
+  await client.query(
+    `INSERT INTO profile.managed_asset_canons
+      (id, household_id, subject_type, subject_id, asset_kind, selected_asset_id, status, selected_at)
+     VALUES ($1, $2, 'character', $3, 'character_portrait', NULL, 'selected', now())`,
+    [ids.staleSelectedCanon, ids.household1, ids.subject3],
+  );
   await client.query(migrationSql);
+
+  const staleCanon = await client.query(
+    `SELECT selected_asset_id, status, selected_at
+     FROM profile.managed_asset_canons
+     WHERE id = $1`,
+    [ids.staleSelectedCanon],
+  );
+  assert.equal(staleCanon.rows[0].selected_asset_id, null);
+  assert.equal(staleCanon.rows[0].status, "draft");
+  assert.equal(staleCanon.rows[0].selected_at, null);
 
   const constraint = await client.query(
     `SELECT convalidated
