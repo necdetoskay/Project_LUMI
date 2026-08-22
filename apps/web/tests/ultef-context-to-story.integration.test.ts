@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   StorySceneGenerationService,
@@ -9,8 +9,9 @@ import {
 import type { StoryHookState } from "@lumi/story/domain";
 
 import { NpcBeliefStoryContinuityContextAdapter } from "@/lib/story-continuity-context-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled = process.env.ULTEF_SCENARIO === "L6-CONTEXT-TO-STORY-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
@@ -110,6 +111,7 @@ ultefDescribe("ULTEF L6-CONTEXT-TO-STORY-001", () => {
   it("turns persisted prior-story continuity into visible prose in a later generated story", async () => {
     const householdId = crypto.randomUUID();
     const childProfileId = crypto.randomUUID();
+    const childAvatarId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
     const boraNpcId = crypto.randomUUID();
     const scenario = createScenario({
@@ -121,6 +123,15 @@ ultefDescribe("ULTEF L6-CONTEXT-TO-STORY-001", () => {
     });
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId,
+        fixtureKey: `context-to-story-${householdId}`,
+        npcs: [{ id: boraNpcId, name: "Bora" }],
+      });
+
       await pool.query(
         `INSERT INTO npc_intelligence.beliefs
           (id, npc_id, household_id, world_id, fact_id, claim, confidence, source, provenance, status)
@@ -137,7 +148,7 @@ ultefDescribe("ULTEF L6-CONTEXT-TO-STORY-001", () => {
       );
 
       scenario.setup("Child", { name: "Deniz", id: childProfileId });
-      scenario.setup("Character", { name: "Arin" });
+      scenario.setup("Character", { name: "Arin", id: childAvatarId });
       scenario.setup("World", { name: "Gunes Vadisi", id: worldId });
       scenario.setup("NPC", { name: "Bora", id: boraNpcId });
       scenario.event(
@@ -157,7 +168,7 @@ ultefDescribe("ULTEF L6-CONTEXT-TO-STORY-001", () => {
         }),
         settingsPort,
         continuityPort: adapter,
-        characterId: "Arin",
+        characterId: childAvatarId,
         callOpenRouter: continuityAwareCaller(prompts),
       });
 
@@ -213,6 +224,9 @@ ultefDescribe("ULTEF L6-CONTEXT-TO-STORY-001", () => {
         "DELETE FROM npc_intelligence.beliefs WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   });
 });
