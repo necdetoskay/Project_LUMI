@@ -39,7 +39,7 @@ export class DrizzleSimulationRepository implements SimulationRepository {
       .onConflictDoUpdate({
         target: worldClocks.worldId,
         set: {
-          currentDay: sql`${worldClocks.currentDay} + EXCLUDED.currentDay`,
+          currentDay: sql`EXCLUDED.current_day`,
           currentHour: sql`EXCLUDED.current_hour`,
           currentMinute: sql`EXCLUDED.current_minute`,
           season: sql`EXCLUDED.season`,
@@ -107,7 +107,7 @@ export class DrizzleSimulationRepository implements SimulationRepository {
   }
 
   async saveEffect(effect: SimulationEffectRecord): Promise<boolean> {
-    await this.db
+    const inserted = await this.db
       .insert(simulationEffects)
       .values({
         id: effect.id,
@@ -125,8 +125,9 @@ export class DrizzleSimulationRepository implements SimulationRepository {
         committedAt: effect.committedAt,
         createdAt: effect.createdAt,
       })
-      .onConflictDoNothing();
-    return true;
+      .onConflictDoNothing()
+      .returning({ id: simulationEffects.id });
+    return inserted.length === 1;
   }
 
   async findEffectsByRun(runId: string): Promise<SimulationEffectRecord[]> {
