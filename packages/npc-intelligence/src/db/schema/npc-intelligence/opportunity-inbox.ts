@@ -1,13 +1,14 @@
+import { sql } from "drizzle-orm";
 import {
   check,
   doublePrecision,
   index,
   jsonb,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { primaryId } from "./common";
 import { npcIntelligenceSchema } from "./schemas";
 
@@ -41,7 +42,7 @@ export const opportunityInbox = npcIntelligenceSchema.table(
   (table) => [
     index("opp_inbox_child_idx").on(table.householdId, table.childProfileId),
     index("opp_inbox_status_idx").on(table.status, table.expiresAt),
-    index("opp_inbox_idempotency_idx").on(
+    uniqueIndex("opp_inbox_idempotency_idx").on(
       table.householdId,
       table.idempotencyKey,
     ),

@@ -26,6 +26,7 @@ import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
 import { createRumorMaterializationRuntime } from "@/lib/rumor-materialization-runtime";
 import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 import {
   cleanupStoryFixture,
   seedStoryFixture,
@@ -93,6 +94,17 @@ ultefDescribe(
       const targetNpcId = crypto.randomUUID();
 
       await seedStoryFixture(pool, fixture);
+      await seedCanonicalNpcFixture(pool, {
+        householdId: fixture.householdId,
+        childProfileId: fixture.childProfileId,
+        characterId: fixture.characterId,
+        worldId: fixture.worldId,
+        fixtureKey: `golden-headless-${fixture.householdId}`,
+        npcs: [
+          { id: sourceNpcId, name: "Mira" },
+          { id: targetNpcId, name: "Bora" },
+        ],
+      });
 
       const scenario = createScenario({
         id: "L6-GOLDEN-001",

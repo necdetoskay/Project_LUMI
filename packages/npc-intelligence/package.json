@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:int": "vitest run --config vitest.integration.config.ts",
+    "test:db:referential-integrity": "node scripts/referential-integrity-db-selftest.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "npc:migrate": "node scripts/npc-migrate.mjs"

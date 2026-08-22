@@ -1,7 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import pg from "pg";
 import { sql } from "drizzle-orm";
+import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { DrizzleBeliefSourceRepository } from "@lumi/npc-intelligence/db";
+import { createDatabase as createNpcDatabase } from "@lumi/npc-intelligence/db/client";
 import {
   IndirectEffectPropagator,
   __setTestPropagationDb,
@@ -9,13 +11,10 @@ import {
 import type { IndirectEffectApplicator } from "@lumi/story/application";
 import { createDatabase as createStoryDatabase } from "@lumi/story/db/client";
 import { storyOutbox } from "@lumi/story/db/schema/story";
-import {
-  DrizzleBeliefSourceRepository,
-  createDatabase as createNpcDatabase,
-} from "@lumi/npc-intelligence/db";
 
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const enabled = process.env.ULTEF_SCENARIO === "L4-INDIRECT-FAILURE-001";
 const databaseUrl = process.env.STORY_TEST_DATABASE_URL;
@@ -24,6 +23,8 @@ const ultefDescribe =
   enabled && destructive && databaseUrl ? describe : describe.skip;
 
 const HOUSEHOLD_ID = "22000000-0000-4000-8000-000000000091";
+const CHILD_PROFILE_ID = "25000000-0000-4000-8000-000000000091";
+const CHARACTER_ID = "26000000-0000-4000-8000-000000000091";
 const WORLD_ID = "32000000-0000-4000-8000-000000000091";
 const COMMIT_ID = "52000000-0000-4000-8000-000000000091";
 const SOURCE_NPC = "62000000-0000-4000-8000-000000000091";
@@ -56,6 +57,18 @@ beforeAll(async () => {
   beliefRepository = new DrizzleBeliefSourceRepository(npcDb);
   __setTestPropagationDb(storyDb);
 
+  await seedCanonicalNpcFixture(pool, {
+    householdId: HOUSEHOLD_ID,
+    childProfileId: CHILD_PROFILE_ID,
+    characterId: CHARACTER_ID,
+    worldId: WORLD_ID,
+    fixtureKey: "indirect-terminal-failure-091",
+    npcs: [
+      { id: SOURCE_NPC, name: "Mira" },
+      { id: TARGET_NPC, name: "Bora" },
+    ],
+  });
+
   await pool.query("DELETE FROM story.story_outbox WHERE household_id = $1", [
     HOUSEHOLD_ID,
   ]);
@@ -68,6 +81,9 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!enabled || !destructive || !databaseUrl) return;
   __setTestPropagationDb(undefined);
+  await pool.query("DELETE FROM profile.households WHERE id = $1", [
+    HOUSEHOLD_ID,
+  ]);
   await pool.end();
 });
 

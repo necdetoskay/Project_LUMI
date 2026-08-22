@@ -59,10 +59,12 @@ try {
   }
   if (
     status.counts?.profiles !== 1 ||
-    status.counts?.characters !== 1 ||
+    status.counts?.characters !== 1 + LUMI_DEMO_MANIFEST.npcs.length ||
+    status.counts?.childAvatars !== 1 ||
+    status.counts?.npcIdentities !== LUMI_DEMO_MANIFEST.npcs.length ||
     status.counts?.worlds !== 1
   ) {
-    throw new Error("DEMO_BOOTSTRAP_COUNTS_INVALID");
+    throw new Error("DEMO_CANONICAL_IDENTITY_COUNTS_INVALID");
   }
   if (status.counts?.inventoryItems !== LUMI_DEMO_MANIFEST.inventory.length) {
     throw new Error("DEMO_INVENTORY_COUNT_INVALID");
@@ -81,6 +83,22 @@ try {
           FROM profile.inventory_entries ie
           JOIN profile.inventory_inventories ii ON ii.id = ie.inventory_id
          WHERE ii.household_id = $1 AND ii.owner_id = $2 AND ie.entry_status = 'active') AS inventory_entries,
+       (SELECT count(*)::int
+          FROM profile.lumi_characters
+         WHERE household_id = $1 AND child_profile_id = $4
+           AND character_subtype = 'npc' AND deleted_at IS NULL) AS canonical_npc_characters,
+       (SELECT count(*)::int
+          FROM profile.world_npcs
+         WHERE household_id = $1 AND world_id = $3 AND child_profile_id = $4
+           AND deleted_at IS NULL) AS typed_world_npcs,
+       (SELECT count(*)::int
+          FROM profile.child_avatars
+         WHERE household_id = $1 AND child_profile_id = $4
+           AND character_id = $2 AND deleted_at IS NULL) AS child_avatar_registry,
+       (SELECT count(*)::int
+          FROM profile.character_origin_packages
+         WHERE household_id = $1 AND child_profile_id = $4
+           AND id = ANY($8::uuid[])) AS origin_packages,
        (SELECT count(*)::int
           FROM npc_intelligence.npc_snapshots
          WHERE household_id = $1 AND world_id = $3 AND child_profile_id = $4) AS scoped_npcs,
@@ -105,11 +123,27 @@ try {
       LUMI_DEMO_MANIFEST.npcs[0].id,
       LUMI_DEMO_MANIFEST.quest.id,
       LUMI_DEMO_PARENT.id,
+      [
+        LUMI_DEMO_MANIFEST.character.originPackageId,
+        ...LUMI_DEMO_MANIFEST.npcs.map((npc) => npc.originPackageId),
+      ],
     ],
   );
   const support = supporting.rows[0] ?? {};
   if (support.inventory_entries !== LUMI_DEMO_MANIFEST.inventory.length) {
     throw new Error("DEMO_INVENTORY_ENTRIES_INVALID");
+  }
+  if (support.canonical_npc_characters !== LUMI_DEMO_MANIFEST.npcs.length) {
+    throw new Error("DEMO_CANONICAL_NPC_CHARACTERS_INVALID");
+  }
+  if (support.typed_world_npcs !== LUMI_DEMO_MANIFEST.npcs.length) {
+    throw new Error("DEMO_TYPED_WORLD_NPCS_INVALID");
+  }
+  if (support.child_avatar_registry !== 1) {
+    throw new Error("DEMO_CHILD_AVATAR_REGISTRY_INVALID");
+  }
+  if (support.origin_packages !== 1 + LUMI_DEMO_MANIFEST.npcs.length) {
+    throw new Error("DEMO_ORIGIN_PACKAGES_INVALID");
   }
   if (support.scoped_npcs !== LUMI_DEMO_MANIFEST.npcs.length) {
     throw new Error("DEMO_NPC_SCOPE_INVALID");
@@ -167,6 +201,9 @@ try {
 
   const replayStatus = await runDemoStatus({ adapter });
   if (
+    replayStatus.counts?.characters !== 1 + LUMI_DEMO_MANIFEST.npcs.length ||
+    replayStatus.counts?.childAvatars !== 1 ||
+    replayStatus.counts?.npcIdentities !== LUMI_DEMO_MANIFEST.npcs.length ||
     replayStatus.counts?.inventoryItems !==
       LUMI_DEMO_MANIFEST.inventory.length ||
     replayStatus.counts?.npcs !== LUMI_DEMO_MANIFEST.npcs.length ||

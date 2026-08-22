@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   StorySceneGenerationService,
@@ -9,8 +9,9 @@ import {
 import type { StoryHookState } from "@lumi/story/domain";
 
 import { NpcBeliefStoryContinuityContextAdapter } from "@/lib/story-continuity-context-runtime";
-import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
 import { writeScenarioArtifacts } from "../../../tooling/ultef/src/artifacts.mjs";
+import { createScenario } from "../../../tooling/ultef/src/evidence.mjs";
+import { seedCanonicalNpcFixture } from "./helpers/canonical-npc-fixture";
 
 const SCENARIO_ID = "PX-LUMI-03-MEMORY-COHERENCE-001";
 const enabled = process.env.ULTEF_SCENARIO === SCENARIO_ID;
@@ -117,6 +118,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
   it("keeps direct observation and hearsay source semantics distinct and never fabricates absent memory", async () => {
     const householdId = crypto.randomUUID();
     const childProfileId = crypto.randomUUID();
+    const childAvatarId = crypto.randomUUID();
     const worldId = crypto.randomUUID();
     const npcId = crypto.randomUUID();
     const scenario = createScenario({
@@ -129,6 +131,15 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
     });
 
     try {
+      await seedCanonicalNpcFixture(pool, {
+        householdId,
+        childProfileId,
+        characterId: childAvatarId,
+        worldId,
+        fixtureKey: `memory-coherence-${householdId}`,
+        npcs: [{ id: npcId, name: "Bora" }],
+      });
+
       await pool.query(
         `INSERT INTO npc_intelligence.beliefs
           (id, npc_id, household_id, world_id, fact_id, claim, confidence, source, provenance, status)
@@ -166,7 +177,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
         householdId,
         worldId,
         childProfileId,
-        characterId: "Arin",
+        characterId: childAvatarId,
         npcIds: [npcId],
       });
 
@@ -211,7 +222,7 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
           hook: makeHook({ householdId, childProfileId, worldId, npcId }),
           settingsPort,
           continuityPort: adapter,
-          characterId: "Arin",
+          characterId: childAvatarId,
           callOpenRouter: capturingCaller(prompts),
         });
       const prompt = prompts[0] ?? "";
@@ -290,6 +301,9 @@ ultefDescribe(`ULTEF ${SCENARIO_ID}`, () => {
         "DELETE FROM npc_intelligence.beliefs WHERE household_id = $1",
         [householdId],
       );
+      await pool.query("DELETE FROM profile.households WHERE id = $1", [
+        householdId,
+      ]);
     }
   });
 });
