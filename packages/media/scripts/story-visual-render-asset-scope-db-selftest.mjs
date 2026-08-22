@@ -79,9 +79,10 @@ async function reset() {
 }
 
 async function seedBase() {
-  await client.query("INSERT INTO media.story_visual_manifests (id) VALUES ($1)", [
-    manifestA,
-  ]);
+  await client.query(
+    "INSERT INTO media.story_visual_manifests (id) VALUES ($1)",
+    [manifestA],
+  );
   await client.query(
     `INSERT INTO media.story_visual_asset_sets
       (id, manifest_id, household_id, child_profile_id, world_id)
