@@ -6,6 +6,7 @@ import pg from "pg";
 import { createDatabase } from "../../src/db/client";
 import { DrizzleSimulationRepository } from "../../src/db/repositories/drizzle/drizzle-simulation.repository";
 import {
+  makeClock,
   makeCommittedEffect,
   makePendingEffect,
   makeScheduledEvent,
@@ -74,11 +75,37 @@ describe("DrizzleSimulationRepository integration", () => {
     expect(found!.childAbsentDays).toBe(3);
   });
 
+  it("persists absolute world clock state on repeated upsert", async () => {
+    if (!enabled || !connected) return;
+
+    const initial = makeClock({ currentDay: 5, currentHour: 22, version: 5 });
+    await repo.upsertClock(initial);
+
+    const advanced = makeClock({
+      currentDay: 6,
+      currentHour: 1,
+      currentMinute: 30,
+      version: 6,
+      clockHash: "advanced-clock",
+      updatedAt: new Date("2026-08-03T12:00:00Z"),
+    });
+    await repo.upsertClock(advanced);
+
+    const found = await repo.findClock(initial.worldId);
+    expect(found).toBeDefined();
+    expect(found!.currentDay).toBe(6);
+    expect(found!.currentHour).toBe(1);
+    expect(found!.currentMinute).toBe(30);
+    expect(found!.version).toBe(6);
+    expect(found!.clockHash).toBe("advanced-clock");
+  });
+
   it("persists effects with idempotency", async () => {
     if (!enabled || !connected) return;
 
     const effect = makeCommittedEffect();
-    await repo.saveEffect(effect);
+    const saved = await repo.saveEffect(effect);
+    expect(saved).toBe(true);
 
     const dup = { ...effect };
     const savedAgain = await repo.saveEffect(dup);
