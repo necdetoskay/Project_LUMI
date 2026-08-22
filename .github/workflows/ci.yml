@@ -65,12 +65,6 @@ jobs:
         run: pnpm ultef:l9-long-horizon
       - name: Run ULTEF L9 provider failover routing contract
         run: pnpm ultef:l9-provider-failover
-      - name: Diagnose managed asset canon formatting
-        run: |
-          cp packages/profiles/scripts/managed-asset-canon-db-selftest.mjs /tmp/managed-asset-canon-db-selftest.mjs
-          pnpm exec prettier --write packages/profiles/scripts/managed-asset-canon-db-selftest.mjs
-          diff -u /tmp/managed-asset-canon-db-selftest.mjs packages/profiles/scripts/managed-asset-canon-db-selftest.mjs || true
-          git checkout -- packages/profiles/scripts/managed-asset-canon-db-selftest.mjs
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
