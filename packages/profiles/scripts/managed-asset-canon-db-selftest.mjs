@@ -155,8 +155,6 @@ try {
 
   console.warn("Managed asset canon integrity database self-test OK");
 } finally {
-  await client
-    .query("DROP SCHEMA IF EXISTS profile CASCADE")
-    .catch(() => {});
+  await client.query("DROP SCHEMA IF EXISTS profile CASCADE").catch(() => {});
   await client.end();
 }
