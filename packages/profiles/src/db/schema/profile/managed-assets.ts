@@ -24,6 +24,9 @@ export const managedAssets = profileSchema.table(
       .references(() => households.id, { onDelete: "cascade" }),
     subjectType: varchar("subject_type", { length: 32 }).notNull(),
     subjectId: uuid("subject_id").notNull(),
+    storySceneId: uuid("story_scene_id"),
+    storyVersionId: uuid("story_version_id"),
+    storyDefinitionId: uuid("story_definition_id"),
     assetKind: varchar("asset_kind", { length: 64 }).notNull(),
     storageRef: text("storage_ref").notNull(),
     mimeType: varchar("mime_type", { length: 120 }),
@@ -60,6 +63,21 @@ export const managedAssets = profileSchema.table(
     check(
       "managed_assets_subject_type_check",
       sql`${table.subjectType} IN ('character', 'npc', 'location', 'item', 'story_scene')`,
+    ),
+    check(
+      "managed_assets_story_scene_typed_check",
+      sql`(
+        ${table.subjectType} = 'story_scene'
+        AND ${table.storySceneId} IS NOT NULL
+        AND ${table.storyVersionId} IS NOT NULL
+        AND ${table.storyDefinitionId} IS NOT NULL
+        AND ${table.subjectId} = ${table.storySceneId}
+      ) OR (
+        ${table.subjectType} <> 'story_scene'
+        AND ${table.storySceneId} IS NULL
+        AND ${table.storyVersionId} IS NULL
+        AND ${table.storyDefinitionId} IS NULL
+      )`,
     ),
     check(
       "managed_assets_origin_type_check",
