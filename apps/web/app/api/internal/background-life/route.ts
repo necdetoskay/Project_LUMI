@@ -1,25 +1,10 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { NextResponse } from "next/server";
 
+import { isBackgroundLifeCronAuthorized } from "@/lib/background-life/cron-auth";
 import { runProductionBackgroundLife } from "@/lib/background-life/worker";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-export function isBackgroundLifeCronAuthorized(
-  authorizationHeader: string | null,
-  configuredSecret: string | undefined,
-): boolean {
-  const secret = configuredSecret?.trim();
-  if (!secret || !authorizationHeader?.startsWith("Bearer ")) return false;
-
-  const candidate = authorizationHeader.slice("Bearer ".length);
-  const expectedBuffer = Buffer.from(secret);
-  const candidateBuffer = Buffer.from(candidate);
-  if (expectedBuffer.length !== candidateBuffer.length) return false;
-  return timingSafeEqual(expectedBuffer, candidateBuffer);
-}
 
 export async function GET(request: Request) {
   if (!process.env.DATABASE_URL?.trim()) {
