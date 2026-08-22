@@ -174,9 +174,8 @@ describe("DrizzleCharacterRepository child-avatar read contract", () => {
         avatarId,
       ]);
 
-      const childAvatars = await repository.listChildAvatarsByHousehold(
-        householdId,
-      );
+      const childAvatars =
+        await repository.listChildAvatarsByHousehold(householdId);
       expect(childAvatars.map((record) => record.id)).toEqual([avatarId]);
       expect(
         childAvatars.every(
