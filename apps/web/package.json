@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/vercel-production-ai-migrate.mjs && node scripts/vercel-production-character-foundation-migrate.mjs && node scripts/vercel-production-context-migrate.mjs && node scripts/vercel-production-data-integrity-migrate.mjs && node scripts/vercel-production-cross-domain-migrate.mjs && next build --webpack",
+    "build": "node scripts/vercel-production-schema-migrate.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
