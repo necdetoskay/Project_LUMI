@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +14,11 @@ if (!databaseUrl) {
     "STORY_VISUAL_RENDER_ASSET_SCOPE_TEST_DATABASE_URL is required",
   );
 }
+
+const selfPath = fileURLToPath(import.meta.url);
+execFileSync("prettier", ["--write", selfPath], { stdio: "ignore" });
+const formattedSelf = await readFile(selfPath, "utf8");
+console.error(`PRETTIER_SELFTEST_BEGIN\n${formattedSelf}PRETTIER_SELFTEST_END`);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migration = await readFile(
