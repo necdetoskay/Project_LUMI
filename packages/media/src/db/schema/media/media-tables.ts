@@ -276,7 +276,7 @@ export const storyVisualAssetSetRenders = mediaSchema.table(
     stateId: varchar("state_id", { length: 160 }),
     renderFingerprint: varchar("render_fingerprint", { length: 64 }).notNull(),
     assetId: uuid("asset_id").references(() => mediaAssets.id, {
-      onDelete: "set null",
+      onDelete: "no action",
     }),
     status: varchar("status", { length: 20 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -302,6 +302,10 @@ export const storyVisualAssetSetRenders = mediaSchema.table(
     check(
       "chk_story_visual_render_status",
       sql`${table.status} IN ('planned', 'reused', 'missing', 'generating', 'ready', 'failed')`,
+    ),
+    check(
+      "chk_story_visual_render_ready_asset",
+      sql`${table.status} NOT IN ('ready', 'reused') OR ${table.assetId} IS NOT NULL`,
     ),
   ],
 );
