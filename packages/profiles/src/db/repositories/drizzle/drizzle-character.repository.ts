@@ -1,13 +1,14 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 
+import { DomainError } from "../../../domain";
 import type { QueryExecutor } from "../../../db/client";
 import {
+  childAvatars,
   lumiCharacters,
   type LumiCharacterRecord,
   type NewLumiCharacterRecord,
 } from "../../../db/schema/profile";
 import type { CharacterRepository } from "../interfaces/character.repository";
-import { DomainError } from "../../../domain";
 
 export class DrizzleCharacterRepository implements CharacterRepository {
   constructor(private readonly db: QueryExecutor) {}
@@ -34,20 +35,20 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     childProfileId: string,
     householdId: string,
   ): Promise<LumiCharacterRecord | null> {
-    const [record] = await this.db
-      .select()
-      .from(lumiCharacters)
+    const [row] = await this.db
+      .select({ character: lumiCharacters })
+      .from(childAvatars)
+      .innerJoin(lumiCharacters, eq(lumiCharacters.id, childAvatars.characterId))
       .where(
         and(
-          eq(lumiCharacters.childProfileId, childProfileId),
-          eq(lumiCharacters.householdId, householdId),
-          eq(lumiCharacters.characterSubtype, "child_avatar"),
+          eq(childAvatars.childProfileId, childProfileId),
+          eq(childAvatars.householdId, householdId),
+          isNull(childAvatars.deletedAt),
           isNull(lumiCharacters.deletedAt),
         ),
       )
-      .orderBy(lumiCharacters.createdAt)
       .limit(1);
-    return (record as LumiCharacterRecord) ?? null;
+    return row?.character ?? null;
   }
 
   async listByHousehold(householdId: string): Promise<LumiCharacterRecord[]> {
