@@ -7,8 +7,20 @@ const MIGRATION_FILE_PATTERN = /^(\d{4})_([a-z0-9_]+)\.sql$/;
 // Historical duplicates already exist in production history. They are frozen here
 // so we can hard-fail every new duplicate without rewriting legacy filenames.
 const LEGACY_DUPLICATE_SEQUENCES = new Map([
-  ["0061", new Set(["0061_ai_generation_trace_cost.sql", "0061_onboarding_llm_task.sql"])],
-  ["0062", new Set(["0062_ai_generation_traces.sql", "0062_prompt_management_audit.sql"])],
+  [
+    "0061",
+    new Set([
+      "0061_ai_generation_trace_cost.sql",
+      "0061_onboarding_llm_task.sql",
+    ]),
+  ],
+  [
+    "0062",
+    new Set([
+      "0062_ai_generation_traces.sql",
+      "0062_prompt_management_audit.sql",
+    ]),
+  ],
 ]);
 
 export function checksumSql(sql) {
@@ -75,7 +87,9 @@ export function validateMigrationManifest(migrations) {
     .filter((file, index, files) => files.indexOf(file) !== index);
 
   if (duplicateFiles.length > 0) {
-    throw new Error(`Duplicate profile migration filenames: ${duplicateFiles.join(", ")}`);
+    throw new Error(
+      `Duplicate profile migration filenames: ${duplicateFiles.join(", ")}`,
+    );
   }
 }
 
