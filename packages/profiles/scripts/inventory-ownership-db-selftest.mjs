@@ -21,6 +21,13 @@ const ownerReferenceMigration = await readFile(
   resolve(worldMigrationDir, "0017_inventory_owner_reference_integrity.sql"),
   "utf8",
 );
+const currentCompanionMigration = await readFile(
+  resolve(
+    worldMigrationDir,
+    "0018_inventory_current_owner_companion_write_through.sql",
+  ),
+  "utf8",
+);
 
 function fixtureId(index) {
   const suffix = String(index + 1).padStart(12, "0");
@@ -191,6 +198,7 @@ try {
 
   await client.query(typedOwnershipMigration);
   await client.query(ownerReferenceMigration);
+  await client.query(currentCompanionMigration);
 
   const typedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
@@ -216,7 +224,8 @@ try {
   );
   assert.equal(historyToReference.rows[0].npc_id, npcA);
 
-  // Future current ownership writes can no longer bypass typed identity.
+  // Future current ownership writes can no longer bypass typed identity, and
+  // the original PR-7 companion remains synchronized.
   await client.query(
     "INSERT INTO profile.inventory_ownerships VALUES ($1,$2,'character',$3,'active')",
     [futureOwnership, itemA2, npcA],
@@ -228,12 +237,26 @@ try {
     [futureOwnership],
   );
   assert.equal(futureOwnershipReference.rows[0].npc_id, npcA);
+  const futureOwnershipCompanion = await client.query(
+    `SELECT npc_id
+       FROM profile.inventory_ownership_typed_owners
+      WHERE ownership_id = $1`,
+    [futureOwnership],
+  );
+  assert.equal(futureOwnershipCompanion.rows[0].npc_id, npcA);
 
   // Future container and usage writes are synchronized in the same transaction.
   await client.query(
     "INSERT INTO profile.inventory_inventories VALUES ($1,$2,'child_avatar',$3,'active')",
     [futureContainer, householdA, avatarA],
   );
+  const futureContainerCompanion = await client.query(
+    `SELECT child_avatar_id
+       FROM profile.inventory_container_typed_owners
+      WHERE inventory_id = $1`,
+    [futureContainer],
+  );
+  assert.equal(futureContainerCompanion.rows[0].child_avatar_id, avatarA);
   await client.query(
     `INSERT INTO profile.inventory_usages
       VALUES ($1,$2,'household',$3,$3)`,
@@ -325,8 +348,9 @@ try {
   );
   assert.equal(deletedReference.rows[0].count, 0);
 
-  // The forward-only migration remains safe if replayed directly.
+  // Both forward-only migrations remain safe if replayed directly.
   await client.query(ownerReferenceMigration);
+  await client.query(currentCompanionMigration);
   const replayedReferenceCount = await client.query(
     "SELECT COUNT(*)::int AS count FROM profile.inventory_typed_owner_references",
   );
