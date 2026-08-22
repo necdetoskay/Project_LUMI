@@ -1,0 +1,185 @@
+name: PR-8 Production Dependency Preflight
+
+on:
+  push:
+    branches:
+      - fix/pr8-production-dependency-migrations
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lumi_integrity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lumi_integrity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create pre-hardening production fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d lumi_integrity -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE SCHEMA profile;
+          CREATE SCHEMA simulation;
+          CREATE SCHEMA story;
+
+          CREATE TABLE profile.households (
+            id uuid PRIMARY KEY
+          );
+          CREATE TABLE profile.child_profiles (
+            id uuid PRIMARY KEY,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE profile.lumi_characters (
+            id uuid PRIMARY KEY,
+            character_subtype varchar(20) NOT NULL,
+            child_profile_id uuid NOT NULL,
+            household_id uuid NOT NULL,
+            deleted_at timestamptz,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now()
+          );
+          CREATE TABLE profile.worlds (
+            id uuid PRIMARY KEY,
+            child_profile_id uuid NOT NULL,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE profile.world_regions (
+            id uuid PRIMARY KEY,
+            world_id uuid NOT NULL
+          );
+          CREATE TABLE profile.world_locations (
+            id uuid PRIMARY KEY,
+            region_id uuid NOT NULL,
+            world_id uuid NOT NULL
+          );
+          CREATE TABLE profile.inventory_ownerships (
+            id uuid PRIMARY KEY,
+            owner_type varchar(40) NOT NULL,
+            owner_id uuid NOT NULL,
+            status varchar(20) NOT NULL
+          );
+          CREATE TABLE profile.inventory_inventories (
+            id uuid PRIMARY KEY,
+            owner_type varchar(40) NOT NULL,
+            owner_id uuid NOT NULL,
+            lifecycle_status varchar(20) NOT NULL
+          );
+
+          CREATE TABLE simulation.simulation_runs (
+            id uuid PRIMARY KEY,
+            world_id uuid NOT NULL,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE simulation.world_clocks (
+            id uuid PRIMARY KEY,
+            world_id uuid NOT NULL,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE simulation.scheduled_events (
+            id uuid PRIMARY KEY,
+            world_id uuid NOT NULL,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE simulation.simulation_effects (
+            id uuid PRIMARY KEY,
+            run_id uuid NOT NULL,
+            world_id uuid NOT NULL,
+            household_id uuid NOT NULL
+          );
+
+          CREATE TABLE story.story_definitions (
+            id uuid PRIMARY KEY,
+            household_id uuid NOT NULL
+          );
+          CREATE TABLE story.story_versions (
+            id uuid PRIMARY KEY,
+            story_definition_id uuid NOT NULL
+          );
+          CREATE TABLE story.story_scenes (
+            id uuid PRIMARY KEY,
+            story_version_id uuid NOT NULL
+          );
+          CREATE TABLE story.story_sessions (
+            id uuid PRIMARY KEY,
+            child_profile_id uuid NOT NULL,
+            household_id uuid NOT NULL,
+            world_id uuid NOT NULL,
+            story_definition_id uuid NOT NULL,
+            story_version_id uuid NOT NULL,
+            current_scene_id uuid
+          );
+          CREATE TABLE story.story_session_characters (
+            id uuid PRIMARY KEY,
+            character_id uuid NOT NULL
+          );
+          SQL
+
+      - name: Run production Data Integrity dependencies
+        env:
+          VERCEL_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: node apps/web/scripts/vercel-production-data-integrity-migrate.mjs
+
+      - name: Run production cross-domain migrations
+        env:
+          VERCEL_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: node apps/web/scripts/vercel-production-cross-domain-migrate.mjs
+
+      - name: Re-run complete production hardening chain idempotently
+        env:
+          VERCEL_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
+        run: |
+          node apps/web/scripts/vercel-production-data-integrity-migrate.mjs
+          node apps/web/scripts/vercel-production-cross-domain-migrate.mjs
+
+      - name: Verify production dependency and cross-domain objects
+        env:
+          PGPASSWORD: postgres
+        run: |
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM pg_indexes WHERE schemaname='profile' AND indexname='child_profiles_id_household_unique'")" = "1"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM pg_indexes WHERE schemaname='profile' AND indexname='worlds_id_household_unique'")" = "1"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM pg_tables WHERE schemaname='profile' AND tablename IN ('child_avatars','world_npcs','inventory_ownership_typed_owners','inventory_container_typed_owners')")" = "4"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM pg_constraint WHERE conname IN ('simulation_runs_world_scope_fk','story_sessions_child_scope_fk','privacy_consent_child_scope_fk','media_assets_world_scope_fk','prompt_activation_version_registry_fk')")" = "5"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM privacy._privacy_migration_ledger WHERE filename='0002_scope_and_status_integrity.sql'")" = "1"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM media._media_migration_ledger WHERE filename='0003_scope_and_numeric_integrity.sql'")" = "1"
+          test "$(psql -h 127.0.0.1 -U postgres -d lumi_integrity -Atc "SELECT count(*) FROM prompts._prompt_migration_ledger WHERE filename='0002_prompt_integrity.sql'")" = "1"
+
+      - name: Validate migration integrity policy
+        run: node tooling/data-integrity/check-migrations.mjs
+      - name: Self-test migration integrity policy
+        run: node tooling/data-integrity/migration-integrity-selftest.mjs
+      - name: Format
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
