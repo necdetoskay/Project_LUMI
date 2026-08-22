@@ -11,20 +11,6 @@ permissions:
 jobs:
   preflight:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: lumi_integrity
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d lumi_integrity"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -35,56 +21,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Migration integrity policy
-        run: node tooling/data-integrity/check-migrations.mjs
-      - name: Migration integrity policy self-test
-        run: node tooling/data-integrity/migration-integrity-selftest.mjs
-      - name: Profile migration ledger self-test
-        run: node packages/profiles/scripts/profile-ledger-selftest.mjs
-      - name: Household scope self-test
-        env:
-          PROFILE_SCOPE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:scope-selftest
-      - name: Typed character split self-test
-        env:
-          CHARACTER_SPLIT_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:character-split-selftest
-      - name: Legacy character registry self-test
-        env:
-          LEGACY_CHARACTER_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:legacy-character-selftest
-      - name: Typed character consumer contract
-        run: node tooling/data-integrity/character-consumer-contract.mjs
-      - name: World and simulation integrity
-        env:
-          WORLD_SIM_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:world-sim-selftest
-      - name: Story integrity
-        env:
-          STORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:story-integrity-selftest
-      - name: Inventory typed ownership integrity
-        env:
-          INVENTORY_INTEGRITY_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:inventory-integrity-selftest
-      - name: Cross-domain integrity
-        env:
-          CROSS_DOMAIN_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: pnpm --filter @lumi/profiles profile:cross-domain-selftest
-      - name: Production schema bootstrap contract
-        run: pnpm --filter @lumi/web exec vitest run tests/production-schema-migrations.contract.test.ts
-      - name: Clean production schema bootstrap
-        env:
-          VERCEL_ENV: production
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: node apps/web/scripts/vercel-production-schema-migrate.mjs
-      - name: Production schema bootstrap idempotent replay
-        env:
-          VERCEL_ENV: production
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lumi_integrity
-        run: node apps/web/scripts/vercel-production-schema-migrate.mjs
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
+      - name: Show exact Prettier patch
+        shell: bash
+        run: |
+          pnpm exec prettier --write \
+            packages/profiles/scripts/legacy-character-contract-db-selftest.mjs \
+            tooling/data-integrity/character-consumer-contract.mjs
+          git diff -- \
+            packages/profiles/scripts/legacy-character-contract-db-selftest.mjs \
+            tooling/data-integrity/character-consumer-contract.mjs
+          exit 1
