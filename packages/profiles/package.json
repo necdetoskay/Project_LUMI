@@ -21,6 +21,7 @@
     "lint": "eslint . --max-warnings=0",
     "profile:migrate": "node scripts/profile-migrate.mjs",
     "profile:scope-selftest": "node scripts/profile-scope-db-selftest.mjs",
+    "profile:character-split-selftest": "node scripts/character-split-db-selftest.mjs",
     "test:int": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
